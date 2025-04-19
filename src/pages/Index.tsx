@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
@@ -79,7 +78,7 @@ const Index = () => {
             <div className="max-w-4xl mx-auto">
               <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
                 <h2 className="text-xl md:text-2xl font-semibold text-center text-gray-900 mb-6">
-                  Velkommen til GreenEngros - Professionel frugt- og grøntleverandør
+                  Velkommen til Firmanavn - Professionel frugt- og grøntleverandør
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-4">

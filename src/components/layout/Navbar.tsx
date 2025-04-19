@@ -12,7 +12,7 @@ export function Navbar() {
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center">
-            <span className="text-2xl font-bold text-green-600">GreenEngros</span>
+            <span className="text-2xl font-bold text-green-600">Firmanavn</span>
           </Link>
           
           <nav className="hidden md:flex items-center space-x-6">
@@ -38,7 +38,7 @@ export function Navbar() {
             </Button>
           </Link>
           <Link to="/login" className="hidden sm:block">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 hover:bg-green-50 hover:text-green-700">
               <User className="h-4 w-4" />
               <span>Log ind</span>
             </Button>

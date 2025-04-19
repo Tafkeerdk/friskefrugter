@@ -1,4 +1,3 @@
-
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -88,7 +87,7 @@ const Login = () => {
                 Kun for B2B-kunder
               </h3>
               <p className="text-gray-600 mb-4">
-                GreenEngros er en B2B-webshop, der kun er tilgængelig for registrerede erhvervskunder.
+                Firmanavn er en B2B-webshop, der kun er tilgængelig for registrerede erhvervskunder.
               </p>
               <div className="flex flex-col space-y-3">
                 <div className="flex items-start">
