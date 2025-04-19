@@ -1,7 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { ContactOverlay } from "@/components/layout/ContactOverlay";
 import { ProductCard } from "@/components/products/ProductCard";
 import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock } from "lucide-react";
@@ -227,6 +227,7 @@ const Index = () => {
         </section>
       </main>
       <Footer />
+      <ContactOverlay />
     </div>
   );
 };
