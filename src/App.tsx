@@ -10,6 +10,10 @@ import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
+import DashboardProducts from "./pages/DashboardProducts";
+import DashboardOrders from "./pages/DashboardOrders";
+import DashboardInvoices from "./pages/DashboardInvoices";
+import DashboardCustomers from "./pages/DashboardCustomers";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
@@ -28,6 +32,10 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/cart" element={<Cart />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/products" element={<DashboardProducts />} />
+          <Route path="/dashboard/orders" element={<DashboardOrders />} />
+          <Route path="/dashboard/invoices" element={<DashboardInvoices />} />
+          <Route path="/dashboard/customers" element={<DashboardCustomers />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
