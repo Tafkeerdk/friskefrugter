@@ -8,7 +8,7 @@ export function Footer() {
       <div className="container mx-auto py-12 px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">GreenEngros</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">FriskeFrugter</h3>
             <p className="text-gray-600 mb-4">
               Friske råvarer til professionelle – nemt og hurtigt
             </p>
@@ -41,7 +41,7 @@ export function Footer() {
               </li>
               <li className="flex items-center">
                 <Mail className="h-5 w-5 text-green-600 mr-2" />
-                <span>info@greenengros.dk</span>
+                <span>info@friskefrugter.dk</span>
               </li>
             </ul>
           </div>
@@ -74,7 +74,7 @@ export function Footer() {
         </div>
         
         <div className="border-t border-gray-200 mt-12 pt-8 text-center text-gray-500 text-sm">
-          <p>© 2025 GreenEngros. Alle rettigheder forbeholdes.</p>
+          <p>© 2025 FriskeFrugter. Alle rettigheder forbeholdes.</p>
         </div>
       </div>
     </footer>
