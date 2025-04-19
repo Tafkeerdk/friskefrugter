@@ -40,7 +40,7 @@ export function Navbar() {
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center group">
             <span className="text-2xl font-bold text-green-600 transition-all duration-300 group-hover:text-green-700">
-              Firmanavn
+              FriskeFrugter
             </span>
           </Link>
           
