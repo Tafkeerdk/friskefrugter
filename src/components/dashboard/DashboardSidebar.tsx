@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -20,10 +19,8 @@ import {
   FileText,
   Users,
   BarChart3,
-  MessageSquare,
   Settings,
   LayoutGrid,
-  HelpCircle,
   LogOut,
 } from "lucide-react";
 
@@ -116,27 +113,13 @@ const DashboardSidebar: React.FC = () => {
         </SidebarGroup>
         
         <SidebarGroup>
-          <SidebarGroupLabel>Support</SidebarGroupLabel>
+          <SidebarGroupLabel>System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleNavigation("/dashboard/messages")}>
-                  <MessageSquare className="mr-2 h-5 w-5" />
-                  <span>Beskeder</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleNavigation("/dashboard/settings")}>
                   <Settings className="mr-2 h-5 w-5" />
                   <span>Indstillinger</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleNavigation("/dashboard/help")}>
-                  <HelpCircle className="mr-2 h-5 w-5" />
-                  <span>Hjælp</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
