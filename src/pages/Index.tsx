@@ -195,7 +195,7 @@ const Index = () => {
           </div>
         </section>
 
-        {/* CTA Section with enhanced design */}
+        {/* CTA Section with enhanced design - Fixed Text and Button Colors */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 z-0">
             <img 
@@ -210,12 +210,12 @@ const Index = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 animate-fade-slide-up">
                 Klar til at blive kunde?
               </h2>
-              <p className="text-gray-100 text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-slide-up-delay-1">
+              <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-slide-up-delay-1">
                 Opret en B2B-konto og få adgang til vores fulde sortiment, kundespecifikke priser og nemme bestillingsmuligheder.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-slide-up-delay-2">
                 <Link to="/contact">
-                  <Button className="text-lg bg-white text-green-700 hover:bg-gray-100 hover:text-green-800 shadow-lg btn-scale py-6 px-8">
+                  <Button className="text-lg bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 shadow-lg btn-scale py-6 px-8">
                     Kontakt os
                   </Button>
                 </Link>
