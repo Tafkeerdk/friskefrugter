@@ -1,9 +1,9 @@
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ContactOverlay } from "@/components/layout/ContactOverlay";
 import { ProductCard } from "@/components/products/ProductCard";
-import { Link } from "react-router-dom";
 import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock } from "lucide-react";
 
 // Sample product data
@@ -67,7 +67,10 @@ const Index = () => {
                     </Button>
                   </Link>
                   <Link to="/login">
-                    <Button variant="outline" className="text-lg py-6 px-8 bg-white/90 text-gray-900 hover:bg-white border-0 shadow-lg btn-scale">
+                    <Button 
+                      variant="outline" 
+                      className="text-lg py-6 px-8 bg-white text-green-700 hover:bg-green-50 hover:text-green-800 border-green-200 shadow-soft btn-scale" 
+                    >
                       Log ind
                     </Button>
                   </Link>
