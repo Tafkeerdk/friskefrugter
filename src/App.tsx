@@ -16,6 +16,7 @@ import DashboardInvoices from "./pages/DashboardInvoices";
 import DashboardCustomers from "./pages/DashboardCustomers";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
+import About from "./pages/About";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/dashboard/invoices" element={<DashboardInvoices />} />
           <Route path="/dashboard/customers" element={<DashboardCustomers />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
