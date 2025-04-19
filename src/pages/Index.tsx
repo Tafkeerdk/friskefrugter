@@ -78,15 +78,15 @@ const Index = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 animate-fade-slide-up-delay-2">
                 <Link to="/products">
-                  <Button size="lg" className="text-lg py-6 px-8 bg-green-600 hover:bg-green-700 shadow-lg btn-scale">
+                  <Button variant="heroOutline" size="lg" className="text-lg py-6 px-8 btn-scale">
                     Udforsk produkter <ChevronRight className="ml-2" />
                   </Button>
                 </Link>
                 <Link to="/contact">
                   <Button 
-                    variant="outline" 
+                    variant="heroOutline" 
                     size="lg"
-                    className="text-lg py-6 px-8 text-white border-white hover:bg-white/10 btn-scale"
+                    className="text-lg py-6 px-8 btn-scale"
                   >
                     Kontakt os
                   </Button>
