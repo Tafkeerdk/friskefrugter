@@ -1,14 +1,15 @@
+
 import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 
 export function Footer() {
   return (
     <footer className="bg-gray-50 border-t border-gray-200">
-      <div className="container mx-auto py-12 px-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="container mx-auto py-8 md:py-12 px-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">FriskeFrugter</h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-gray-600 mb-4 text-sm md:text-base">
               Friske råvarer til professionelle – nemt og hurtigt
             </p>
             <div className="flex space-x-4">
@@ -29,17 +30,17 @@ export function Footer() {
           
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Kontakt</h3>
-            <ul className="space-y-3 text-gray-600">
+            <ul className="space-y-3 text-sm md:text-base text-gray-600">
               <li className="flex items-start">
-                <MapPin className="h-5 w-5 text-green-600 mr-2 mt-0.5" />
+                <MapPin className="h-5 w-5 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
                 <span>Grøntvej 123, 2300 København</span>
               </li>
               <li className="flex items-center">
-                <Phone className="h-5 w-5 text-green-600 mr-2" />
+                <Phone className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
                 <span>+45 12 34 56 78</span>
               </li>
               <li className="flex items-center">
-                <Mail className="h-5 w-5 text-green-600 mr-2" />
+                <Mail className="h-5 w-5 text-green-600 mr-2 flex-shrink-0" />
                 <span>info@friskefrugter.dk</span>
               </li>
             </ul>
@@ -47,24 +48,24 @@ export function Footer() {
           
           <div>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Information</h3>
-            <ul className="space-y-2 text-gray-600">
+            <ul className="space-y-2 text-sm md:text-base text-gray-600">
               <li>
-                <Link to="/about" className="hover:text-green-600 transition-colors">
+                <Link to="/about" className="hover:text-green-600 transition-colors inline-block py-1">
                   Om os
                 </Link>
               </li>
               <li>
-                <Link to="/terms" className="hover:text-green-600 transition-colors">
+                <Link to="/terms" className="hover:text-green-600 transition-colors inline-block py-1">
                   Vilkår og betingelser
                 </Link>
               </li>
               <li>
-                <Link to="/privacy" className="hover:text-green-600 transition-colors">
+                <Link to="/privacy" className="hover:text-green-600 transition-colors inline-block py-1">
                   Privatlivspolitik
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-green-600 transition-colors">
+                <Link to="/contact" className="hover:text-green-600 transition-colors inline-block py-1">
                   Kontakt os
                 </Link>
               </li>
@@ -72,7 +73,7 @@ export function Footer() {
           </div>
         </div>
         
-        <div className="border-t border-gray-200 mt-12 pt-8 text-center text-gray-500 text-sm">
+        <div className="border-t border-gray-200 mt-8 md:mt-12 pt-6 md:pt-8 text-center text-gray-500 text-xs md:text-sm">
           <p>© 2025 FriskeFrugter. Alle rettigheder forbeholdes.</p>
         </div>
       </div>
