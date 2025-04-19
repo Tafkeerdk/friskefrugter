@@ -46,11 +46,13 @@ const DashboardInvoices: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Input
-            placeholder="Søg efter faktura..."
-            className="w-64"
-            icon={<Search className="h-4 w-4" />}
-          />
+          <div className="relative w-64">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Søg efter faktura..."
+              className="pl-8 w-full"
+            />
+          </div>
           <Button variant="outline">Opret ny faktura</Button>
         </div>
       </div>

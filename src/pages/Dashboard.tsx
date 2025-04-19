@@ -26,17 +26,20 @@ const Dashboard: React.FC = () => {
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {dashboardStats.map((stat, index) => (
-            <StatCard
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              description={stat.description}
-              icon={stat.icon}
-              trend={stat.trend}
-              className="h-full"
-            />
-          ))}
+          {dashboardStats.map((stat, index) => {
+            const IconComponent = stat.icon;
+            return (
+              <StatCard
+                key={index}
+                title={stat.title}
+                value={stat.value}
+                description={stat.description}
+                icon={<IconComponent className="h-5 w-5" />}
+                trend={stat.trend}
+                className="h-full"
+              />
+            );
+          })}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
