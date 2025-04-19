@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
@@ -47,8 +48,8 @@ const Index = () => {
         <section className="relative">
           <div className="bg-green-500/10 w-full h-[500px] md:h-[700px] overflow-hidden relative">
             <img 
-              src="https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&q=80&w=2000" 
-              alt="Friske grøntsager" 
+              src="https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&q=80&w=2000" 
+              alt="Fresh organic vegetables" 
               className="w-full h-full object-cover img-zoom"
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/10" />
@@ -184,7 +185,7 @@ const Index = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-12 text-center flex justify-center"> {/* Added flex and justify-center */}
+            <div className="mt-12 text-center flex justify-center">
               <Link to="/products">
                 <Button className="px-8 py-6 text-lg bg-green-600 hover:bg-green-700 shadow-md flex items-center btn-scale">
                   <span>Se alle produkter</span>
