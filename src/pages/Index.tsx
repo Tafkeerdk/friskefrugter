@@ -220,13 +220,6 @@ const Index = () => {
                   </Button>
                 </Link>
                 <Link to="/login">
-                  <Button 
-                    variant="outline" 
-                    className="text-lg text-white hover:bg-white/20 btn-scale py-6 px-8 border-white flex items-center gap-2"
-                  >
-                    <User className="w-5 h-5 mr-2" />
-                    Log ind
-                  </Button>
                 </Link>
               </div>
             </div>
