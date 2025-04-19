@@ -3,11 +3,39 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Menu, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { SearchResults } from "../search/SearchResults";
+
+const sampleProducts = [
+  {
+    id: "1",
+    name: "Økologiske Æbler",
+    image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?auto=format&fit=crop&q=80&w=800",
+    category: "Frugt",
+    price: 29.95,
+  },
+  {
+    id: "2",
+    name: "Danske Gulerødder",
+    image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&q=80&w=800",
+    category: "Grøntsager",
+    price: 12.95,
+  },
+  {
+    id: "3",
+    name: "Friske Jordbær",
+    image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&q=80&w=800",
+    category: "Bær",
+    price: 39.95,
+  },
+];
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchActive, setSearchActive] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -24,6 +52,18 @@ export function Navbar() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  useEffect(() => {
+    if (searchValue.trim() === "") {
+      setSearchResults([]);
+      return;
+    }
+
+    const filtered = sampleProducts.filter((product) =>
+      product.name.toLowerCase().includes(searchValue.toLowerCase())
+    );
+    setSearchResults(filtered);
+  }, [searchValue]);
 
   return (
     <header 
@@ -66,13 +106,28 @@ export function Navbar() {
 
         <div className="flex items-center gap-3">
           <div className={cn(
-            "hidden md:flex items-center transition-all duration-300 overflow-hidden",
-            searchActive ? "w-60" : "w-0"
+            "relative md:flex items-center transition-all duration-300",
+            searchActive || searchValue ? "w-60 lg:w-80" : "w-0 md:w-60 lg:w-80"
           )}>
             <input 
               type="text" 
               placeholder="Søg efter produkter..." 
               className="border border-gray-200 px-4 py-2 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-all"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onFocus={() => {
+                setSearchActive(true);
+                setShowResults(true);
+              }}
+              onBlur={() => {
+                setTimeout(() => {
+                  setShowResults(false);
+                }, 200);
+              }}
+            />
+            <SearchResults 
+              results={searchResults}
+              isVisible={showResults && searchResults.length > 0}
             />
           </div>
           
