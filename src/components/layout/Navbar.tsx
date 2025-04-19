@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, User, Menu, Search } from "lucide-react";
@@ -10,7 +9,6 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [searchActive, setSearchActive] = useState(false);
 
-  // Handle scroll effect for navbar
   useEffect(() => {
     const handleScroll = () => {
       const offset = window.scrollY;
@@ -122,7 +120,6 @@ export function Navbar() {
         </div>
       </div>
       
-      {/* Mobile Menu with animation */}
       <div className={cn(
         "md:hidden bg-white w-full shadow-md overflow-hidden transition-all duration-300 ease-in-out",
         isMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
