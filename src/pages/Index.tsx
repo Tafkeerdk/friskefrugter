@@ -4,9 +4,19 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ContactOverlay } from "@/components/layout/ContactOverlay";
 import { ProductCard } from "@/components/products/ProductCard";
-import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock, User } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle,
+  ChevronRight,
+  Truck,
+  CreditCard,
+  Clock,
+  Leaf,
+  ShieldCheck,
+  Users,
+  ThumbsUp
+} from "lucide-react";
 
-// Sample product data
 const featuredProducts = [
   {
     id: "1",
@@ -43,183 +53,176 @@ const Index = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow">
-        {/* Hero Section with enhanced animations */}
-        <section className="relative">
-          <div className="bg-green-500/10 w-full h-[500px] md:h-[700px] overflow-hidden relative">
-            <img 
-              src="https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&q=80&w=2000" 
-              alt="Friske grøntsager" 
-              className="w-full h-full object-cover img-zoom"
-            />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/10" />
-            <div className="absolute inset-0 flex flex-col justify-center container mx-auto px-4">
-              <div className="max-w-lg text-white animate-fade-slide-up">
-                <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
-                  Friske råvarer til professionelle
-                </h1>
-                <p className="text-xl md:text-2xl mb-8 text-gray-100 animate-fade-slide-up-delay-1">
-                  Nemt og hurtigt – direkte til din virksomhed
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 animate-fade-slide-up-delay-2">
-                  <Link to="/products">
-                    <Button className="text-lg py-6 px-8 bg-green-600 hover:bg-green-700 shadow-lg btn-scale">
-                      Se produkter <ChevronRight className="ml-1" />
-                    </Button>
-                  </Link>
-                  <Link to="/login">
-                    <Button 
-                      variant="outline" 
-                      className="text-lg py-6 px-8 bg-white text-green-700 hover:bg-green-50 hover:text-green-800 border-green-200 shadow-soft btn-scale" 
-                    >
-                      Log ind
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Features Bar */}
-        <section className="bg-white border-b py-6">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center justify-center gap-3 animate-fade-slide-up-delay-1">
-                <Truck className="h-6 w-6 text-green-600" />
-                <span className="text-gray-700 font-medium">Levering til hele Danmark</span>
-              </div>
-              <div className="flex items-center justify-center gap-3 animate-fade-slide-up-delay-2">
-                <CreditCard className="h-6 w-6 text-green-600" />
-                <span className="text-gray-700 font-medium">Betaling via faktura</span>
-              </div>
-              <div className="flex items-center justify-center gap-3 animate-fade-slide-up-delay-3">
-                <Clock className="h-6 w-6 text-green-600" />
-                <span className="text-gray-700 font-medium">Bestil inden kl. 14 - levering næste dag</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* B2B Info Section with enhanced styling */}
-        <section className="bg-gradient-to-b from-green-50 to-white py-16">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-soft shadow-hover transition-all duration-300">
-                <h2 className="text-xl md:text-2xl font-semibold text-center text-gray-900 mb-8 relative">
-                  <span className="relative">
-                    Velkommen til <span className="text-green-600">Firmanavn</span> - Professionel frugt- og grøntleverandør
-                    <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-green-500 rounded-full"></div>
-                  </span>
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="flex flex-col gap-5">
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Kun for erhvervskunder</h3>
-                        <p className="text-gray-600 text-sm mt-1">Vores webshop er udelukkende for professionelle indkøbere og erhvervskunder.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Betaling via faktura</h3>
-                        <p className="text-gray-600 text-sm mt-1">Vi tilbyder nemme betalingsvilkår med faktura og integration til e-conomic.</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-5">
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Friske kvalitetsvarer</h3>
-                        <p className="text-gray-600 text-sm mt-1">Vi håndplukker de bedste råvarer til din virksomhed med fokus på kvalitet og friskhed.</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Hurtig og pålidelig levering</h3>
-                        <p className="text-gray-600 text-sm mt-1">Bestil nemt online og få leveret direkte til din virksomheds adresse.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-8 text-center">
-                  <Link to="/about">
-                    <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
-                      Læs mere om os <ArrowRight className="ml-1 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Featured Products with enhanced styling */}
-        <section className="py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 relative inline-block">
-                Udvalgte produkter
-                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-green-500 rounded-full"></div>
-              </h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
-                Se et udvalg af vores mest populære produkter til din virksomhed.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {featuredProducts.map((product, index) => (
-                <div className={`animate-fade-slide-up-delay-${index % 3 + 1}`} key={product.id}>
-                  <ProductCard {...product} />
-                </div>
-              ))}
-            </div>
-            <div className="mt-12 text-center flex justify-center"> {/* Added flex and justify-center */}
-              <Link to="/products">
-                <Button className="px-8 py-6 text-lg bg-green-600 hover:bg-green-700 shadow-md flex items-center btn-scale">
-                  <span>Se alle produkter</span>
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section with enhanced design - Fixed Text and Button Colors */}
-        <section className="relative overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            <img 
-              src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&q=80&w=2000" 
-              alt="Friske grøntsager baggrund" 
+        <section className="relative min-h-screen flex items-center">
+          <div className="absolute inset-0 overflow-hidden">
+            <video 
+              autoPlay 
+              loop 
+              muted 
+              playsInline
               className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-green-900/80"></div>
+              style={{ filter: 'brightness(0.7)' }}
+            >
+              <source src="https://cdn.coverr.co/videos/coverr-fresh-vegetables-being-washed-2683/1080p.mp4" type="video/mp4" />
+            </video>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
           </div>
-          <div className="container mx-auto px-4 py-20 relative z-10">
-            <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 animate-fade-slide-up">
-                Klar til at blive kunde?
-              </h2>
-              <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-slide-up-delay-1">
-                Opret en B2B-konto og få adgang til vores fulde sortiment, kundespecifikke priser og nemme bestillingsmuligheder.
+          
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-3xl">
+              <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-slide-up leading-tight">
+                Friske råvarer direkte til din virksomhed
+              </h1>
+              <p className="text-xl md:text-2xl text-white/90 mb-8 animate-fade-slide-up-delay-1">
+                Kvalitet, pålidelighed og effektivitet - alt samlet ét sted for professionelle køkkener
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-slide-up-delay-2">
+              <div className="flex flex-col sm:flex-row gap-4 animate-fade-slide-up-delay-2">
+                <Link to="/products">
+                  <Button size="lg" className="text-lg py-6 px-8 bg-green-600 hover:bg-green-700 shadow-lg btn-scale">
+                    Udforsk produkter <ChevronRight className="ml-2" />
+                  </Button>
+                </Link>
                 <Link to="/contact">
-                  <Button className="text-lg bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 shadow-lg btn-scale py-6 px-8">
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="text-lg py-6 px-8 text-white border-white hover:bg-white/10 btn-scale"
+                  >
                     Kontakt os
                   </Button>
                 </Link>
-                <Link to="/login">
+              </div>
+            </div>
+          </div>
+          
+          <div className="absolute bottom-10 left-0 right-0 z-10">
+            <div className="container mx-auto px-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-white/10 backdrop-blur-md p-6 rounded-lg border border-white/20 transform hover:-translate-y-2 transition-all duration-300">
+                  <Leaf className="h-8 w-8 text-green-400 mb-4" />
+                  <h3 className="text-white text-lg font-semibold mb-2">100% Friske råvarer</h3>
+                  <p className="text-white/80">Håndplukkede råvarer leveret direkte fra producenter</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md p-6 rounded-lg border border-white/20 transform hover:-translate-y-2 transition-all duration-300">
+                  <ShieldCheck className="h-8 w-8 text-green-400 mb-4" />
+                  <h3 className="text-white text-lg font-semibold mb-2">Kvalitetsgaranti</h3>
+                  <p className="text-white/80">Vi står inde for kvaliteten af alle vores produkter</p>
+                </div>
+                <div className="bg-white/10 backdrop-blur-md p-6 rounded-lg border border-white/20 transform hover:-translate-y-2 transition-all duration-300">
+                  <Truck className="h-8 w-8 text-green-400 mb-4" />
+                  <h3 className="text-white text-lg font-semibold mb-2">Hurtig levering</h3>
+                  <p className="text-white/80">Bestil inden kl. 14 og få levering næste dag</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-gradient-to-b from-green-50 to-white">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-4xl font-bold text-gray-900 mb-4">
+                Hvorfor vælge os?
+              </h2>
+              <div className="w-20 h-1 bg-green-500 mx-auto rounded-full mb-6"></div>
+              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                Vi leverer mere end bare råvarer - vi leverer en komplet løsning til din virksomhed
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                {
+                  icon: <Users className="h-10 w-10 text-green-600" />,
+                  title: "Dedikeret support",
+                  description: "Personlig service og support til alle vores kunder"
+                },
+                {
+                  icon: <ThumbsUp className="h-10 w-10 text-green-600" />,
+                  title: "Nem bestilling",
+                  description: "Intuitivt online bestillingssystem"
+                },
+                {
+                  icon: <CreditCard className="h-10 w-10 text-green-600" />,
+                  title: "Fleksibel betaling",
+                  description: "Forskellige betalingsmuligheder tilpasset din virksomhed"
+                },
+                {
+                  icon: <Clock className="h-10 w-10 text-green-600" />,
+                  title: "Pålidelig levering",
+                  description: "Fast og præcis leveringstid"
+                }
+              ].map((feature, index) => (
+                <div 
+                  key={index}
+                  className="bg-white p-8 rounded-xl shadow-soft hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2"
+                >
+                  <div className="bg-green-50 p-4 rounded-full inline-block mb-6">
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-4">{feature.title}</h3>
+                  <p className="text-gray-600">{feature.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex justify-between items-end mb-12">
+              <div>
+                <h2 className="text-4xl font-bold text-gray-900 mb-4">Udvalgte produkter</h2>
+                <p className="text-xl text-gray-600">Opdateres dagligt baseret på sæson og tilgængelighed</p>
+              </div>
+              <Link to="/products">
+                <Button variant="outline" className="group">
+                  Se alle produkter
+                  <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {featuredProducts.map((product) => (
+                <ProductCard key={product.id} {...product} />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="relative py-20 overflow-hidden">
+          <div className="absolute inset-0">
+            <img 
+              src="https://images.unsplash.com/photo-1550989460-0adf9ea622e2?auto=format&fit=crop&q=80&w=2000"
+              alt="Fresh vegetables"
+              className="w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-green-900/90 to-green-800/80" />
+          </div>
+          
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-3xl mx-auto text-center text-white">
+              <h2 className="text-4xl md:text-5xl font-bold mb-6">
+                Klar til at starte samarbejdet?
+              </h2>
+              <p className="text-xl mb-8 text-white/90">
+                Tilmeld dig i dag og få adgang til vores komplette sortiment af friske råvarer
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link to="/contact">
+                  <Button size="lg" className="text-lg py-6 px-8 bg-white text-green-700 hover:bg-green-50 shadow-lg btn-scale">
+                    Start nu <ChevronRight className="ml-2" />
+                  </Button>
+                </Link>
+                <Link to="/products">
+                  <Button 
+                    variant="outline" 
+                    size="lg"
+                    className="text-lg py-6 px-8 text-white border-white hover:bg-white/10 btn-scale"
+                  >
+                    Se produkter
+                  </Button>
                 </Link>
               </div>
             </div>
