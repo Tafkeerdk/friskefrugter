@@ -210,7 +210,7 @@ const Index = () => {
               <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 animate-fade-slide-up">
                 Klar til at blive kunde?
               </h2>
-              <p className="text-gray-100 text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-slide-up-delay-1">
+              <p className="text-black text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-slide-up-delay-1">
                 Opret en B2B-konto og få adgang til vores fulde sortiment, kundespecifikke priser og nemme bestillingsmuligheder.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-slide-up-delay-2">
