@@ -184,7 +184,7 @@ const Index = () => {
                 </div>
               ))}
             </div>
-            <div className="mt-12 text-center">
+            <div className="mt-12 text-center flex justify-center"> {/* Added flex and justify-center */}
               <Link to="/products">
                 <Button className="px-8 py-6 text-lg bg-green-600 hover:bg-green-700 shadow-md flex items-center btn-scale">
                   <span>Se alle produkter</span>
