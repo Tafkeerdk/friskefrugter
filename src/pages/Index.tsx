@@ -63,7 +63,7 @@ const Index = () => {
               className="w-full h-full object-cover"
               style={{ filter: 'brightness(0.7)' }}
             >
-              <source src="https://cdn.coverr.co/videos/coverr-fresh-vegetables-being-washed-2683/1080p.mp4" type="video/mp4" />
+              <source src="https://cdn.coverr.co/videos/coverr-sorting-fresh-vegetables-5572/1080p.mp4" type="video/mp4" />
             </video>
             <div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40" />
           </div>
