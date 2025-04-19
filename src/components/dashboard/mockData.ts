@@ -1,4 +1,3 @@
-
 // Mock data for the dashboard components
 import { ShoppingCart, TrendingUp, Users, DollarSign } from "lucide-react";
 import React from "react";
@@ -9,7 +8,7 @@ export const dashboardStats = [
     title: "Dagens ordrer",
     value: "26",
     description: "Ordrer modtaget i dag",
-    icon: <ShoppingCart className="h-5 w-5" />,
+    icon: ShoppingCart, // Changed from <ShoppingCart /> to just the icon component
     trend: {
       value: 12,
       isPositive: true,
@@ -19,7 +18,7 @@ export const dashboardStats = [
     title: "Ugens omsætning",
     value: "142.568 kr",
     description: "Samlet salg denne uge",
-    icon: <DollarSign className="h-5 w-5" />,
+    icon: DollarSign, // Changed from <DollarSign /> to just the icon component
     trend: {
       value: 8,
       isPositive: true,
@@ -29,7 +28,7 @@ export const dashboardStats = [
     title: "Nye kunder",
     value: "4",
     description: "Nye kunder denne uge",
-    icon: <Users className="h-5 w-5" />,
+    icon: Users, // Changed from <Users /> to just the icon component
     trend: {
       value: 5,
       isPositive: false,
@@ -39,7 +38,7 @@ export const dashboardStats = [
     title: "Vækst i salg",
     value: "18%",
     description: "Sammenlignet med sidste måned",
-    icon: <TrendingUp className="h-5 w-5" />,
+    icon: TrendingUp, // Changed from <TrendingUp /> to just the icon component
     trend: {
       value: 2,
       isPositive: true,
