@@ -16,8 +16,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <SidebarInset>
           <div className="flex flex-col h-full">
             <DashboardTopbar />
-            <main className="flex-1 px-4 py-6 md:px-6 lg:px-8">
-              {children}
+            <main className="flex-1">
+              <div className="container mx-auto py-6">
+                {children}
+              </div>
             </main>
           </div>
         </SidebarInset>

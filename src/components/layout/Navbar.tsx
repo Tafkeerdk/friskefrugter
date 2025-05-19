@@ -74,7 +74,7 @@ export function Navbar() {
           : "bg-white shadow-sm py-3"
       )}
     >
-      <div className="container mx-auto px-4 flex items-center justify-between">
+      <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center group">
             <span className="text-2xl font-bold text-green-600 transition-all duration-300 group-hover:text-green-700">
@@ -179,7 +179,7 @@ export function Navbar() {
         "md:hidden bg-white w-full shadow-md overflow-hidden transition-all duration-300 ease-in-out",
         isMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
       )}>
-        <div className="container mx-auto p-4 flex flex-col space-y-3">
+        <div className="container mx-auto flex flex-col space-y-3">
           <div className="relative mb-2">
             <input 
               type="text" 
