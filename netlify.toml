@@ -35,10 +35,10 @@
     X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-# API proxy for backend
+# API proxy for backend - proxy to external backend deployment
 [[redirects]]
   from = "/api/*"
-  to = "https://backendwebshop.netlify.app/.netlify/functions/:splat"
+  to = "https://famous-dragon-b033ac.netlify.app/.netlify/functions/api/:splat"
   status = 200
   force = true
 
