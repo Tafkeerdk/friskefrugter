@@ -1,24 +1,69 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Mail, Lock, User, Users } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowRight, Mail, Lock, User, Users, Loader2 } from "lucide-react";
 import { ContactOverlay } from "@/components/layout/ContactOverlay";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuth } from '../hooks/useAuth';
+import { isCustomer } from '../lib/auth';
+
+const customerLoginSchema = z.object({
+  email: z.string().email('Ugyldig email adresse'),
+  password: z.string().min(6, 'Password skal være mindst 6 tegn'),
+});
+
+type CustomerLoginFormData = z.infer<typeof customerLoginSchema>;
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const isMobile = useIsMobile();
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const { login, user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Login attempt with:", { email, password });
-    window.location.href = "/dashboard";
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<CustomerLoginFormData>({
+    resolver: zodResolver(customerLoginSchema),
+  });
+
+  // Redirect if already logged in as customer
+  useEffect(() => {
+    if (isAuthenticated && user && isCustomer(user)) {
+      const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate, location]);
+
+  const onSubmit = async (data: CustomerLoginFormData) => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await login(data.email, data.password, 'customer');
+      
+      if (response.success) {
+        reset();
+        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+        navigate(from, { replace: true });
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Login fejlede. Kontroller dine oplysninger og prøv igen.';
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -36,14 +81,20 @@ const Login = () => {
                       <User className="h-7 w-7 md:h-8 md:w-8 text-green-600" />
                     </div>
                     <CardTitle className="text-xl md:text-2xl font-bold text-center text-gray-800">
-                      Log ind
+                      B2B Kunde Login
                     </CardTitle>
                     <CardDescription className="text-center text-sm md:text-base">
-                      Indtast dine oplysninger for at få adgang til din konto
+                      Indtast dine oplysninger for at få adgang til din B2B konto
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    {error && (
+                      <Alert variant="destructive" className="mb-6">
+                        <AlertDescription>{error}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1.5">
                           <Mail className="h-3.5 w-3.5 text-green-600" />
@@ -54,11 +105,13 @@ const Login = () => {
                             id="email" 
                             type="email" 
                             placeholder="din@virksomhed.dk" 
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
                             className="pl-4 py-5 md:py-6 transition-all duration-300 rounded-xl bg-white border-gray-200 text-base"
+                            {...register('email')}
+                            disabled={isLoading}
                           />
+                          {errors.email && (
+                            <p className="text-sm text-red-600 mt-1">{errors.email.message}</p>
+                          )}
                         </div>
                       </div>
                       <div className="space-y-2">
@@ -78,33 +131,45 @@ const Login = () => {
                           <Input 
                             id="password" 
                             type="password" 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
                             className="pl-4 py-5 md:py-6 transition-all duration-300 rounded-xl bg-white border-gray-200 text-base"
+                            {...register('password')}
+                            disabled={isLoading}
                           />
+                          {errors.password && (
+                            <p className="text-sm text-red-600 mt-1">{errors.password.message}</p>
+                          )}
                         </div>
                       </div>
                       <Button 
                         type="submit" 
                         className="w-full bg-green-600 hover:bg-green-700 text-white
                                  transition-all duration-300 py-5 md:py-6 rounded-xl text-base"
+                        disabled={isLoading}
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2">
-                          Log ind
-                          <ArrowRight className="h-5 w-5" />
+                          {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                          {isLoading ? 'Logger ind...' : 'Log ind'}
+                          {!isLoading && <ArrowRight className="h-5 w-5" />}
                         </span>
                       </Button>
                     </form>
                   </CardContent>
                   <CardFooter className="flex flex-col gap-4 pb-6">
                     <div className="text-center text-sm text-gray-600">
-                      <span>Har du ikke en konto? </span>
+                      <span>Har du ikke en B2B konto? </span>
                       <Link 
-                        to="/contact" 
+                        to="/apply" 
                         className="font-medium text-green-600 hover:text-green-800 transition-colors"
                       >
-                        Kontakt os for at blive kunde
+                        Ansøg om adgang her
+                      </Link>
+                    </div>
+                    <div className="text-center">
+                      <Link 
+                        to="/super/admin" 
+                        className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        Administrator? Log ind her
                       </Link>
                     </div>
                   </CardFooter>
@@ -128,8 +193,8 @@ const Login = () => {
                         <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 text-sm md:text-base">Nem bestilling</h4>
-                        <p className="text-gray-600 mt-1 text-sm">Bestil hurtigt og nemt med kundespecifikke priser</p>
+                        <h4 className="font-medium text-gray-900 text-sm md:text-base">Kundespecifikke priser</h4>
+                        <p className="text-gray-600 mt-1 text-sm">Se dine rabatter og specialpriser baseret på din rabatgruppe</p>
                       </div>
                     </div>
                   </div>
@@ -152,18 +217,18 @@ const Login = () => {
                         <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 text-sm md:text-base">Kontakt os for at oprette konto</h4>
-                        <p className="text-gray-600 mt-1 text-sm">Send os en forespørgsel, så kontakter vi dig for at oprette din konto</p>
+                        <h4 className="font-medium text-gray-900 text-sm md:text-base">Orderhistorik og fakturaer</h4>
+                        <p className="text-gray-600 mt-1 text-sm">Hold styr på alle dine ordrer og fakturaer i ét system</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-6 md:mt-8">
-                  <Link to="/contact">
+                  <Link to="/apply">
                     <Button variant="outline" className="w-full gap-2 border-green-200 hover:bg-green-50 text-gray-800 transition-all duration-300 py-5 md:py-6 rounded-xl text-sm md:text-base">
                       <Mail className="h-4 w-4" />
-                      Kontakt os for at blive kunde
+                      Ansøg om B2B adgang
                     </Button>
                   </Link>
                 </div>

@@ -1,2 +1,22 @@
+# Admin routes - Enhanced security
+/admin/* /index.html 200
+/super/admin /index.html 200
 
+# Customer routes
+/customer/* /index.html 200
+/dashboard/* /index.html 200
+
+# Authentication routes
+/login /index.html 200
+/apply /index.html 200
+
+# API routes - proxy to backend
+/api/* https://backendwebshop.netlify.app/.netlify/functions/:splat 200
+
+# Public routes
+/products/* /index.html 200
+/contact /index.html 200
+/about /index.html 200
+
+# Fallback for SPA
 /* /index.html 200

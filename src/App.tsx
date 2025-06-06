@@ -3,10 +3,15 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./hooks/useAuth";
+import { ProtectedRoute } from "./components/auth";
 import Index from "./pages/Index";
 import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
+import AdminLogin from "./pages/AdminLogin";
+import Admin from "./pages/Admin";
+import Apply from "./pages/Apply";
 import Cart from "./pages/Cart";
 import Dashboard from "./pages/Dashboard";
 import DashboardProducts from "./pages/DashboardProducts";
@@ -26,25 +31,197 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/products/:id" element={<ProductDetail />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/products" element={<DashboardProducts />} />
-          <Route path="/dashboard/categories" element={<DashboardCategories />} />
-          <Route path="/dashboard/orders" element={<DashboardOrders />} />
-          <Route path="/dashboard/invoices" element={<DashboardInvoices />} />
-          <Route path="/dashboard/customers" element={<DashboardCustomers />} />
-          <Route path="/dashboard/statistics" element={<DashboardStatistics />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/about" element={<About />} />
+            
+            {/* Authentication routes */}
+            <Route 
+              path="/login" 
+              element={
+                <ProtectedRoute requireAuth={false}>
+                  <Login />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/super/admin" 
+              element={
+                <ProtectedRoute requireAuth={false}>
+                  <AdminLogin />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/apply" 
+              element={
+                <ProtectedRoute requireAuth={false}>
+                  <Apply />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Admin routes - Enhanced security for Netlify */}
+            <Route 
+              path="/admin" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <Admin />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/applications" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <Admin />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/products" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardProducts />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/categories" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardCategories />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/orders" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardOrders />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/invoices" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardInvoices />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/customers" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardCustomers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/statistics" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardStatistics />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/settings" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardStatistics />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Customer routes */}
+            <Route 
+              path="/cart" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <Cart />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/customer/dashboard" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Legacy dashboard routes - redirect to customer */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <Dashboard />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/products" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <DashboardProducts />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/categories" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <DashboardCategories />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/orders" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <DashboardOrders />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/invoices" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <DashboardInvoices />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/customers" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <DashboardCustomers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/statistics" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <DashboardStatistics />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* 404 route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
