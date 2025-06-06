@@ -86,8 +86,11 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const accessToken = tokenManager.getAccessToken();
 
+    console.log('Making request to:', url);
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       ...(options.headers as Record<string, string>),
     };
 
@@ -95,25 +98,34 @@ class ApiClient {
       headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    let response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      let response = await fetch(url, {
+        ...options,
+        headers,
+        mode: 'cors',
+      });
 
-    // If token expired, try to refresh
-    if (response.status === 403 && accessToken) {
-      const refreshed = await this.refreshToken();
-      if (refreshed) {
-        // Retry the request with new token
-        headers.Authorization = `Bearer ${tokenManager.getAccessToken()}`;
-        response = await fetch(url, {
-          ...options,
-          headers,
-        });
+      console.log('Response status:', response.status);
+
+      // If token expired, try to refresh
+      if (response.status === 403 && accessToken) {
+        const refreshed = await this.refreshToken();
+        if (refreshed) {
+          // Retry the request with new token
+          headers.Authorization = `Bearer ${tokenManager.getAccessToken()}`;
+          response = await fetch(url, {
+            ...options,
+            headers,
+            mode: 'cors',
+          });
+        }
       }
-    }
 
-    return response;
+      return response;
+    } catch (error) {
+      console.error('Fetch error:', error);
+      throw new Error(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
   private async refreshToken(): Promise<boolean> {
@@ -192,20 +204,32 @@ export const authService = {
     return data;
   },
 
-  // Admin login
+  // Admin login - Updated to match your backend endpoint
   async loginAdmin(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post('/api/auth/admin/super', {
-      email,
-      password,
-    });
-    const data = await response.json();
+    console.log('Attempting admin login with:', { email, backendUrl: API_BASE_URL });
     
-    if (data.success) {
-      tokenManager.setTokens(data.tokens);
-      tokenManager.setUser(data.user);
+    try {
+      const response = await apiClient.post('/.netlify/functions/api/auth/admin/super', {
+        email,
+        password,
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        tokenManager.setTokens(data.tokens);
+        tokenManager.setUser(data.user);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Admin login error:', error);
+      throw error;
     }
-    
-    return data;
   },
 
   // Logout
@@ -262,4 +286,4 @@ export const getDiscountPercentage = (discountGroup?: string): number => {
     case 'Platin': return 20;
     default: return 0;
   }
-}; 
+};
