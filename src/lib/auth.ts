@@ -1,6 +1,6 @@
 // Authentication utilities for the frontend
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app/.netlify/functions/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app';
 
 export interface User {
   id: string;
@@ -132,7 +132,7 @@ class ApiClient {
     if (!refreshToken) return false;
 
     try {
-      const response = await fetch(`${this.baseURL}/auth/refresh`, {
+      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -183,13 +183,13 @@ export const apiClient = new ApiClient(API_BASE_URL);
 export const authService = {
   // Customer application
   async applyAsCustomer(applicationData: CustomerApplicationData): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post('/auth/customer/apply', applicationData);
+    const response = await apiClient.post('/api/auth/customer/apply', applicationData);
     return response.json();
   },
 
   // Customer login
   async loginCustomer(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post('/auth/customer/login', {
+    const response = await apiClient.post('/api/auth/customer/login', {
       email,
       password,
     });
@@ -205,7 +205,7 @@ export const authService = {
 
   // Admin login
   async loginAdmin(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post('/auth/admin/super', {
+    const response = await apiClient.post('/api/auth/admin/super', {
       email,
       password,
     });
@@ -236,17 +236,17 @@ export const authService = {
 
   // Admin functions
   async getApplications(): Promise<{ success: boolean; applications: unknown[] }> {
-    const response = await apiClient.get('/auth/admin/applications');
+    const response = await apiClient.get('/api/auth/admin/applications');
     return response.json();
   },
 
   async approveApplication(applicationId: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post(`/auth/admin/applications/${applicationId}/approve`);
+    const response = await apiClient.post(`/api/auth/admin/applications/${applicationId}/approve`);
     return response.json();
   },
 
   async rejectApplication(applicationId: string, reason?: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post(`/auth/admin/applications/${applicationId}/reject`, { reason });
+    const response = await apiClient.post(`/api/auth/admin/applications/${applicationId}/reject`, { reason });
     return response.json();
   },
 };

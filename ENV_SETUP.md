@@ -7,7 +7,7 @@
 Set these in your Netlify dashboard under **Site settings > Environment variables**:
 
 ```
-VITE_API_BASE_URL=https://famous-dragon-b033ac.netlify.app/.netlify/functions/api
+VITE_API_BASE_URL=https://famous-dragon-b033ac.netlify.app
 ```
 
 ### Local Development
@@ -15,14 +15,14 @@ VITE_API_BASE_URL=https://famous-dragon-b033ac.netlify.app/.netlify/functions/ap
 Create a `.env.local` file in the `friskefrugter/` directory:
 
 ```env
-VITE_API_BASE_URL=http://localhost:3001/api
+VITE_API_BASE_URL=http://localhost:3001
 ```
 
 ### Environment Variable Explanation
 
 - **VITE_API_BASE_URL**: The base URL for your backend API
-  - Local: `http://localhost:3001/api`
-  - Production: `https://famous-dragon-b033ac.netlify.app/.netlify/functions/api`
+  - Local: `http://localhost:3001`
+  - Production: `https://famous-dragon-b033ac.netlify.app`
 
 ### Netlify Deployment Steps
 
@@ -44,7 +44,7 @@ If you're still getting NetworkError:
    - Check the backend environment variable `CORS_ORIGIN`
 
 2. **Verify API URL:**
-   - Test the backend URL directly: `https://famous-dragon-b033ac.netlify.app/.netlify/functions/api/health`
+   - Test the backend URL directly: `https://famous-dragon-b033ac.netlify.app/api/health`
    - Should return a JSON response
 
 3. **Check Browser Console:**
@@ -59,7 +59,7 @@ If you're still getting NetworkError:
    ```
 
 5. **Common Issues:**
-   - **Double API path**: URL should be `https://famous-dragon-b033ac.netlify.app/.netlify/functions/api` (not `/api/api/`)
+   - **Double API path**: URL should be `https://famous-dragon-b033ac.netlify.app/api/auth/admin/super` (not `/.netlify/functions/api/api/`)
    - **Missing CORS headers**: Backend should return `Access-Control-Allow-Origin` header
    - **Preflight failures**: OPTIONS requests should return 200 status
 
