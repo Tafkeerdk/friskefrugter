@@ -1,6 +1,6 @@
 // Authentication utilities for the frontend
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app/.netlify/functions/api';
 
 export interface User {
   id: string;
@@ -86,6 +86,8 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     const accessToken = tokenManager.getAccessToken();
 
+    console.log(`🌐 Making API request to: ${url}`);
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string>),
@@ -95,25 +97,34 @@ class ApiClient {
       headers.Authorization = `Bearer ${accessToken}`;
     }
 
-    let response = await fetch(url, {
-      ...options,
-      headers,
-    });
+    try {
+      let response = await fetch(url, {
+        ...options,
+        headers,
+      });
 
-    // If token expired, try to refresh
-    if (response.status === 403 && accessToken) {
-      const refreshed = await this.refreshToken();
-      if (refreshed) {
-        // Retry the request with new token
-        headers.Authorization = `Bearer ${tokenManager.getAccessToken()}`;
-        response = await fetch(url, {
-          ...options,
-          headers,
-        });
+      console.log(`📡 Response status: ${response.status} for ${url}`);
+
+      // If token expired, try to refresh
+      if (response.status === 403 && accessToken) {
+        console.log('🔄 Token expired, attempting refresh...');
+        const refreshed = await this.refreshToken();
+        if (refreshed) {
+          // Retry the request with new token
+          headers.Authorization = `Bearer ${tokenManager.getAccessToken()}`;
+          response = await fetch(url, {
+            ...options,
+            headers,
+          });
+          console.log(`📡 Retry response status: ${response.status} for ${url}`);
+        }
       }
-    }
 
-    return response;
+      return response;
+    } catch (error) {
+      console.error(`❌ Network error for ${url}:`, error);
+      throw error;
+    }
   }
 
   private async refreshToken(): Promise<boolean> {
