@@ -50,9 +50,28 @@ If you're still getting NetworkError:
 3. **Check Browser Console:**
    - Look for CORS errors in the browser developer tools
    - Check if the request is being made to the correct URL
+   - The URL should NOT have double `/api` paths
 
 4. **Environment Variable Debug:**
    - Add this to your component to debug:
    ```typescript
    console.log('API URL:', import.meta.env.VITE_API_BASE_URL);
-   ``` 
+   ```
+
+5. **Common Issues:**
+   - **Double API path**: URL should be `https://famous-dragon-b033ac.netlify.app/.netlify/functions/api` (not `/api/api/`)
+   - **Missing CORS headers**: Backend should return `Access-Control-Allow-Origin` header
+   - **Preflight failures**: OPTIONS requests should return 200 status
+
+### Backend CORS Configuration
+
+If you need to set CORS in your backend Netlify dashboard:
+
+```
+CORS_ORIGIN=https://b2bengross.netlify.app
+```
+
+Or for multiple domains:
+```
+CORS_ORIGIN=https://b2bengross.netlify.app,https://preview--friskefrugter.lovable.app
+``` 
