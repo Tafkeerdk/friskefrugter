@@ -255,9 +255,9 @@ export const authService = {
     tokenManager.clearTokens();
   },
 
-  // Check if user is authenticated with valid token
+  // Check if user is authenticated (simple check)
   isAuthenticated(): boolean {
-    return tokenManager.isAccessTokenValid();
+    return !!tokenManager.getAccessToken();
   },
 
   // Get current user

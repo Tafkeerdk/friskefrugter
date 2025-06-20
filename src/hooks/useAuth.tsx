@@ -41,42 +41,41 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
 
     validateInitialSession();
+  }, []); // Only run once on mount
 
-    // Set up periodic session validation (every 5 minutes)
+  useEffect(() => {
+    // Set up periodic session validation only when user exists
+    if (!user) return;
+
     const sessionCheckInterval = setInterval(async () => {
-      if (user) {
-        console.log('🔄 Periodic session validation...');
-        const isValid = await authService.validateSession();
-        if (!isValid) {
-          console.log('🚫 Session expired during periodic check');
-          setUser(null);
-          // Force redirect to login
-          window.location.href = '/super/admin';
-        }
+      console.log('🔄 Periodic session validation...');
+      const isValid = await authService.validateSession();
+      if (!isValid) {
+        console.log('🚫 Session expired during periodic check');
+        setUser(null);
+        window.location.href = '/super/admin';
       }
     }, 5 * 60 * 1000); // 5 minutes
 
     // Check session when window gets focus (user returns to tab)
     const handleWindowFocus = async () => {
-      if (user) {
-        console.log('🔍 Window focus - checking session...');
-        const isValid = await authService.validateSession();
-        if (!isValid) {
-          console.log('🚫 Session expired on window focus');
-          setUser(null);
-          window.location.href = '/super/admin';
-        }
+      console.log('🔍 Window focus - checking session...');
+      const isValid = await authService.validateSession();
+      if (!isValid) {
+        console.log('🚫 Session expired on window focus');
+        setUser(null);
+        window.location.href = '/super/admin';
       }
     };
 
     window.addEventListener('focus', handleWindowFocus);
 
-    // Cleanup interval and event listener on unmount
+    // Cleanup interval and event listener
     return () => {
       clearInterval(sessionCheckInterval);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, [user]);
+  }, [user]); // Only when user changes
 
   const login = async (email: string, password: string, userType: 'customer' | 'admin') => {
     try {
