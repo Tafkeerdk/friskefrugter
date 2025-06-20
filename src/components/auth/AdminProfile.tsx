@@ -58,12 +58,22 @@ export const AdminProfile: React.FC = () => {
   });
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
-  // Verification states
+  // Verification states for main profile (email changes)
   const [requiresVerification, setRequiresVerification] = useState(false);
-  const [verificationType, setVerificationType] = useState<'email_change' | 'password_change' | null>(null);
+  const [verificationType, setVerificationType] = useState<'email_change' | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
   const [verificationExpiry, setVerificationExpiry] = useState<Date | null>(null);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
+
+  // Separate verification states for password dialog
+  const [passwordDialogState, setPasswordDialogState] = useState({
+    requiresVerification: false,
+    verificationSent: false,
+    verificationCode: '',
+    isGeneratingCode: false,
+    error: null as string | null,
+    success: null as string | null
+  });
 
   useEffect(() => {
     if (user) {
@@ -93,30 +103,10 @@ export const AdminProfile: React.FC = () => {
       };
 
       const isEmailChange = formData.email !== user?.email;
-      const isPasswordChange = formData.newPassword && formData.currentPassword;
 
       // Add email if it's being changed
       if (isEmailChange) {
         updateData.email = formData.email;
-      }
-
-      // Only include password fields if new password is provided
-      if (isPasswordChange) {
-        if (formData.newPassword !== formData.confirmPassword) {
-          setError('Nye adgangskoder matcher ikke');
-          return;
-        }
-        if (formData.newPassword.length < 6) {
-          setError('Ny adgangskode skal være mindst 6 tegn');
-          return;
-        }
-        if (!formData.currentPassword) {
-          setError('Nuværende adgangskode er påkrævet for at ændre adgangskode');
-          return;
-        }
-        
-        updateData.currentPassword = formData.currentPassword;
-        updateData.newPassword = formData.newPassword;
       }
 
       // Add verification code if provided
@@ -126,7 +116,6 @@ export const AdminProfile: React.FC = () => {
 
       console.log('🔄 Submitting profile update:', { 
         isEmailChange, 
-        isPasswordChange, 
         hasVerificationCode: !!formData.verificationCode,
         requiresVerification 
       });
@@ -135,11 +124,7 @@ export const AdminProfile: React.FC = () => {
       
       if (response.success) {
         // Set specific success message based on what was changed
-        if (isPasswordChange && isEmailChange) {
-          setSuccess('✅ Adgangskode og email opdateret succesfuldt!');
-        } else if (isPasswordChange) {
-          setSuccess('🔐 Adgangskode ændret succesfuldt! Du er nu logget ind med den nye adgangskode.');
-        } else if (isEmailChange) {
+        if (isEmailChange) {
           setSuccess('📧 Email adresse opdateret succesfuldt!');
         } else {
           setSuccess(response.message);
@@ -147,35 +132,21 @@ export const AdminProfile: React.FC = () => {
         
         setFormData(prev => ({
           ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: '',
           verificationCode: ''
         }));
-        setIsPasswordDialogOpen(false);
         setRequiresVerification(false);
         setVerificationSent(false);
         setVerificationType(null);
         refreshUser();
         
-        // Show success message for longer for password changes
-        if (isPasswordChange) {
-          setTimeout(() => setSuccess(null), 8000); // 8 seconds for password changes
-        } else {
-          setTimeout(() => setSuccess(null), 5000); // 5 seconds for other changes
-        }
+        // Show success message for normal duration
+        setTimeout(() => setSuccess(null), 5000);
       } else if (response.requiresVerification) {
-        // Show verification requirement
+        // Show verification requirement for email changes
         console.log('🔐 Verification required:', response.changeType);
         setRequiresVerification(true);
-        setVerificationType(response.changeType as 'email_change' | 'password_change');
+        setVerificationType(response.changeType as 'email_change');
         setError(response.message);
-        
-        // If it's a password change, keep the dialog open
-        if (response.changeType === 'password_change') {
-          // Don't close the password dialog
-          console.log('🔑 Password change requires verification - keeping dialog open');
-        }
       } else {
         setError(response.message || 'Opdatering fejlede');
       }
@@ -190,30 +161,91 @@ export const AdminProfile: React.FC = () => {
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear previous errors
+    setPasswordDialogState(prev => ({ ...prev, error: null, success: null }));
+    
     // Validation
     if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
-      setError('Alle password felter skal udfyldes');
+      setPasswordDialogState(prev => ({ ...prev, error: 'Alle password felter skal udfyldes' }));
       return;
     }
     
     if (formData.newPassword !== formData.confirmPassword) {
-      setError('Nye adgangskoder matcher ikke');
+      setPasswordDialogState(prev => ({ ...prev, error: 'Nye adgangskoder matcher ikke' }));
       return;
     }
     
     if (formData.newPassword.length < 6) {
-      setError('Ny adgangskode skal være mindst 6 tegn');
+      setPasswordDialogState(prev => ({ ...prev, error: 'Ny adgangskode skal være mindst 6 tegn' }));
       return;
     }
 
     // If verification is required and we don't have a code yet, trigger verification
-    if (requiresVerification && verificationType === 'password_change' && !formData.verificationCode) {
-      setError('Indtast verifikationskoden for at fortsætte');
+    if (passwordDialogState.requiresVerification && !passwordDialogState.verificationCode) {
+      setPasswordDialogState(prev => ({ ...prev, error: 'Indtast verifikationskoden for at fortsætte' }));
       return;
     }
 
-    // Call the main update function
-    await handleProfileUpdate(e);
+    setIsLoading(true);
+
+    try {
+      const updateData: any = {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword
+      };
+
+      // Add verification code if provided
+      if (passwordDialogState.verificationCode) {
+        updateData.verificationCode = passwordDialogState.verificationCode;
+      }
+
+      console.log('🔑 Submitting password change:', { 
+        hasVerificationCode: !!passwordDialogState.verificationCode,
+        requiresVerification: passwordDialogState.requiresVerification 
+      });
+
+      const response = await authService.updateAdminProfile(updateData);
+      
+      if (response.success) {
+        setPasswordDialogState(prev => ({ 
+          ...prev, 
+          success: '🔐 Adgangskode ændret succesfuldt! Du er nu logget ind med den nye adgangskode.',
+          requiresVerification: false,
+          verificationSent: false,
+          verificationCode: ''
+        }));
+        
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+        
+        refreshUser();
+        
+        // Close dialog after a delay to show success message
+        setTimeout(() => {
+          setIsPasswordDialogOpen(false);
+          setPasswordDialogState(prev => ({ ...prev, success: null }));
+        }, 3000);
+        
+      } else if (response.requiresVerification) {
+        // Show verification requirement for password change
+        console.log('🔐 Password change requires verification');
+        setPasswordDialogState(prev => ({ 
+          ...prev, 
+          requiresVerification: true,
+          error: response.message 
+        }));
+      } else {
+        setPasswordDialogState(prev => ({ ...prev, error: response.message || 'Opdatering fejlede' }));
+      }
+    } catch (err: any) {
+      setPasswordDialogState(prev => ({ ...prev, error: err.message || 'Der opstod en fejl' }));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleGenerateVerificationCode = async () => {
@@ -240,14 +272,41 @@ export const AdminProfile: React.FC = () => {
     }
   };
 
+  // Separate function for password dialog verification code generation
+  const handlePasswordVerificationCode = async () => {
+    setPasswordDialogState(prev => ({ ...prev, isGeneratingCode: true, error: null }));
+
+    try {
+      const response = await authService.generateVerificationCode('password_change');
+      
+      if (response.success) {
+        setPasswordDialogState(prev => ({ 
+          ...prev, 
+          verificationSent: true,
+          success: response.message 
+        }));
+      } else {
+        setPasswordDialogState(prev => ({ 
+          ...prev, 
+          error: response.message || 'Kunne ikke sende verifikationskode' 
+        }));
+      }
+    } catch (err: any) {
+      setPasswordDialogState(prev => ({ 
+        ...prev, 
+        error: err.message || 'Der opstod en fejl' 
+      }));
+    } finally {
+      setPasswordDialogState(prev => ({ ...prev, isGeneratingCode: false }));
+    }
+  };
+
   const getVerificationMessage = () => {
     if (!verificationType) return '';
     
     switch (verificationType) {
       case 'email_change':
         return `For at ændre din email til ${formData.email}, skal du bekræfte med en verifikationskode sendt til din nuværende email (${user?.email}).`;
-      case 'password_change':
-        return 'For at ændre din adgangskode, skal du bekræfte med en verifikationskode sendt til din email.';
       default:
         return 'Du skal bekræfte denne ændring med en verifikationskode.';
     }
@@ -310,6 +369,29 @@ export const AdminProfile: React.FC = () => {
       ...prev,
       [field]: !prev[field]
     }));
+  };
+
+  // Reset password dialog state when dialog opens/closes
+  const handlePasswordDialogChange = (open: boolean) => {
+    setIsPasswordDialogOpen(open);
+    if (!open) {
+      // Reset password dialog state when closing
+      setPasswordDialogState({
+        requiresVerification: false,
+        verificationSent: false,
+        verificationCode: '',
+        isGeneratingCode: false,
+        error: null,
+        success: null
+      });
+      // Also reset password form fields
+      setFormData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }));
+    }
   };
 
   if (!user) return null;
@@ -504,7 +586,7 @@ export const AdminProfile: React.FC = () => {
                 )}
               </Button>
 
-              <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+              <Dialog open={isPasswordDialogOpen} onOpenChange={handlePasswordDialogChange}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
                     <Lock className="mr-2 h-4 w-4" />
@@ -520,15 +602,15 @@ export const AdminProfile: React.FC = () => {
                   </DialogHeader>
                   
                   {/* Error/Success Messages in Dialog */}
-                  {error && (
+                  {passwordDialogState.error && (
                     <Alert variant="destructive">
-                      <AlertDescription>{error}</AlertDescription>
+                      <AlertDescription>{passwordDialogState.error}</AlertDescription>
                     </Alert>
                   )}
                   
-                  {success && (
+                  {passwordDialogState.success && (
                     <Alert className="border-green-200 bg-green-50">
-                      <AlertDescription className="text-green-800">{success}</AlertDescription>
+                      <AlertDescription className="text-green-800">{passwordDialogState.success}</AlertDescription>
                     </Alert>
                   )}
                   
@@ -620,7 +702,7 @@ export const AdminProfile: React.FC = () => {
                     </div>
 
                     {/* Verification Section in Password Dialog */}
-                    {requiresVerification && verificationType === 'password_change' && (
+                    {passwordDialogState.requiresVerification && (
                       <div className="space-y-4 p-4 border border-orange-200 bg-orange-50 rounded-lg">
                         <div className="flex items-start gap-3">
                           <Shield className="h-5 w-5 text-orange-600 mt-0.5" />
@@ -632,15 +714,15 @@ export const AdminProfile: React.FC = () => {
                           </div>
                         </div>
 
-                        {!verificationSent ? (
+                        {!passwordDialogState.verificationSent ? (
                           <Button
                             type="button"
                             variant="outline"
-                            onClick={handleGenerateVerificationCode}
-                            disabled={isGeneratingCode}
+                            onClick={handlePasswordVerificationCode}
+                            disabled={passwordDialogState.isGeneratingCode}
                             className="border-orange-300 text-orange-700 hover:bg-orange-100"
                           >
-                            {isGeneratingCode ? (
+                            {passwordDialogState.isGeneratingCode ? (
                               <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Sender kode...
@@ -666,8 +748,11 @@ export const AdminProfile: React.FC = () => {
                                 <Input
                                   id="passwordVerificationCode"
                                   type="text"
-                                  value={formData.verificationCode}
-                                  onChange={(e) => handleInputChange('verificationCode', e.target.value)}
+                                  value={passwordDialogState.verificationCode}
+                                  onChange={(e) => setPasswordDialogState(prev => ({ 
+                                    ...prev, 
+                                    verificationCode: e.target.value 
+                                  }))}
                                   className="pl-10"
                                   placeholder="Indtast 6-cifret kode"
                                   maxLength={6}
@@ -682,8 +767,8 @@ export const AdminProfile: React.FC = () => {
                               type="button"
                               variant="ghost"
                               size="sm"
-                              onClick={handleGenerateVerificationCode}
-                              disabled={isGeneratingCode}
+                              onClick={handlePasswordVerificationCode}
+                              disabled={passwordDialogState.isGeneratingCode}
                               className="text-orange-600 hover:text-orange-700"
                             >
                               Send ny kode
