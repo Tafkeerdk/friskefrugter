@@ -263,19 +263,38 @@ export const authService = {
 
   async updateAdminProfile(profileData: { 
     name: string; 
-    email: string; 
+    email?: string; 
     currentPassword?: string; 
-    newPassword?: string; 
-  }): Promise<{ success: boolean; message: string; admin: User }> {
+    newPassword?: string;
+    verificationCode?: string;
+  }): Promise<{ success: boolean; message: string; admin?: User; requiresVerification?: boolean; changeType?: string }> {
     const response = await apiClient.put('/admin-profile', profileData);
     const data = await response.json();
     
-    if (data.success) {
+    if (data.success && data.admin) {
       // Update stored user data
       tokenManager.setUser(data.admin);
     }
     
     return data;
+  },
+
+  // Admin verification functions
+  async generateVerificationCode(verificationType: 'email_change' | 'password_change' | 'profile_security', newEmail?: string): Promise<{ success: boolean; message: string; expiresIn?: number }> {
+    const response = await apiClient.post('/admin-verification', {
+      action: 'generate',
+      verificationType,
+      newEmail
+    });
+    return response.json();
+  },
+
+  async verifyCode(verificationCode: string): Promise<{ success: boolean; message: string; verificationType?: string; pendingEmailChange?: string }> {
+    const response = await apiClient.post('/admin-verification', {
+      action: 'verify',
+      verificationCode
+    });
+    return response.json();
   },
 
   async uploadAdminProfilePicture(imageFile: File): Promise<{ success: boolean; message: string; profilePictureUrl: string; admin: User }> {

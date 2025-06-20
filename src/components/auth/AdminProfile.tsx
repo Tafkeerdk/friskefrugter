@@ -25,7 +25,11 @@ import {
   Loader2,
   Upload,
   Eye,
-  EyeOff
+  EyeOff,
+  Send,
+  CheckCircle,
+  AlertTriangle,
+  Shield
 } from 'lucide-react';
 
 export const AdminProfile: React.FC = () => {
@@ -38,7 +42,8 @@ export const AdminProfile: React.FC = () => {
     email: user?.email || '',
     currentPassword: '',
     newPassword: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    verificationCode: ''
   });
 
   // UI states
@@ -52,6 +57,13 @@ export const AdminProfile: React.FC = () => {
     confirm: false
   });
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+
+  // Verification states
+  const [requiresVerification, setRequiresVerification] = useState(false);
+  const [verificationType, setVerificationType] = useState<'email_change' | 'password_change' | null>(null);
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [verificationExpiry, setVerificationExpiry] = useState<Date | null>(null);
+  const [isGeneratingCode, setIsGeneratingCode] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -77,12 +89,19 @@ export const AdminProfile: React.FC = () => {
 
     try {
       const updateData: any = {
-        name: formData.name,
-        email: formData.email
+        name: formData.name
       };
 
+      const isEmailChange = formData.email !== user?.email;
+      const isPasswordChange = formData.newPassword && formData.currentPassword;
+
+      // Add email if it's being changed
+      if (isEmailChange) {
+        updateData.email = formData.email;
+      }
+
       // Only include password fields if new password is provided
-      if (formData.newPassword) {
+      if (isPasswordChange) {
         if (formData.newPassword !== formData.confirmPassword) {
           setError('Nye adgangskoder matcher ikke');
           return;
@@ -100,6 +119,11 @@ export const AdminProfile: React.FC = () => {
         updateData.newPassword = formData.newPassword;
       }
 
+      // Add verification code if provided
+      if (formData.verificationCode) {
+        updateData.verificationCode = formData.verificationCode;
+      }
+
       const response = await authService.updateAdminProfile(updateData);
       
       if (response.success) {
@@ -108,10 +132,19 @@ export const AdminProfile: React.FC = () => {
           ...prev,
           currentPassword: '',
           newPassword: '',
-          confirmPassword: ''
+          confirmPassword: '',
+          verificationCode: ''
         }));
         setIsPasswordDialogOpen(false);
+        setRequiresVerification(false);
+        setVerificationSent(false);
+        setVerificationType(null);
         refreshUser();
+      } else if (response.requiresVerification) {
+        // Show verification requirement
+        setRequiresVerification(true);
+        setVerificationType(response.changeType as 'email_change' | 'password_change');
+        setError(response.message);
       } else {
         setError(response.message || 'Opdatering fejlede');
       }
@@ -119,6 +152,43 @@ export const AdminProfile: React.FC = () => {
       setError(err.message || 'Der opstod en fejl');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGenerateVerificationCode = async () => {
+    if (!verificationType) return;
+
+    setIsGeneratingCode(true);
+    setError(null);
+
+    try {
+      const newEmail = verificationType === 'email_change' ? formData.email : undefined;
+      const response = await authService.generateVerificationCode(verificationType, newEmail);
+      
+      if (response.success) {
+        setVerificationSent(true);
+        setVerificationExpiry(new Date(Date.now() + (response.expiresIn || 10) * 60 * 1000));
+        setSuccess(response.message);
+      } else {
+        setError(response.message || 'Kunne ikke sende verifikationskode');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Der opstod en fejl');
+    } finally {
+      setIsGeneratingCode(false);
+    }
+  };
+
+  const getVerificationMessage = () => {
+    if (!verificationType) return '';
+    
+    switch (verificationType) {
+      case 'email_change':
+        return `For at ændre din email til ${formData.email}, skal du bekræfte med en verifikationskode sendt til din nuværende email (${user?.email}).`;
+      case 'password_change':
+        return 'For at ændre din adgangskode, skal du bekræfte med en verifikationskode sendt til din email.';
+      default:
+        return 'Du skal bekræfte denne ændring med en verifikationskode.';
     }
   };
 
@@ -283,6 +353,80 @@ export const AdminProfile: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Verification Section */}
+            {requiresVerification && (
+              <div className="space-y-4 p-4 border border-orange-200 bg-orange-50 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <Shield className="h-5 w-5 text-orange-600 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-medium text-orange-900">Sikkerhedsverifikation påkrævet</h4>
+                    <p className="text-sm text-orange-700 mt-1">
+                      {getVerificationMessage()}
+                    </p>
+                  </div>
+                </div>
+
+                {!verificationSent ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleGenerateVerificationCode}
+                    disabled={isGeneratingCode}
+                    className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                  >
+                    {isGeneratingCode ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sender kode...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Send verifikationskode
+                      </>
+                    )}
+                  </Button>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="text-sm">Verifikationskode sendt til din email</span>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="verificationCode">Verifikationskode</Label>
+                      <div className="relative">
+                        <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="verificationCode"
+                          type="text"
+                          value={formData.verificationCode}
+                          onChange={(e) => handleInputChange('verificationCode', e.target.value)}
+                          className="pl-10"
+                          placeholder="Indtast 6-cifret kode"
+                          maxLength={6}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Koden udløber om 10 minutter
+                      </p>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleGenerateVerificationCode}
+                      disabled={isGeneratingCode}
+                      className="text-orange-600 hover:text-orange-700"
+                    >
+                      Send ny kode
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex justify-between items-center">
               <Button type="submit" disabled={isLoading}>
