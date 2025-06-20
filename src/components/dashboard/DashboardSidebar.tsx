@@ -144,6 +144,12 @@ const DashboardSidebar: React.FC = () => {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleNavigation("/admin/profile")}>
+                  <Shield className="mr-2 h-5 w-5" />
+                  <span>Min Profil</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
                 <SidebarMenuButton onClick={handleNavigation("/admin/settings")}>
                   <Settings className="mr-2 h-5 w-5" />
                   <span>Systemindstillinger</span>

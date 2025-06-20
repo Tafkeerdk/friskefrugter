@@ -20,6 +20,7 @@ import DashboardInvoices from "./pages/DashboardInvoices";
 import DashboardCustomers from "./pages/DashboardCustomers";
 import DashboardStatistics from "./pages/DashboardStatistics";
 import DashboardCategories from "./pages/DashboardCategories";
+import AdminProfile from "./pages/AdminProfile";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
@@ -129,6 +130,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardStatistics />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/profile" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminProfile />
                 </ProtectedRoute>
               } 
             />

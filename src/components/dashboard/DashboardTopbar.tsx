@@ -1,6 +1,8 @@
 
 import React from "react";
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from "react-router-dom";
+import { Bell, Search, ChevronDown, User, Settings, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { 
@@ -15,6 +17,27 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 const DashboardTopbar: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/super/admin');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/super/admin');
+    }
+  };
+
+  const handleProfileClick = () => {
+    navigate('/admin/profile');
+  };
+
+  const getUserInitials = () => {
+    return user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD';
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2 md:hidden">
@@ -79,12 +102,12 @@ const DashboardTopbar: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 flex items-center gap-2">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="/placeholder.svg" alt="Admin" />
-                <AvatarFallback>MA</AvatarFallback>
+                <AvatarImage src={user?.profilePictureUrl} alt={user?.name || 'Admin'} />
+                <AvatarFallback>{getUserInitials()}</AvatarFallback>
               </Avatar>
               <div className="hidden md:flex flex-col items-start">
-                <span className="text-sm font-medium">Maria Andersen</span>
-                <span className="text-xs text-muted-foreground">Administrator</span>
+                <span className="text-sm font-medium">{user?.name || 'Administrator'}</span>
+                <span className="text-xs text-muted-foreground">{user?.role || 'Administrator'}</span>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </Button>
@@ -92,11 +115,19 @@ const DashboardTopbar: React.FC = () => {
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Min konto</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profil</DropdownMenuItem>
-            <DropdownMenuItem>Indstillinger</DropdownMenuItem>
-            <DropdownMenuItem>Hjælp</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleProfileClick}>
+              <User className="mr-2 h-4 w-4" />
+              Profil
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              Indstillinger
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Log ud</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Log ud
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

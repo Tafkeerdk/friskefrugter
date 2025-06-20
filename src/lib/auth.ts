@@ -11,6 +11,11 @@ export interface User {
   discountGroup?: string;
   name?: string;
   role?: string;
+  profilePictureUrl?: string;
+  isActive?: boolean;
+  lastLogin?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthTokens {
@@ -248,6 +253,57 @@ export const authService = {
   async rejectApplication(applicationId: string, reason?: string): Promise<{ success: boolean; message: string }> {
     const response = await apiClient.post(`/api/auth/admin/applications/${applicationId}/reject`, { reason });
     return response.json();
+  },
+
+  // Admin profile management
+  async getAdminProfile(): Promise<{ success: boolean; admin: User }> {
+    const response = await apiClient.get('/api/auth/admin/profile');
+    return response.json();
+  },
+
+  async updateAdminProfile(profileData: { 
+    name: string; 
+    email: string; 
+    currentPassword?: string; 
+    newPassword?: string; 
+  }): Promise<{ success: boolean; message: string; admin: User }> {
+    const response = await apiClient.put('/api/auth/admin/profile', profileData);
+    const data = await response.json();
+    
+    if (data.success) {
+      // Update stored user data
+      tokenManager.setUser(data.admin);
+    }
+    
+    return data;
+  },
+
+  async uploadAdminProfilePicture(imageFile: File): Promise<{ success: boolean; message: string; profilePictureUrl: string; admin: User }> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const imageData = reader.result as string;
+          const response = await apiClient.post('/api/auth/admin/profile', {
+            imageData,
+            fileName: imageFile.name,
+            contentType: imageFile.type
+          });
+          const data = await response.json();
+          
+          if (data.success) {
+            // Update stored user data
+            tokenManager.setUser(data.admin);
+          }
+          
+          resolve(data);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(imageFile);
+    });
   },
 };
 
