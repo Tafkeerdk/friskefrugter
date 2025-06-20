@@ -1,6 +1,10 @@
 // Authentication utilities for the frontend
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+  (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
+
+console.log('🌐 API Base URL:', API_BASE_URL);
+console.log('🔧 Environment mode:', import.meta.env.DEV ? 'development' : 'production');
 
 export interface User {
   id: string;
@@ -257,7 +261,7 @@ export const authService = {
 
   // Admin profile management
   async getAdminProfile(): Promise<{ success: boolean; admin: User }> {
-    const response = await apiClient.get('/admin-profile');
+    const response = await apiClient.get('/api/auth/admin/profile');
     return response.json();
   },
 
@@ -268,7 +272,7 @@ export const authService = {
     newPassword?: string;
     verificationCode?: string;
   }): Promise<{ success: boolean; message: string; admin?: User; requiresVerification?: boolean; changeType?: string }> {
-    const response = await apiClient.put('/admin-profile', profileData);
+    const response = await apiClient.put('/api/auth/admin/profile', profileData);
     const data = await response.json();
     
     if (data.success && data.admin) {
@@ -281,7 +285,7 @@ export const authService = {
 
   // Admin verification functions
   async generateVerificationCode(verificationType: 'email_change' | 'password_change' | 'profile_security', newEmail?: string): Promise<{ success: boolean; message: string; expiresIn?: number }> {
-    const response = await apiClient.post('/admin-verification', {
+    const response = await apiClient.post('/api/auth/admin/verification', {
       action: 'generate',
       verificationType,
       newEmail
@@ -290,7 +294,7 @@ export const authService = {
   },
 
   async verifyCode(verificationCode: string): Promise<{ success: boolean; message: string; verificationType?: string; pendingEmailChange?: string }> {
-    const response = await apiClient.post('/admin-verification', {
+    const response = await apiClient.post('/api/auth/admin/verification', {
       action: 'verify',
       verificationCode
     });
@@ -308,7 +312,7 @@ export const authService = {
           console.log('📁 File name:', imageFile.name);
           console.log('📄 Content type:', imageFile.type);
           
-          const response = await apiClient.post('/admin-profile', {
+          const response = await apiClient.put('/api/auth/admin/profile', {
             imageData,
             fileName: imageFile.name,
             contentType: imageFile.type
