@@ -19,10 +19,28 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireCustomer = false,
   redirectTo = '/login'
 }) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading, isAuthenticated, validateSession } = useAuth();
+  const [validatingSession, setValidatingSession] = React.useState(false);
 
-  // Show loading spinner while checking authentication
-  if (isLoading) {
+  // Validate session when component mounts or when authentication is required
+  React.useEffect(() => {
+    if (requireAuth && !isLoading && isAuthenticated) {
+      const checkSession = async () => {
+        setValidatingSession(true);
+        try {
+          await validateSession();
+        } catch (error) {
+          console.error('Session validation failed:', error);
+        } finally {
+          setValidatingSession(false);
+        }
+      };
+      checkSession();
+    }
+  }, [requireAuth, isLoading, isAuthenticated, validateSession]);
+
+  // Show loading spinner while checking authentication or validating session
+  if (isLoading || validatingSession) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
