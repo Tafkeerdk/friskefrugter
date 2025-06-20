@@ -320,9 +320,16 @@ export const authService = {
     return response.json();
   },
 
-  async uploadAdminProfilePicture(imageFile: File): Promise<{ success: boolean; message: string; profilePictureUrl: string; admin: User }> {
+  async uploadAdminProfilePicture(imageFile: File): Promise<{ success: boolean; message: string; profilePictureUrl?: string; admin?: User }> {
     return new Promise((resolve, reject) => {
-      console.log('🔄 Starting file read for upload...');
+      console.log('🔄 Starting file read for cropped image upload...');
+      console.log('📊 File details:', {
+        name: imageFile.name,
+        size: imageFile.size,
+        type: imageFile.type,
+        lastModified: imageFile.lastModified
+      });
+      
       const reader = new FileReader();
       reader.onload = async () => {
         try {
@@ -341,7 +348,7 @@ export const authService = {
           const data = await response.json();
           console.log('📥 Response data:', data);
           
-          if (data.success) {
+          if (data.success && data.admin) {
             // Update stored user data
             tokenManager.setUser(data.admin);
           }
