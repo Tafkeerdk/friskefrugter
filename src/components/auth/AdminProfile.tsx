@@ -126,9 +126,12 @@ export const AdminProfile: React.FC = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
+    console.log('📸 Image upload started:', file.name, file.size, file.type);
+
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Kun billedfiler er tilladt');
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type.toLowerCase())) {
+      setError('Kun JPEG, PNG og WebP billeder er tilladt');
       return;
     }
 
@@ -143,16 +146,21 @@ export const AdminProfile: React.FC = () => {
     setSuccess(null);
 
     try {
+      console.log('📤 Uploading image...');
       const response = await authService.uploadAdminProfilePicture(file);
+      
+      console.log('📥 Upload response:', response);
       
       if (response.success) {
         setSuccess('Profilbillede opdateret succesfuldt');
         refreshUser();
       } else {
+        console.error('❌ Upload failed:', response.message);
         setError(response.message || 'Upload fejlede');
       }
     } catch (err: any) {
-      setError(err.message || 'Upload fejlede');
+      console.error('❌ Upload error:', err);
+      setError(err.message || 'Upload fejlede - tjek din internetforbindelse');
     } finally {
       setIsUploadingImage(false);
       // Reset file input

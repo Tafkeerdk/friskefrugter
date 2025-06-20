@@ -257,7 +257,7 @@ export const authService = {
 
   // Admin profile management
   async getAdminProfile(): Promise<{ success: boolean; admin: User }> {
-    const response = await apiClient.get('/api/auth/admin/profile');
+    const response = await apiClient.get('/admin-profile');
     return response.json();
   },
 
@@ -267,7 +267,7 @@ export const authService = {
     currentPassword?: string; 
     newPassword?: string; 
   }): Promise<{ success: boolean; message: string; admin: User }> {
-    const response = await apiClient.put('/api/auth/admin/profile', profileData);
+    const response = await apiClient.put('/admin-profile', profileData);
     const data = await response.json();
     
     if (data.success) {
@@ -280,16 +280,24 @@ export const authService = {
 
   async uploadAdminProfilePicture(imageFile: File): Promise<{ success: boolean; message: string; profilePictureUrl: string; admin: User }> {
     return new Promise((resolve, reject) => {
+      console.log('🔄 Starting file read for upload...');
       const reader = new FileReader();
       reader.onload = async () => {
         try {
           const imageData = reader.result as string;
-          const response = await apiClient.post('/api/auth/admin/profile', {
+          console.log('📊 Image data size:', imageData.length);
+          console.log('📁 File name:', imageFile.name);
+          console.log('📄 Content type:', imageFile.type);
+          
+          const response = await apiClient.post('/admin-profile', {
             imageData,
             fileName: imageFile.name,
             contentType: imageFile.type
           });
+          
+          console.log('📡 Response status:', response.status);
           const data = await response.json();
+          console.log('📥 Response data:', data);
           
           if (data.success) {
             // Update stored user data
@@ -298,10 +306,16 @@ export const authService = {
           
           resolve(data);
         } catch (error) {
+          console.error('❌ Upload request failed:', error);
           reject(error);
         }
       };
-      reader.onerror = () => reject(new Error('Failed to read file'));
+      
+      reader.onerror = () => {
+        console.error('❌ File read failed');
+        reject(new Error('Kunne ikke læse billedfilen'));
+      };
+      
       reader.readAsDataURL(imageFile);
     });
   },
