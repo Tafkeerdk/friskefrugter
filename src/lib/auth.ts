@@ -45,18 +45,6 @@ export interface CustomerApplicationData {
   password: string;
 }
 
-// JWT token utilities
-const isTokenExpired = (token: string): boolean => {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
-    const currentTime = Date.now() / 1000;
-    return payload.exp < currentTime;
-  } catch (error) {
-    console.error('Error parsing token:', error);
-    return true; // If we can't parse it, consider it expired
-  }
-};
-
 // Token management
 export const tokenManager = {
   getAccessToken: (): string | null => {
@@ -85,20 +73,6 @@ export const tokenManager = {
 
   setUser: (user: User): void => {
     localStorage.setItem('user', JSON.stringify(user));
-  },
-
-  // Check if access token is valid and not expired
-  isAccessTokenValid: (): boolean => {
-    const token = localStorage.getItem('accessToken');
-    if (!token) return false;
-    return !isTokenExpired(token);
-  },
-
-  // Check if refresh token is valid and not expired
-  isRefreshTokenValid: (): boolean => {
-    const token = localStorage.getItem('refreshToken');
-    if (!token) return false;
-    return !isTokenExpired(token);
   }
 };
 
@@ -255,7 +229,7 @@ export const authService = {
     tokenManager.clearTokens();
   },
 
-  // Check if user is authenticated (simple check)
+  // Check if user is authenticated
   isAuthenticated(): boolean {
     return !!tokenManager.getAccessToken();
   },
@@ -263,51 +237,6 @@ export const authService = {
   // Get current user
   getCurrentUser(): User | null {
     return tokenManager.getUser();
-  },
-
-  // Validate session and refresh token if needed
-  async validateSession(): Promise<boolean> {
-    const accessToken = tokenManager.getAccessToken();
-    const refreshToken = tokenManager.getRefreshToken();
-
-    // No tokens at all
-    if (!accessToken || !refreshToken) {
-      tokenManager.clearTokens();
-      return false;
-    }
-
-    // Access token is still valid
-    if (tokenManager.isAccessTokenValid()) {
-      return true;
-    }
-
-    // Access token expired, try to refresh if refresh token is valid
-    if (tokenManager.isRefreshTokenValid()) {
-      console.log('🔄 Access token expired, attempting refresh...');
-             try {
-         const response = await fetch(`${API_BASE_URL}/.netlify/functions/token-refresh`, {
-           method: 'POST',
-           headers: {
-             'Content-Type': 'application/json',
-           },
-           body: JSON.stringify({ refreshToken: refreshToken }),
-         });
-        
-        const data = await response.json();
-        if (data.success && data.tokens) {
-          tokenManager.setTokens(data.tokens);
-          console.log('✅ Token refreshed successfully');
-          return true;
-        }
-      } catch (error) {
-        console.error('❌ Token refresh failed:', error);
-      }
-    }
-
-    // Both tokens invalid, clear everything
-    console.log('🚫 Session expired, clearing tokens');
-    tokenManager.clearTokens();
-    return false;
   },
 
   // Admin functions

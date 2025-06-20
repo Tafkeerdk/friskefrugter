@@ -20,8 +20,14 @@ const DashboardTopbar: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/super/admin');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/super/admin');
+    }
   };
 
   const handleProfileClick = () => {
