@@ -276,6 +276,7 @@ export const AdminProfile: React.FC = () => {
 
     try {
       const updateData: any = {
+        name: user?.name || '',
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,
         verificationCode: passwordDialogState.verificationCode // Use the verified code
