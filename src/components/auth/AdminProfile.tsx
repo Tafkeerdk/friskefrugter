@@ -1,30 +1,35 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { authService } from '../../lib/auth';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Alert, AlertDescription } from '../ui/alert';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Separator } from '../ui/separator';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
-import { ImageCropper } from '../ui/image-cropper';
-import { ImageViewer, useImageViewerKeyboard } from '../ui/image-viewer';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../ui/dialog';
 import { 
   User, 
   Mail, 
   Lock, 
   Camera, 
-  Loader2, 
   Save, 
-  Eye, 
-  EyeOff, 
-  Shield, 
-  Send, 
+  Loader2,
+  Upload,
+  Eye,
+  EyeOff,
+  Send,
   CheckCircle,
-  Expand,
-  AlertTriangle
+  AlertTriangle,
+  Shield
 } from 'lucide-react';
 
 export const AdminProfile: React.FC = () => {
@@ -53,21 +58,12 @@ export const AdminProfile: React.FC = () => {
   });
   const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
 
-  // Image handling states
-  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
-  const [isCropperOpen, setIsCropperOpen] = useState(false);
-  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
-
   // Verification states
   const [requiresVerification, setRequiresVerification] = useState(false);
   const [verificationType, setVerificationType] = useState<'email_change' | 'password_change' | null>(null);
   const [verificationSent, setVerificationSent] = useState(false);
   const [verificationExpiry, setVerificationExpiry] = useState<Date | null>(null);
   const [isGeneratingCode, setIsGeneratingCode] = useState(false);
-  const [passwordChangeSuccess, setPasswordChangeSuccess] = useState(false);
-
-  // Keyboard shortcuts for image viewer
-  useImageViewerKeyboard(() => setIsImageViewerOpen(false));
 
   useEffect(() => {
     if (user) {
@@ -128,18 +124,25 @@ export const AdminProfile: React.FC = () => {
         updateData.verificationCode = formData.verificationCode;
       }
 
+      console.log('🔄 Submitting profile update:', { 
+        isEmailChange, 
+        isPasswordChange, 
+        hasVerificationCode: !!formData.verificationCode,
+        requiresVerification 
+      });
+
       const response = await authService.updateAdminProfile(updateData);
       
       if (response.success) {
-        setSuccess(response.message);
-        
-        // Handle password change success
-        if (isPasswordChange) {
-          setPasswordChangeSuccess(true);
-          setTimeout(() => {
-            setIsPasswordDialogOpen(false);
-            setPasswordChangeSuccess(false);
-          }, 2000);
+        // Set specific success message based on what was changed
+        if (isPasswordChange && isEmailChange) {
+          setSuccess('✅ Adgangskode og email opdateret succesfuldt!');
+        } else if (isPasswordChange) {
+          setSuccess('🔐 Adgangskode ændret succesfuldt! Du er nu logget ind med den nye adgangskode.');
+        } else if (isEmailChange) {
+          setSuccess('📧 Email adresse opdateret succesfuldt!');
+        } else {
+          setSuccess(response.message);
         }
         
         setFormData(prev => ({
@@ -149,15 +152,30 @@ export const AdminProfile: React.FC = () => {
           confirmPassword: '',
           verificationCode: ''
         }));
+        setIsPasswordDialogOpen(false);
         setRequiresVerification(false);
         setVerificationSent(false);
         setVerificationType(null);
         refreshUser();
+        
+        // Show success message for longer for password changes
+        if (isPasswordChange) {
+          setTimeout(() => setSuccess(null), 8000); // 8 seconds for password changes
+        } else {
+          setTimeout(() => setSuccess(null), 5000); // 5 seconds for other changes
+        }
       } else if (response.requiresVerification) {
         // Show verification requirement
+        console.log('🔐 Verification required:', response.changeType);
         setRequiresVerification(true);
         setVerificationType(response.changeType as 'email_change' | 'password_change');
         setError(response.message);
+        
+        // If it's a password change, keep the dialog open
+        if (response.changeType === 'password_change') {
+          // Don't close the password dialog
+          console.log('🔑 Password change requires verification - keeping dialog open');
+        }
       } else {
         setError(response.message || 'Opdatering fejlede');
       }
@@ -166,6 +184,36 @@ export const AdminProfile: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Separate handler for password dialog submission
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      setError('Alle password felter skal udfyldes');
+      return;
+    }
+    
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError('Nye adgangskoder matcher ikke');
+      return;
+    }
+    
+    if (formData.newPassword.length < 6) {
+      setError('Ny adgangskode skal være mindst 6 tegn');
+      return;
+    }
+
+    // If verification is required and we don't have a code yet, trigger verification
+    if (requiresVerification && verificationType === 'password_change' && !formData.verificationCode) {
+      setError('Indtast verifikationskoden for at fortsætte');
+      return;
+    }
+
+    // Call the main update function
+    await handleProfileUpdate(e);
   };
 
   const handleGenerateVerificationCode = async () => {
@@ -205,9 +253,11 @@ export const AdminProfile: React.FC = () => {
     }
   };
 
-  const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    console.log('📸 Image upload started:', file.name, file.size, file.type);
 
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
@@ -216,30 +266,19 @@ export const AdminProfile: React.FC = () => {
       return;
     }
 
-    // Validate file size (10MB max for cropping)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('Billedet er for stort (max 10MB)');
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Billedet er for stort (max 5MB)');
       return;
     }
 
-    setSelectedImageFile(file);
-    setIsCropperOpen(true);
-    
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const handleImageCrop = async (croppedFile: File) => {
-    setIsCropperOpen(false);
     setIsUploadingImage(true);
     setError(null);
     setSuccess(null);
 
     try {
-      console.log('📤 Uploading cropped image...');
-      const response = await authService.uploadAdminProfilePicture(croppedFile);
+      console.log('📤 Uploading image...');
+      const response = await authService.uploadAdminProfilePicture(file);
       
       console.log('📥 Upload response:', response);
       
@@ -255,7 +294,10 @@ export const AdminProfile: React.FC = () => {
       setError(err.message || 'Upload fejlede - tjek din internetforbindelse');
     } finally {
       setIsUploadingImage(false);
-      setSelectedImageFile(null);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -268,23 +310,6 @@ export const AdminProfile: React.FC = () => {
       ...prev,
       [field]: !prev[field]
     }));
-  };
-
-  const handlePasswordDialogClose = () => {
-    setIsPasswordDialogOpen(false);
-    setFormData(prev => ({
-      ...prev,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-      verificationCode: ''
-    }));
-    setRequiresVerification(false);
-    setVerificationSent(false);
-    setVerificationType(null);
-    setError(null);
-    setSuccess(null);
-    setPasswordChangeSuccess(false);
   };
 
   if (!user) return null;
@@ -306,10 +331,7 @@ export const AdminProfile: React.FC = () => {
           {/* Profile Picture Section */}
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <Avatar 
-                className="h-20 w-20 cursor-pointer" 
-                onClick={() => user.profilePictureUrl && setIsImageViewerOpen(true)}
-              >
+              <Avatar className="h-20 w-20">
                 <AvatarImage src={user.profilePictureUrl} alt={user.name} />
                 <AvatarFallback className="text-lg">{getUserInitials()}</AvatarFallback>
               </Avatar>
@@ -325,21 +347,11 @@ export const AdminProfile: React.FC = () => {
                   <Camera className="h-4 w-4" />
                 )}
               </Button>
-              {user.profilePictureUrl && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                  onClick={() => setIsImageViewerOpen(true)}
-                >
-                  <Expand className="h-3 w-3" />
-                </Button>
-              )}
               <input
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                onChange={handleImageSelect}
+                onChange={handleImageUpload}
                 className="hidden"
               />
             </div>
@@ -349,31 +361,18 @@ export const AdminProfile: React.FC = () => {
               <p className="text-sm text-muted-foreground">
                 Rolle: {user.role || 'Administrator'}
               </p>
-              {user.profilePictureUrl && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="p-0 h-auto text-xs"
-                  onClick={() => setIsImageViewerOpen(true)}
-                >
-                  <Expand className="mr-1 h-3 w-3" />
-                  Se i fuld størrelse
-                </Button>
-              )}
             </div>
           </div>
 
           {/* Success/Error Messages */}
           {success && (
             <Alert className="border-green-200 bg-green-50">
-              <CheckCircle className="h-4 w-4 text-green-600" />
               <AlertDescription className="text-green-800">{success}</AlertDescription>
             </Alert>
           )}
           
           {error && (
             <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -505,7 +504,7 @@ export const AdminProfile: React.FC = () => {
                 )}
               </Button>
 
-              <Dialog open={isPasswordDialogOpen} onOpenChange={handlePasswordDialogClose}>
+              <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
                     <Lock className="mr-2 h-4 w-4" />
@@ -515,203 +514,203 @@ export const AdminProfile: React.FC = () => {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Skift adgangskode</DialogTitle>
+                    <DialogDescription>
+                      Indtast din nuværende adgangskode og den nye adgangskode
+                    </DialogDescription>
                   </DialogHeader>
                   
-                  {passwordChangeSuccess ? (
-                    <div className="text-center py-8">
-                      <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-green-800 mb-2">
-                        Adgangskode opdateret!
-                      </h3>
-                      <p className="text-sm text-green-600">
-                        Din adgangskode er blevet ændret succesfuldt.
-                      </p>
+                  {/* Error/Success Messages in Dialog */}
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  {success && (
+                    <Alert className="border-green-200 bg-green-50">
+                      <AlertDescription className="text-green-800">{success}</AlertDescription>
+                    </Alert>
+                  )}
+                  
+                  <form onSubmit={handlePasswordChange} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="currentPassword">Nuværende adgangskode</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="currentPassword"
+                          type={showPasswords.current ? "text" : "password"}
+                          value={formData.currentPassword}
+                          onChange={(e) => handleInputChange('currentPassword', e.target.value)}
+                          className="pl-10 pr-10"
+                          placeholder="Din nuværende adgangskode"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => togglePasswordVisibility('current')}
+                        >
+                          {showPasswords.current ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </div>
-                  ) : (
-                    <form onSubmit={handleProfileUpdate} className="space-y-4">
-                      {/* Verification Section for Password Change */}
-                      {requiresVerification && verificationType === 'password_change' && (
-                        <div className="space-y-4 p-4 border border-orange-200 bg-orange-50 rounded-lg">
-                          <div className="flex items-start gap-3">
-                            <Shield className="h-5 w-5 text-orange-600 mt-0.5" />
-                            <div className="flex-1">
-                              <h4 className="font-medium text-orange-900">2FA påkrævet</h4>
-                              <p className="text-sm text-orange-700 mt-1">
-                                {getVerificationMessage()}
+
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">Ny adgangskode</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="newPassword"
+                          type={showPasswords.new ? "text" : "password"}
+                          value={formData.newPassword}
+                          onChange={(e) => handleInputChange('newPassword', e.target.value)}
+                          className="pl-10 pr-10"
+                          placeholder="Din nye adgangskode"
+                          minLength={6}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => togglePasswordVisibility('new')}
+                        >
+                          {showPasswords.new ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Bekræft ny adgangskode</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="confirmPassword"
+                          type={showPasswords.confirm ? "text" : "password"}
+                          value={formData.confirmPassword}
+                          onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                          className="pl-10 pr-10"
+                          placeholder="Bekræft din nye adgangskode"
+                          minLength={6}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3"
+                          onClick={() => togglePasswordVisibility('confirm')}
+                        >
+                          {showPasswords.confirm ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Verification Section in Password Dialog */}
+                    {requiresVerification && verificationType === 'password_change' && (
+                      <div className="space-y-4 p-4 border border-orange-200 bg-orange-50 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <Shield className="h-5 w-5 text-orange-600 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="font-medium text-orange-900">Sikkerhedsverifikation påkrævet</h4>
+                            <p className="text-sm text-orange-700 mt-1">
+                              For at ændre din adgangskode, skal du bekræfte med en verifikationskode sendt til din email.
+                            </p>
+                          </div>
+                        </div>
+
+                        {!verificationSent ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleGenerateVerificationCode}
+                            disabled={isGeneratingCode}
+                            className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                          >
+                            {isGeneratingCode ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Sender kode...
+                              </>
+                            ) : (
+                              <>
+                                <Send className="mr-2 h-4 w-4" />
+                                Send verifikationskode
+                              </>
+                            )}
+                          </Button>
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-2 text-green-700">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="text-sm">Verifikationskode sendt til din email</span>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="passwordVerificationCode">Verifikationskode</Label>
+                              <div className="relative">
+                                <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                <Input
+                                  id="passwordVerificationCode"
+                                  type="text"
+                                  value={formData.verificationCode}
+                                  onChange={(e) => handleInputChange('verificationCode', e.target.value)}
+                                  className="pl-10"
+                                  placeholder="Indtast 6-cifret kode"
+                                  maxLength={6}
+                                />
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                Koden udløber om 10 minutter
                               </p>
                             </div>
-                          </div>
 
-                          {!verificationSent ? (
                             <Button
                               type="button"
-                              variant="outline"
+                              variant="ghost"
+                              size="sm"
                               onClick={handleGenerateVerificationCode}
                               disabled={isGeneratingCode}
-                              className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                              className="text-orange-600 hover:text-orange-700"
                             >
-                              {isGeneratingCode ? (
-                                <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  Sender kode...
-                                </>
-                              ) : (
-                                <>
-                                  <Send className="mr-2 h-4 w-4" />
-                                  Send verifikationskode
-                                </>
-                              )}
+                              Send ny kode
                             </Button>
-                          ) : (
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2 text-green-700">
-                                <CheckCircle className="h-4 w-4" />
-                                <span className="text-sm">Verifikationskode sendt til din email</span>
-                              </div>
-                              
-                              <div className="space-y-2">
-                                <Label htmlFor="passwordVerificationCode">Verifikationskode</Label>
-                                <div className="relative">
-                                  <Shield className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                                  <Input
-                                    id="passwordVerificationCode"
-                                    type="text"
-                                    value={formData.verificationCode}
-                                    onChange={(e) => handleInputChange('verificationCode', e.target.value)}
-                                    className="pl-10"
-                                    placeholder="Indtast 6-cifret kode"
-                                    maxLength={6}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        <Label htmlFor="currentPassword">Nuværende adgangskode</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="currentPassword"
-                            type={showPasswords.current ? "text" : "password"}
-                            value={formData.currentPassword}
-                            onChange={(e) => handleInputChange('currentPassword', e.target.value)}
-                            className="pl-10 pr-10"
-                            placeholder="Din nuværende adgangskode"
-                            required
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => togglePasswordVisibility('current')}
-                          >
-                            {showPasswords.current ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="newPassword">Ny adgangskode</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="newPassword"
-                            type={showPasswords.new ? "text" : "password"}
-                            value={formData.newPassword}
-                            onChange={(e) => handleInputChange('newPassword', e.target.value)}
-                            className="pl-10 pr-10"
-                            placeholder="Din nye adgangskode"
-                            minLength={6}
-                            required
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => togglePasswordVisibility('new')}
-                          >
-                            {showPasswords.new ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Bekræft ny adgangskode</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="confirmPassword"
-                            type={showPasswords.confirm ? "text" : "password"}
-                            value={formData.confirmPassword}
-                            onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                            className="pl-10 pr-10"
-                            placeholder="Bekræft din nye adgangskode"
-                            minLength={6}
-                            required
-                          />
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="absolute right-0 top-0 h-full px-3"
-                            onClick={() => togglePasswordVisibility('confirm')}
-                          >
-                            {showPasswords.confirm ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Error/Success Messages in Modal */}
-                      {error && (
-                        <Alert variant="destructive">
-                          <AlertTriangle className="h-4 w-4" />
-                          <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                      )}
-
-                      {success && !passwordChangeSuccess && (
-                        <Alert className="border-green-200 bg-green-50">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          <AlertDescription className="text-green-800">{success}</AlertDescription>
-                        </Alert>
-                      )}
-
-                      <Button 
-                        type="submit" 
-                        className="w-full"
-                        disabled={isLoading || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
-                      >
-                        {isLoading ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Opdaterer...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="mr-2 h-4 w-4" />
-                            Gem ny adgangskode
-                          </>
+                          </div>
                         )}
-                      </Button>
-                    </form>
-                  )}
+                      </div>
+                    )}
+
+                    <Button 
+                      type="submit" 
+                      className="w-full"
+                      disabled={isLoading || !formData.currentPassword || !formData.newPassword || !formData.confirmPassword}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Opdaterer...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Gem ny adgangskode
+                        </>
+                      )}
+                    </Button>
+                  </form>
                 </DialogContent>
               </Dialog>
             </div>
@@ -760,25 +759,6 @@ export const AdminProfile: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Image Cropper Modal */}
-      <ImageCropper
-        isOpen={isCropperOpen}
-        onClose={() => {
-          setIsCropperOpen(false);
-          setSelectedImageFile(null);
-        }}
-        onCrop={handleImageCrop}
-        imageFile={selectedImageFile}
-      />
-
-      {/* Image Viewer Modal */}
-      <ImageViewer
-        isOpen={isImageViewerOpen}
-        onClose={() => setIsImageViewerOpen(false)}
-        imageUrl={user.profilePictureUrl || ''}
-        title={`${user.name} - Profilbillede`}
-      />
     </div>
   );
 }; 
