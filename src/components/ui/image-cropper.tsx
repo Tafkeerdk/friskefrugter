@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './dialog';
 import { Button } from './button';
 import { Slider } from './slider';
@@ -31,6 +31,7 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
@@ -70,16 +71,18 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       setImageSize({ width: displayWidth, height: displayHeight });
       
       // Center the crop area
+      const cropSize = Math.min(200, displayWidth * 0.8, displayHeight * 0.8);
       setCropArea({
-        x: (displayWidth - 200) / 2,
-        y: (displayHeight - 200) / 2,
-        width: 200,
-        height: 200
+        x: (displayWidth - cropSize) / 2,
+        y: (displayHeight - cropSize) / 2,
+        width: cropSize,
+        height: cropSize
       });
     }
   }, []);
 
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Optimize mouse events with useCallback
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
     if (!containerRef.current) return;
     
     const rect = containerRef.current.getBoundingClientRect();
@@ -96,10 +99,12 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       setIsDragging(true);
       setDragStart({ x: x - cropArea.x, y: y - cropArea.y });
     }
-  };
+  }, [cropArea]);
 
-  const handleMouseMove = (e: React.MouseEvent) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isDragging || !containerRef.current) return;
+    
+    e.preventDefault(); // Prevent default behavior
     
     const rect = containerRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left - dragStart.x;
@@ -114,94 +119,128 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
       x: Math.max(0, Math.min(x, maxX)),
       y: Math.max(0, Math.min(y, maxY))
     }));
-  };
+  }, [isDragging, dragStart, imageSize, cropArea.width, cropArea.height]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
-  const handleCrop = async () => {
+  const handleCrop = useCallback(async () => {
     if (!imageRef.current || !canvasRef.current || !imageFile) return;
 
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+    setIsProcessing(true);
+    
+    try {
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
 
-    const img = imageRef.current;
-    
-    // Set canvas size to crop area
-    canvas.width = cropArea.width;
-    canvas.height = cropArea.height;
-    
-    // Calculate scaling factors
-    const scaleX = img.naturalWidth / imageSize.width;
-    const scaleY = img.naturalHeight / imageSize.height;
-    
-    // Apply transformations
-    ctx.save();
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate((rotation * Math.PI) / 180);
-    ctx.scale(scale, scale);
-    
-    // Draw the cropped portion
-    ctx.drawImage(
-      img,
-      cropArea.x * scaleX,
-      cropArea.y * scaleY,
-      cropArea.width * scaleX,
-      cropArea.height * scaleY,
-      -cropArea.width / 2,
-      -cropArea.height / 2,
-      cropArea.width,
-      cropArea.height
-    );
-    
-    ctx.restore();
-    
-    // Convert canvas to blob
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const croppedFile = new File([blob], imageFile.name, {
-          type: imageFile.type,
-          lastModified: Date.now()
-        });
-        onCrop(croppedFile);
-      }
-    }, imageFile.type, 0.9);
-  };
+      const img = imageRef.current;
+      
+      // Set canvas size to crop area
+      canvas.width = cropArea.width;
+      canvas.height = cropArea.height;
+      
+      // Calculate scaling factors
+      const scaleX = img.naturalWidth / imageSize.width;
+      const scaleY = img.naturalHeight / imageSize.height;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Apply transformations
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate((rotation * Math.PI) / 180);
+      ctx.scale(scale, scale);
+      
+      // Draw the cropped portion
+      ctx.drawImage(
+        img,
+        cropArea.x * scaleX,
+        cropArea.y * scaleY,
+        cropArea.width * scaleX,
+        cropArea.height * scaleY,
+        -cropArea.width / 2,
+        -cropArea.height / 2,
+        cropArea.width,
+        cropArea.height
+      );
+      
+      ctx.restore();
+      
+      // Convert canvas to blob with higher quality
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const croppedFile = new File([blob], imageFile.name, {
+            type: imageFile.type,
+            lastModified: Date.now()
+          });
+          onCrop(croppedFile);
+        }
+        setIsProcessing(false);
+      }, imageFile.type, 0.95); // Higher quality
+      
+    } catch (error) {
+      console.error('Crop error:', error);
+      setIsProcessing(false);
+    }
+  }, [imageRef, canvasRef, imageFile, cropArea, imageSize, rotation, scale, onCrop]);
 
-  const resetTransforms = () => {
+  const resetTransforms = useCallback(() => {
     setScale(1);
     setRotation(0);
     if (imageSize.width && imageSize.height) {
+      const cropSize = Math.min(200, imageSize.width * 0.8, imageSize.height * 0.8);
       setCropArea({
-        x: (imageSize.width - 200) / 2,
-        y: (imageSize.height - 200) / 2,
-        width: 200,
-        height: 200
+        x: (imageSize.width - cropSize) / 2,
+        y: (imageSize.height - cropSize) / 2,
+        width: cropSize,
+        height: cropSize
       });
     }
-  };
+  }, [imageSize]);
+
+  // Memoize transform style to prevent unnecessary re-renders
+  const imageTransformStyle = useMemo(() => ({
+    width: imageSize.width,
+    height: imageSize.height,
+    transform: `translate(-50%, -50%) scale(${scale}) rotate(${rotation}deg)`,
+    transition: isDragging ? 'none' : 'transform 0.2s ease'
+  }), [imageSize, scale, rotation, isDragging]);
+
+  // Memoize crop area style
+  const cropAreaStyle = useMemo(() => ({
+    left: cropArea.x,
+    top: cropArea.y,
+    width: cropArea.width,
+    height: cropArea.height,
+    cursor: isDragging ? 'grabbing' : 'grab'
+  }), [cropArea, isDragging]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0" aria-describedby="crop-description">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="flex items-center gap-2">
             <Crop className="h-5 w-5" />
             Tilpas profilbillede
           </DialogTitle>
+          <div id="crop-description" className="sr-only">
+            Brug værktøjerne nedenfor til at beskære og tilpasse dit profilbillede. Du kan zoome, rotere og flytte beskæringsområdet.
+          </div>
         </DialogHeader>
         
         <div className="flex flex-col h-[70vh]">
           {/* Image Editor Area */}
           <div 
             ref={containerRef}
-            className="flex-1 relative bg-gray-100 m-6 rounded-lg overflow-hidden cursor-move"
+            className="flex-1 relative bg-gray-100 m-6 rounded-lg overflow-hidden select-none"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
+            style={{ touchAction: 'none' }} // Prevent touch scrolling
           >
             {imageUrl && (
               <>
@@ -209,29 +248,19 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
                   ref={imageRef}
                   src={imageUrl}
                   alt="Crop preview"
-                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    width: imageSize.width,
-                    height: imageSize.height,
-                    transform: `translate(-50%, -50%) scale(${scale}) rotate(${rotation}deg)`
-                  }}
+                  className="absolute top-1/2 left-1/2 pointer-events-none"
+                  style={imageTransformStyle}
                   onLoad={handleImageLoad}
                   draggable={false}
                 />
                 
                 {/* Crop Overlay */}
-                <div className="absolute inset-0 bg-black bg-opacity-50" />
+                <div className="absolute inset-0 bg-black bg-opacity-50 pointer-events-none" />
                 
                 {/* Crop Area */}
                 <div
                   className="absolute border-2 border-white shadow-lg bg-transparent"
-                  style={{
-                    left: cropArea.x,
-                    top: cropArea.y,
-                    width: cropArea.width,
-                    height: cropArea.height,
-                    cursor: isDragging ? 'grabbing' : 'grab'
-                  }}
+                  style={cropAreaStyle}
                 >
                   <div className="absolute inset-0 border border-white opacity-50" />
                   {/* Corner handles */}
@@ -306,18 +335,27 @@ export const ImageCropper: React.FC<ImageCropperProps> = ({
             
             {/* Action Buttons */}
             <div className="flex justify-between items-center">
-              <Button variant="outline" onClick={resetTransforms}>
+              <Button variant="outline" onClick={resetTransforms} disabled={isProcessing}>
                 Nulstil
               </Button>
               
               <div className="flex gap-2">
-                <Button variant="outline" onClick={onClose}>
+                <Button variant="outline" onClick={onClose} disabled={isProcessing}>
                   <X className="mr-2 h-4 w-4" />
                   Annuller
                 </Button>
-                <Button onClick={handleCrop}>
-                  <Crop className="mr-2 h-4 w-4" />
-                  Anvend beskæring
+                <Button onClick={handleCrop} disabled={isProcessing}>
+                  {isProcessing ? (
+                    <>
+                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      Behandler...
+                    </>
+                  ) : (
+                    <>
+                      <Crop className="mr-2 h-4 w-4" />
+                      Anvend beskæring
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

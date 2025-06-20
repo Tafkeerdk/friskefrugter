@@ -600,6 +600,7 @@ export const AdminProfile: React.FC = () => {
                             onChange={(e) => handleInputChange('currentPassword', e.target.value)}
                             className="pl-10 pr-10"
                             placeholder="Din nuværende adgangskode"
+                            required
                           />
                           <Button
                             type="button"
@@ -629,6 +630,7 @@ export const AdminProfile: React.FC = () => {
                             className="pl-10 pr-10"
                             placeholder="Din nye adgangskode"
                             minLength={6}
+                            required
                           />
                           <Button
                             type="button"
@@ -658,6 +660,7 @@ export const AdminProfile: React.FC = () => {
                             className="pl-10 pr-10"
                             placeholder="Bekræft din nye adgangskode"
                             minLength={6}
+                            required
                           />
                           <Button
                             type="button"
