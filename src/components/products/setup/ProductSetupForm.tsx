@@ -434,657 +434,657 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">
-            {mode === 'create' ? 'Opret nyt produkt' : 'Rediger produkt'}
-          </h1>
-          <p className="text-muted-foreground">
-            {mode === 'create' 
-              ? 'Udfyld formularen for at tilføje et nyt produkt til kataloget' 
-              : 'Rediger produktoplysningerne nedenfor'
-            }
-          </p>
+    <Dialog open={!!imageToPreview} onOpenChange={(isOpen) => !isOpen && setImageToPreview(null)}>
+      <div className="max-w-4xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">
+              {mode === 'create' ? 'Opret nyt produkt' : 'Rediger produkt'}
+            </h1>
+            <p className="text-muted-foreground">
+              {mode === 'create' 
+                ? 'Udfyld formularen for at tilføje et nyt produkt til kataloget' 
+                : 'Rediger produktoplysningerne nedenfor'
+              }
+            </p>
+          </div>
+          <Badge variant={aktivStatus ? 'default' : 'secondary'}>
+            {aktivStatus ? 'Aktiv' : 'Inaktiv'}
+          </Badge>
         </div>
-        <Badge variant={aktivStatus ? 'default' : 'secondary'}>
-          {aktivStatus ? 'Aktiv' : 'Inaktiv'}
-        </Badge>
-      </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          {/* Basic Information */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Grundlæggende oplysninger
-              </CardTitle>
-              <CardDescription>
-                Produktnavn, beskrivelse og identifikation
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Product Name */}
-              <FormField
-                control={form.control}
-                name="produktnavn"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Produktnavn
-                      <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        placeholder="f.eks. Økologiske æbler"
-                        disabled={isLoading}
-                        className={cn(errors.produktnavn && 'border-red-500')}
-                      />
-                    </FormControl>
-                    <div className="flex justify-between items-center">
-                      <FormDescription>
-                        Kort og beskrivende navn på produktet
-                      </FormDescription>
-                      <CharacterCounter current={field.value?.length || 0} max={100} />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Description */}
-              <FormField
-                control={form.control}
-                name="beskrivelse"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Beskrivelse (valgfrit)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        {...field}
-                        placeholder="Detaljeret beskrivelse af produktet..."
-                        disabled={isLoading}
-                        className="min-h-[100px] resize-y"
-                      />
-                    </FormControl>
-                    <div className="flex justify-between items-center">
-                      <FormDescription>
-                        Uddybende beskrivelse af produktet
-                      </FormDescription>
-                      <CharacterCounter current={field.value?.length || 0} max={1000} />
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* EAN Number */}
-              <FormField
-                control={form.control}
-                name="eanNummer"
-                render={({ field }) => (
-                  <EANInput
-                    value={field.value}
-                    onChange={field.onChange}
-                    error={errors.eanNummer?.message}
-                    disabled={isLoading}
-                  />
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Pricing and Unit */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Banknote className="h-5 w-5" />
-                Priser og enheder
-              </CardTitle>
-              <CardDescription>
-                Prissætning og salgsenheder
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Base Price */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Basic Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="h-5 w-5" />
+                  Grundlæggende oplysninger
+                </CardTitle>
+                <CardDescription>
+                  Produktnavn, beskrivelse og identifikation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Product Name */}
                 <FormField
                   control={form.control}
-                  name="basispris"
-                  render={({ field }) => (
-                    <CurrencyInput
-                      value={field.value}
-                      onChange={field.onChange}
-                      error={errors.basispris?.message}
-                      disabled={isLoading}
-                    />
-                  )}
-                />
-
-                {/* Unit */}
-                <FormField
-                  control={form.control}
-                  name="enhed"
+                  name="produktnavn"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="flex items-center gap-2">
-                        Enhed
+                        Produktnavn
                         <span className="text-red-500">*</span>
                       </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={isLoading}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Vælg enhed" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {unitOptions.map((unit) => (
-                            <SelectItem key={unit.value} value={unit.value}>
-                              {unit.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Salgsenheden for produktet
-                      </FormDescription>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="f.eks. Økologiske æbler"
+                          disabled={isLoading}
+                          className={cn(errors.produktnavn && 'border-red-500')}
+                        />
+                      </FormControl>
+                      <div className="flex justify-between items-center">
+                        <FormDescription>
+                          Kort og beskrivende navn på produktet
+                        </FormDescription>
+                        <CharacterCounter current={field.value?.length || 0} max={100} />
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Category */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Tags className="h-5 w-5" />
-                Kategori
-              </CardTitle>
-              <CardDescription>
-                Produktkategori og klassificering
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="kategori.navn"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Kategori
-                      <span className="text-red-500">*</span>
-                      {isCreatingCategory && (
-                        <Badge variant="secondary" className="ml-2">
-                          Opretter ny kategori
-                        </Badge>
-                      )}
-                    </FormLabel>
-                    <div className="flex gap-2">
-                      <Select
-                        onValueChange={(value) => {
-                          if (value === 'create-new') {
-                            setIsCreatingCategory(true);
-                            // Clear the current category selection when creating new
-                            setValue('kategori', { navn: '', isNew: true });
-                          } else {
-                            const category = categories.find(c => c._id === value);
-                            if (category) {
-                              setValue('kategori', { id: category._id, navn: category.navn, isNew: false });
-                            }
-                          }
-                        }}
-                        value={isCreatingCategory ? 'create-new' : (watchedKategori?.id || '')}
-                        disabled={isLoading || isCreatingCategory}
-                      >
-                        <FormControl>
-                          <SelectTrigger className={cn(
-                            "flex-1",
-                            isCreatingCategory && "border-blue-300 bg-blue-50"
-                          )}>
-                            <SelectValue placeholder="Vælg kategori">
-                              {isCreatingCategory 
-                                ? "Opretter ny kategori..." 
-                                : (watchedKategori?.navn || 'Vælg kategori')
-                              }
-                            </SelectValue>
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {categories.map((category) => (
-                            <SelectItem key={category._id} value={category._id}>
-                              {category.navn}
-                            </SelectItem>
-                          ))}
-                          <Separator />
-                          <SelectItem value="create-new">
-                            + Opret ny kategori
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Create new category */}
-                    {isCreatingCategory && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
-                        <div className="flex items-center gap-2 mb-3">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-sm font-medium text-blue-700">
-                            Opret ny kategori
-                          </span>
-                        </div>
-                        <div className="flex gap-2">
-                          <Input
-                            placeholder="Indtast kategori navn (f.eks. Grøntsager, Frugt, Krydderier)"
-                            value={newCategoryName}
-                            onChange={(e) => setNewCategoryName(e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                e.preventDefault();
-                                handleCreateCategory();
-                              }
-                              if (e.key === 'Escape') {
-                                setIsCreatingCategory(false);
-                                setNewCategoryName('');
-                                setValue('kategori', { navn: '', isNew: false });
-                              }
-                            }}
-                            className="flex-1"
-                            autoFocus
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={handleCreateCategory}
-                            disabled={!newCategoryName.trim()}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            Opret
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setIsCreatingCategory(false);
-                              setNewCategoryName('');
-                              setValue('kategori', { navn: '', isNew: false });
-                            }}
-                          >
-                            Annuller
-                          </Button>
-                        </div>
+                {/* Description */}
+                <FormField
+                  control={form.control}
+                  name="beskrivelse"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Beskrivelse (valgfrit)</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          {...field}
+                          placeholder="Detaljeret beskrivelse af produktet..."
+                          disabled={isLoading}
+                          className="min-h-[100px] resize-y"
+                        />
+                      </FormControl>
+                      <div className="flex justify-between items-center">
+                        <FormDescription>
+                          Uddybende beskrivelse af produktet
+                        </FormDescription>
+                        <CharacterCounter current={field.value?.length || 0} max={1000} />
                       </div>
-                    )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                    <FormDescription>
-                      {isCreatingCategory 
-                        ? "Indtast navnet på den nye kategori og tryk 'Opret'" 
-                        : "Vælg en eksisterende kategori eller opret en ny"
-                      }
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+                {/* EAN Number */}
+                <FormField
+                  control={form.control}
+                  name="eanNummer"
+                  render={({ field }) => (
+                    <EANInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={errors.eanNummer?.message}
+                      disabled={isLoading}
+                    />
+                  )}
+                />
+              </CardContent>
+            </Card>
 
-          {/* Inventory Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Warehouse className="h-5 w-5" />
-                Lagerstyring
-              </CardTitle>
-              <CardDescription>
-                Aktivér lagerstyring for at spore beholdning
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="lagerstyring.enabled"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Aktivér lagerstyring
-                      </FormLabel>
-                      <FormDescription>
-                        Spor antal på lager og modtag advarsler ved lavt lager
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              {/* Inventory fields - only show when enabled */}
-              {lagerstyringEnabled && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-muted">
+            {/* Pricing and Unit */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Banknote className="h-5 w-5" />
+                  Priser og enheder
+                </CardTitle>
+                <CardDescription>
+                  Prissætning og salgsenheder
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Base Price */}
                   <FormField
                     control={form.control}
-                    name="lagerstyring.antalPaaLager"
+                    name="basispris"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-2">
-                          Antal på lager
-                          <span className="text-red-500">*</span>
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                            placeholder="0"
-                            min="0"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
-                        <FormDescription>
-                          Nuværende antal på lager
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
+                      <CurrencyInput
+                        value={field.value}
+                        onChange={field.onChange}
+                        error={errors.basispris?.message}
+                        disabled={isLoading}
+                      />
                     )}
                   />
 
+                  {/* Unit */}
                   <FormField
                     control={form.control}
-                    name="lagerstyring.minimumslager"
+                    name="enhed"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Minimumslager (valgfrit)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            {...field}
-                            onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                            placeholder="0"
-                            min="0"
-                            disabled={isLoading}
-                          />
-                        </FormControl>
+                        <FormLabel className="flex items-center gap-2">
+                          Enhed
+                          <span className="text-red-500">*</span>
+                        </FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          disabled={isLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Vælg enhed" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {unitOptions.map((unit) => (
+                              <SelectItem key={unit.value} value={unit.value}>
+                                {unit.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormDescription>
-                          Advarsel når lageret kommer under dette niveau
+                          Salgsenheden for produktet
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Product Status */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5" />
-                Produktstatus
-              </CardTitle>
-              <CardDescription>
-                Kontroller produktets synlighed og tilgængelighed
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <FormField
-                control={form.control}
-                name="aktiv"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Produkt aktiv
-                      </FormLabel>
-                      <FormDescription>
-                        Kun aktive produkter vises i kataloget for kunder
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={isLoading}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Image Upload */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ImagePlus className="h-5 w-5" />
-                Produktbilleder
-              </CardTitle>
-              <CardDescription>
-                Upload 1-3 billeder af produktet (JPEG, PNG, WebP - maks. 5MB hver)
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <FormField
-                control={form.control}
-                name="billeder"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      Billeder
-                      <span className="text-red-500">*</span>
-                      <Badge variant="outline" className="ml-2">
-                        {field.value?.length || 0}/3
-                      </Badge>
-                    </FormLabel>
-                    
-                    {/* Enhanced Dropzone */}
-                    <div
-                      {...getRootProps()}
-                      className={cn(
-                        "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
-                        isDragActive 
-                          ? "border-blue-500 bg-blue-50 scale-105 shadow-lg" 
-                          : "border-gray-300 hover:border-blue-400 hover:bg-gray-50",
-                        field.value?.length >= 3 && "opacity-50 cursor-not-allowed border-gray-200"
-                      )}
-                    >
-                      <input {...getInputProps()} disabled={field.value?.length >= 3} />
-                      <div className="flex flex-col items-center gap-3">
-                        <div className={cn(
-                          "p-3 rounded-full transition-colors",
-                          isDragActive ? "bg-blue-100" : "bg-gray-100"
-                        )}>
-                          <Upload className={cn(
-                            "h-8 w-8 transition-colors",
-                            isDragActive ? "text-blue-600" : "text-gray-400"
-                          )} />
-                        </div>
-                        {isDragActive ? (
-                          <div className="space-y-1">
-                            <p className="text-blue-600 font-medium">Slip billederne her nu!</p>
-                            <p className="text-sm text-blue-500">Billederne vil blive tilføjet til produktet</p>
-                          </div>
-                        ) : field.value?.length >= 3 ? (
-                          <div className="space-y-1">
-                            <p className="text-gray-400 font-medium">Maksimalt antal billeder nået</p>
-                            <p className="text-xs text-gray-400">
-                              Du har allerede uploadet 3 billeder (maksimum)
-                            </p>
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <p className="text-sm font-medium text-gray-700">
-                              Træk og slip billeder her, eller klik for at vælge
-                            </p>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <span>JPEG, PNG, WebP</span>
-                              <span>•</span>
-                              <span>Maks. 5MB per billede</span>
-                              <span>•</span>
-                              <span>Op til {3 - (field.value?.length || 0)} billeder tilbage</span>
-                            </div>
-                          </div>
+            {/* Category */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Tags className="h-5 w-5" />
+                  Kategori
+                </CardTitle>
+                <CardDescription>
+                  Produktkategori og klassificering
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="kategori.navn"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Kategori
+                        <span className="text-red-500">*</span>
+                        {isCreatingCategory && (
+                          <Badge variant="secondary" className="ml-2">
+                            Opretter ny kategori
+                          </Badge>
                         )}
+                      </FormLabel>
+                      <div className="flex gap-2">
+                        <Select
+                          onValueChange={(value) => {
+                            if (value === 'create-new') {
+                              setIsCreatingCategory(true);
+                              // Clear the current category selection when creating new
+                              setValue('kategori', { navn: '', isNew: true });
+                            } else {
+                              const category = categories.find(c => c._id === value);
+                              if (category) {
+                                setValue('kategori', { id: category._id, navn: category.navn, isNew: false });
+                              }
+                            }
+                          }}
+                          value={isCreatingCategory ? 'create-new' : (watchedKategori?.id || '')}
+                          disabled={isLoading || isCreatingCategory}
+                        >
+                          <FormControl>
+                            <SelectTrigger className={cn(
+                              "flex-1",
+                              isCreatingCategory && "border-blue-300 bg-blue-50"
+                            )}>
+                              <SelectValue placeholder="Vælg kategori">
+                                {isCreatingCategory 
+                                  ? "Opretter ny kategori..." 
+                                  : (watchedKategori?.navn || 'Vælg kategori')
+                                }
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {categories.map((category) => (
+                              <SelectItem key={category._id} value={category._id}>
+                                {category.navn}
+                              </SelectItem>
+                            ))}
+                            <Separator />
+                            <SelectItem value="create-new">
+                              + Opret ny kategori
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </div>
 
-                    {/* Image Preview Grid */}
-                    {field.value && field.value.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        {field.value.map((image, index) => (
-                          <div key={index} className="relative group">
-                            {/* Image Container with improved aspect ratio */}
-                            <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow duration-200">
-                              <ImagePreview
-                                image={image}
-                                altText={`Produktbillede ${index + 1}`}
-                              />
+                      {/* Create new category */}
+                      {isCreatingCategory && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-sm font-medium text-blue-700">
+                              Opret ny kategori
+                            </span>
+                          </div>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Indtast kategori navn (f.eks. Grøntsager, Frugt, Krydderier)"
+                              value={newCategoryName}
+                              onChange={(e) => setNewCategoryName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleCreateCategory();
+                                }
+                                if (e.key === 'Escape') {
+                                  setIsCreatingCategory(false);
+                                  setNewCategoryName('');
+                                  setValue('kategori', { navn: '', isNew: false });
+                                }
+                              }}
+                              className="flex-1"
+                              autoFocus
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={handleCreateCategory}
+                              disabled={!newCategoryName.trim()}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              Opret
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setIsCreatingCategory(false);
+                                setNewCategoryName('');
+                                setValue('kategori', { navn: '', isNew: false });
+                              }}
+                            >
+                              Annuller
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+
+                      <FormDescription>
+                        {isCreatingCategory 
+                          ? "Indtast navnet på den nye kategori og tryk 'Opret'" 
+                          : "Vælg en eksisterende kategori eller opret en ny"
+                        }
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Inventory Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Warehouse className="h-5 w-5" />
+                  Lagerstyring
+                </CardTitle>
+                <CardDescription>
+                  Aktivér lagerstyring for at spore beholdning
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="lagerstyring.enabled"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Aktivér lagerstyring
+                        </FormLabel>
+                        <FormDescription>
+                          Spor antal på lager og modtag advarsler ved lavt lager
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {/* Inventory fields - only show when enabled */}
+                {lagerstyringEnabled && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-muted">
+                    <FormField
+                      control={form.control}
+                      name="lagerstyring.antalPaaLager"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-2">
+                            Antal på lager
+                            <span className="text-red-500">*</span>
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              placeholder="0"
+                              min="0"
+                              disabled={isLoading}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Nuværende antal på lager
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="lagerstyring.minimumslager"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Minimumslager (valgfrit)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              {...field}
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
+                              placeholder="0"
+                              min="0"
+                              disabled={isLoading}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Advarsel når lageret kommer under dette niveau
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Product Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5" />
+                  Produktstatus
+                </CardTitle>
+                <CardDescription>
+                  Kontroller produktets synlighed og tilgængelighed
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <FormField
+                  control={form.control}
+                  name="aktiv"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">
+                          Produkt aktiv
+                        </FormLabel>
+                        <FormDescription>
+                          Kun aktive produkter vises i kataloget for kunder
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={isLoading}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Image Upload */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ImagePlus className="h-5 w-5" />
+                  Produktbilleder
+                </CardTitle>
+                <CardDescription>
+                  Upload 1-3 billeder af produktet (JPEG, PNG, WebP - maks. 5MB hver)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="billeder"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2">
+                        Billeder
+                        <span className="text-red-500">*</span>
+                        <Badge variant="outline" className="ml-2">
+                          {field.value?.length || 0}/3
+                        </Badge>
+                      </FormLabel>
+                      
+                      {/* Enhanced Dropzone */}
+                      <div
+                        {...getRootProps()}
+                        className={cn(
+                          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
+                          isDragActive 
+                            ? "border-blue-500 bg-blue-50 scale-105 shadow-lg" 
+                            : "border-gray-300 hover:border-blue-400 hover:bg-gray-50",
+                          field.value?.length >= 3 && "opacity-50 cursor-not-allowed border-gray-200"
+                        )}
+                      >
+                        <input {...getInputProps()} disabled={field.value?.length >= 3} />
+                        <div className="flex flex-col items-center gap-3">
+                          <div className={cn(
+                            "p-3 rounded-full transition-colors",
+                            isDragActive ? "bg-blue-100" : "bg-gray-100"
+                          )}>
+                            <Upload className={cn(
+                              "h-8 w-8 transition-colors",
+                              isDragActive ? "text-blue-600" : "text-gray-400"
+                            )} />
+                          </div>
+                          {isDragActive ? (
+                            <div className="space-y-1">
+                              <p className="text-blue-600 font-medium">Slip billederne her nu!</p>
+                              <p className="text-sm text-blue-500">Billederne vil blive tilføjet til produktet</p>
                             </div>
-                            
-                            {/* Enhanced Image Actions Overlay */}
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                              <DialogTrigger asChild>
+                          ) : field.value?.length >= 3 ? (
+                            <div className="space-y-1">
+                              <p className="text-gray-400 font-medium">Maksimalt antal billeder nået</p>
+                              <p className="text-xs text-gray-400">
+                                Du har allerede uploadet 3 billeder (maksimum)
+                              </p>
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <p className="text-sm font-medium text-gray-700">
+                                Træk og slip billeder her, eller klik for at vælge
+                              </p>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span>JPEG, PNG, WebP</span>
+                                <span>•</span>
+                                <span>Maks. 5MB per billede</span>
+                                <span>•</span>
+                                <span>Op til {3 - (field.value?.length || 0)} billeder tilbage</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Image Preview Grid */}
+                      {field.value && field.value.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                          {field.value.map((image, index) => (
+                            <div key={index} className="relative group">
+                              {/* Image Container with improved aspect ratio */}
+                              <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow duration-200">
+                                <ImagePreview
+                                  image={image}
+                                  altText={`Produktbillede ${index + 1}`}
+                                />
+                              </div>
+                              
+                              {/* Enhanced Image Actions Overlay */}
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                                <DialogTrigger asChild>
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="secondary"
+                                    onClick={() => {
+                                      // Preview image in modal
+                                      setImageToPreview(image);
+                                    }}
+                                    className="bg-white/90 text-gray-900 hover:bg-white shadow-lg backdrop-blur-sm"
+                                    title="Forhåndsvis billede"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
                                 <Button
                                   type="button"
                                   size="sm"
-                                  variant="secondary"
-                                  onClick={() => {
-                                    // Preview image in modal
-                                    setImageToPreview(image);
-                                  }}
-                                  className="bg-white/90 text-gray-900 hover:bg-white shadow-lg backdrop-blur-sm"
-                                  title="Forhåndsvis billede"
+                                  variant="destructive"
+                                  onClick={() => removeImage(index)}
+                                  className="bg-red-500/90 hover:bg-red-600 shadow-lg backdrop-blur-sm"
+                                  title="Fjern billede"
                                 >
-                                  <Eye className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
-                              </DialogTrigger>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => removeImage(index)}
-                                className="bg-red-500/90 hover:bg-red-600 shadow-lg backdrop-blur-sm"
-                                title="Fjern billede"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            
-                            {/* Enhanced Primary Badge */}
-                            {index === 0 && (
-                              <Badge 
-                                variant="default" 
-                                className="absolute top-2 left-2 text-xs bg-blue-600 hover:bg-blue-700 shadow-md"
-                              >
-                                Primær
-                              </Badge>
-                            )}
-                            
-                            {/* Image Info Badge */}
-                            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
-                              {index + 1}/{field.value.length}
-                            </div>
-                            
-                            {/* Loading Indicator for Processing */}
-                            {image.id && uploadingImages.has(image.id) && (
-                              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
-                                <div className="flex flex-col items-center gap-2">
-                                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                                  <span className="text-xs text-gray-600">Behandler...</span>
-                                </div>
                               </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                              
+                              {/* Enhanced Primary Badge */}
+                              {index === 0 && (
+                                <Badge 
+                                  variant="default" 
+                                  className="absolute top-2 left-2 text-xs bg-blue-600 hover:bg-blue-700 shadow-md"
+                                >
+                                  Primær
+                                </Badge>
+                              )}
+                              
+                              {/* Image Info Badge */}
+                              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                                {index + 1}/{field.value.length}
+                              </div>
+                              
+                              {/* Loading Indicator for Processing */}
+                              {image.id && uploadingImages.has(image.id) && (
+                                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                                  <div className="flex flex-col items-center gap-2">
+                                    <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                    <span className="text-xs text-gray-600">Behandler...</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-                    <FormDescription>
-                      Det første billede vil blive brugt som primært produktbillede. 
-                      Du kan uploade op til 3 billeder.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </CardContent>
-          </Card>
+                      <FormDescription>
+                        Det første billede vil blive brugt som primært produktbillede. 
+                        Du kan uploade op til 3 billeder.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
 
-          {/* Form Actions */}
-          <div className="flex items-center justify-between pt-6 border-t">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {hasMeaningfulChanges && (
-                <>
-                  <AlertTriangle className="h-4 w-4" />
-                  Du har ugemte ændringer
-                </>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-                disabled={isLoading}
-              >
-                <X className="h-4 w-4 mr-2" />
-                Annuller
-              </Button>
-              
-              <Button
-                type="submit"
-                disabled={!isValid || isLoading}
-                className="min-w-[120px]"
-                onClick={() => {
-                  // Debug form state
-                  console.log('🔍 Form Debug Info:', {
-                    isValid,
-                    errors,
-                    formValues: form.getValues(),
-                    isDirty,
-                    isLoading
-                  });
-                }}
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Gemmer...
-                  </div>
-                ) : (
+            {/* Form Actions */}
+            <div className="flex items-center justify-between pt-6 border-t">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {hasMeaningfulChanges && (
                   <>
-                    <Save className="h-4 w-4 mr-2" />
-                    {mode === 'create' ? 'Opret produkt' : 'Gem ændringer'}
+                    <AlertTriangle className="h-4 w-4" />
+                    Du har ugemte ændringer
                   </>
                 )}
-              </Button>
+              </div>
+              
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isLoading}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Annuller
+                </Button>
+                
+                <Button
+                  type="submit"
+                  disabled={!isValid || isLoading}
+                  className="min-w-[120px]"
+                  onClick={() => {
+                    // Debug form state
+                    console.log('🔍 Form Debug Info:', {
+                      isValid,
+                      errors,
+                      formValues: form.getValues(),
+                      isDirty,
+                      isLoading
+                    });
+                  }}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Gemmer...
+                    </div>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      {mode === 'create' ? 'Opret produkt' : 'Gem ændringer'}
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
-          </div>
-        </form>
-      </Form>
+          </form>
+        </Form>
 
-      <Dialog open={!!imageToPreview} onOpenChange={(isOpen) => !isOpen && setImageToPreview(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>Forhåndsvisning af Billede</DialogTitle>
@@ -1107,7 +1107,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
-    </div>
+      </div>
+    </Dialog>
   );
 }; 
