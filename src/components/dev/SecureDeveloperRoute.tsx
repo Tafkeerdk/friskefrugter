@@ -91,11 +91,13 @@ export const SecureDeveloperRoute: React.FC = () => {
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
           (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
         
+        // Fix URL encoding - ensure proper encoding of the token
         const encodedToken = encodeURIComponent(SECURE_TOKEN);
         const response = await fetch(`${API_BASE_URL}/api/auth/dev/server-logs?token=${encodedToken}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
           },
         });
 
@@ -122,20 +124,22 @@ export const SecureDeveloperRoute: React.FC = () => {
             });
           }
         } else {
-          console.error('Failed to fetch server logs:', response.status);
+          const errorText = await response.text().catch(() => 'Unknown error');
+          console.error('Failed to fetch server logs:', response.status, errorText);
           setServerLogs(prev => [{
             timestamp: new Date().toISOString(),
             level: 'error',
-            message: `❌ Failed to fetch server logs: ${response.status}`,
+            message: `❌ Failed to fetch server logs: ${response.status} - ${errorText}`,
             source: 'client'
           }, ...prev]);
         }
       } catch (error) {
         console.error('❌ Server logs fetch error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setServerLogs(prev => [{
           timestamp: new Date().toISOString(),
           level: 'error',
-          message: `❌ Server logs connection error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `❌ Server logs connection error: ${errorMessage}`,
           source: 'client'
         }, ...prev]);
       }
@@ -215,15 +219,22 @@ export const SecureDeveloperRoute: React.FC = () => {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       });
 
       if (response.ok) {
         const data: DevMetricsResponse = await response.json();
-        setRealTimeMetrics(data.serverMetrics);
+        if (data.success) {
+          setRealTimeMetrics(data.serverMetrics);
+        }
+      } else {
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error(`❌ Failed to fetch real-time metrics: ${response.status} - ${errorText}`);
       }
     } catch (error) {
-      console.error('❌ Failed to fetch real-time metrics:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('❌ Failed to fetch real-time metrics:', errorMessage);
     }
   };
 
@@ -244,25 +255,29 @@ export const SecureDeveloperRoute: React.FC = () => {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
         (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
       
-      // Use proper URL encoding for the token to fix decoding errors
+      // Fix URL encoding issue - use proper encoding for the token
+      // The token contains special characters that need proper encoding
       const encodedToken = encodeURIComponent(inputToken);
       
       const response = await fetch(`${API_BASE_URL}/api/auth/dev/performance-metrics?token=${encodedToken}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
       });
 
       if (response.status === 403) {
         console.warn('🚨 Server rejected developer token');
-        setError('Access denied by server - invalid token');
+        setError('Access denied by server - invalid token or connection error');
         setAttemptCount(prev => prev + 1);
         return;
       }
 
       if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
+        const errorText = await response.text().catch(() => 'Unknown error');
+        console.error('Server error response:', response.status, errorText);
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
       }
 
       const data: DevMetricsResponse = await response.json();
@@ -273,13 +288,14 @@ export const SecureDeveloperRoute: React.FC = () => {
         setServerMetrics(data.serverMetrics);
         setToken(''); // Clear token from memory
       } else {
-        setError('Invalid server response');
+        setError('Invalid server response - authentication failed');
         setAttemptCount(prev => prev + 1);
       }
 
     } catch (err) {
       console.error('❌ Developer route error:', err);
-      setError(err instanceof Error ? err.message : 'Connection error');
+      const errorMessage = err instanceof Error ? err.message : 'Connection error';
+      setError(`Connection failed: ${errorMessage}`);
       setAttemptCount(prev => prev + 1);
     } finally {
       setIsLoading(false);
@@ -308,6 +324,7 @@ export const SecureDeveloperRoute: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
         body: JSON.stringify({ token: resetToken.trim() })
       });
@@ -315,16 +332,29 @@ export const SecureDeveloperRoute: React.FC = () => {
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setResetMessage('✅ Rate limit reset successful! Admin login attempts have been cleared.');
+        const resetInfo = data.resetLimiters ? ` (${data.resetLimiters.join(', ')})` : '';
+        setResetMessage(`✅ Rate limit reset successful! Admin login attempts have been cleared${resetInfo}.`);
         setResetToken('');
         setShowRateLimitReset(false);
+        
+        // Add success log to server logs if monitoring is active
+        if (isRealTimeMonitoring) {
+          setServerLogs(prev => [{
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: `🔄 Rate limits reset successfully for IP: ${data.ip}`,
+            source: 'admin-action'
+          }, ...prev]);
+        }
       } else {
-        setResetMessage('❌ Invalid developer token or reset failed.');
+        const errorMsg = data.message || 'Invalid developer token or reset failed';
+        setResetMessage(`❌ ${errorMsg}`);
       }
 
     } catch (err) {
       console.error('Rate limit reset error:', err);
-      setResetMessage('❌ Connection error - could not reset rate limit.');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setResetMessage(`❌ Connection error - could not reset rate limit: ${errorMessage}`);
     } finally {
       setIsResetting(false);
     }
