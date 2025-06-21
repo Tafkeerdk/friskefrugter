@@ -16,12 +16,20 @@ class ApiClient {
   ): Promise<{ success: boolean; data?: T; error?: string; validationErrors?: any[] }> {
     const url = `${this.baseURL}${endpoint}`;
     
+    console.log('🌐 Making API request to:', url);
+    console.log('📤 Request method:', options.method || 'GET');
+    console.log('📦 Request body type:', options.body ? options.body.constructor.name : 'none');
+    
     // Get auth token from localStorage (correct key)
     const token = localStorage.getItem('accessToken');
     
-    const defaultHeaders: HeadersInit = {
-      'Content-Type': 'application/json',
-    };
+    // Only set default Content-Type if not explicitly overridden
+    const defaultHeaders: HeadersInit = {};
+    
+    // Don't set Content-Type for FormData - let browser set it with boundary
+    if (!(options.body instanceof FormData)) {
+      defaultHeaders['Content-Type'] = 'application/json';
+    }
 
     if (token) {
       // Validate token expiry before using it
@@ -53,8 +61,16 @@ class ApiClient {
       credentials: 'include',
     };
 
+    console.log('📋 Final request headers:', config.headers);
+
     try {
+      console.log('🚀 Sending request...');
+      const startTime = Date.now();
       const response = await fetch(url, config);
+      const duration = Date.now() - startTime;
+      
+      console.log(`📡 Response status: ${response.status} for ${url}`);
+      console.log(`⏱️ Request duration: ${duration}ms`);
       
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type');
@@ -63,6 +79,7 @@ class ApiClient {
       if (contentType && contentType.includes('application/json')) {
         try {
           data = await response.json();
+          console.log('📥 Response data:', data);
         } catch (parseError) {
           console.error('JSON parse error:', parseError);
           throw new Error('Invalid JSON response from server');
@@ -89,6 +106,7 @@ class ApiClient {
                 Authorization: `Bearer ${newToken}`,
               },
             };
+            console.log('🔄 Retrying request with new token...');
             const retryResponse = await fetch(url, retryConfig);
             const retryContentType = retryResponse.headers.get('content-type');
             
@@ -101,6 +119,7 @@ class ApiClient {
             if (!retryResponse.ok) {
               throw new Error(data.error || `HTTP error! status: ${retryResponse.status}`);
             }
+            console.log('✅ Retry successful');
             return data;
           }
         } else {
@@ -111,12 +130,14 @@ class ApiClient {
       }
       
       if (!response.ok) {
+        console.error('❌ Request failed:', data);
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
       
+      console.log(`📊 API ${options.method || 'GET'} ${url}: ${duration}ms ✅`);
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('❌ API request failed:', error);
       throw error;
     }
   }
@@ -213,10 +234,13 @@ class ApiClient {
 
   async createProduct(productData: FormData) {
     const endpoint = this.getEndpoint('/api/products');
+    console.log('🛍️ Creating product via endpoint:', endpoint);
+    console.log('📦 FormData keys:', Array.from(productData.keys()));
+    
     return this.request(endpoint, {
       method: 'POST',
       body: productData,
-      headers: {}, // Let browser set Content-Type for FormData
+      // Don't set any headers - let browser handle FormData with proper boundary
     });
   }
 
