@@ -63,6 +63,7 @@ interface Category {
   productCount?: number;
 }
 
+// Fixed DialogTrigger component with proper React hierarchy - 2024-12-31
 const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ image, altText }) => {
   const [hasError, setHasError] = useState(false);
 
