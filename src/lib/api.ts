@@ -166,6 +166,25 @@ class ApiClient {
     localStorage.removeItem('user');
   }
 
+  // Helper method to get correct endpoint based on environment
+  private getEndpoint(path: string): string {
+    // In development, use Express routes directly
+    if (import.meta.env.DEV) {
+      return path;
+    }
+    
+    // In production, route to appropriate Netlify functions
+    if (path.startsWith('/api/products')) {
+      return path.replace('/api/products', '/.netlify/functions/products');
+    }
+    if (path.startsWith('/api/categories')) {
+      return path.replace('/api/categories', '/.netlify/functions/categories');
+    }
+    
+    // Default: use main API function
+    return path;
+  }
+
   // Product API methods
   async getProducts(params: {
     page?: number;
@@ -183,15 +202,18 @@ class ApiClient {
       }
     });
     
-    return this.request(`/api/products?${searchParams.toString()}`);
+    const endpoint = this.getEndpoint(`/api/products?${searchParams.toString()}`);
+    return this.request(endpoint);
   }
 
   async getProduct(id: string) {
-    return this.request(`/api/products/${id}`);
+    const endpoint = this.getEndpoint(`/api/products/${id}`);
+    return this.request(endpoint);
   }
 
   async createProduct(productData: FormData) {
-    return this.request('/api/products', {
+    const endpoint = this.getEndpoint('/api/products');
+    return this.request(endpoint, {
       method: 'POST',
       body: productData,
       headers: {}, // Let browser set Content-Type for FormData
@@ -199,7 +221,8 @@ class ApiClient {
   }
 
   async updateProduct(id: string, productData: FormData) {
-    return this.request(`/api/products/${id}`, {
+    const endpoint = this.getEndpoint(`/api/products/${id}`);
+    return this.request(endpoint, {
       method: 'PUT',
       body: productData,
       headers: {}, // Let browser set Content-Type for FormData
@@ -207,7 +230,8 @@ class ApiClient {
   }
 
   async deleteProduct(id: string) {
-    return this.request(`/api/products/${id}`, {
+    const endpoint = this.getEndpoint(`/api/products/${id}`);
+    return this.request(endpoint, {
       method: 'DELETE',
     });
   }
@@ -226,22 +250,26 @@ class ApiClient {
       }
     });
     
-    return this.request(`/api/products/search?${searchParams.toString()}`);
+    const endpoint = this.getEndpoint(`/api/products/search?${searchParams.toString()}`);
+    return this.request(endpoint);
   }
 
   async getLowStockProducts() {
-    return this.request('/api/products/low-stock');
+    const endpoint = this.getEndpoint('/api/products/low-stock');
+    return this.request(endpoint);
   }
 
   async updateStock(id: string, quantity: number, operation: 'set' | 'add' | 'subtract' = 'set') {
-    return this.request(`/api/products/${id}/stock`, {
+    const endpoint = this.getEndpoint(`/api/products/${id}/stock`);
+    return this.request(endpoint, {
       method: 'POST',
       body: JSON.stringify({ quantity, operation }),
     });
   }
 
   async deleteProductImage(productId: string, imageId: string) {
-    return this.request(`/api/products/${productId}/images/${imageId}`, {
+    const endpoint = this.getEndpoint(`/api/products/${productId}/images/${imageId}`);
+    return this.request(endpoint, {
       method: 'DELETE',
     });
   }
@@ -260,15 +288,18 @@ class ApiClient {
       }
     });
     
-    return this.request(`/api/categories?${searchParams.toString()}`);
+    const endpoint = this.getEndpoint(`/api/categories?${searchParams.toString()}`);
+    return this.request(endpoint);
   }
 
   async getCategory(id: string) {
-    return this.request(`/api/categories/${id}`);
+    const endpoint = this.getEndpoint(`/api/categories/${id}`);
+    return this.request(endpoint);
   }
 
   async getCategoryBySlug(slug: string) {
-    return this.request(`/api/categories/slug/${slug}`);
+    const endpoint = this.getEndpoint(`/api/categories/slug/${slug}`);
+    return this.request(endpoint);
   }
 
   async createCategory(categoryData: {
@@ -278,7 +309,8 @@ class ApiClient {
     sortOrder?: number;
     aktiv?: boolean;
   }) {
-    return this.request('/api/categories', {
+    const endpoint = this.getEndpoint('/api/categories');
+    return this.request(endpoint, {
       method: 'POST',
       body: JSON.stringify(categoryData),
     });
@@ -291,14 +323,16 @@ class ApiClient {
     sortOrder?: number;
     aktiv?: boolean;
   }) {
-    return this.request(`/api/categories/${id}`, {
+    const endpoint = this.getEndpoint(`/api/categories/${id}`);
+    return this.request(endpoint, {
       method: 'PUT',
       body: JSON.stringify(categoryData),
     });
   }
 
   async deleteCategory(id: string) {
-    return this.request(`/api/categories/${id}`, {
+    const endpoint = this.getEndpoint(`/api/categories/${id}`);
+    return this.request(endpoint, {
       method: 'DELETE',
     });
   }
@@ -317,22 +351,26 @@ class ApiClient {
       }
     });
     
-    return this.request(`/api/categories/${id}/products?${searchParams.toString()}`);
+    const endpoint = this.getEndpoint(`/api/categories/${id}/products?${searchParams.toString()}`);
+    return this.request(endpoint);
   }
 
   async reorderCategories(categoryIds: string[]) {
-    return this.request('/api/categories/reorder', {
+    const endpoint = this.getEndpoint('/api/categories/reorder');
+    return this.request(endpoint, {
       method: 'POST',
       body: JSON.stringify({ categoryIds }),
     });
   }
 
   async getCategoryHierarchy() {
-    return this.request('/api/categories/hierarchy');
+    const endpoint = this.getEndpoint('/api/categories/hierarchy');
+    return this.request(endpoint);
   }
 
   async updateCategoryProductCounts() {
-    return this.request('/api/categories/bulk-update-counts', {
+    const endpoint = this.getEndpoint('/api/categories/bulk-update-counts');
+    return this.request(endpoint, {
       method: 'POST',
     });
   }
