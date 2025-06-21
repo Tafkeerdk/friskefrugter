@@ -11,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-import { useDropzone } from 'react-dropzone';
+
 import { 
   Save, 
   X, 
@@ -34,6 +34,7 @@ import { ProductFormData, ProductSetupFormProps, ProductImage } from '@/types/pr
 import { productSetupSchema } from './validation/productSchema';
 import { EANInput } from './components/EANInput';
 import { CurrencyInput } from './components/CurrencyInput';
+import ProductImageUploader, { UploadedImage } from './components/ProductImageUploader';
 import { api, productFormDataToFormData, handleApiError } from '@/lib/api';
 
 // Unit options with Danish labels
@@ -65,7 +66,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
+  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSetupSchema),
@@ -138,70 +139,53 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     loadCategories();
   }, [toast]);
 
-  // Image upload handlers
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const currentImages = form.getValues('billeder') || [];
+  // Handle uploaded images change
+  const handleImagesChange = useCallback((newImages: UploadedImage[]) => {
+    setUploadedImages(newImages);
     
-    if (currentImages.length + acceptedFiles.length > 3) {
-      toast({
-        title: 'For mange billeder',
-        description: 'Du kan maksimalt uploade 3 billeder per produkt.',
-        variant: 'destructive',
-        duration: 3000,
-      });
-      return;
-    }
-
-    const newImages: ProductImage[] = acceptedFiles.map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
-      compressed: false,
-    }));
-
-    form.setValue('billeder', [...currentImages, ...newImages]);
-  }, [form, toast]);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: {
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png'],
-      'image/webp': ['.webp']
-    },
-    maxFiles: 3,
-    maxSize: 5 * 1024 * 1024 // 5MB
-  });
-
-  const removeImage = (index: number) => {
-    const currentImages = form.getValues('billeder') || [];
-    const imageToRemove = currentImages[index];
+    // Convert UploadedImage[] to ProductImage[] for form
+    const productImages: ProductImage[] = newImages
+      .filter(img => img.uploadStatus === 'completed')
+      .map(img => ({
+        file: img.file,
+        preview: img.cdnUrl || img.preview,
+        compressed: false,
+        id: img.id
+      }));
     
-    // Revoke object URL to prevent memory leaks
-    if (imageToRemove.preview) {
-      URL.revokeObjectURL(imageToRemove.preview);
-    }
-    
-    const newImages = currentImages.filter((_, i) => i !== index);
-    form.setValue('billeder', newImages);
-  };
+    form.setValue('billeder', productImages);
+  }, [form]);
 
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
-      const images = form.getValues('billeder') || [];
-      images.forEach(image => {
+      uploadedImages.forEach(image => {
         if (image.preview) {
           URL.revokeObjectURL(image.preview);
         }
       });
     };
-  }, [form]);
+  }, [uploadedImages]);
 
   // Handle form submission
   const handleSubmit = async (data: ProductFormData) => {
     try {
-      // Convert form data to FormData for API
-      const images = data.billeder?.map(b => b.file).filter(Boolean) || [];
+      // Get completed uploads only
+      const completedImages = uploadedImages.filter(img => img.uploadStatus === 'completed');
+      
+      // Check if we have at least one image
+      if (completedImages.length === 0) {
+        toast({
+          title: 'Manglende billeder',
+          description: 'Du skal uploade mindst ét billede før du kan oprette produktet.',
+          variant: 'destructive',
+          duration: 5000,
+        });
+        return;
+      }
+      
+      // Convert uploaded images to files for API
+      const images = completedImages.map(img => img.file);
       const formData = productFormDataToFormData(data, images);
       
       let response;
@@ -742,7 +726,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                 Upload 1-3 billeder af produktet (JPEG, PNG, WebP - maks. 5MB hver)
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <FormField
                 control={form.control}
                 name="billeder"
@@ -751,90 +735,15 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                     <FormLabel className="flex items-center gap-2">
                       Billeder
                       <span className="text-red-500">*</span>
-                      <Badge variant="outline" className="ml-2">
-                        {field.value?.length || 0}/3
-                      </Badge>
                     </FormLabel>
                     
-                    {/* Dropzone */}
-                    <div
-                      {...getRootProps()}
-                      className={cn(
-                        "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
-                        isDragActive 
-                          ? "border-blue-400 bg-blue-50" 
-                          : "border-gray-300 hover:border-gray-400",
-                        field.value?.length >= 3 && "opacity-50 cursor-not-allowed"
-                      )}
-                    >
-                      <input {...getInputProps()} disabled={field.value?.length >= 3} />
-                      <div className="flex flex-col items-center gap-2">
-                        <Upload className="h-8 w-8 text-gray-400" />
-                        {isDragActive ? (
-                          <p className="text-blue-600">Slip billederne her...</p>
-                        ) : (
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium">
-                              Træk og slip billeder her, eller klik for at vælge
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              JPEG, PNG, WebP - maks. 5MB per billede
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Image Preview Grid */}
-                    {field.value && field.value.length > 0 && (
-                      <div className="grid grid-cols-3 gap-4 mt-4">
-                        {field.value.map((image, index) => (
-                          <div key={index} className="relative group">
-                            <div className="aspect-square rounded-lg overflow-hidden border bg-gray-50">
-                              <img
-                                src={image.preview}
-                                alt={`Produktbillede ${index + 1}`}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            
-                            {/* Image Actions */}
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => {
-                                  // Preview image in modal
-                                  window.open(image.preview, '_blank');
-                                }}
-                                className="bg-white text-black hover:bg-gray-100"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => removeImage(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            
-                            {/* Primary Badge */}
-                            {index === 0 && (
-                              <Badge 
-                                variant="default" 
-                                className="absolute top-2 left-2 text-xs"
-                              >
-                                Primær
-                              </Badge>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <ProductImageUploader
+                      images={uploadedImages}
+                      onImagesChange={handleImagesChange}
+                      maxImages={3}
+                      maxFileSize={5 * 1024 * 1024}
+                      disabled={isLoading}
+                    />
 
                     <FormDescription>
                       Det første billede vil blive brugt som primært produktbillede. 
