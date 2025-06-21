@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ProductSetupForm } from './ProductSetupForm';
-import { ProductFormData } from '@/types/product';
+import { ProductFormData, ProductImage } from '@/types/product';
 import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,20 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
           const response = await api.getProduct(productId);
           if (response.success && response.data) {
             const product = response.data as any;
+            
+            // Convert existing images to ProductImage format
+            const existingImages: ProductImage[] = product.billeder?.map((img: any, index: number) => ({
+              _id: img._id,
+              url: img.url,
+              filename: img.filename,
+              originalname: img.originalname,
+              size: img.size,
+              uploadedAt: img.uploadedAt,
+              isExisting: true,
+              isPrimary: index === 0, // First image is primary by default
+              preview: img.url // Use the actual URL as preview for existing images
+            })) || [];
+            
             setInitialData({
               produktnavn: product.produktnavn,
               beskrivelse: product.beskrivelse,
@@ -47,7 +61,7 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
                 isNew: false 
               },
               lagerstyring: product.lagerstyring,
-              billeder: [], // Convert URLs to File objects would be complex
+              billeder: existingImages,
               aktiv: product.aktiv
             });
           }
@@ -133,6 +147,7 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
         {/* Main Form */}
         <ProductSetupForm
           initialData={initialData}
+          productId={productId}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           mode={isEditMode ? 'edit' : 'create'}

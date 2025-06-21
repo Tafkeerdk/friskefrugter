@@ -70,14 +70,18 @@ const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ imag
 
   useEffect(() => {
     setHasError(false);
-  }, [image.preview]);
+  }, [image.preview, image.url]);
 
-  if (hasError || !image.preview) {
+  const imageUrl = image.preview || image.url;
+
+  if (hasError || !imageUrl) {
     return (
       <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
         <div className="text-center p-2">
           <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-          <p className="text-xs">Kunne ikke vise billede</p>
+          <p className="text-xs">
+            {image.isExisting ? 'Eksisterende billede' : 'Kunne ikke vise billede'}
+          </p>
         </div>
       </div>
     );
@@ -85,11 +89,11 @@ const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ imag
 
   return (
     <img
-      src={image.preview}
+      src={imageUrl}
       alt={altText}
       className="w-full h-full object-contain bg-white"
       onError={() => {
-        console.warn(`Could not load preview: ${altText}`);
+        console.warn(`Could not load image: ${altText}`, { imageUrl, isExisting: image.isExisting });
         setHasError(true);
       }}
     />
@@ -98,6 +102,7 @@ const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ imag
 
 export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   initialData,
+  productId,
   onSubmit,
   onCancel,
   mode = 'create',
@@ -110,6 +115,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
   const [imageToPreview, setImageToPreview] = useState<ProductImage | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false); // Prevent multiple submissions
+  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]); // Track deleted existing images
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSetupSchema),
@@ -312,12 +319,39 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     }
   }, [fileRejections, toast]);
 
-  const removeImage = (index: number) => {
+  const removeImage = async (index: number) => {
     const currentImages = form.getValues('billeder') || [];
     const imageToRemove = currentImages[index];
     
-    // Revoke object URL to prevent memory leaks
-    if (imageToRemove.preview) {
+    // If it's an existing image, add to deleted list and potentially delete from server
+    if (imageToRemove.isExisting && imageToRemove._id) {
+      if (mode === 'edit' && productId) {
+        try {
+          // Delete from server immediately for edit mode
+          await api.deleteProductImage(productId, imageToRemove._id);
+          toast({
+            title: 'Billede slettet',
+            description: 'Billedet blev fjernet fra serveren.',
+            duration: 2000,
+          });
+        } catch (error) {
+          console.error('Failed to delete image:', error);
+          toast({
+            title: 'Fejl ved sletning',
+            description: 'Kunne ikke slette billedet fra serveren.',
+            variant: 'destructive',
+            duration: 3000,
+          });
+          return; // Don't remove from UI if server deletion failed
+        }
+      } else {
+        // For edit mode without immediate server deletion, track for later
+        setDeletedImageIds(prev => [...prev, imageToRemove._id!]);
+      }
+    }
+    
+    // Revoke object URL to prevent memory leaks (for new uploads)
+    if (imageToRemove.preview && !imageToRemove.isExisting) {
       URL.revokeObjectURL(imageToRemove.preview);
     }
     
@@ -338,7 +372,9 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     // Show feedback
     toast({
       title: 'Billede fjernet',
-      description: 'Billedet blev fjernet fra produktet.',
+      description: imageToRemove.isExisting 
+        ? 'Eksisterende billede blev fjernet fra produktet.' 
+        : 'Nyt billede blev fjernet fra upload.',
       duration: 2000,
     });
   };
@@ -374,19 +410,37 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     };
   }, [form]);
 
-  // Handle form submission
+  // Handle form submission with protection against multiple requests
   const handleSubmit = async (data: ProductFormData) => {
+    // Prevent multiple submissions (Nielsen's usability heuristics)
+    if (isSubmitting) {
+      toast({
+        title: 'Vent venligst',
+        description: 'Produktet bliver allerede gemt...',
+        variant: 'default',
+        duration: 2000,
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
     try {
+      // Separate new uploads from existing images
+      const newUploads = data.billeder?.filter(img => !img.isExisting && img.file) || [];
+      const existingImages = data.billeder?.filter(img => img.isExisting) || [];
+      
       // Convert form data to FormData for API
-      const images = data.billeder?.map(b => b.file).filter(Boolean) || [];
-      const formData = productFormDataToFormData(data, images);
+      const images = newUploads.map(img => img.file!);
+      const formData = productFormDataToFormData(data, images, existingImages, deletedImageIds);
       
       let response;
       if (mode === 'create') {
         response = await api.createProduct(formData);
+      } else if (mode === 'edit' && productId) {
+        response = await api.updateProduct(productId, formData);
       } else {
-        // For edit mode, we'd need the product ID
-        throw new Error('Edit mode not implemented yet');
+        throw new Error('Edit mode requires product ID');
       }
       
       if (response.success) {
@@ -407,6 +461,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
         variant: 'destructive',
         duration: 5000,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1109,7 +1165,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                 
                 <Button
                   type="submit"
-                  disabled={!isValid || isLoading}
+                  disabled={!isValid || isLoading || isSubmitting}
                   className="min-w-[120px]"
                   onClick={() => {
                     // Debug form state
@@ -1118,14 +1174,15 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                       errors,
                       formValues: form.getValues(),
                       isDirty,
-                      isLoading
+                      isLoading,
+                      isSubmitting
                     });
                   }}
                 >
-                  {isLoading ? (
+                  {isLoading || isSubmitting ? (
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Gemmer...
+                      {isSubmitting ? 'Gemmer...' : 'Indlæser...'}
                     </div>
                   ) : (
                     <>

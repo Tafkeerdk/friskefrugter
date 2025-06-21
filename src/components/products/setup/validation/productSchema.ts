@@ -103,23 +103,48 @@ const lagerstyringSchema = z.object({
   path: ['minimumslager']
 });
 
-// Image validation
+// Image validation - supports both new uploads and existing images
 const billedeSchema = z.object({
-  file: z.instanceof(File, { message: 'Ugyldig fil' }),
-  preview: z.string().url('Ugyldig preview URL'),
+  // For new uploads
+  file: z.instanceof(File, { message: 'Ugyldig fil' }).optional(),
+  preview: z.string().optional(),
   compressed: z.boolean().default(false),
-  id: z.string().optional()
+  id: z.string().optional(),
+  isPrimary: z.boolean().optional(),
+  
+  // For existing images from database
+  _id: z.string().optional(),
+  url: z.string().optional(),
+  filename: z.string().optional(),
+  originalname: z.string().optional(),
+  size: z.number().optional(),
+  uploadedAt: z.string().optional(),
+  
+  // Indicates if this is an existing image or new upload
+  isExisting: z.boolean().optional()
 }).refine((data) => {
-  // Validate file type
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-  return allowedTypes.includes(data.file.type);
+  // Either it's an existing image (has url) or a new upload (has file)
+  return (data.isExisting && data.url) || (!data.isExisting && data.file);
+}, {
+  message: 'Billede skal enten være en eksisterende fil eller en ny upload',
+  path: ['file']
+}).refine((data) => {
+  // For new uploads, validate file type
+  if (!data.isExisting && data.file) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    return allowedTypes.includes(data.file.type);
+  }
+  return true;
 }, {
   message: 'Kun JPEG, PNG og WebP billeder er tilladt',
   path: ['file']
 }).refine((data) => {
-  // Validate file size (5MB max)
-  const maxSize = 5 * 1024 * 1024;
-  return data.file.size <= maxSize;
+  // For new uploads, validate file size (5MB max)
+  if (!data.isExisting && data.file) {
+    const maxSize = 5 * 1024 * 1024;
+    return data.file.size <= maxSize;
+  }
+  return true;
 }, {
   message: 'Billedet må maksimalt være 5MB',
   path: ['file']

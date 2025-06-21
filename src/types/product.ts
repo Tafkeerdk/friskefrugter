@@ -19,11 +19,23 @@ export interface ProductFormData {
 }
 
 export interface ProductImage {
-  file: File;
-  preview: string;
-  compressed: boolean;
+  // For new uploads
+  file?: File;
+  preview?: string;
+  compressed?: boolean;
   id?: string;
   isPrimary?: boolean;
+  
+  // For existing images from database
+  _id?: string;
+  url?: string;
+  filename?: string;
+  originalname?: string;
+  size?: number;
+  uploadedAt?: string;
+  
+  // Indicates if this is an existing image or new upload
+  isExisting?: boolean;
 }
 
 export interface Category {
@@ -55,6 +67,7 @@ export interface Product {
 
 export interface ProductSetupFormProps {
   initialData?: Partial<ProductFormData>;
+  productId?: string; // For edit mode
   onSubmit: (data: ProductFormData) => Promise<void>;
   onCancel: () => void;
   mode: 'create' | 'edit';

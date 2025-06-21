@@ -410,7 +410,7 @@ class ApiClient {
 export const api = new ApiClient(API_BASE_URL);
 
 // Helper function to convert ProductFormData to FormData for API
-export const productFormDataToFormData = (productData: any, images?: File[]): FormData => {
+export const productFormDataToFormData = (productData: any, images?: File[], existingImages?: any[], deletedImageIds?: string[]): FormData => {
   const formData = new FormData();
   
   // Add individual form fields (not as JSON string)
@@ -423,7 +423,17 @@ export const productFormDataToFormData = (productData: any, images?: File[]): Fo
   formData.append('lagerstyring', JSON.stringify(productData.lagerstyring));
   formData.append('aktiv', productData.aktiv?.toString() || 'true');
   
-  // Add image files in correct order (primary first)
+  // Add existing images information (for edit mode)
+  if (existingImages && existingImages.length > 0) {
+    formData.append('existingImages', JSON.stringify(existingImages));
+  }
+  
+  // Add deleted image IDs (for edit mode)
+  if (deletedImageIds && deletedImageIds.length > 0) {
+    formData.append('deletedImageIds', JSON.stringify(deletedImageIds));
+  }
+  
+  // Add new image files in correct order (primary first)
   if (images && images.length > 0) {
     // If we have ProductImage objects with isPrimary, sort them
     if (productData.billeder && productData.billeder.length > 0) {
@@ -436,11 +446,10 @@ export const productFormDataToFormData = (productData: any, images?: File[]): Fo
         return 0;
       });
       
-      // Add files in the sorted order
+      // Add files in the sorted order (only new uploads)
       sortedImages.forEach((imageData, index) => {
-        const file = imageData.file;
-        if (file) {
-          formData.append('billeder', file);
+        if (!imageData.isExisting && imageData.file) {
+          formData.append('billeder', imageData.file);
         }
       });
     } else {
@@ -453,7 +462,9 @@ export const productFormDataToFormData = (productData: any, images?: File[]): Fo
   
   console.log('📦 FormData prepared:', {
     fields: Array.from(formData.keys()),
-    imageCount: images?.length || 0,
+    newImageCount: images?.length || 0,
+    existingImageCount: existingImages?.length || 0,
+    deletedImageCount: deletedImageIds?.length || 0,
     primaryImageFirst: productData.billeder?.some((img: any) => img.isPrimary) || false
   });
   
