@@ -24,6 +24,7 @@ import AdminProfile from "./pages/AdminProfile";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
+import ProductSetup from "./pages/ProductSetup";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -101,6 +102,22 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardCategories />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/products/new" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <ProductSetup />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/products/edit/:id" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <ProductSetup />
                 </ProtectedRoute>
               } 
             />
@@ -193,6 +210,22 @@ const App = () => (
               element={
                 <ProtectedRoute requireCustomer={true}>
                   <DashboardCategories />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/products/new" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <ProductSetup />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/products/edit/:id" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <ProductSetup />
                 </ProtectedRoute>
               } 
             />
