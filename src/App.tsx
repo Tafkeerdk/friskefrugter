@@ -231,7 +231,7 @@ const App = () => (
             
             {/* Secure developer-only route - DO NOT SHARE */}
             <Route 
-              path="/dev-dashboard/metrics-access-9e8d7f4a9c1b3e09d6f2a1bc2a7e/" 
+              path="/dev-dashboard/metrics-access-9e8d7f4a9c1b3e09d6f2a1bc2a7e" 
               element={<SecureDeveloperRoute />} 
             />
             
