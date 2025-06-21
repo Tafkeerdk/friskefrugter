@@ -76,7 +76,7 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
       onSuccess?.(data);
       
       // Navigate back to products list
-      navigate('/dashboard/products');
+      navigate('/admin/products');
       
     } catch (error) {
       console.error('Error in submit handler:', error);
@@ -87,7 +87,7 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
     if (onCancel) {
       onCancel();
     } else {
-      navigate('/dashboard/products');
+      navigate('/admin/products');
     }
   };
 

@@ -256,7 +256,7 @@ const DashboardProducts: React.FC = () => {
             </p>
           </div>
           <Button 
-            onClick={() => navigate('/dashboard/products/new')}
+            onClick={() => navigate('/admin/products/new')}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -354,7 +354,7 @@ const DashboardProducts: React.FC = () => {
                             size="icon" 
                             variant="secondary" 
                             className="h-8 w-8 rounded-full"
-                            onClick={() => navigate(`/dashboard/products/edit/${product._id}`)}
+                            onClick={() => navigate(`/admin/products/edit/${product._id}`)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -480,7 +480,7 @@ const DashboardProducts: React.FC = () => {
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
                                   <DropdownMenuItem 
-                                    onClick={() => navigate(`/dashboard/products/edit/${product._id}`)}
+                                    onClick={() => navigate(`/admin/products/edit/${product._id}`)}
                                   >
                                     <Edit className="mr-2 h-4 w-4" />
                                     Rediger
