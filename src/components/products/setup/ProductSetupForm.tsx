@@ -962,23 +962,21 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                             
                             {/* Enhanced Image Actions Overlay */}
                             <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => {
-                                  // Preview image in modal
-                                  setImageToPreview(image);
-                                }}
-                                className="bg-white/90 text-gray-900 hover:bg-white shadow-lg backdrop-blur-sm"
-                                title="Forhåndsvis billede"
-                              >
-                                <DialogTrigger asChild>
-                                  <button type="button" className="w-full h-full flex items-center justify-center">
-                                    <Eye className="h-4 w-4" />
-                                  </button>
-                                </DialogTrigger>
-                              </Button>
+                              <DialogTrigger asChild>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="secondary"
+                                  onClick={() => {
+                                    // Preview image in modal
+                                    setImageToPreview(image);
+                                  }}
+                                  className="bg-white/90 text-gray-900 hover:bg-white shadow-lg backdrop-blur-sm"
+                                  title="Forhåndsvis billede"
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
                               <Button
                                 type="button"
                                 size="sm"
