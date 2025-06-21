@@ -417,16 +417,38 @@ export const productFormDataToFormData = (productData: any, images?: File[]): Fo
   formData.append('lagerstyring', JSON.stringify(productData.lagerstyring));
   formData.append('aktiv', productData.aktiv?.toString() || 'true');
   
-  // Add image files
+  // Add image files in correct order (primary first)
   if (images && images.length > 0) {
-    images.forEach((file, index) => {
-      formData.append('billeder', file);
-    });
+    // If we have ProductImage objects with isPrimary, sort them
+    if (productData.billeder && productData.billeder.length > 0) {
+      const imageData = productData.billeder;
+      
+      // Sort images so primary comes first
+      const sortedImages = [...imageData].sort((a, b) => {
+        if (a.isPrimary && !b.isPrimary) return -1;
+        if (!a.isPrimary && b.isPrimary) return 1;
+        return 0;
+      });
+      
+      // Add files in the sorted order
+      sortedImages.forEach((imageData, index) => {
+        const file = imageData.file;
+        if (file) {
+          formData.append('billeder', file);
+        }
+      });
+    } else {
+      // Fallback: just add images as provided
+      images.forEach((file, index) => {
+        formData.append('billeder', file);
+      });
+    }
   }
   
   console.log('📦 FormData prepared:', {
     fields: Array.from(formData.keys()),
-    imageCount: images?.length || 0
+    imageCount: images?.length || 0,
+    primaryImageFirst: productData.billeder?.some((img: any) => img.isPrimary) || false
   });
   
   return formData;

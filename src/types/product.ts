@@ -23,6 +23,7 @@ export interface ProductImage {
   preview: string;
   compressed: boolean;
   id?: string;
+  isPrimary?: boolean;
 }
 
 export interface Category {

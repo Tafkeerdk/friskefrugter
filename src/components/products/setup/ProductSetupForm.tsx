@@ -27,7 +27,8 @@ import {
   ImagePlus,
   Upload,
   Trash2,
-  ImageIcon
+  ImageIcon,
+  Star
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -238,7 +239,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           file,
           preview: URL.createObjectURL(file),
           compressed: false,
-          id: imageId
+          id: imageId,
+          isPrimary: currentImages.length === 0 && index === 0 // First image of first upload is primary
         };
       });
 
@@ -320,10 +322,44 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     }
     
     const newImages = currentImages.filter((_, i) => i !== index);
+    
+    // If we're removing the primary image, make the first remaining image primary
+    if (newImages.length > 0) {
+      newImages.forEach((img, i) => {
+        img.isPrimary = i === 0;
+      });
+    }
+    
     form.setValue('billeder', newImages);
     
     // Trigger validation to update form state
     form.trigger('billeder');
+    
+    // Show feedback
+    toast({
+      title: 'Billede fjernet',
+      description: 'Billedet blev fjernet fra produktet.',
+      duration: 2000,
+    });
+  };
+
+  const setPrimaryImage = (index: number) => {
+    const currentImages = form.getValues('billeder') || [];
+    
+    // Update all images to set the selected one as primary
+    const updatedImages = currentImages.map((img, i) => ({
+      ...img,
+      isPrimary: i === index
+    }));
+    
+    form.setValue('billeder', updatedImages, { shouldValidate: true });
+    
+    // Show feedback
+    toast({
+      title: 'Primært billede ændret',
+      description: `Billede ${index + 1} er nu det primære produktbillede.`,
+      duration: 3000,
+    });
   };
 
   // Cleanup object URLs on unmount
@@ -955,7 +991,12 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                           {field.value.map((image, index) => (
                             <div key={index} className="relative group">
                               {/* Image Container with improved aspect ratio */}
-                              <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow duration-200">
+                              <div className={cn(
+                                "aspect-[4/3] rounded-lg overflow-hidden border-2 bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200",
+                                image.isPrimary 
+                                  ? "border-blue-500 ring-2 ring-blue-200 shadow-lg" 
+                                  : "border-gray-200 hover:border-blue-300"
+                              )}>
                                 <ImagePreview
                                   image={image}
                                   altText={`Produktbillede ${index + 1}`}
@@ -963,7 +1004,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                               </div>
                               
                               {/* Enhanced Image Actions Overlay */}
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
                                 <DialogTrigger asChild>
                                   <Button
                                     type="button"
@@ -979,6 +1020,18 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                     <Eye className="h-4 w-4" />
                                   </Button>
                                 </DialogTrigger>
+                                {!image.isPrimary && (
+                                  <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="default"
+                                    onClick={() => setPrimaryImage(index)}
+                                    className="bg-blue-500/90 hover:bg-blue-600 shadow-lg backdrop-blur-sm text-white"
+                                    title="Sæt som primært billede"
+                                  >
+                                    <Star className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   type="button"
                                   size="sm"
@@ -992,11 +1045,12 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                               </div>
                               
                               {/* Enhanced Primary Badge */}
-                              {index === 0 && (
+                              {image.isPrimary && (
                                 <Badge 
                                   variant="default" 
-                                  className="absolute top-2 left-2 text-xs bg-blue-600 hover:bg-blue-700 shadow-md"
+                                  className="absolute top-2 left-2 text-xs bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-1"
                                 >
+                                  <Star className="h-3 w-3 fill-current" />
                                   Primær
                                 </Badge>
                               )}
@@ -1021,8 +1075,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                       )}
 
                       <FormDescription>
-                        Det første billede vil blive brugt som primært produktbillede. 
-                        Du kan uploade op til 3 billeder.
+                        Klik på stjerne-ikonet for at ændre hvilket billede der er primært. 
+                        Det primære billede vises først i produktkataloget. Du kan uploade op til 3 billeder.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
