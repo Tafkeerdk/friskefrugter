@@ -383,17 +383,15 @@ export const api = new ApiClient(API_BASE_URL);
 export const productFormDataToFormData = (productData: any, images?: File[]): FormData => {
   const formData = new FormData();
   
-  // Add product data as JSON string
-  formData.append('productData', JSON.stringify({
-    produktnavn: productData.produktnavn,
-    beskrivelse: productData.beskrivelse,
-    eanNummer: productData.eanNummer,
-    enhed: productData.enhed,
-    basispris: productData.basispris,
-    kategori: productData.kategori,
-    lagerstyring: productData.lagerstyring,
-    aktiv: productData.aktiv
-  }));
+  // Add individual form fields (not as JSON string)
+  formData.append('produktnavn', productData.produktnavn || '');
+  formData.append('beskrivelse', productData.beskrivelse || '');
+  formData.append('eanNummer', productData.eanNummer || '');
+  formData.append('enhed', productData.enhed || '');
+  formData.append('basispris', productData.basispris?.toString() || '0');
+  formData.append('kategori', JSON.stringify(productData.kategori));
+  formData.append('lagerstyring', JSON.stringify(productData.lagerstyring));
+  formData.append('aktiv', productData.aktiv?.toString() || 'true');
   
   // Add image files
   if (images && images.length > 0) {
@@ -401,6 +399,11 @@ export const productFormDataToFormData = (productData: any, images?: File[]): Fo
       formData.append('billeder', file);
     });
   }
+  
+  console.log('📦 FormData prepared:', {
+    fields: Array.from(formData.keys()),
+    imageCount: images?.length || 0
+  });
   
   return formData;
 };
