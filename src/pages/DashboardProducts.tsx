@@ -592,13 +592,6 @@ const DashboardProducts: React.FC = () => {
                     Billede {currentImageIndex + 1} af {galleryImages.length}
                   </DialogDescription>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsImageGalleryOpen(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
               </div>
 
               {/* Image Display */}
