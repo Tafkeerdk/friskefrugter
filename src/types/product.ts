@@ -25,17 +25,6 @@ export interface ProductImage {
   id?: string;
 }
 
-export interface UploadedImage {
-  id: string;
-  file: File;
-  preview: string;
-  cdnUrl?: string;
-  uploadStatus: 'uploading' | 'completed' | 'error';
-  uploadProgress: number;
-  error?: string;
-  isPrimary: boolean;
-}
-
 export interface Category {
   id: string;
   navn: string;

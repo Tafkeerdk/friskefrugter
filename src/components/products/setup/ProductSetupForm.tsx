@@ -11,7 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
-
+import { useDropzone } from 'react-dropzone';
 import { 
   Save, 
   X, 
@@ -34,7 +34,6 @@ import { ProductFormData, ProductSetupFormProps, ProductImage } from '@/types/pr
 import { productSetupSchema } from './validation/productSchema';
 import { EANInput } from './components/EANInput';
 import { CurrencyInput } from './components/CurrencyInput';
-import ProductImageUploader, { UploadedImage } from './components/ProductImageUploader';
 import { api, productFormDataToFormData, handleApiError } from '@/lib/api';
 
 // Unit options with Danish labels
@@ -66,7 +65,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
-  const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
+  const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSetupSchema),
@@ -114,6 +113,31 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     return hasProductChanges;
   }, [isDirty, isCreatingCategory, newCategoryName, form]);
 
+  // Watch form values to trigger re-renders when images change
+  const watchedImages = watch('billeder');
+  const watchedProductName = watch('produktnavn');
+  const watchedKategoriNavn = watch('kategori.navn');
+  const watchedBasispris = watch('basispris');
+
+  // Enhanced form validation check
+  const isFormValid = React.useMemo(() => {
+    const values = form.getValues();
+    
+    // Check required fields
+    const hasProductName = values.produktnavn && values.produktnavn.trim().length > 0;
+    const hasCategory = values.kategori?.navn && values.kategori.navn.trim().length > 0;
+    const hasValidPrice = values.basispris && values.basispris > 0;
+    const hasImages = values.billeder && values.billeder.length > 0;
+    
+    // Check inventory requirements if enabled
+    let inventoryValid = true;
+    if (values.lagerstyring.enabled) {
+      inventoryValid = values.lagerstyring.antalPaaLager !== undefined && values.lagerstyring.antalPaaLager >= 0;
+    }
+    
+    return hasProductName && hasCategory && hasValidPrice && hasImages && inventoryValid && isValid;
+  }, [watchedImages, watchedProductName, watchedKategoriNavn, watchedBasispris, lagerstyringEnabled, isValid, form]);
+
   // Load categories on component mount
   React.useEffect(() => {
     const loadCategories = async () => {
@@ -139,62 +163,202 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     loadCategories();
   }, [toast]);
 
-  // Handle uploaded images change
-  const handleImagesChange = useCallback((newImages: UploadedImage[]) => {
-    setUploadedImages(newImages);
+  // Enhanced image upload handlers with better validation and feedback
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const currentImages = form.getValues('billeder') || [];
     
-    // Convert UploadedImage[] to ProductImage[] for form
-    const productImages: ProductImage[] = newImages
-      .filter(img => img.uploadStatus === 'completed')
-      .map(img => ({
-        file: img.file,
-        preview: img.cdnUrl || img.preview,
-        compressed: false,
-        id: img.id
-      }));
+    // Validate total number of images
+    if (currentImages.length + acceptedFiles.length > 3) {
+      toast({
+        title: 'For mange billeder',
+        description: `Du kan maksimalt uploade 3 billeder per produkt. Du har ${currentImages.length} billeder og forsøger at tilføje ${acceptedFiles.length} mere.`,
+        variant: 'destructive',
+        duration: 4000,
+      });
+      return;
+    }
+
+    // Validate individual file sizes and types
+    const validFiles: File[] = [];
+    const errors: string[] = [];
+
+    for (const file of acceptedFiles) {
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        errors.push(`${file.name} er for stor (${(file.size / 1024 / 1024).toFixed(1)}MB). Maksimum er 5MB.`);
+        continue;
+      }
+
+      // Check file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        errors.push(`${file.name} har et ugyldigt format. Kun JPEG, PNG og WebP er tilladt.`);
+        continue;
+      }
+
+      validFiles.push(file);
+    }
+
+    // Show errors if any
+    if (errors.length > 0) {
+      toast({
+        title: 'Nogle billeder kunne ikke uploades',
+        description: errors.join(' '),
+        variant: 'destructive',
+        duration: 6000,
+      });
+    }
+
+    // Process valid files
+    if (validFiles.length > 0) {
+      const newImages: ProductImage[] = validFiles.map((file, index) => {
+        const imageId = `image-${Date.now()}-${index}`;
+        // Add to uploading set for loading indicator
+        setUploadingImages(prev => new Set([...prev, imageId]));
+        
+        return {
+          file,
+          preview: URL.createObjectURL(file),
+          compressed: false,
+          id: imageId
+        };
+      });
+
+      form.setValue('billeder', [...currentImages, ...newImages], { shouldValidate: true, shouldDirty: true });
+
+      // Show success message
+      toast({
+        title: 'Billeder tilføjet',
+        description: `${validFiles.length} billede${validFiles.length > 1 ? 'r' : ''} blev tilføjet succesfuldt.`,
+        duration: 3000,
+      });
+
+      // Simulate processing time and remove from uploading set
+      setTimeout(() => {
+        newImages.forEach(img => {
+          if (img.id) {
+            setUploadingImages(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(img.id!);
+              return newSet;
+            });
+          }
+        });
+      }, 1500);
+    }
+  }, [form, toast, setUploadingImages]);
+
+  const { getRootProps, getInputProps, isDragActive, fileRejections } = useDropzone({
+    onDrop,
+    accept: {
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp']
+    },
+    maxFiles: 3,
+    maxSize: 5 * 1024 * 1024, // 5MB
+    multiple: true,
+    disabled: (form.getValues('billeder')?.length || 0) >= 3
+  });
+
+  // Handle file rejections
+  React.useEffect(() => {
+    if (fileRejections.length > 0) {
+      const rejectionMessages = fileRejections.map(rejection => {
+        const errors = rejection.errors.map(error => {
+          switch (error.code) {
+            case 'file-too-large':
+              return `${rejection.file.name} er for stor (${(rejection.file.size / 1024 / 1024).toFixed(1)}MB)`;
+            case 'file-invalid-type':
+              return `${rejection.file.name} har et ugyldigt format`;
+            case 'too-many-files':
+              return `For mange filer valgt`;
+            default:
+              return `${rejection.file.name}: ${error.message}`;
+          }
+        });
+        return errors.join(', ');
+      });
+
+      toast({
+        title: 'Nogle filer blev afvist',
+        description: rejectionMessages.join('. '),
+        variant: 'destructive',
+        duration: 5000,
+      });
+    }
+  }, [fileRejections, toast]);
+
+  const removeImage = (index: number) => {
+    const currentImages = form.getValues('billeder') || [];
+    const imageToRemove = currentImages[index];
     
-    form.setValue('billeder', productImages);
-  }, [form]);
+    // Revoke object URL to prevent memory leaks
+    if (imageToRemove.preview) {
+      URL.revokeObjectURL(imageToRemove.preview);
+    }
+    
+    const newImages = currentImages.filter((_, i) => i !== index);
+    form.setValue('billeder', newImages, { shouldValidate: true, shouldDirty: true });
+  };
 
   // Cleanup object URLs on unmount
   useEffect(() => {
     return () => {
-      uploadedImages.forEach(image => {
+      const images = form.getValues('billeder') || [];
+      images.forEach(image => {
         if (image.preview) {
           URL.revokeObjectURL(image.preview);
         }
       });
     };
-  }, [uploadedImages]);
+  }, [form]);
 
   // Handle form submission
   const handleSubmit = async (data: ProductFormData) => {
+    console.log('🚀 Form submission started with data:', data);
+    
     try {
-      // Get completed uploads only
-      const completedImages = uploadedImages.filter(img => img.uploadStatus === 'completed');
-      
-      // Check if we have at least one image
-      if (completedImages.length === 0) {
-        toast({
-          title: 'Manglende billeder',
-          description: 'Du skal uploade mindst ét billede før du kan oprette produktet.',
-          variant: 'destructive',
-          duration: 5000,
-        });
-        return;
+      // Validate that we have all required data
+      if (!data.produktnavn || data.produktnavn.trim().length === 0) {
+        throw new Error('Produktnavn er påkrævet');
       }
       
-      // Convert uploaded images to files for API
-      const images = completedImages.map(img => img.file);
+      if (!data.kategori?.navn || data.kategori.navn.trim().length === 0) {
+        throw new Error('Kategori er påkrævet');
+      }
+      
+      if (!data.basispris || data.basispris <= 0) {
+        throw new Error('En gyldig pris er påkrævet');
+      }
+      
+      if (!data.billeder || data.billeder.length === 0) {
+        throw new Error('Mindst ét billede er påkrævet');
+      }
+      
+      // Check inventory validation if enabled
+      if (data.lagerstyring.enabled && (data.lagerstyring.antalPaaLager === undefined || data.lagerstyring.antalPaaLager < 0)) {
+        throw new Error('Antal på lager er påkrævet når lagerstyring er aktiveret');
+      }
+      
+      console.log('✅ Form validation passed, preparing API call');
+      
+      // Convert form data to FormData for API
+      const images = data.billeder?.map(b => b.file).filter(Boolean) || [];
       const formData = productFormDataToFormData(data, images);
+      
+      console.log('📦 FormData prepared with', images.length, 'images');
       
       let response;
       if (mode === 'create') {
+        console.log('🔄 Creating product via API');
         response = await api.createProduct(formData);
       } else {
         // For edit mode, we'd need the product ID
         throw new Error('Edit mode not implemented yet');
       }
+      
+      console.log('📡 API response:', response);
       
       if (response.success) {
         toast({
@@ -202,11 +366,14 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           description: `${data.produktnavn} blev ${mode === 'create' ? 'oprettet' : 'opdateret'} succesfuldt.`,
           duration: 5000,
         });
+        
+        console.log('✅ Product created successfully, calling parent callback');
         onSubmit(data); // Call the parent callback
       } else {
         throw new Error(response.error || 'Unknown error');
       }
     } catch (error: any) {
+      console.error('❌ Form submission error:', error);
       const apiError = handleApiError(error);
       toast({
         title: 'Fejl',
@@ -726,7 +893,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                 Upload 1-3 billeder af produktet (JPEG, PNG, WebP - maks. 5MB hver)
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <FormField
                 control={form.control}
                 name="billeder"
@@ -735,15 +902,152 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                     <FormLabel className="flex items-center gap-2">
                       Billeder
                       <span className="text-red-500">*</span>
+                      <Badge variant="outline" className="ml-2">
+                        {field.value?.length || 0}/3
+                      </Badge>
                     </FormLabel>
                     
-                    <ProductImageUploader
-                      images={uploadedImages}
-                      onImagesChange={handleImagesChange}
-                      maxImages={3}
-                      maxFileSize={5 * 1024 * 1024}
-                      disabled={isLoading}
-                    />
+                    {/* Enhanced Dropzone */}
+                    <div
+                      {...getRootProps()}
+                      className={cn(
+                        "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
+                        isDragActive 
+                          ? "border-blue-500 bg-blue-50 scale-105 shadow-lg" 
+                          : "border-gray-300 hover:border-blue-400 hover:bg-gray-50",
+                        field.value?.length >= 3 && "opacity-50 cursor-not-allowed border-gray-200"
+                      )}
+                    >
+                      <input {...getInputProps()} disabled={field.value?.length >= 3} />
+                      <div className="flex flex-col items-center gap-3">
+                        <div className={cn(
+                          "p-3 rounded-full transition-colors",
+                          isDragActive ? "bg-blue-100" : "bg-gray-100"
+                        )}>
+                          <Upload className={cn(
+                            "h-8 w-8 transition-colors",
+                            isDragActive ? "text-blue-600" : "text-gray-400"
+                          )} />
+                        </div>
+                        {isDragActive ? (
+                          <div className="space-y-1">
+                            <p className="text-blue-600 font-medium">Slip billederne her nu!</p>
+                            <p className="text-sm text-blue-500">Billederne vil blive tilføjet til produktet</p>
+                          </div>
+                        ) : field.value?.length >= 3 ? (
+                          <div className="space-y-1">
+                            <p className="text-gray-400 font-medium">Maksimalt antal billeder nået</p>
+                            <p className="text-xs text-gray-400">
+                              Du har allerede uploadet 3 billeder (maksimum)
+                            </p>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <p className="text-sm font-medium text-gray-700">
+                              Træk og slip billeder her, eller klik for at vælge
+                            </p>
+                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                              <span>JPEG, PNG, WebP</span>
+                              <span>•</span>
+                              <span>Maks. 5MB per billede</span>
+                              <span>•</span>
+                              <span>Op til {3 - (field.value?.length || 0)} billeder tilbage</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Image Preview Grid */}
+                    {field.value && field.value.length > 0 && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                        {field.value.map((image, index) => (
+                          <div key={index} className="relative group">
+                            {/* Image Container with improved aspect ratio */}
+                            <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
+                              <img
+                                src={image.preview}
+                                alt={`Produktbillede ${index + 1}`}
+                                className="w-full h-full object-cover"
+                                style={{ backgroundColor: 'white' }}
+                                onLoad={(e) => {
+                                  // Ensure image is visible when loaded
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.opacity = '1';
+                                }}
+                                onError={(e) => {
+                                  // Fallback for broken images
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.parentElement!.innerHTML = `
+                                    <div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+                                      <div class="text-center">
+                                        <svg class="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
+                                        </svg>
+                                        <p class="text-xs">Billede ikke tilgængeligt</p>
+                                      </div>
+                                    </div>
+                                  `;
+                                }}
+                              />
+                            </div>
+                            
+                            {/* Enhanced Image Actions Overlay */}
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                  // Preview image in modal
+                                  window.open(image.preview, '_blank');
+                                }}
+                                className="bg-white/90 text-gray-900 hover:bg-white shadow-lg backdrop-blur-sm"
+                                title="Forhåndsvis billede"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removeImage(index)}
+                                className="bg-red-500/90 hover:bg-red-600 shadow-lg backdrop-blur-sm"
+                                title="Fjern billede"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            {/* Enhanced Primary Badge */}
+                            {index === 0 && (
+                              <Badge 
+                                variant="default" 
+                                className="absolute top-2 left-2 text-xs bg-blue-600 hover:bg-blue-700 shadow-md"
+                              >
+                                Primær
+                              </Badge>
+                            )}
+                            
+                            {/* Image Info Badge */}
+                            <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                              {index + 1}/{field.value.length}
+                            </div>
+                            
+                            {/* Loading Indicator for Processing */}
+                            {uploadingImages.has(`image-${index}`) && (
+                              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
+                                <div className="flex flex-col items-center gap-2">
+                                  <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                  <span className="text-xs text-gray-600">Behandler...</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     <FormDescription>
                       Det første billede vil blive brugt som primært produktbillede. 
@@ -765,6 +1069,16 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                   Du har ugemte ændringer
                 </>
               )}
+              {/* Debug info for development */}
+              {import.meta.env.DEV && (
+                <div className="ml-4 text-xs text-gray-400">
+                  Valid: {isFormValid ? '✅' : '❌'} | 
+                  Images: {watchedImages?.length || 0} | 
+                  Name: {watchedProductName ? '✅' : '❌'} | 
+                  Category: {watchedKategoriNavn ? '✅' : '❌'} | 
+                  Price: {watchedBasispris > 0 ? '✅' : '❌'}
+                </div>
+              )}
             </div>
             
             <div className="flex items-center gap-3">
@@ -780,7 +1094,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
               
               <Button
                 type="submit"
-                disabled={!isValid || isLoading}
+                disabled={!isFormValid || isLoading}
                 className="min-w-[120px]"
               >
                 {isLoading ? (
