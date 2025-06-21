@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Input } from '@/components/ui/input';
 import { FormControl, FormDescription, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { DollarSign, AlertCircle } from 'lucide-react';
+import { Banknote, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CurrencyInputProps {
@@ -62,7 +62,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   placeholder = '0,00',
   className,
   label = 'Basispris ekskl. moms',
-  description = 'Pris i danske kroner (DKK) uden moms',
+  description = 'Pris i danske kroner (DKK) uden moms. Brug komma (,) som decimal separator.',
   min = 0.01,
   max = 999999.99
 }) => {
@@ -173,7 +173,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
   return (
     <FormItem className={className}>
       <FormLabel className="flex items-center gap-2">
-        <DollarSign className="h-4 w-4" />
+        <Banknote className="h-4 w-4" />
         {label}
         <span className="text-red-500">*</span>
       </FormLabel>
@@ -195,7 +195,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
               )}
               aria-describedby="currency-description"
             />
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium">
               DKK
             </div>
             {hasError && (
@@ -215,7 +215,7 @@ export const CurrencyInput: React.FC<CurrencyInputProps> = ({
       </FormControl>
       
       <FormDescription id="currency-description">
-        {description}. Brug komma (,) som decimal separator.
+        {description}
       </FormDescription>
       
       {displayError && (

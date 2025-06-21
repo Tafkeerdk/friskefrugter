@@ -21,7 +21,8 @@ import {
   DollarSign, 
   Warehouse,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Banknote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -84,6 +85,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const { watch, setValue, formState: { errors, isValid, isDirty } } = form;
   const lagerstyringEnabled = watch('lagerstyring.enabled');
   const aktivStatus = watch('aktiv');
+  const watchedKategori = watch('kategori');
 
   // Load categories on component mount
   React.useEffect(() => {
@@ -150,13 +152,19 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const handleCreateCategory = async () => {
     if (newCategoryName.trim()) {
       try {
+        console.log('🔄 Creating category:', newCategoryName.trim());
+        
         const response = await api.createCategory({
           navn: newCategoryName.trim(),
           aktiv: true
         });
         
+        console.log('✅ Category creation response:', response);
+        
         if (response.success && response.data) {
           const newCategory = response.data as Category;
+          console.log('✅ New category created:', newCategory);
+          
           setCategories([...categories, newCategory]);
           setValue('kategori', { id: newCategory._id, navn: newCategory.navn, isNew: true });
           setNewCategoryName('');
@@ -167,11 +175,20 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
             description: `Kategorien "${newCategory.navn}" er blevet oprettet.`,
             duration: 3000,
           });
+        } else {
+          console.error('❌ Category creation failed - no data in response:', response);
+          toast({
+            title: 'Fejl',
+            description: 'Kategorien blev ikke oprettet korrekt. Prøv igen.',
+            variant: 'destructive',
+            duration: 3000,
+          });
         }
       } catch (error) {
+        console.error('❌ Category creation error:', error);
         toast({
           title: 'Fejl',
-          description: 'Kunne ikke oprette kategorien',
+          description: 'Kunne ikke oprette kategorien. Prøv igen.',
           variant: 'destructive',
           duration: 3000,
         });
@@ -299,7 +316,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+                <Banknote className="h-5 w-5" />
                 Priser og enheder
               </CardTitle>
               <CardDescription>
@@ -394,11 +411,14 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                             }
                           }
                         }}
+                        value={watchedKategori?.id || ''}
                         disabled={isLoading}
                       >
                         <FormControl>
                           <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Vælg kategori" />
+                            <SelectValue placeholder="Vælg kategori">
+                              {watchedKategori?.navn || 'Vælg kategori'}
+                            </SelectValue>
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
