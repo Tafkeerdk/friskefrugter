@@ -96,8 +96,10 @@ const AdminLogin: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               {error && (
-                <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
-                  <AlertDescription className="text-destructive-foreground">{error}</AlertDescription>
+                <Alert variant="destructive" className="border-red-200 bg-red-50">
+                  <AlertDescription className="text-red-800 whitespace-pre-line font-medium">
+                    {error}
+                  </AlertDescription>
                 </Alert>
               )}
 

@@ -401,7 +401,7 @@ export const authService = {
     return data;
   },
 
-  // Admin login
+  // Admin login with enhanced error handling
   async loginAdmin(email: string, password: string): Promise<LoginResponse> {
     const response = await apiClient.post('/api/auth/admin/super', {
       email,
@@ -412,6 +412,40 @@ export const authService = {
     if (data.success) {
       tokenManager.setTokens(data.tokens);
       tokenManager.setUser(data.user);
+    } else {
+      // Enhanced error handling for better user feedback
+      let userFriendlyMessage = data.error || 'Login fejlede';
+      
+      if (response.status === 429) {
+        userFriendlyMessage = `🚫 For mange login forsøg!\n\n` +
+          `Du har nået grænsen for login forsøg (20 forsøg per 10 minutter).\n\n` +
+          `⏰ Vent 10 minutter før næste forsøg\n` +
+          `🔧 Eller kontakt support for hjælp\n\n` +
+          `Hvis du er developer, kan du nulstille rate limit i developer dashboardet.`;
+      } else if (response.status === 500) {
+        if (data.errorType === 'database_error') {
+          userFriendlyMessage = `💾 Database forbindelse fejlede\n\nServeren kan ikke forbinde til databasen.\nKontakt support hvis problemet fortsætter.`;
+        } else if (data.errorType === 'cors_error') {
+          userFriendlyMessage = `🌐 CORS fejl\n\nDer er et problem med server konfigurationen.\nKontakt support for hjælp.`;
+        } else {
+          userFriendlyMessage = `⚠️ Server fejl\n\nDer opstod en uventet fejl på serveren.\nPrøv igen om lidt eller kontakt support.`;
+        }
+      } else if (response.status === 401) {
+        if (data.errorType === 'wrong_password') {
+          userFriendlyMessage = `🔑 Forkert password\n\nPasswordet er ikke korrekt.\nKontroller dit password og prøv igen.`;
+        } else if (data.errorType === 'invalid_credentials') {
+          userFriendlyMessage = `📧 Ugyldig email eller password\n\nKontroller dine login oplysninger og prøv igen.`;
+        }
+      } else if (response.status === 400) {
+        if (data.errorType === 'missing_credentials') {
+          userFriendlyMessage = `📝 Manglende oplysninger\n\nBåde email og password skal udfyldes.`;
+        }
+      }
+      
+      // Throw error with user-friendly message
+      const error = new Error(userFriendlyMessage);
+      error.name = data.errorType || 'LoginError';
+      throw error;
     }
     
     return data;

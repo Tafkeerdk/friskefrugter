@@ -47,6 +47,10 @@ export const SecureDeveloperRoute: React.FC = () => {
   const [token, setToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [attemptCount, setAttemptCount] = useState(0);
+  const [showRateLimitReset, setShowRateLimitReset] = useState(false);
+  const [resetToken, setResetToken] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
 
   const validateAccess = async (inputToken: string) => {
     // Client-side token validation
@@ -108,6 +112,43 @@ export const SecureDeveloperRoute: React.FC = () => {
     e.preventDefault();
     if (token.trim()) {
       validateAccess(token.trim());
+    }
+  };
+
+  const handleRateLimitReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetToken.trim()) return;
+
+    try {
+      setIsResetting(true);
+      setResetMessage('');
+      
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+        (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/dev/reset-rate-limit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token: resetToken.trim() })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setResetMessage('✅ Rate limit reset successful! Admin login attempts have been cleared.');
+        setResetToken('');
+        setShowRateLimitReset(false);
+      } else {
+        setResetMessage('❌ Invalid developer token or reset failed.');
+      }
+
+    } catch (err) {
+      console.error('Rate limit reset error:', err);
+      setResetMessage('❌ Connection error - could not reset rate limit.');
+    } finally {
+      setIsResetting(false);
     }
   };
 
@@ -289,6 +330,83 @@ export const SecureDeveloperRoute: React.FC = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Rate Limit Reset */}
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader>
+            <CardTitle className="text-orange-800">Admin Rate Limit Reset</CardTitle>
+            <p className="text-orange-600 text-sm">
+              Reset admin login rate limiting when users are locked out
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!showRateLimitReset ? (
+              <Button
+                onClick={() => setShowRateLimitReset(true)}
+                variant="outline"
+                className="border-orange-300 text-orange-700 hover:bg-orange-100"
+              >
+                Reset Admin Rate Limit
+              </Button>
+            ) : (
+              <form onSubmit={handleRateLimitReset} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="resetToken">Developer Token</Label>
+                  <Input
+                    id="resetToken"
+                    type="password"
+                    value={resetToken}
+                    onChange={(e) => setResetToken(e.target.value)}
+                    placeholder="Enter developer token to reset rate limit"
+                    disabled={isResetting}
+                  />
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    type="submit" 
+                    disabled={isResetting || !resetToken.trim()}
+                    className="bg-orange-600 hover:bg-orange-700"
+                  >
+                    {isResetting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Resetting...
+                      </>
+                    ) : (
+                      'Reset Rate Limit'
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowRateLimitReset(false);
+                      setResetToken('');
+                      setResetMessage('');
+                    }}
+                    disabled={isResetting}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            )}
+            
+            {resetMessage && (
+              <Alert variant={resetMessage.includes('✅') ? 'default' : 'destructive'}>
+                <AlertDescription>{resetMessage}</AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="text-xs text-orange-700 bg-orange-100 p-2 rounded">
+              <p><strong>What this does:</strong></p>
+              <p>• Clears failed login attempts for admin accounts</p>
+              <p>• Allows immediate login retry without waiting 10 minutes</p>
+              <p>• Only affects rate limiting, not account security</p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Performance Dashboard */}
         <PerformanceDashboard />
