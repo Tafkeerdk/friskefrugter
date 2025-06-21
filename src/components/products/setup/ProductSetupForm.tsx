@@ -26,9 +26,19 @@ import {
   Banknote,
   ImagePlus,
   Upload,
-  Trash2
+  Trash2,
+  ImageIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 import { ProductFormData, ProductSetupFormProps, ProductImage } from '@/types/product';
 import { productSetupSchema } from './validation/productSchema';
@@ -53,6 +63,37 @@ interface Category {
   productCount?: number;
 }
 
+const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ image, altText }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setHasError(false);
+  }, [image.preview]);
+
+  if (hasError || !image.preview) {
+    return (
+      <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+        <div className="text-center p-2">
+          <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+          <p className="text-xs">Kunne ikke vise billede</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={image.preview}
+      alt={altText}
+      className="w-full h-full object-contain bg-white"
+      onError={() => {
+        console.warn(`Could not load preview: ${altText}`);
+        setHasError(true);
+      }}
+    />
+  );
+};
+
 export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   initialData,
   onSubmit,
@@ -66,6 +107,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
+  const [imageToPreview, setImageToPreview] = useState<ProductImage | null>(null);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSetupSchema),
@@ -112,31 +154,6 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     
     return hasProductChanges;
   }, [isDirty, isCreatingCategory, newCategoryName, form]);
-
-  // Watch form values to trigger re-renders when images change
-  const watchedImages = watch('billeder');
-  const watchedProductName = watch('produktnavn');
-  const watchedKategoriNavn = watch('kategori.navn');
-  const watchedBasispris = watch('basispris');
-
-  // Enhanced form validation check
-  const isFormValid = React.useMemo(() => {
-    const values = form.getValues();
-    
-    // Check required fields
-    const hasProductName = values.produktnavn && values.produktnavn.trim().length > 0;
-    const hasCategory = values.kategori?.navn && values.kategori.navn.trim().length > 0;
-    const hasValidPrice = values.basispris && values.basispris > 0;
-    const hasImages = values.billeder && values.billeder.length > 0;
-    
-    // Check inventory requirements if enabled
-    let inventoryValid = true;
-    if (values.lagerstyring.enabled) {
-      inventoryValid = values.lagerstyring.antalPaaLager !== undefined && values.lagerstyring.antalPaaLager >= 0;
-    }
-    
-    return hasProductName && hasCategory && hasValidPrice && hasImages && inventoryValid && isValid;
-  }, [watchedImages, watchedProductName, watchedKategoriNavn, watchedBasispris, lagerstyringEnabled, isValid, form]);
 
   // Load categories on component mount
   React.useEffect(() => {
@@ -224,7 +241,10 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
         };
       });
 
-      form.setValue('billeder', [...currentImages, ...newImages], { shouldValidate: true, shouldDirty: true });
+      form.setValue('billeder', [...currentImages, ...newImages]);
+      
+      // Trigger validation to update form state
+      form.trigger('billeder');
 
       // Show success message
       toast({
@@ -299,7 +319,10 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     }
     
     const newImages = currentImages.filter((_, i) => i !== index);
-    form.setValue('billeder', newImages, { shouldValidate: true, shouldDirty: true });
+    form.setValue('billeder', newImages);
+    
+    // Trigger validation to update form state
+    form.trigger('billeder');
   };
 
   // Cleanup object URLs on unmount
@@ -316,49 +339,18 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
 
   // Handle form submission
   const handleSubmit = async (data: ProductFormData) => {
-    console.log('🚀 Form submission started with data:', data);
-    
     try {
-      // Validate that we have all required data
-      if (!data.produktnavn || data.produktnavn.trim().length === 0) {
-        throw new Error('Produktnavn er påkrævet');
-      }
-      
-      if (!data.kategori?.navn || data.kategori.navn.trim().length === 0) {
-        throw new Error('Kategori er påkrævet');
-      }
-      
-      if (!data.basispris || data.basispris <= 0) {
-        throw new Error('En gyldig pris er påkrævet');
-      }
-      
-      if (!data.billeder || data.billeder.length === 0) {
-        throw new Error('Mindst ét billede er påkrævet');
-      }
-      
-      // Check inventory validation if enabled
-      if (data.lagerstyring.enabled && (data.lagerstyring.antalPaaLager === undefined || data.lagerstyring.antalPaaLager < 0)) {
-        throw new Error('Antal på lager er påkrævet når lagerstyring er aktiveret');
-      }
-      
-      console.log('✅ Form validation passed, preparing API call');
-      
       // Convert form data to FormData for API
       const images = data.billeder?.map(b => b.file).filter(Boolean) || [];
       const formData = productFormDataToFormData(data, images);
       
-      console.log('📦 FormData prepared with', images.length, 'images');
-      
       let response;
       if (mode === 'create') {
-        console.log('🔄 Creating product via API');
         response = await api.createProduct(formData);
       } else {
         // For edit mode, we'd need the product ID
         throw new Error('Edit mode not implemented yet');
       }
-      
-      console.log('📡 API response:', response);
       
       if (response.success) {
         toast({
@@ -366,14 +358,11 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           description: `${data.produktnavn} blev ${mode === 'create' ? 'oprettet' : 'opdateret'} succesfuldt.`,
           duration: 5000,
         });
-        
-        console.log('✅ Product created successfully, calling parent callback');
         onSubmit(data); // Call the parent callback
       } else {
         throw new Error(response.error || 'Unknown error');
       }
     } catch (error: any) {
-      console.error('❌ Form submission error:', error);
       const apiError = handleApiError(error);
       toast({
         title: 'Fejl',
@@ -964,32 +953,10 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         {field.value.map((image, index) => (
                           <div key={index} className="relative group">
                             {/* Image Container with improved aspect ratio */}
-                            <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow duration-200">
-                              <img
-                                src={image.preview}
-                                alt={`Produktbillede ${index + 1}`}
-                                className="w-full h-full object-cover"
-                                style={{ backgroundColor: 'white' }}
-                                onLoad={(e) => {
-                                  // Ensure image is visible when loaded
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.opacity = '1';
-                                }}
-                                onError={(e) => {
-                                  // Fallback for broken images
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  target.parentElement!.innerHTML = `
-                                    <div class="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                                      <div class="text-center">
-                                        <svg class="w-8 h-8 mx-auto mb-2" fill="currentColor" viewBox="0 0 20 20">
-                                          <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd" />
-                                        </svg>
-                                        <p class="text-xs">Billede ikke tilgængeligt</p>
-                                      </div>
-                                    </div>
-                                  `;
-                                }}
+                            <div className="aspect-[4/3] rounded-lg overflow-hidden border-2 border-gray-200 bg-gray-50 shadow-sm hover:shadow-md transition-shadow duration-200">
+                              <ImagePreview
+                                image={image}
+                                altText={`Produktbillede ${index + 1}`}
                               />
                             </div>
                             
@@ -1001,12 +968,16 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                 variant="secondary"
                                 onClick={() => {
                                   // Preview image in modal
-                                  window.open(image.preview, '_blank');
+                                  setImageToPreview(image);
                                 }}
                                 className="bg-white/90 text-gray-900 hover:bg-white shadow-lg backdrop-blur-sm"
                                 title="Forhåndsvis billede"
                               >
-                                <Eye className="h-4 w-4" />
+                                <DialogTrigger asChild>
+                                  <button type="button" className="w-full h-full flex items-center justify-center">
+                                    <Eye className="h-4 w-4" />
+                                  </button>
+                                </DialogTrigger>
                               </Button>
                               <Button
                                 type="button"
@@ -1036,7 +1007,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                             </div>
                             
                             {/* Loading Indicator for Processing */}
-                            {uploadingImages.has(`image-${index}`) && (
+                            {image.id && uploadingImages.has(image.id) && (
                               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm rounded-lg flex items-center justify-center">
                                 <div className="flex flex-col items-center gap-2">
                                   <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
@@ -1069,16 +1040,6 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                   Du har ugemte ændringer
                 </>
               )}
-              {/* Debug info for development */}
-              {import.meta.env.DEV && (
-                <div className="ml-4 text-xs text-gray-400">
-                  Valid: {isFormValid ? '✅' : '❌'} | 
-                  Images: {watchedImages?.length || 0} | 
-                  Name: {watchedProductName ? '✅' : '❌'} | 
-                  Category: {watchedKategoriNavn ? '✅' : '❌'} | 
-                  Price: {watchedBasispris > 0 ? '✅' : '❌'}
-                </div>
-              )}
             </div>
             
             <div className="flex items-center gap-3">
@@ -1094,8 +1055,18 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
               
               <Button
                 type="submit"
-                disabled={!isFormValid || isLoading}
+                disabled={!isValid || isLoading}
                 className="min-w-[120px]"
+                onClick={() => {
+                  // Debug form state
+                  console.log('🔍 Form Debug Info:', {
+                    isValid,
+                    errors,
+                    formValues: form.getValues(),
+                    isDirty,
+                    isLoading
+                  });
+                }}
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
@@ -1113,6 +1084,31 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           </div>
         </form>
       </Form>
+
+      <Dialog open={!!imageToPreview} onOpenChange={(isOpen) => !isOpen && setImageToPreview(null)}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Forhåndsvisning af Billede</DialogTitle>
+            <DialogDescription>
+              En større visning af det valgte produktbillede.
+            </DialogDescription>
+          </DialogHeader>
+          {imageToPreview && (
+            <div className="mt-4 flex justify-center">
+              <img
+                src={imageToPreview.preview}
+                alt="Produktbillede forhåndsvisning"
+                className="max-h-[70vh] w-auto rounded-lg object-contain"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setImageToPreview(null)}>
+              Luk
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }; 
