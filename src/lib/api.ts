@@ -278,6 +278,12 @@ class ApiClient {
     return this.request(endpoint);
   }
 
+  // EAN lookup for visual feedback (non-blocking)
+  async lookupEAN(ean: string) {
+    const endpoint = this.getEndpoint(`/api/products?ean=${encodeURIComponent(ean)}`);
+    return this.request(endpoint);
+  }
+
   async getLowStockProducts() {
     const endpoint = this.getEndpoint('/api/products/low-stock');
     return this.request(endpoint);

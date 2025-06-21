@@ -36,13 +36,16 @@ const beskrivelseSchema = z.string()
   .optional()
   .transform((val) => val?.trim() || undefined);
 
-// EAN number validation
+// EAN number validation - NON-BLOCKING for 13 digits
 const eanNummerSchema = z.string()
   .optional()
   .refine((val) => {
     if (!val) return true; // Optional field
+    // If it's 13 digits, always allow it (even if checksum is wrong)
+    if (/^\d{13}$/.test(val)) return true;
+    // For non-13 digit values, do full validation
     return validateEAN13(val);
-  }, 'EAN-nummer skal være et gyldigt 13-cifret nummer');
+  }, 'EAN-nummer skal være 13 cifre');
 
 // Unit enum with Danish labels
 const enhedSchema = z.enum(['kg', 'stk', 'bakke', 'kasse'], {
