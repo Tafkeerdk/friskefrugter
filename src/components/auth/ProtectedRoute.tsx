@@ -38,12 +38,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // If admin access is required but user is not admin
   if (requireAdmin && (!user || !isAdmin(user))) {
-    return <Navigate to="/login?type=admin" replace />;
+    return <Navigate to="/super/admin" replace />;
   }
 
   // If customer access is required but user is not customer
   if (requireCustomer && (!user || !isCustomer(user))) {
-    return <Navigate to="/login?type=customer" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // CRITICAL: Allow all users (including logged-in admins) to access customer login page

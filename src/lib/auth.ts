@@ -612,6 +612,31 @@ export const authService = {
 
   clearCachePattern(pattern: string): void {
     requestCache.clearPattern(pattern);
+  },
+
+  // Public refresh token method
+  async refreshToken(): Promise<{ success: boolean; tokens?: AuthTokens; message?: string }> {
+    const refreshToken = tokenManager.getRefreshToken();
+    if (!refreshToken) {
+      return { success: false, message: 'No refresh token available' };
+    }
+
+    try {
+      const response = await apiClient.post('/api/auth/refresh', { refreshToken });
+      const data = await response.json();
+      
+      if (data.success && data.tokens) {
+        tokenManager.setTokens(data.tokens);
+        return { success: true, tokens: data.tokens };
+      } else {
+        tokenManager.clearTokens();
+        return { success: false, message: data.message || 'Token refresh failed' };
+      }
+    } catch (error) {
+      console.error('Token refresh error:', error);
+      tokenManager.clearTokens();
+      return { success: false, message: 'Token refresh failed' };
+    }
   }
 };
 

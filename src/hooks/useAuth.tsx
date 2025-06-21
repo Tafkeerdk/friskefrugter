@@ -20,6 +20,36 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Utility function to check if token is expired
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return payload.exp < currentTime;
+    } catch (error) {
+      console.error('Error parsing token:', error);
+      return true; // Assume expired if we can't parse
+    }
+  };
+
+  // Utility function to attempt token refresh
+  const attemptTokenRefresh = async (): Promise<boolean> => {
+    const refreshToken = tokenManager.getRefreshToken();
+    if (!refreshToken) return false;
+
+    try {
+      const response = await authService.refreshToken();
+      if (response.success && response.tokens) {
+        tokenManager.setTokens(response.tokens);
+        return true;
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+    }
+
+    return false;
+  };
+
   // Enhanced initialization with profile data sync
   useEffect(() => {
     const initializeAuth = async () => {
@@ -27,6 +57,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const accessToken = tokenManager.getAccessToken();
       
       if (savedUser && accessToken) {
+        // Check if token is expired
+        if (isTokenExpired(accessToken)) {
+          console.log('🔄 Token expired on app init, attempting refresh...');
+          const refreshed = await attemptTokenRefresh();
+          if (!refreshed) {
+            // If refresh failed, clear everything and don't set user
+            tokenManager.clearTokens();
+            setUser(null);
+            setIsLoading(false);
+            return;
+          }
+        }
+        
         setUser(savedUser);
         
         // For admin users, fetch fresh profile data to ensure we have latest profilePictureUrl

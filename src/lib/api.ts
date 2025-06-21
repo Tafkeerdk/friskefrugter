@@ -16,15 +16,32 @@ class ApiClient {
   ): Promise<{ success: boolean; data?: T; error?: string; validationErrors?: any[] }> {
     const url = `${this.baseURL}${endpoint}`;
     
-    // Get auth token from localStorage
-    const token = localStorage.getItem('authToken');
+    // Get auth token from localStorage (correct key)
+    const token = localStorage.getItem('accessToken');
     
     const defaultHeaders: HeadersInit = {
       'Content-Type': 'application/json',
     };
 
     if (token) {
-      defaultHeaders.Authorization = `Bearer ${token}`;
+      // Validate token expiry before using it
+      if (this.isTokenExpired(token)) {
+        console.log('🔄 Token expired, attempting refresh...');
+        const refreshed = await this.refreshToken();
+        if (refreshed) {
+          const newToken = localStorage.getItem('accessToken');
+          if (newToken) {
+            defaultHeaders.Authorization = `Bearer ${newToken}`;
+          }
+        } else {
+          // If refresh failed, clear tokens and redirect to login
+          this.clearTokens();
+          window.location.href = '/login';
+          throw new Error('Session expired. Please log in again.');
+        }
+      } else {
+        defaultHeaders.Authorization = `Bearer ${token}`;
+      }
     }
 
     const config: RequestInit = {
@@ -38,7 +55,60 @@ class ApiClient {
 
     try {
       const response = await fetch(url, config);
-      const data = await response.json();
+      
+      // Handle non-JSON responses
+      const contentType = response.headers.get('content-type');
+      let data;
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          data = await response.json();
+        } catch (parseError) {
+          console.error('JSON parse error:', parseError);
+          throw new Error('Invalid JSON response from server');
+        }
+      } else {
+        // Handle non-JSON responses (like HTML error pages)
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        throw new Error(`Server returned non-JSON response: ${response.status}`);
+      }
+      
+      // Handle token expiry from server
+      if (response.status === 401 || response.status === 403) {
+        console.log('🔄 Server returned auth error, attempting token refresh...');
+        const refreshed = await this.refreshToken();
+        if (refreshed) {
+          // Retry the request with new token
+          const newToken = localStorage.getItem('accessToken');
+          if (newToken) {
+            const retryConfig = {
+              ...config,
+              headers: {
+                ...config.headers,
+                Authorization: `Bearer ${newToken}`,
+              },
+            };
+            const retryResponse = await fetch(url, retryConfig);
+            const retryContentType = retryResponse.headers.get('content-type');
+            
+            if (retryContentType && retryContentType.includes('application/json')) {
+              data = await retryResponse.json();
+            } else {
+              throw new Error(`Server returned non-JSON response on retry: ${retryResponse.status}`);
+            }
+            
+            if (!retryResponse.ok) {
+              throw new Error(data.error || `HTTP error! status: ${retryResponse.status}`);
+            }
+            return data;
+          }
+        } else {
+          this.clearTokens();
+          window.location.href = '/login';
+          throw new Error('Session expired. Please log in again.');
+        }
+      }
       
       if (!response.ok) {
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
@@ -49,6 +119,51 @@ class ApiClient {
       console.error('API request failed:', error);
       throw error;
     }
+  }
+
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      return payload.exp < currentTime;
+    } catch (error) {
+      console.error('Error parsing token:', error);
+      return true; // Assume expired if we can't parse
+    }
+  }
+
+  private async refreshToken(): Promise<boolean> {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) return false;
+
+    try {
+      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.tokens) {
+          localStorage.setItem('accessToken', data.tokens.accessToken);
+          localStorage.setItem('refreshToken', data.tokens.refreshToken);
+          return true;
+        }
+      }
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+    }
+
+    return false;
+  }
+
+  private clearTokens(): void {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
   }
 
   // Product API methods
