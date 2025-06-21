@@ -37,7 +37,10 @@ import {
   Eye,
   Package,
   MoreHorizontal,
-  ImageIcon
+  ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -101,6 +104,12 @@ const DashboardProducts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  
+  // Image gallery states
+  const [isImageGalleryOpen, setIsImageGalleryOpen] = useState(false);
+  const [galleryImages, setGalleryImages] = useState<Array<{url: string; altText?: string}>>([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [galleryProductName, setGalleryProductName] = useState('');
   
   // Filter states
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
@@ -209,6 +218,26 @@ const DashboardProducts: React.FC = () => {
   const openDeleteDialog = (product: Product) => {
     setSelectedProduct(product);
     setIsDeleteDialogOpen(true);
+  };
+
+  const openImageGallery = (product: Product, startIndex: number = 0) => {
+    const images = product.billeder.map(img => ({
+      url: img.url,
+      altText: img.altText || `${product.produktnavn} billede`
+    }));
+    
+    setGalleryImages(images);
+    setCurrentImageIndex(startIndex);
+    setGalleryProductName(product.produktnavn);
+    setIsImageGalleryOpen(true);
+  };
+
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % galleryImages.length);
+  };
+
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + galleryImages.length) % galleryImages.length);
   };
 
   const formatPrice = (price: number) => {
@@ -342,7 +371,8 @@ const DashboardProducts: React.FC = () => {
                           <img
                             src={primaryImage.url}
                             alt={primaryImage.altText || product.produktnavn}
-                            className="object-cover w-full h-full"
+                            className="object-cover w-full h-full cursor-pointer hover:scale-105 transition-transform duration-200"
+                            onClick={() => openImageGallery(product, 0)}
                           />
                         ) : (
                           <div className="flex items-center justify-center w-full h-full bg-muted">
@@ -449,7 +479,8 @@ const DashboardProducts: React.FC = () => {
                                     <img
                                       src={primaryImage.url}
                                       alt={primaryImage.altText || product.produktnavn}
-                                      className="h-full w-full object-cover"
+                                      className="h-full w-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                                      onClick={() => openImageGallery(product, 0)}
                                     />
                                   ) : (
                                     <div className="flex items-center justify-center w-full h-full">
@@ -546,6 +577,88 @@ const DashboardProducts: React.FC = () => {
             </Button>
           </div>
         )}
+
+        {/* Image Gallery Dialog */}
+        <Dialog open={isImageGalleryOpen} onOpenChange={setIsImageGalleryOpen}>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+            <div className="relative">
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b">
+                <div>
+                  <DialogTitle className="text-lg font-semibold">
+                    {galleryProductName}
+                  </DialogTitle>
+                  <DialogDescription className="text-sm text-muted-foreground">
+                    Billede {currentImageIndex + 1} af {galleryImages.length}
+                  </DialogDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsImageGalleryOpen(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Image Display */}
+              <div className="relative bg-black">
+                {galleryImages.length > 0 && (
+                  <img
+                    src={galleryImages[currentImageIndex]?.url}
+                    alt={galleryImages[currentImageIndex]?.altText}
+                    className="w-full h-auto max-h-[70vh] object-contain"
+                  />
+                )}
+                
+                {/* Navigation Arrows */}
+                {galleryImages.length > 1 && (
+                  <>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      onClick={prevImage}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      size="icon"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white"
+                      onClick={nextImage}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
+              </div>
+
+              {/* Thumbnail Navigation */}
+              {galleryImages.length > 1 && (
+                <div className="flex gap-2 p-4 overflow-x-auto">
+                  {galleryImages.map((image, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden ${
+                        index === currentImageIndex
+                          ? 'border-blue-500'
+                          : 'border-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.altText}
+                        className="w-full h-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Delete Product Dialog */}
         <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
