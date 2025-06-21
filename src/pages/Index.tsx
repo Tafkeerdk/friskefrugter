@@ -108,7 +108,7 @@ const Index = () => {
               <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-soft shadow-hover transition-all duration-300">
                 <h2 className="text-xl md:text-2xl font-semibold text-center text-gray-900 mb-8 relative">
                   <span className="relative">
-                    Velkommen til <span className="text-green-600">Firmanavn</span> - Professionel frugt- og grøntleverandør
+                    Velkommen til <span className="text-green-600">Multi Grønt</span> - Professionel frugt- og grøntleverandør
                     <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-green-500 rounded-full"></div>
                   </span>
                 </h2>

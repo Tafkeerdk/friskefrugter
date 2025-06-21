@@ -50,7 +50,7 @@ export default function About() {
               </h2>
             </div>
             <p className="text-xl text-gray-600 leading-relaxed animate-fade-slide-up-delay-1">
-              Hos FriskeFrugter stræber vi efter at revolutionere måden professionelle køkkener får deres råvarer på. 
+                              Hos Multi Grønt stræber vi efter at revolutionere måden professionelle køkkener får deres råvarer på. 
               Vi kombinerer års erfaring inden for fødevarebranchen med moderne teknologi for at sikre den bedste 
               kvalitet og service til vores kunder.
             </p>

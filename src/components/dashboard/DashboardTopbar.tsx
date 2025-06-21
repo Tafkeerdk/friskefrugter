@@ -42,11 +42,11 @@ const DashboardTopbar: React.FC = () => {
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6">
       <div className="flex items-center gap-2 md:hidden">
         <SidebarTrigger />
-        <div className="font-medium">FriskeFrugter</div>
+                  <div className="font-medium">Multi Grønt</div>
       </div>
 
       <div className="hidden md:flex md:flex-1 md:items-center md:gap-4 lg:gap-8">
-        <div className="font-medium text-lg">FriskeFrugter</div>
+        <div className="font-medium text-lg">Multi Grønt</div>
       </div>
 
       <div className="relative flex-1 md:grow-0 lg:flex-1">
