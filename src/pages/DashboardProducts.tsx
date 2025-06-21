@@ -358,6 +358,14 @@ const DashboardProducts: React.FC = () => {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          <Button 
+                            size="icon" 
+                            variant="destructive" 
+                            className="h-8 w-8 rounded-full"
+                            onClick={() => openDeleteDialog(product)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                       <CardContent className="p-4">

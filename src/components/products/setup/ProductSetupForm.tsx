@@ -72,7 +72,8 @@ const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ imag
     setHasError(false);
   }, [image.preview, image.url]);
 
-  const imageUrl = image.preview || image.url;
+  // For existing images, use the url; for new uploads, use the preview (blob URL)
+  const imageUrl = image.isExisting ? image.url : (image.preview || image.url);
 
   if (hasError || !imageUrl) {
     return (
@@ -80,7 +81,7 @@ const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ imag
         <div className="text-center p-2">
           <ImageIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
           <p className="text-xs">
-            {image.isExisting ? 'Eksisterende billede' : 'Kunne ikke vise billede'}
+            {image.isExisting ? 'Kunne ikke indlæse eksisterende billede' : 'Kunne ikke vise billede'}
           </p>
         </div>
       </div>
@@ -93,7 +94,12 @@ const ImagePreview: React.FC<{ image: ProductImage; altText: string }> = ({ imag
       alt={altText}
       className="w-full h-full object-contain bg-white"
       onError={() => {
-        console.warn(`Could not load image: ${altText}`, { imageUrl, isExisting: image.isExisting });
+        console.warn(`Could not load image: ${altText}`, { 
+          imageUrl, 
+          isExisting: image.isExisting,
+          preview: image.preview,
+          url: image.url 
+        });
         setHasError(true);
       }}
     />

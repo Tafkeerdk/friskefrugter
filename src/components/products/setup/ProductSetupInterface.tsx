@@ -6,7 +6,15 @@ import { useToast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, Edit } from 'lucide-react';
+import { ArrowLeft, Plus, Edit, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface ProductSetupInterfaceProps {
   productId?: string; // If provided, we're in edit mode
@@ -23,6 +31,8 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [initialData, setInitialData] = useState<Partial<ProductFormData> | undefined>();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [productName, setProductName] = useState<string>('');
 
   const isEditMode = Boolean(productId);
 
@@ -64,6 +74,9 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
               billeder: existingImages,
               aktiv: product.aktiv
             });
+            
+            // Set product name for delete dialog
+            setProductName(product.produktnavn);
           }
         } catch (error) {
           console.error('Failed to fetch product:', error);
@@ -105,6 +118,33 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
     }
   };
 
+  const handleDeleteProduct = async () => {
+    if (!productId) return;
+    
+    try {
+      const response = await api.deleteProduct(productId);
+      
+      if (response.success) {
+        toast({
+          title: 'Produkt slettet',
+          description: `Produktet "${productName}" blev slettet succesfuldt.`,
+          duration: 3000,
+        });
+        
+        setIsDeleteDialogOpen(false);
+        navigate('/admin/products');
+      }
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl ved sletning af produktet.',
+        variant: 'destructive',
+        duration: 5000,
+      });
+    }
+  };
+
   // Loading state while fetching data in edit mode
   if (isEditMode && isLoading && !initialData) {
     return (
@@ -138,10 +178,24 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
       <div className="container mx-auto py-6">
         {/* Navigation */}
         <div className="mb-6">
-          <Button variant="outline" size="sm" onClick={handleCancel}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Tilbage til produkter
-          </Button>
+          <div className="flex items-center justify-between">
+            <Button variant="outline" size="sm" onClick={handleCancel}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Tilbage til produkter
+            </Button>
+            
+            {/* Delete button for edit mode */}
+            {isEditMode && (
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Slet produkt
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Main Form */}
@@ -153,6 +207,27 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
           mode={isEditMode ? 'edit' : 'create'}
           isLoading={isLoading}
         />
+        
+        {/* Delete Product Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Slet produkt</DialogTitle>
+              <DialogDescription>
+                Er du sikker på, at du vil slette produktet "{productName}"?
+                Denne handling kan ikke fortrydes.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+                Annuller
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteProduct}>
+                Slet produkt
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
