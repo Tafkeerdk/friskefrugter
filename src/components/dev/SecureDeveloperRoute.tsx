@@ -80,6 +80,31 @@ export const SecureDeveloperRoute: React.FC = () => {
     };
   }, []);
 
+  // Helper function to get the correct endpoint based on environment
+  const getEndpoint = (path: string): string => {
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+      (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
+    
+    // In development, use Express routes
+    if (import.meta.env.DEV) {
+      return `${API_BASE_URL}${path}`;
+    }
+    
+    // In production (Netlify), route to dedicated functions
+    if (path.includes('/dev/server-logs')) {
+      return `${API_BASE_URL}/.netlify/functions/dev-server-logs`;
+    }
+    if (path.includes('/dev/performance-metrics')) {
+      return `${API_BASE_URL}/.netlify/functions/dev-performance-metrics`;
+    }
+    if (path.includes('/dev/reset-rate-limit')) {
+      return `${API_BASE_URL}/.netlify/functions/dev-rate-limit-reset`;
+    }
+    
+    // Default: use the path as-is
+    return `${API_BASE_URL}${path}`;
+  };
+
   // Real-time monitoring function
   const startRealTimeMonitoring = () => {
     setIsRealTimeMonitoring(true);
@@ -88,12 +113,10 @@ export const SecureDeveloperRoute: React.FC = () => {
     // Use polling approach for serverless compatibility
     const fetchServerLogs = async () => {
       try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-          (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
-        
         // Fix URL encoding - ensure proper encoding of the token
         const encodedToken = encodeURIComponent(SECURE_TOKEN);
-        const response = await fetch(`${API_BASE_URL}/api/auth/dev/server-logs?token=${encodedToken}`, {
+        const endpoint = getEndpoint('/api/auth/dev/server-logs');
+        const response = await fetch(`${endpoint}?token=${encodedToken}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -209,13 +232,11 @@ export const SecureDeveloperRoute: React.FC = () => {
 
   const fetchLatestMetrics = async () => {
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-        (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
-      
       // Use proper URL encoding for the token
       const encodedToken = encodeURIComponent(SECURE_TOKEN);
+      const endpoint = getEndpoint('/api/auth/dev/performance-metrics');
       
-      const response = await fetch(`${API_BASE_URL}/api/auth/dev/performance-metrics?token=${encodedToken}`, {
+      const response = await fetch(`${endpoint}?token=${encodedToken}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -251,15 +272,12 @@ export const SecureDeveloperRoute: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      // Server-side validation and metrics fetch
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-        (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
-      
       // Fix URL encoding issue - use proper encoding for the token
       // The token contains special characters that need proper encoding
       const encodedToken = encodeURIComponent(inputToken);
+      const endpoint = getEndpoint('/api/auth/dev/performance-metrics');
       
-      const response = await fetch(`${API_BASE_URL}/api/auth/dev/performance-metrics?token=${encodedToken}`, {
+      const response = await fetch(`${endpoint}?token=${encodedToken}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -317,10 +335,9 @@ export const SecureDeveloperRoute: React.FC = () => {
       setIsResetting(true);
       setResetMessage('');
       
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-        (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
+      const endpoint = getEndpoint('/api/auth/dev/reset-rate-limit');
       
-      const response = await fetch(`${API_BASE_URL}/api/auth/dev/reset-rate-limit`, {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -333,7 +350,8 @@ export const SecureDeveloperRoute: React.FC = () => {
 
       if (response.ok && data.success) {
         const resetInfo = data.resetLimiters ? ` (${data.resetLimiters.join(', ')})` : '';
-        setResetMessage(`✅ Rate limit reset successful! Admin login attempts have been cleared${resetInfo}.`);
+        const note = data.note ? `\n\nNote: ${data.note}` : '';
+        setResetMessage(`✅ Rate limit reset successful! Admin login attempts have been cleared${resetInfo}.${note}`);
         setResetToken('');
         setShowRateLimitReset(false);
         
@@ -342,7 +360,7 @@ export const SecureDeveloperRoute: React.FC = () => {
           setServerLogs(prev => [{
             timestamp: new Date().toISOString(),
             level: 'info',
-            message: `🔄 Rate limits reset successfully for IP: ${data.ip}`,
+            message: `🔄 Rate limits reset successfully${import.meta.env.DEV ? '' : ' (Netlify mode)'}`,
             source: 'admin-action'
           }, ...prev]);
         }
