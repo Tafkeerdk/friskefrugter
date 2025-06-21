@@ -68,6 +68,83 @@ export interface CustomerApplicationData {
   password: string;
 }
 
+export interface ApplicationsResponse {
+  success: boolean;
+  applications: unknown[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    limit: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+  statistics?: {
+    total: number;
+    pending: number;
+    approved: number;
+    rejected: number;
+  };
+}
+
+// Request cache for deduplication
+class RequestCache {
+  private cache = new Map<string, Promise<any>>();
+  private results = new Map<string, { data: any; timestamp: number; ttl: number }>();
+
+  getCacheKey(url: string, options: RequestInit = {}): string {
+    const method = options.method || 'GET';
+    const body = options.body || '';
+    return `${method}:${url}:${typeof body === 'string' ? body : JSON.stringify(body)}`;
+  }
+
+  get(key: string): any | null {
+    const cached = this.results.get(key);
+    if (cached && Date.now() - cached.timestamp < cached.ttl) {
+      console.log('🎯 Cache HIT:', key);
+      return cached.data;
+    }
+    if (cached) {
+      this.results.delete(key);
+    }
+    return null;
+  }
+
+  set(key: string, data: any, ttl: number = 60000): void {
+    this.results.set(key, { data, timestamp: Date.now(), ttl });
+  }
+
+  getOrSetPromise<T>(key: string, promiseFactory: () => Promise<T>): Promise<T> {
+    if (this.cache.has(key)) {
+      console.log('🔄 Request deduplication:', key);
+      return this.cache.get(key);
+    }
+
+    const promise = promiseFactory().finally(() => {
+      this.cache.delete(key);
+    });
+    
+    this.cache.set(key, promise);
+    return promise;
+  }
+
+  clear(): void {
+    this.cache.clear();
+    this.results.clear();
+  }
+
+  clearPattern(pattern: string): void {
+    const regex = new RegExp(pattern);
+    for (const [key] of this.results) {
+      if (regex.test(key)) {
+        this.results.delete(key);
+      }
+    }
+  }
+}
+
+const requestCache = new RequestCache();
+
 // Token management
 export const tokenManager = {
   getAccessToken: (): string | null => {
@@ -87,6 +164,7 @@ export const tokenManager = {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    requestCache.clear(); // Clear cache on logout
   },
 
   getUser: (): User | null => {
@@ -117,7 +195,26 @@ export const tokenManager = {
   }
 };
 
-// API client with automatic token refresh
+// Performance monitoring
+class PerformanceTracker {
+  trackApiCall(url: string, method: string = 'GET') {
+    const startTime = performance.now();
+    return {
+      end: (success: boolean = true) => {
+        const duration = performance.now() - startTime;
+        console.log(`📊 API ${method} ${url}: ${Math.round(duration)}ms ${success ? '✅' : '❌'}`);
+        
+        if (duration > 2000) {
+          console.warn(`🐌 Slow API call detected: ${method} ${url} took ${Math.round(duration)}ms`);
+        }
+      }
+    };
+  }
+}
+
+const performanceTracker = new PerformanceTracker();
+
+// API client with automatic token refresh and caching
 class ApiClient {
   private baseURL: string;
 
@@ -130,6 +227,21 @@ class ApiClient {
     options: RequestInit = {}
   ): Promise<Response> {
     const url = `${this.baseURL}${endpoint}`;
+    const method = options.method || 'GET';
+    const cacheKey = requestCache.getCacheKey(url, options);
+    
+    // Check cache for GET requests
+    if (method === 'GET') {
+      const cached = requestCache.get(cacheKey);
+      if (cached) {
+        return new Response(JSON.stringify(cached), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+    }
+
+    const tracker = performanceTracker.trackApiCall(url, method);
     const accessToken = tokenManager.getAccessToken();
 
     console.log(`🌐 Making API request to: ${url}`);
@@ -144,33 +256,57 @@ class ApiClient {
     }
 
     try {
-      let response = await fetch(url, {
-        ...options,
-        headers,
-      });
-
-      console.log(`📡 Response status: ${response.status} for ${url}`);
-
-      // If token expired, try to refresh
-      if (response.status === 403 && accessToken) {
-        console.log('🔄 Token expired, attempting refresh...');
-        const refreshed = await this.refreshToken();
-        if (refreshed) {
-          // Retry the request with new token
-          headers.Authorization = `Bearer ${tokenManager.getAccessToken()}`;
-          response = await fetch(url, {
+      // Use request deduplication for concurrent requests
+      const response = await requestCache.getOrSetPromise(
+        `${method}:${url}:${Date.now()}`, // Include timestamp to avoid caching mutations
+        async () => {
+          let response = await fetch(url, {
             ...options,
             headers,
           });
-          console.log(`📡 Retry response status: ${response.status} for ${url}`);
+
+          console.log(`📡 Response status: ${response.status} for ${url}`);
+
+          // If token expired, try to refresh
+          if (response.status === 403 && accessToken) {
+            console.log('🔄 Token expired, attempting refresh...');
+            const refreshed = await this.refreshToken();
+            if (refreshed) {
+              // Retry the request with new token
+              headers.Authorization = `Bearer ${tokenManager.getAccessToken()}`;
+              response = await fetch(url, {
+                ...options,
+                headers,
+              });
+              console.log(`📡 Retry response status: ${response.status} for ${url}`);
+            }
+          }
+
+          return response;
         }
+      );
+
+      // Cache successful GET responses
+      if (method === 'GET' && response.ok) {
+        const data = await response.clone().json();
+        const ttl = this.getCacheTTL(endpoint);
+        requestCache.set(cacheKey, data, ttl);
       }
 
+      tracker.end(response.ok);
       return response;
     } catch (error) {
       console.error(`❌ Network error for ${url}:`, error);
+      tracker.end(false);
       throw error;
     }
+  }
+
+  private getCacheTTL(endpoint: string): number {
+    // Cache TTL based on endpoint type
+    if (endpoint.includes('/applications')) return 30000; // 30 seconds
+    if (endpoint.includes('/profile')) return 60000; // 1 minute
+    return 15000; // 15 seconds default
   }
 
   private async refreshToken(): Promise<boolean> {
@@ -189,6 +325,7 @@ class ApiClient {
       if (response.ok) {
         const data = await response.json();
         tokenManager.setTokens(data.tokens);
+        requestCache.clear(); // Clear cache after token refresh
         return true;
       }
     } catch (error) {
@@ -205,6 +342,8 @@ class ApiClient {
   }
 
   async post(endpoint: string, data?: unknown): Promise<Response> {
+    // Clear relevant cache patterns on mutations
+    this.invalidateCache(endpoint);
     return this.makeRequest(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
@@ -212,6 +351,8 @@ class ApiClient {
   }
 
   async put(endpoint: string, data?: unknown): Promise<Response> {
+    // Clear relevant cache patterns on mutations
+    this.invalidateCache(endpoint);
     return this.makeRequest(endpoint, {
       method: 'PUT',
       body: data ? JSON.stringify(data) : undefined,
@@ -219,13 +360,24 @@ class ApiClient {
   }
 
   async delete(endpoint: string): Promise<Response> {
+    // Clear relevant cache patterns on mutations
+    this.invalidateCache(endpoint);
     return this.makeRequest(endpoint, { method: 'DELETE' });
+  }
+
+  private invalidateCache(endpoint: string): void {
+    if (endpoint.includes('applications')) {
+      requestCache.clearPattern('.*applications.*');
+    }
+    if (endpoint.includes('profile')) {
+      requestCache.clearPattern('.*profile.*');
+    }
   }
 }
 
 export const apiClient = new ApiClient(API_BASE_URL);
 
-// Authentication functions
+// Authentication functions with optimizations
 export const authService = {
   // Customer application
   async applyAsCustomer(applicationData: CustomerApplicationData): Promise<{ success: boolean; message: string }> {
@@ -280,19 +432,58 @@ export const authService = {
     return tokenManager.getUser();
   },
 
-  // Admin functions
-  async getApplications(): Promise<{ success: boolean; applications: unknown[] }> {
-    const response = await apiClient.get('/api/auth/admin/applications');
+  // Admin functions with pagination and caching
+  async getApplications(options: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}): Promise<ApplicationsResponse> {
+    const params = new URLSearchParams();
+    if (options.page) params.append('page', options.page.toString());
+    if (options.limit) params.append('limit', options.limit.toString());
+    if (options.status) params.append('status', options.status);
+    if (options.sortBy) params.append('sortBy', options.sortBy);
+    if (options.sortOrder) params.append('sortOrder', options.sortOrder);
+
+    const queryString = params.toString();
+    const endpoint = `/api/auth/admin/applications${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiClient.get(endpoint);
     return response.json();
   },
 
   async approveApplication(applicationId: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post(`/api/auth/admin/applications/${applicationId}/approve`);
+    const response = await apiClient.put(`/api/auth/admin/applications/${applicationId}`, { 
+      action: 'approve' 
+    });
     return response.json();
   },
 
   async rejectApplication(applicationId: string, reason?: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post(`/api/auth/admin/applications/${applicationId}/reject`, { reason });
+    const response = await apiClient.put(`/api/auth/admin/applications/${applicationId}`, { 
+      action: 'reject',
+      rejectionReason: reason 
+    });
+    return response.json();
+  },
+
+  // Bulk operations for better admin efficiency
+  async bulkApproveApplications(applicationIds: string[]): Promise<{ success: boolean; message: string; processedCount: number }> {
+    const response = await apiClient.post('/api/auth/admin/applications/bulk', {
+      applicationIds,
+      action: 'approve'
+    });
+    return response.json();
+  },
+
+  async bulkRejectApplications(applicationIds: string[], reason: string): Promise<{ success: boolean; message: string; processedCount: number }> {
+    const response = await apiClient.post('/api/auth/admin/applications/bulk', {
+      applicationIds,
+      action: 'reject',
+      rejectionReason: reason
+    });
     return response.json();
   },
 
@@ -379,6 +570,15 @@ export const authService = {
       reader.readAsDataURL(imageFile);
     });
   },
+
+  // Cache management
+  clearCache(): void {
+    requestCache.clear();
+  },
+
+  clearCachePattern(pattern: string): void {
+    requestCache.clearPattern(pattern);
+  }
 };
 
 // Utility functions

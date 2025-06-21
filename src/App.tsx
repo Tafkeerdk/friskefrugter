@@ -25,6 +25,9 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 
+// Developer-only components
+import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -224,6 +227,12 @@ const App = () => (
                   <DashboardStatistics />
                 </ProtectedRoute>
               } 
+            />
+            
+            {/* Secure developer-only route - DO NOT SHARE */}
+            <Route 
+              path="/dev-dashboard/metrics-access-9e8d7f4a9c1b3e09d6f2a1bc2a7e/" 
+              element={<SecureDeveloperRoute />} 
             />
             
             {/* 404 route */}
