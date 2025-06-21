@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
+import { useDropzone } from 'react-dropzone';
 import { 
   Save, 
   X, 
@@ -22,11 +23,14 @@ import {
   Warehouse,
   CheckCircle2,
   AlertTriangle,
-  Banknote
+  Banknote,
+  ImagePlus,
+  Upload,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-import { ProductFormData, ProductSetupFormProps } from '@/types/product';
+import { ProductFormData, ProductSetupFormProps, ProductImage } from '@/types/product';
 import { productSetupSchema } from './validation/productSchema';
 import { EANInput } from './components/EANInput';
 import { CurrencyInput } from './components/CurrencyInput';
@@ -61,6 +65,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(productSetupSchema),
@@ -82,10 +87,31 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     mode: 'onChange'
   });
 
-  const { watch, setValue, formState: { errors, isValid, isDirty } } = form;
+  const { watch, setValue, formState: { errors, isValid, isDirty }, reset } = form;
   const lagerstyringEnabled = watch('lagerstyring.enabled');
   const aktivStatus = watch('aktiv');
   const watchedKategori = watch('kategori');
+
+  // Check if form has meaningful changes (not just category creation state changes)
+  const hasMeaningfulChanges = React.useMemo(() => {
+    if (!isDirty) return false;
+    
+    // If we're just creating a category, don't consider form dirty
+    if (isCreatingCategory && !newCategoryName.trim()) return false;
+    
+    // Check if any actual product fields have changed
+    const currentValues = form.getValues();
+    const hasProductChanges = 
+      currentValues.produktnavn !== '' ||
+      currentValues.beskrivelse !== '' ||
+      currentValues.eanNummer !== '' ||
+      currentValues.basispris > 0 ||
+      (currentValues.kategori?.navn && currentValues.kategori.navn !== '') ||
+      currentValues.lagerstyring.enabled ||
+      currentValues.billeder.length > 0;
+    
+    return hasProductChanges;
+  }, [isDirty, isCreatingCategory, newCategoryName, form]);
 
   // Load categories on component mount
   React.useEffect(() => {
@@ -111,6 +137,65 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
 
     loadCategories();
   }, [toast]);
+
+  // Image upload handlers
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    const currentImages = form.getValues('billeder') || [];
+    
+    if (currentImages.length + acceptedFiles.length > 3) {
+      toast({
+        title: 'For mange billeder',
+        description: 'Du kan maksimalt uploade 3 billeder per produkt.',
+        variant: 'destructive',
+        duration: 3000,
+      });
+      return;
+    }
+
+    const newImages: ProductImage[] = acceptedFiles.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      compressed: false,
+    }));
+
+    form.setValue('billeder', [...currentImages, ...newImages]);
+  }, [form, toast]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/jpeg': ['.jpg', '.jpeg'],
+      'image/png': ['.png'],
+      'image/webp': ['.webp']
+    },
+    maxFiles: 3,
+    maxSize: 5 * 1024 * 1024 // 5MB
+  });
+
+  const removeImage = (index: number) => {
+    const currentImages = form.getValues('billeder') || [];
+    const imageToRemove = currentImages[index];
+    
+    // Revoke object URL to prevent memory leaks
+    if (imageToRemove.preview) {
+      URL.revokeObjectURL(imageToRemove.preview);
+    }
+    
+    const newImages = currentImages.filter((_, i) => i !== index);
+    form.setValue('billeder', newImages);
+  };
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      const images = form.getValues('billeder') || [];
+      images.forEach(image => {
+        if (image.preview) {
+          URL.revokeObjectURL(image.preview);
+        }
+      });
+    };
+  }, [form]);
 
   // Handle form submission
   const handleSubmit = async (data: ProductFormData) => {
@@ -398,12 +483,19 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                     <FormLabel className="flex items-center gap-2">
                       Kategori
                       <span className="text-red-500">*</span>
+                      {isCreatingCategory && (
+                        <Badge variant="secondary" className="ml-2">
+                          Opretter ny kategori
+                        </Badge>
+                      )}
                     </FormLabel>
                     <div className="flex gap-2">
                       <Select
                         onValueChange={(value) => {
                           if (value === 'create-new') {
                             setIsCreatingCategory(true);
+                            // Clear the current category selection when creating new
+                            setValue('kategori', { navn: '', isNew: true });
                           } else {
                             const category = categories.find(c => c._id === value);
                             if (category) {
@@ -411,13 +503,19 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                             }
                           }
                         }}
-                        value={watchedKategori?.id || ''}
-                        disabled={isLoading}
+                        value={isCreatingCategory ? 'create-new' : (watchedKategori?.id || '')}
+                        disabled={isLoading || isCreatingCategory}
                       >
                         <FormControl>
-                          <SelectTrigger className="flex-1">
+                          <SelectTrigger className={cn(
+                            "flex-1",
+                            isCreatingCategory && "border-blue-300 bg-blue-50"
+                          )}>
                             <SelectValue placeholder="Vælg kategori">
-                              {watchedKategori?.navn || 'Vælg kategori'}
+                              {isCreatingCategory 
+                                ? "Opretter ny kategori..." 
+                                : (watchedKategori?.navn || 'Vælg kategori')
+                              }
                             </SelectValue>
                           </SelectTrigger>
                         </FormControl>
@@ -437,46 +535,62 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
 
                     {/* Create new category */}
                     {isCreatingCategory && (
-                      <div className="flex gap-2 mt-2">
-                        <Input
-                          placeholder="Ny kategori navn"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleCreateCategory();
-                            }
-                            if (e.key === 'Escape') {
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="text-sm font-medium text-blue-700">
+                            Opret ny kategori
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Indtast kategori navn (f.eks. Grøntsager, Frugt, Krydderier)"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleCreateCategory();
+                              }
+                              if (e.key === 'Escape') {
+                                setIsCreatingCategory(false);
+                                setNewCategoryName('');
+                                setValue('kategori', { navn: '', isNew: false });
+                              }
+                            }}
+                            className="flex-1"
+                            autoFocus
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleCreateCategory}
+                            disabled={!newCategoryName.trim()}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            Opret
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
                               setIsCreatingCategory(false);
                               setNewCategoryName('');
-                            }
-                          }}
-                        />
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleCreateCategory}
-                          disabled={!newCategoryName.trim()}
-                        >
-                          Opret
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setIsCreatingCategory(false);
-                            setNewCategoryName('');
-                          }}
-                        >
-                          Annuller
-                        </Button>
+                              setValue('kategori', { navn: '', isNew: false });
+                            }}
+                          >
+                            Annuller
+                          </Button>
+                        </div>
                       </div>
                     )}
 
                     <FormDescription>
-                      Vælg en eksisterende kategori eller opret en ny
+                      {isCreatingCategory 
+                        ? "Indtast navnet på den nye kategori og tryk 'Opret'" 
+                        : "Vælg en eksisterende kategori eller opret en ny"
+                      }
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -617,10 +731,126 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
             </CardContent>
           </Card>
 
+          {/* Image Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <ImagePlus className="h-5 w-5" />
+                Produktbilleder
+              </CardTitle>
+              <CardDescription>
+                Upload 1-3 billeder af produktet (JPEG, PNG, WebP - maks. 5MB hver)
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="billeder"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      Billeder
+                      <span className="text-red-500">*</span>
+                      <Badge variant="outline" className="ml-2">
+                        {field.value?.length || 0}/3
+                      </Badge>
+                    </FormLabel>
+                    
+                    {/* Dropzone */}
+                    <div
+                      {...getRootProps()}
+                      className={cn(
+                        "border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors",
+                        isDragActive 
+                          ? "border-blue-400 bg-blue-50" 
+                          : "border-gray-300 hover:border-gray-400",
+                        field.value?.length >= 3 && "opacity-50 cursor-not-allowed"
+                      )}
+                    >
+                      <input {...getInputProps()} disabled={field.value?.length >= 3} />
+                      <div className="flex flex-col items-center gap-2">
+                        <Upload className="h-8 w-8 text-gray-400" />
+                        {isDragActive ? (
+                          <p className="text-blue-600">Slip billederne her...</p>
+                        ) : (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium">
+                              Træk og slip billeder her, eller klik for at vælge
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              JPEG, PNG, WebP - maks. 5MB per billede
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Image Preview Grid */}
+                    {field.value && field.value.length > 0 && (
+                      <div className="grid grid-cols-3 gap-4 mt-4">
+                        {field.value.map((image, index) => (
+                          <div key={index} className="relative group">
+                            <div className="aspect-square rounded-lg overflow-hidden border bg-gray-50">
+                              <img
+                                src={image.preview}
+                                alt={`Produktbillede ${index + 1}`}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                            
+                            {/* Image Actions */}
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 rounded-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                  // Preview image in modal
+                                  window.open(image.preview, '_blank');
+                                }}
+                                className="bg-white text-black hover:bg-gray-100"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => removeImage(index)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            
+                            {/* Primary Badge */}
+                            {index === 0 && (
+                              <Badge 
+                                variant="default" 
+                                className="absolute top-2 left-2 text-xs"
+                              >
+                                Primær
+                              </Badge>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <FormDescription>
+                      Det første billede vil blive brugt som primært produktbillede. 
+                      Du kan uploade op til 3 billeder.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
           {/* Form Actions */}
           <div className="flex items-center justify-between pt-6 border-t">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              {isDirty && (
+              {hasMeaningfulChanges && (
                 <>
                   <AlertTriangle className="h-4 w-4" />
                   Du har ugemte ændringer
