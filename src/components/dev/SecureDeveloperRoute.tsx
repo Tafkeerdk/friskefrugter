@@ -5,7 +5,7 @@ import { Alert, AlertDescription } from '../ui/alert';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Loader2, Shield, AlertTriangle, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Shield, AlertTriangle, Eye, EyeOff, Activity, Play, Square } from 'lucide-react';
 
 // DEVELOPER ONLY - DO NOT SHARE
 const SECURE_TOKEN = "Q3v7$1pL!eR9dTz#XpRk29!eDdL92v@aMzFw8k";
@@ -39,6 +39,14 @@ interface DevMetricsResponse {
   };
 }
 
+interface ServerLog {
+  timestamp: string;
+  level: 'info' | 'warn' | 'error' | 'debug';
+  message: string;
+  source?: string;
+  data?: any;
+}
+
 export const SecureDeveloperRoute: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [serverMetrics, setServerMetrics] = useState<ServerMetrics | null>(null);
@@ -51,6 +59,173 @@ export const SecureDeveloperRoute: React.FC = () => {
   const [resetToken, setResetToken] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [resetMessage, setResetMessage] = useState('');
+  
+  // Real-time monitoring state
+  const [isRealTimeMonitoring, setIsRealTimeMonitoring] = useState(false);
+  const [serverLogs, setServerLogs] = useState<ServerLog[]>([]);
+  const [realTimeMetrics, setRealTimeMetrics] = useState<ServerMetrics | null>(null);
+
+  // Cleanup effect for real-time monitoring
+  useEffect(() => {
+    return () => {
+      // Cleanup on component unmount
+      if ((window as any).__serverLogsInterval) {
+        clearInterval((window as any).__serverLogsInterval);
+        delete (window as any).__serverLogsInterval;
+      }
+      if ((window as any).__metricsInterval) {
+        clearInterval((window as any).__metricsInterval);
+        delete (window as any).__metricsInterval;
+      }
+    };
+  }, []);
+
+  // Real-time monitoring function
+  const startRealTimeMonitoring = () => {
+    setIsRealTimeMonitoring(true);
+    console.log('🚀 Starting real-time monitoring...');
+    
+    // Use polling approach for serverless compatibility
+    const fetchServerLogs = async () => {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+          (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
+        
+        const encodedToken = encodeURIComponent(SECURE_TOKEN);
+        const response = await fetch(`${API_BASE_URL}/api/auth/dev/server-logs?token=${encodedToken}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          if (data.success && data.logs) {
+            // Add timestamp to distinguish new logs
+            const newLogs = data.logs.map((log: any) => ({
+              timestamp: log.timestamp,
+              level: log.level,
+              message: log.message,
+              source: log.source,
+              data: log.data
+            }));
+            
+            setServerLogs(prev => {
+              // Merge new logs with existing ones, avoiding duplicates
+              const combined = [...newLogs, ...prev];
+              const unique = combined.filter((log, index, arr) => 
+                arr.findIndex(l => l.timestamp === log.timestamp && l.message === log.message) === index
+              );
+              return unique.slice(0, 100); // Keep last 100 logs
+            });
+          }
+        } else {
+          console.error('Failed to fetch server logs:', response.status);
+          setServerLogs(prev => [{
+            timestamp: new Date().toISOString(),
+            level: 'error',
+            message: `❌ Failed to fetch server logs: ${response.status}`,
+            source: 'client'
+          }, ...prev]);
+        }
+      } catch (error) {
+        console.error('❌ Server logs fetch error:', error);
+        setServerLogs(prev => [{
+          timestamp: new Date().toISOString(),
+          level: 'error',
+          message: `❌ Server logs connection error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          source: 'client'
+        }, ...prev]);
+      }
+    };
+
+    // Initial fetch
+    fetchServerLogs();
+    
+    // Add connection log
+    setServerLogs(prev => [{
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      message: '🔗 Real-time monitoring started (polling mode)',
+      source: 'client'
+    }, ...prev]);
+
+    // Set up polling interval
+    const logsInterval = setInterval(() => {
+      if (!isRealTimeMonitoring) {
+        clearInterval(logsInterval);
+        return;
+      }
+      fetchServerLogs();
+    }, 5000); // Poll every 5 seconds
+
+    // Update metrics more frequently
+    const metricsInterval = setInterval(async () => {
+      if (!isRealTimeMonitoring) {
+        clearInterval(metricsInterval);
+        return;
+      }
+      
+      try {
+        await fetchLatestMetrics();
+      } catch (error) {
+        console.error('Failed to fetch real-time metrics:', error);
+      }
+    }, 5000);
+
+    // Store references for cleanup
+    (window as any).__serverLogsInterval = logsInterval;
+    (window as any).__metricsInterval = metricsInterval;
+  };
+
+  const stopRealTimeMonitoring = () => {
+    setIsRealTimeMonitoring(false);
+    console.log('⏹️ Stopping real-time monitoring...');
+    
+    // Clear polling intervals
+    if ((window as any).__serverLogsInterval) {
+      clearInterval((window as any).__serverLogsInterval);
+      delete (window as any).__serverLogsInterval;
+    }
+    
+    if ((window as any).__metricsInterval) {
+      clearInterval((window as any).__metricsInterval);
+      delete (window as any).__metricsInterval;
+    }
+    
+    setServerLogs(prev => [{
+      timestamp: new Date().toISOString(),
+      level: 'info',
+      message: '🔌 Real-time monitoring stopped',
+      source: 'client'
+    }, ...prev]);
+  };
+
+  const fetchLatestMetrics = async () => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
+        (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
+      
+      // Use proper URL encoding for the token
+      const encodedToken = encodeURIComponent(SECURE_TOKEN);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/dev/performance-metrics?token=${encodedToken}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data: DevMetricsResponse = await response.json();
+        setRealTimeMetrics(data.serverMetrics);
+      }
+    } catch (error) {
+      console.error('❌ Failed to fetch real-time metrics:', error);
+    }
+  };
 
   const validateAccess = async (inputToken: string) => {
     // Client-side token validation
@@ -69,7 +244,10 @@ export const SecureDeveloperRoute: React.FC = () => {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
         (import.meta.env.DEV ? 'http://localhost:3001' : 'https://famous-dragon-b033ac.netlify.app');
       
-      const response = await fetch(`${API_BASE_URL}/api/auth/dev/performance-metrics?token=${encodeURIComponent(inputToken)}`, {
+      // Use proper URL encoding for the token to fix decoding errors
+      const encodedToken = encodeURIComponent(inputToken);
+      
+      const response = await fetch(`${API_BASE_URL}/api/auth/dev/performance-metrics?token=${encodedToken}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -165,6 +343,16 @@ export const SecureDeveloperRoute: React.FC = () => {
   const formatBytes = (bytes: number): string => {
     const mb = bytes / (1024 * 1024);
     return `${mb.toFixed(1)} MB`;
+  };
+
+  const getLogLevelColor = (level: string): string => {
+    switch (level) {
+      case 'error': return 'text-red-600 bg-red-50';
+      case 'warn': return 'text-yellow-600 bg-yellow-50';
+      case 'info': return 'text-blue-600 bg-blue-50';
+      case 'debug': return 'text-gray-600 bg-gray-50';
+      default: return 'text-gray-600 bg-gray-50';
+    }
   };
 
   // Show login form if not authenticated
@@ -270,61 +458,141 @@ export const SecureDeveloperRoute: React.FC = () => {
                 <div>
                   <CardTitle className="text-green-800">Developer Performance Dashboard</CardTitle>
                   <p className="text-green-600 text-sm">Secure access granted • Internal use only</p>
+                  {isRealTimeMonitoring && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs text-green-700">Real-time monitoring active</span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsAuthenticated(false);
-                  setServerMetrics(null);
-                  setToken('');
-                  setError(null);
-                  setAttemptCount(0);
-                }}
-                className="border-green-300 text-green-700 hover:bg-green-100"
-              >
-                Logout
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={isRealTimeMonitoring ? stopRealTimeMonitoring : startRealTimeMonitoring}
+                  variant={isRealTimeMonitoring ? "destructive" : "default"}
+                  size="sm"
+                >
+                  {isRealTimeMonitoring ? (
+                    <>
+                      <Square className="w-4 h-4 mr-2" />
+                      Stop Monitoring
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 mr-2" />
+                      Start Real-Time
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsAuthenticated(false);
+                    setServerMetrics(null);
+                    setToken('');
+                    setError(null);
+                    setAttemptCount(0);
+                    stopRealTimeMonitoring();
+                  }}
+                  className="border-green-300 text-green-700 hover:bg-green-100"
+                >
+                  Logout
+                </Button>
+              </div>
             </div>
           </CardHeader>
         </Card>
 
-        {/* Server Metrics */}
-        {serverMetrics && (
+        {/* Real-Time Server Logs */}
+        {isRealTimeMonitoring && (
           <Card>
             <CardHeader>
-              <CardTitle>Server Metrics</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Real-Time Server Logs
+                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse ml-2"></div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64 overflow-y-auto space-y-2 border rounded-lg p-4 bg-gray-50 font-mono text-sm">
+                {serverLogs.length === 0 ? (
+                  <div className="text-gray-500 text-center py-8">
+                    Waiting for server logs...
+                  </div>
+                ) : (
+                  serverLogs.map((log, index) => (
+                    <div key={index} className={`p-2 rounded ${getLogLevelColor(log.level)}`}>
+                      <div className="flex items-start gap-2">
+                        <span className="text-xs text-gray-500 min-w-[80px]">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                        <span className="uppercase text-xs font-bold min-w-[50px]">
+                          {log.level}
+                        </span>
+                        <span className="flex-1">{log.message}</span>
+                        {log.source && (
+                          <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                            {log.source}
+                          </span>
+                        )}
+                      </div>
+                      {log.data && (
+                        <div className="text-xs text-gray-600 mt-1 ml-[132px]">
+                          {JSON.stringify(log.data)}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Server Metrics */}
+        {(serverMetrics || realTimeMetrics) && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Server Metrics {isRealTimeMonitoring && <span className="text-sm text-green-600">(Live)</span>}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{formatUptime(serverMetrics.uptime)}</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {formatUptime((realTimeMetrics || serverMetrics)!.uptime)}
+                  </div>
                   <div className="text-sm text-muted-foreground">Uptime</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{formatBytes(serverMetrics.memory.heapUsed)}</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {formatBytes((realTimeMetrics || serverMetrics)!.memory.heapUsed)}
+                  </div>
                   <div className="text-sm text-muted-foreground">Memory Used</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-orange-600">{serverMetrics.environment}</div>
+                  <div className="text-2xl font-bold text-orange-600">
+                    {(realTimeMetrics || serverMetrics)!.environment}
+                  </div>
                   <div className="text-sm text-muted-foreground">Environment</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-gray-600">{serverMetrics.nodeVersion}</div>
+                  <div className="text-2xl font-bold text-gray-600">
+                    {(realTimeMetrics || serverMetrics)!.nodeVersion}
+                  </div>
                   <div className="text-sm text-muted-foreground">Node.js</div>
                 </div>
               </div>
               
               <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 <div>
-                  <strong>Platform:</strong> {serverMetrics.platform}
+                  <strong>Platform:</strong> {(realTimeMetrics || serverMetrics)!.platform}
                 </div>
                 <div>
-                  <strong>Architecture:</strong> {serverMetrics.arch}
+                  <strong>Architecture:</strong> {(realTimeMetrics || serverMetrics)!.arch}
                 </div>
                 <div>
-                  <strong>Total Memory:</strong> {formatBytes(serverMetrics.memory.heapTotal)}
+                  <strong>Total Memory:</strong> {formatBytes((realTimeMetrics || serverMetrics)!.memory.heapTotal)}
                 </div>
               </div>
             </CardContent>
@@ -419,6 +687,7 @@ export const SecureDeveloperRoute: React.FC = () => {
               <p><strong>Authentication:</strong> Secure token-based access</p>
               <p><strong>Security:</strong> Server-side validation • IP logging • Developer only</p>
               <p><strong>Session:</strong> {new Date().toLocaleString()}</p>
+              <p><strong>Real-time:</strong> {isRealTimeMonitoring ? '🟢 Active' : '🔴 Inactive'}</p>
             </div>
           </CardContent>
         </Card>
