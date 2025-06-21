@@ -110,6 +110,35 @@ export const SecureDeveloperRoute: React.FC = () => {
     setIsRealTimeMonitoring(true);
     console.log('🚀 Starting real-time monitoring...');
     
+    // Start centralized logging session
+    const startLoggingSession = async () => {
+      try {
+        const encodedToken = encodeURIComponent(SECURE_TOKEN);
+        const endpoint = getEndpoint('/api/auth/dev/server-logs');
+        const response = await fetch(`${endpoint}?token=${encodedToken}&action=start`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Monitoring session started:', data);
+          
+          setServerLogs(prev => [{
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: `🔍 ${data.message} (Session: ${data.sessionId})`,
+            source: 'monitoring-session'
+          }, ...prev]);
+        }
+      } catch (error) {
+        console.error('❌ Failed to start monitoring session:', error);
+      }
+    };
+    
     // Use polling approach for serverless compatibility
     const fetchServerLogs = async () => {
       try {
@@ -143,7 +172,7 @@ export const SecureDeveloperRoute: React.FC = () => {
               const unique = combined.filter((log, index, arr) => 
                 arr.findIndex(l => l.timestamp === log.timestamp && l.message === log.message) === index
               );
-              return unique.slice(0, 100); // Keep last 100 logs
+              return unique.slice(0, 200); // Keep last 200 logs
             });
           }
         } else {
@@ -168,8 +197,11 @@ export const SecureDeveloperRoute: React.FC = () => {
       }
     };
 
+    // Start the logging session first
+    startLoggingSession();
+
     // Initial fetch
-    fetchServerLogs();
+    setTimeout(() => fetchServerLogs(), 2000); // Wait 2 seconds after starting session
     
     // Add connection log
     setServerLogs(prev => [{
@@ -210,6 +242,38 @@ export const SecureDeveloperRoute: React.FC = () => {
   const stopRealTimeMonitoring = () => {
     setIsRealTimeMonitoring(false);
     console.log('⏹️ Stopping real-time monitoring...');
+    
+    // Stop centralized logging session
+    const stopLoggingSession = async () => {
+      try {
+        const encodedToken = encodeURIComponent(SECURE_TOKEN);
+        const endpoint = getEndpoint('/api/auth/dev/server-logs');
+        const response = await fetch(`${endpoint}?token=${encodedToken}&action=stop`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('✅ Monitoring session stopped:', data);
+          
+          setServerLogs(prev => [{
+            timestamp: new Date().toISOString(),
+            level: 'info',
+            message: `🔍 ${data.message}`,
+            source: 'monitoring-session'
+          }, ...prev]);
+        }
+      } catch (error) {
+        console.error('❌ Failed to stop monitoring session:', error);
+      }
+    };
+    
+    // Stop the logging session
+    stopLoggingSession();
     
     // Clear polling intervals
     if ((window as any).__serverLogsInterval) {
