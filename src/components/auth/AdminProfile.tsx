@@ -49,6 +49,7 @@ export const AdminProfile: React.FC = () => {
   // UI states
   const [isLoading, setIsLoading] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [showPasswords, setShowPasswords] = useState({
@@ -83,6 +84,8 @@ export const AdminProfile: React.FC = () => {
         name: user.name || '',
         email: user.email || ''
       }));
+      // Reset image load error when user data changes
+      setImageLoadError(false);
     }
   }, [user]);
 
@@ -138,7 +141,7 @@ export const AdminProfile: React.FC = () => {
         setRequiresVerification(false);
         setVerificationSent(false);
         setVerificationType(null);
-        refreshUser();
+        await refreshUser();
         
         // Show success message for normal duration
         setTimeout(() => setSuccess(null), 5000);
@@ -300,7 +303,7 @@ export const AdminProfile: React.FC = () => {
           confirmPassword: ''
         }));
         
-        refreshUser();
+        await refreshUser();
         
         // Close dialog after a delay to show success message
         setTimeout(() => {
@@ -423,7 +426,7 @@ export const AdminProfile: React.FC = () => {
       
       if (response.success) {
         setSuccess('Profilbillede opdateret succesfuldt');
-        refreshUser();
+        await refreshUser();
       } else {
         console.error('❌ Upload failed:', response.message);
         setError(response.message || 'Upload fejlede');
@@ -495,7 +498,19 @@ export const AdminProfile: React.FC = () => {
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Avatar className="h-20 w-20">
-                <AvatarImage src={user.profilePictureUrl} alt={user.name} />
+                <AvatarImage 
+                  src={!imageLoadError ? user.profilePictureUrl : undefined} 
+                  alt={user.name}
+                  enableCacheBusting={true}
+                  onError={() => {
+                    console.warn('⚠️ Profile image failed to load:', user.profilePictureUrl);
+                    setImageLoadError(true);
+                  }}
+                  onLoad={() => {
+                    console.log('✅ Profile image loaded successfully:', user.profilePictureUrl);
+                    setImageLoadError(false);
+                  }}
+                />
                 <AvatarFallback className="text-lg">{getUserInitials()}</AvatarFallback>
               </Avatar>
               <Button

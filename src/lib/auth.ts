@@ -95,6 +95,24 @@ export const tokenManager = {
   },
 
   setUser: (user: User): void => {
+    const existingUser = tokenManager.getUser();
+    
+    // Debug logging for profile picture changes
+    if (existingUser && existingUser.profilePictureUrl !== user.profilePictureUrl) {
+      console.log('🖼️ Profile picture URL changed:', {
+        from: existingUser.profilePictureUrl || 'none',
+        to: user.profilePictureUrl || 'none',
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+    } else if (!existingUser && user.profilePictureUrl) {
+      console.log('🖼️ Initial profile picture set:', {
+        profilePictureUrl: user.profilePictureUrl,
+        userId: user.id,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     localStorage.setItem('user', JSON.stringify(user));
   }
 };

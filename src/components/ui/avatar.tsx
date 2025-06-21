@@ -20,14 +20,32 @@ Avatar.displayName = AvatarPrimitive.Root.displayName
 
 const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
-  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
->(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image
-    ref={ref}
-    className={cn("aspect-square h-full w-full", className)}
-    {...props}
-  />
-))
+  React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image> & {
+    enableCacheBusting?: boolean;
+  }
+>(({ className, src, enableCacheBusting = false, ...props }, ref) => {
+  // Add cache-busting timestamp for profile images that might be updated
+  const cacheBustedSrc = React.useMemo(() => {
+    if (!src || !enableCacheBusting) return src;
+    
+    // Only add cache-busting for images that look like profile pictures
+    if (src.includes('admin-profile-') || src.includes('profile-picture')) {
+      const separator = src.includes('?') ? '&' : '?';
+      return `${src}${separator}t=${Date.now()}`;
+    }
+    
+    return src;
+  }, [src, enableCacheBusting]);
+
+  return (
+    <AvatarPrimitive.Image
+      ref={ref}
+      className={cn("aspect-square h-full w-full", className)}
+      src={cacheBustedSrc}
+      {...props}
+    />
+  );
+})
 AvatarImage.displayName = AvatarPrimitive.Image.displayName
 
 const AvatarFallback = React.forwardRef<

@@ -101,10 +101,14 @@ const DashboardTopbar: React.FC = () => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-8 flex items-center gap-2">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.profilePictureUrl} alt={user?.name || 'Admin'} />
-                <AvatarFallback>{getUserInitials()}</AvatarFallback>
-              </Avatar>
+                          <Avatar className="h-8 w-8">
+              <AvatarImage 
+                src={user?.profilePictureUrl} 
+                alt={user?.name || 'Admin'}
+                enableCacheBusting={true}
+              />
+              <AvatarFallback>{getUserInitials()}</AvatarFallback>
+            </Avatar>
               <div className="hidden md:flex flex-col items-start">
                 <span className="text-sm font-medium">{user?.name || 'Administrator'}</span>
                 <span className="text-xs text-muted-foreground">{user?.role || 'Administrator'}</span>
