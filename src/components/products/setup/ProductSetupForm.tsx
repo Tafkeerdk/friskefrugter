@@ -388,11 +388,32 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const setPrimaryImage = (index: number) => {
     const currentImages = form.getValues('billeder') || [];
     
+    console.log('🌟 Setting primary image:', {
+      selectedIndex: index,
+      totalImages: currentImages.length,
+      currentPrimary: currentImages.findIndex(img => img.isPrimary),
+      currentImagesStatus: currentImages.map((img, i) => ({
+        index: i,
+        _id: img._id,
+        filename: img.filename || 'new upload',
+        isPrimary: img.isPrimary,
+        isExisting: img.isExisting
+      }))
+    });
+    
     // Update all images to set the selected one as primary
     const updatedImages = currentImages.map((img, i) => ({
       ...img,
       isPrimary: i === index
     }));
+    
+    console.log('🌟 Updated images after primary change:', updatedImages.map((img, i) => ({
+      index: i,
+      _id: img._id,
+      filename: img.filename || 'new upload',
+      isPrimary: img.isPrimary,
+      isExisting: img.isExisting
+    })));
     
     form.setValue('billeder', updatedImages, { shouldValidate: true });
     
@@ -435,6 +456,19 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
       // Separate new uploads from existing images
       const newUploads = data.billeder?.filter(img => !img.isExisting && img.file) || [];
       const existingImages = data.billeder?.filter(img => img.isExisting) || [];
+      
+      console.log('🔍 Form submit debug:', {
+        mode,
+        totalImages: data.billeder?.length || 0,
+        newUploads: newUploads.length,
+        existingImages: existingImages.length,
+        existingImagesData: existingImages.map(img => ({
+          _id: img._id,
+          filename: img.filename,
+          isPrimary: img.isPrimary,
+          isExisting: img.isExisting
+        }))
+      });
       
       // Convert form data to FormData for API
       const images = newUploads.map(img => img.file!);

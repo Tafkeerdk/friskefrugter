@@ -425,11 +425,13 @@ export const productFormDataToFormData = (productData: any, images?: File[], exi
   
   // Add existing images information (for edit mode)
   if (existingImages && existingImages.length > 0) {
+    console.log('📸 Existing images being sent to backend:', existingImages);
     formData.append('existingImages', JSON.stringify(existingImages));
   }
   
   // Add deleted image IDs (for edit mode)
   if (deletedImageIds && deletedImageIds.length > 0) {
+    console.log('🗑️ Deleted image IDs being sent:', deletedImageIds);
     formData.append('deletedImageIds', JSON.stringify(deletedImageIds));
   }
   
