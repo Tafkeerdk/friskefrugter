@@ -426,6 +426,14 @@ export const productFormDataToFormData = (productData: any, images?: File[], exi
   // Add existing images information (for edit mode)
   if (existingImages && existingImages.length > 0) {
     console.log('📸 Existing images being sent to backend:', existingImages);
+    console.log('📸 Detailed existing images data:', existingImages.map((img, index) => ({
+      index,
+      _id: img._id,
+      filename: img.filename,
+      isPrimary: img.isPrimary,
+      isExisting: img.isExisting,
+      url: img.url ? img.url.substring(0, 50) + '...' : 'no url'
+    })));
     formData.append('existingImages', JSON.stringify(existingImages));
   }
   

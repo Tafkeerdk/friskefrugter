@@ -155,7 +155,21 @@ const DashboardProducts: React.FC = () => {
       
       if (response.success && response.data) {
         const data = response.data as any;
-        setProducts(data.products || data || []);
+        const products = data.products || data || [];
+        
+        console.log('📋 Products loaded from backend:', products.map((product: any) => ({
+          id: product._id,
+          name: product.produktnavn,
+          images: product.billeder?.map((img: any, index: number) => ({
+            index,
+            _id: img._id,
+            filename: img.filename,
+            isPrimary: img.isPrimary,
+            url: img.url ? img.url.substring(0, 50) + '...' : 'no url'
+          })) || []
+        })));
+        
+        setProducts(products);
         setTotalPages(data.totalPages || 1);
         setTotalProducts(data.total || 0);
       }
