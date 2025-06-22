@@ -55,7 +55,7 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
               size: img.size,
               uploadedAt: img.uploadedAt,
               isExisting: true,
-              isPrimary: index === 0, // First image is primary by default
+              isPrimary: img.isPrimary || (index === 0 && !product.billeder.some((i: any) => i.isPrimary)), // Use actual isPrimary from DB, fallback to first if none set
               preview: img.url // Use the actual URL as preview for existing images
             })) || [];
             
