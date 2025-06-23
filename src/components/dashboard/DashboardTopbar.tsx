@@ -142,7 +142,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 lg:h-16 items-center gap-3 lg:gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 w-full">
+    <header className="sticky top-0 z-30 flex h-14 lg:h-16 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 w-full">
       {/* Mobile: Collapsed state */}
       {isMobile && !isSearchExpanded && (
         <>
@@ -301,20 +301,23 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
         </div>
       )}
 
-      {/* Desktop Layout - Fully responsive */}
+      {/* Desktop Layout - Full width utilization */}
       {!isMobile && (
         <>
           {/* Left side - Sidebar trigger and title */}
-          <div className="flex items-center gap-3 lg:gap-4 min-w-0 flex-shrink-0">
+          <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0">
             <SidebarTrigger className="h-9 w-9 lg:h-10 lg:w-10" />
             <div className="font-semibold text-lg lg:text-xl tracking-tight whitespace-nowrap">
               {getPageTitle()}
             </div>
           </div>
 
-          {/* Search Bar - Expanded to use available space */}
+          {/* Spacer to push content apart */}
+          <div className="flex-1" />
+
+          {/* Search Bar - Centered with good width */}
           {showSearch && (
-            <div className="relative flex-1 max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl mx-4 lg:mx-6">
+            <div className="relative w-full max-w-sm lg:max-w-md xl:max-w-lg 2xl:max-w-xl">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -336,7 +339,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Another spacer */}
+          <div className="flex-1" />
+
+          {/* Action Buttons - Right side */}
           <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
             {/* Notifications */}
             <DropdownMenu>
