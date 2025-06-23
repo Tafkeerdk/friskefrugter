@@ -166,12 +166,20 @@ async function handleRequest(request) {
 
 // Enhanced image strategy for both local and external images
 async function enhancedImageStrategy(request, url) {
+  console.log('🔍 SW: Image request intercepted:', {
+    url: url.href,
+    pathname: url.pathname,
+    hostname: url.hostname,
+    isExternal: isExternalImageDomain(url),
+    timestamp: new Date().toISOString()
+  });
+
   const cache = await caches.open(IMAGE_CACHE_NAME);
   
   // Check cache first for all images
   const cachedResponse = await cache.match(request);
   if (cachedResponse) {
-    console.log('Service Worker: Image served from cache:', url.href);
+    console.log('✅ SW: Image served from cache:', url.href);
     return cachedResponse;
   }
   
@@ -190,42 +198,60 @@ async function enhancedImageStrategy(request, url) {
         credentials: 'omit', // Don't send credentials for external images
         cache: 'default'
       });
-      console.log('Service Worker: Fetching external image with CORS:', url.href);
+      console.log('🌐 SW: Fetching external image with CORS:', url.href);
     } else {
-      console.log('Service Worker: Fetching local image:', url.href);
+      console.log('📍 SW: Fetching local image:', url.href);
     }
     
+    console.log('🚀 SW: Starting fetch for image:', url.href);
     const networkResponse = await fetch(fetchRequest);
+    console.log('📥 SW: Fetch response received:', {
+      url: url.href,
+      status: networkResponse.status,
+      statusText: networkResponse.statusText,
+      ok: networkResponse.ok,
+      headers: Object.fromEntries(networkResponse.headers.entries())
+    });
     
     if (networkResponse.ok) {
       // Cache successful responses
       const responseClone = networkResponse.clone();
-      cache.put(request, responseClone);
-      console.log('Service Worker: Image cached:', url.href);
+      try {
+        await cache.put(request, responseClone);
+        console.log('💾 SW: Image cached successfully:', url.href);
+      } catch (cacheError) {
+        console.warn('⚠️ SW: Failed to cache image:', url.href, cacheError);
+      }
       return networkResponse;
     } else {
-      console.error('Service Worker: Image fetch failed with status:', networkResponse.status, url.href);
-      throw new Error(`Image fetch failed: ${networkResponse.status}`);
+      console.error('❌ SW: Image fetch failed with status:', networkResponse.status, url.href);
+      throw new Error(`Image fetch failed: ${networkResponse.status} ${networkResponse.statusText}`);
     }
     
   } catch (error) {
-    console.error('Service Worker: Network error fetching image:', url.href, error);
+    console.error('💥 SW: Network error fetching image:', {
+      url: url.href,
+      error: error.message,
+      stack: error.stack,
+      timestamp: new Date().toISOString()
+    });
     
     // Try to return any cached version (even if stale)
     const staleResponse = await cache.match(request);
     if (staleResponse) {
-      console.log('Service Worker: Returning stale cached image:', url.href);
+      console.log('🔄 SW: Returning stale cached image:', url.href);
       return staleResponse;
     }
     
     // Return placeholder SVG for completely failed images
+    console.log('🎨 SW: Returning placeholder SVG for failed image:', url.href);
     return new Response(
       `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
         <rect width="400" height="300" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="2"/>
         <circle cx="200" cy="120" r="30" fill="#d1d5db"/>
         <path d="M170 140 L230 140 L210 180 L190 180 Z" fill="#d1d5db"/>
         <text x="200" y="220" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="14">Billede kunne ikke indlæses</text>
-        <text x="200" y="240" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="12">Prøv at opdatere siden</text>
+        <text x="200" y="240" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="12">SW: ${error.message}</text>
       </svg>`,
       {
         headers: {

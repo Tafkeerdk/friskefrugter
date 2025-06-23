@@ -192,32 +192,173 @@
         });
       }
 
-      // Debug helper for PWA image issues
-      if (window.location.search.includes('debug-images')) {
-        window.addEventListener('load', () => {
-          console.log('=== PWA Image Debug Info ===');
-          console.log('Is PWA installed?', window.matchMedia('(display-mode: standalone)').matches);
-          console.log('Service Worker available?', 'serviceWorker' in navigator);
-          console.log('Current URL:', window.location.href);
-          
-          navigator.serviceWorker.ready.then(() => {
-            console.log('Service Worker is ready');
+      // Enhanced debug helper for PWA image issues - ALWAYS ACTIVE FOR DEBUGGING
+      window.addEventListener('load', () => {
+        console.log('=== 🔍 PWA Image Debug Info ===');
+        console.log('📱 Is PWA installed?', window.matchMedia('(display-mode: standalone)').matches);
+        console.log('⚙️ Service Worker available?', 'serviceWorker' in navigator);
+        console.log('🌐 Current URL:', window.location.href);
+        console.log('📡 Network status:', navigator.onLine ? 'online' : 'offline');
+        console.log('🖥️ User Agent:', navigator.userAgent);
+        
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.ready.then((registration) => {
+            console.log('✅ Service Worker is ready:', registration);
+            console.log('🔧 SW Controller:', navigator.serviceWorker.controller);
             
-            // Check image loading
-            const images = document.querySelectorAll('img');
-            console.log(`Found ${images.length} images on page`);
-            
-            images.forEach((img, index) => {
-              console.log(`Image ${index + 1}:`, {
-                src: img.src,
-                complete: img.complete,
-                naturalWidth: img.naturalWidth,
-                naturalHeight: img.naturalHeight
+            // Monitor all image loading on the page
+            const observeImages = () => {
+              const images = document.querySelectorAll('img');
+              console.log(`🖼️ Found ${images.length} images on page`);
+              
+              images.forEach((img, index) => {
+                const imageInfo = {
+                  index: index + 1,
+                  src: img.src,
+                  complete: img.complete,
+                  naturalWidth: img.naturalWidth,
+                  naturalHeight: img.naturalHeight,
+                  dataset: img.dataset,
+                  alt: img.alt
+                };
+                
+                if (img.complete && img.naturalWidth > 0) {
+                  console.log(`✅ Image ${index + 1} loaded successfully:`, imageInfo);
+                } else if (img.complete && img.naturalWidth === 0) {
+                  console.error(`❌ Image ${index + 1} failed to load:`, imageInfo);
+                } else {
+                  console.log(`⏳ Image ${index + 1} still loading:`, imageInfo);
+                  
+                  // Add listeners for this image
+                  img.addEventListener('load', () => {
+                    console.log(`✅ Image ${index + 1} loaded after monitoring:`, {
+                      src: img.src,
+                      naturalWidth: img.naturalWidth,
+                      naturalHeight: img.naturalHeight
+                    });
+                  });
+                  
+                  img.addEventListener('error', (event) => {
+                    console.error(`❌ Image ${index + 1} failed after monitoring:`, {
+                      src: img.src,
+                      error: event,
+                      dataset: img.dataset
+                    });
+                  });
+                }
               });
+            };
+            
+            // Initial check
+            observeImages();
+            
+            // Re-check every 5 seconds for new images
+            setInterval(observeImages, 5000);
+            
+          }).catch(error => {
+            console.error('❌ Service Worker not ready:', error);
+          });
+        } else {
+          console.warn('⚠️ Service Worker not supported');
+        }
+        
+        // Monitor for new images added dynamically
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+              if (node.nodeType === 1) { // Element node
+                const images = node.tagName === 'IMG' ? [node] : node.querySelectorAll('img');
+                images.forEach((img) => {
+                  console.log('🆕 New image detected:', {
+                    src: img.src,
+                    alt: img.alt,
+                    dataset: img.dataset
+                  });
+                });
+              }
             });
           });
         });
-      }
+        
+        observer.observe(document.body, {
+          childList: true,
+          subtree: true
+        });
+      });
+
+      // Add global debugging functions for image issues
+      window.debugImages = {
+        clearImageCache: async () => {
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            try {
+              const messageChannel = new MessageChannel();
+              navigator.serviceWorker.controller.postMessage({
+                type: 'CLEAR_IMAGE_CACHE'
+              }, [messageChannel.port2]);
+              
+              const response = await new Promise((resolve) => {
+                messageChannel.port1.onmessage = (event) => resolve(event.data);
+              });
+              
+              console.log('🗑️ Image cache cleared:', response);
+              location.reload();
+            } catch (error) {
+              console.error('❌ Failed to clear image cache:', error);
+            }
+          }
+        },
+        
+        bypassServiceWorker: () => {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+              registrations.forEach((registration) => {
+                registration.unregister().then(() => {
+                  console.log('🚫 Service Worker unregistered');
+                  location.reload();
+                });
+              });
+            });
+          }
+        },
+        
+        reloadAllImages: () => {
+          const images = document.querySelectorAll('img');
+          console.log(`🔄 Reloading ${images.length} images...`);
+          images.forEach((img, index) => {
+            const originalSrc = img.src;
+            img.src = '';
+            setTimeout(() => {
+              img.src = originalSrc + (originalSrc.includes('?') ? '&' : '?') + 'reload=' + Date.now();
+              console.log(`🔄 Reloaded image ${index + 1}:`, img.src);
+            }, index * 100);
+          });
+        },
+        
+        testDirectImageLoad: (imageUrl) => {
+          console.log('🧪 Testing direct image load (bypassing SW):', imageUrl);
+          const img = new Image();
+          img.onload = () => {
+            console.log('✅ Direct image load successful:', {
+              url: imageUrl,
+              width: img.naturalWidth,
+              height: img.naturalHeight
+            });
+          };
+          img.onerror = (error) => {
+            console.error('❌ Direct image load failed:', {
+              url: imageUrl,
+              error: error
+            });
+          };
+          img.src = imageUrl;
+        }
+      };
+
+      console.log('🛠️ Debug functions available:');
+      console.log('- window.debugImages.clearImageCache() - Clear SW image cache');
+      console.log('- window.debugImages.bypassServiceWorker() - Disable SW completely');
+      console.log('- window.debugImages.reloadAllImages() - Force reload all images');
+      console.log('- window.debugImages.testDirectImageLoad(url) - Test direct image loading');
     </script>
   </body>
 </html>

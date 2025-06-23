@@ -41,27 +41,63 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
   };
 
   const handleImageLoad = () => {
+    console.log('✅ ProductCard image loaded successfully:', {
+      src: image,
+      productName: name,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent.substring(0, 50)
+    });
     setImageLoaded(true);
     setImageError(false);
   };
 
-  const handleImageError = () => {
-    console.log('Image failed to load in ProductCard:', image);
+  const handleImageError = (event) => {
+    console.error('❌ ProductCard image failed to load:', {
+      src: image,
+      productName: name,
+      error: event,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent.substring(0, 50),
+      isServiceWorkerActive: 'serviceWorker' in navigator && navigator.serviceWorker.controller,
+      networkStatus: navigator.onLine ? 'online' : 'offline',
+      currentURL: window.location.href
+    });
+    
+    // Try to get more details about the failure
+    if (event && event.target) {
+      console.error('❌ Image element details:', {
+        naturalWidth: event.target.naturalWidth,
+        naturalHeight: event.target.naturalHeight,
+        complete: event.target.complete,
+        currentSrc: event.target.currentSrc
+      });
+    }
+    
     setImageError(true);
     setImageLoaded(true);
   };
 
   const renderImage = () => {
     if (imageError) {
+      console.log('🔄 ProductCard rendering error fallback for:', image);
       return (
         <div className="h-full w-full bg-gray-100 flex items-center justify-center">
           <div className="text-center">
             <div className="h-12 w-12 text-gray-400 mx-auto mb-2" />
             <p className="text-xs text-gray-500">Billede ikke tilgængeligt</p>
+            <p className="text-xs text-gray-400 mt-1">{name}</p>
           </div>
         </div>
       );
     }
+
+    console.log('🖼️ ProductCard rendering image:', {
+      src: image,
+      productName: name,
+      imageLoaded,
+      imageError,
+      timestamp: new Date().toISOString()
+    });
 
     return (
       <>
@@ -88,6 +124,10 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
           crossOrigin="anonymous"
           // Add referrer policy for better compatibility
           referrerPolicy="no-referrer-when-downgrade"
+          // Add data attributes for debugging
+          data-product-name={name}
+          data-image-src={image}
+          data-debug="product-card-image"
         />
       </>
     );
