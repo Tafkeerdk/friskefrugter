@@ -72,6 +72,7 @@ export const AdminDashboard: React.FC = () => {
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   // Pagination and filtering state
   const [currentPage, setCurrentPage] = useState(1);
@@ -166,7 +167,9 @@ export const AdminDashboard: React.FC = () => {
       
       if (response.success) {
         // Close modal immediately
+        setDialogOpen(false);
         setSelectedApplication(null);
+        setRejectionReason('');
         
         // Update UI state
         setSelectedApplications(prev => {
@@ -208,6 +211,7 @@ export const AdminDashboard: React.FC = () => {
       
       if (response.success) {
         // Close modal immediately
+        setDialogOpen(false);
         setSelectedApplication(null);
         setRejectionReason('');
         
@@ -527,12 +531,16 @@ export const AdminDashboard: React.FC = () => {
                       <TableCell>{format(new Date(application.appliedAt), 'dd/MM/yyyy')}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end space-x-2">
-                          <Dialog>
+                          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setSelectedApplication(application)}
+                                onClick={() => {
+                                  setSelectedApplication(application);
+                                  setDialogOpen(true);
+                                  setRejectionReason('');
+                                }}
                               >
                                 <Eye className="w-4 h-4 mr-1" />
                                 Se detaljer

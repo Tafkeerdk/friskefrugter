@@ -748,12 +748,12 @@ export const authService = {
     if (params?.limit) queryParams.set('limit', params.limit.toString());
     if (params?.search) queryParams.set('search', params.search);
     
-    const response = await apiClient.get(`/admin/customers?${queryParams.toString()}`);
+    const response = await apiClient.get(`/.netlify/functions/admin-customers?${queryParams.toString()}`);
     return response.json();
   },
 
   async deleteCustomer(customerId: string, options?: { sendEmail?: boolean; reason?: string }): Promise<{ success: boolean; message: string; emailSent?: boolean; emailError?: string }> {
-    const response = await apiClient.delete('/admin/customers', { 
+    const response = await apiClient.delete('/.netlify/functions/admin-customers', { 
       customerId,
       sendEmail: options?.sendEmail || false,
       reason: options?.reason || ''
