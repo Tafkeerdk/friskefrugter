@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MoreHorizontal, Mail, Phone, Calendar, Plus, Trash2, AlertTriangle, Send } from "lucide-react";
+import { MoreHorizontal, Mail, Phone, Calendar, Plus, Trash2, AlertTriangle, Send, Percent } from "lucide-react";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +36,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -59,6 +66,7 @@ interface Customer {
     country?: string;
   };
   discountGroup: {
+    id?: string;
     name: string;
     discountPercentage: number;
     color?: string;
@@ -68,21 +76,39 @@ interface Customer {
   isActive: boolean;
 }
 
+interface DiscountGroup {
+  id: string;
+  name: string;
+  description?: string;
+  discountPercentage: number;
+  color: string;
+  customerCount: number;
+  formattedDiscount: string;
+}
+
 const DashboardCustomers: React.FC = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [discountGroups, setDiscountGroups] = useState<DiscountGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [discountGroupDialogOpen, setDiscountGroupDialogOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [discountGroupLoading, setDiscountGroupLoading] = useState(false);
   const [sendRemovalEmail, setSendRemovalEmail] = useState(false);
   const [removalReason, setRemovalReason] = useState('');
+  const [selectedDiscountGroupId, setSelectedDiscountGroupId] = useState<string>('');
   const { toast } = useToast();
 
   useEffect(() => {
-    loadCustomers();
+    loadData();
   }, []);
+
+  const loadData = async () => {
+    await Promise.all([loadCustomers(), loadDiscountGroups()]);
+  };
 
   const loadCustomers = async () => {
     try {
@@ -100,6 +126,17 @@ const DashboardCustomers: React.FC = () => {
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadDiscountGroups = async () => {
+    try {
+      const response = await authService.getDiscountGroups();
+      if (response.success) {
+        setDiscountGroups(response.discountGroups as DiscountGroup[]);
+      }
+    } catch (err) {
+      console.error('Error loading discount groups:', err);
     }
   };
 
@@ -147,6 +184,53 @@ const DashboardCustomers: React.FC = () => {
     } finally {
       setDeleteLoading(false);
     }
+  };
+
+  const handleUpdateDiscountGroup = async () => {
+    if (!selectedCustomer || !selectedDiscountGroupId) return;
+
+    try {
+      setDiscountGroupLoading(true);
+      const response = await authService.updateCustomerDiscountGroup(
+        selectedCustomer.id, 
+        selectedDiscountGroupId
+      );
+
+      if (response.success) {
+        toast({
+          title: "Rabatgruppe opdateret",
+          description: response.message,
+        });
+
+        // Update customer in local state
+        setCustomers(prev => prev.map(customer => 
+          customer.id === selectedCustomer.id 
+            ? { ...customer, discountGroup: response.customer.discountGroup }
+            : customer
+        ));
+
+        // Close dialog
+        setDiscountGroupDialogOpen(false);
+        setSelectedCustomer(null);
+        setSelectedDiscountGroupId('');
+
+        // Reload discount groups to update customer counts
+        await loadDiscountGroups();
+      } else {
+        setError(response.message || 'Kunne ikke opdatere rabatgruppe');
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
+      setError(errorMessage);
+    } finally {
+      setDiscountGroupLoading(false);
+    }
+  };
+
+  const openDiscountGroupDialog = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setSelectedDiscountGroupId(customer.discountGroup.id || '');
+    setDiscountGroupDialogOpen(true);
   };
 
   const getDiscountGroupColor = (group: { name: string; discountPercentage: number }) => {
@@ -258,6 +342,12 @@ const DashboardCustomers: React.FC = () => {
                       <DropdownMenuItem>Rediger</DropdownMenuItem>
                       <DropdownMenuItem>Se ordrer</DropdownMenuItem>
                       <DropdownMenuItem>Send faktura</DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => openDiscountGroupDialog(customer)}
+                      >
+                        <Percent className="h-4 w-4 mr-2" />
+                        Ændre rabatgruppe
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem 
                         className="text-destructive"
@@ -361,6 +451,102 @@ const DashboardCustomers: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Discount Group Assignment Dialog */}
+      <Dialog open={discountGroupDialogOpen} onOpenChange={setDiscountGroupDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ændre rabatgruppe</DialogTitle>
+            <DialogDescription>
+              Vælg en ny rabatgruppe for <strong>{selectedCustomer?.companyName}</strong>
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="discount-group">Nuværende rabatgruppe</Label>
+              <div className="p-3 bg-muted rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">{selectedCustomer?.discountGroup.name}</span>
+                  <Badge variant="outline">
+                    {selectedCustomer?.discountGroup.discountPercentage}% rabat
+                  </Badge>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="new-discount-group">Ny rabatgruppe</Label>
+              <Select 
+                value={selectedDiscountGroupId} 
+                onValueChange={setSelectedDiscountGroupId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vælg rabatgruppe" />
+                </SelectTrigger>
+                <SelectContent>
+                  {discountGroups.map((group) => (
+                    <SelectItem key={group.id} value={group.id}>
+                      <div className="flex items-center justify-between w-full">
+                        <span>{group.name}</span>
+                        <span className="ml-2 text-sm text-muted-foreground">
+                          {group.discountPercentage}%
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedDiscountGroupId && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Percent className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-blue-800">
+                    {(() => {
+                      const selectedGroup = discountGroups.find(g => g.id === selectedDiscountGroupId);
+                      return selectedGroup ? 
+                        `Kunden vil få ${selectedGroup.discountPercentage}% rabat med ${selectedGroup.name} gruppen` :
+                        '';
+                    })()}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDiscountGroupDialogOpen(false);
+                setSelectedCustomer(null);
+                setSelectedDiscountGroupId('');
+              }}
+              disabled={discountGroupLoading}
+            >
+              Annuller
+            </Button>
+            <Button
+              onClick={handleUpdateDiscountGroup}
+              disabled={discountGroupLoading || !selectedDiscountGroupId || selectedDiscountGroupId === selectedCustomer?.discountGroup.id}
+            >
+              {discountGroupLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Opdaterer...
+                </>
+              ) : (
+                <>
+                  <Percent className="h-4 w-4 mr-2" />
+                  Opdater rabatgruppe
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

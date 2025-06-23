@@ -761,6 +761,14 @@ export const authService = {
     return response.json();
   },
 
+  async updateCustomerDiscountGroup(customerId: string, discountGroupId: string): Promise<{ success: boolean; message: string; customer?: any }> {
+    const response = await apiClient.put('/.netlify/functions/admin-customers', { 
+      customerId,
+      discountGroupId
+    });
+    return response.json();
+  },
+
   // Expose apiClient for direct use when needed
   apiClient
 };
