@@ -76,11 +76,12 @@ export const validateCVR = async (cvrNumber: string): Promise<CVRValidationResul
     console.log('📊 CVR API response:', data);
 
     // Check if CVR number was found and is valid
-    if (data.status === 200 && data.vat === parseInt(cleanCVR)) {
+    // The API returns the company data directly when found, or an error object when not found
+    if (data.vat && data.vat === parseInt(cleanCVR) && data.name) {
       const cvrData: CVRData = {
         companyName: data.name || '',
         companyType: data.companytype || '',
-        industry: data.industrycode?.text || '',
+        industry: data.industrydesc || '',
         employees: data.employees || 0,
         foundedYear: data.startdate ? new Date(data.startdate).getFullYear() : undefined,
         address: data.address && data.city && data.zipcode ? {
@@ -105,7 +106,7 @@ export const validateCVR = async (cvrNumber: string): Promise<CVRValidationResul
         error: undefined // No error message for not found
       };
     } else {
-      console.log('❌ CVR validation failed:', data);
+      console.log('❌ CVR validation failed - unexpected response format:', data);
       return {
         valid: true, // Changed to true to allow submission
         data: undefined,
