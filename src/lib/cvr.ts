@@ -97,31 +97,31 @@ export const validateCVR = async (cvrNumber: string): Promise<CVRValidationResul
         valid: true,
         data: cvrData
       };
-    } else {
-      console.log('❌ CVR not found or invalid');
+    } else if (data.error === 'NOT_FOUND') {
+      console.log('⚠️ CVR not found in registry, but allowing submission');
       return {
-        valid: false,
-        error: 'CVR nummer ikke fundet i registret'
+        valid: true, // Changed to true to allow submission
+        data: undefined,
+        error: undefined // No error message for not found
+      };
+    } else {
+      console.log('❌ CVR validation failed:', data);
+      return {
+        valid: true, // Changed to true to allow submission
+        data: undefined,
+        error: undefined // No error message, let user proceed
       };
     }
 
   } catch (error) {
     console.error('❌ CVR validation error:', error);
     
-    // Provide user-friendly error messages
-    let errorMessage = 'Kunne ikke validere CVR nummer';
-    
-    if (error instanceof Error) {
-      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-        errorMessage = 'Netværksfejl - tjek din internetforbindelse';
-      } else if (error.message.includes('timeout')) {
-        errorMessage = 'CVR validering tog for lang tid - prøv igen';
-      }
-    }
-
+    // Always allow submission even if API fails
+    console.log('⚠️ CVR API failed, but allowing submission to proceed');
     return {
-      valid: false,
-      error: errorMessage
+      valid: true, // Allow submission even on API error
+      data: undefined,
+      error: undefined // No error message to block submission
     };
   }
 };

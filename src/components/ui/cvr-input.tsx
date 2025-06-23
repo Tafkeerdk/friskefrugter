@@ -178,19 +178,23 @@ export const CVRInput: React.FC<CVRInputProps> = ({
       return 'CVR nummer skal være 8 cifre';
     }
     
-    if (isValidating) return 'Validerer CVR nummer...';
-    if (validationState.valid) return 'CVR nummer er gyldigt';
+    if (isValidating) return 'Søger virksomhedsdata...';
+    if (validationState.valid && companyData) return 'Virksomhedsdata fundet og hentet';
+    if (validationState.valid && !companyData && cleanCVR.length === 8) {
+      return 'CVR nummer ikke fundet i registret - du kan stadig fortsætte';
+    }
     
     return null;
   };
 
   const getInputBorderColor = () => {
-    if (externalError || validationState.error) return 'border-red-500';
-    if (validationState.valid) return 'border-green-500';
+    if (externalError) return 'border-red-500';
+    if (validationState.valid && companyData) return 'border-green-500';
     if (isValidating) return 'border-blue-500';
     
     const cleanCVR = value.replace(/\s/g, '');
     if (cleanCVR && !isValidCVRFormat(cleanCVR)) return 'border-yellow-500';
+    if (validationState.valid && !companyData && cleanCVR.length === 8) return 'border-orange-500';
     
     return '';
   };
@@ -206,18 +210,24 @@ export const CVRInput: React.FC<CVRInputProps> = ({
           </Label>
           
           {/* Validation status badge */}
-          {!canSubmit && value && (
+          {!canSubmit && value && isValidating && (
             <Badge 
-              variant={validationState.valid ? "default" : "destructive"}
+              variant="secondary"
               className="text-xs"
             >
-              {isValidating ? "Validerer..." : "Skal valideres"}
+              Søger data...
             </Badge>
           )}
           
-          {canSubmit && (
+          {canSubmit && companyData && (
             <Badge variant="default" className="text-xs bg-green-100 text-green-800">
-              ✓ Valideret
+              ✓ Data hentet
+            </Badge>
+          )}
+          
+          {canSubmit && !companyData && value && (
+            <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800">
+              ⚠ Ikke fundet
             </Badge>
           )}
         </div>
@@ -271,7 +281,7 @@ export const CVRInput: React.FC<CVRInputProps> = ({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-green-900">Virksomhedsoplysninger</span>
+                <span className="font-medium text-green-900">Virksomhedsoplysninger hentet fra CVR</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -307,30 +317,39 @@ export const CVRInput: React.FC<CVRInputProps> = ({
               </div>
               
               {companyData.address && (
-                <div className="flex items-start gap-2 pt-2 border-t border-green-200">
-                  <MapPin className="h-3 w-3 text-green-600 mt-0.5" />
-                  <div className="text-xs text-green-700">
-                    <p>{companyData.address.street}</p>
-                    <p>{companyData.address.postalCode} {companyData.address.city}</p>
+                <div className="pt-3 border-t border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-green-600" />
+                    <span className="font-medium text-green-900">Adresse fra CVR</span>
+                  </div>
+                  <div className="bg-white p-3 rounded border border-green-200">
+                    <div className="text-sm text-green-900">
+                      <p className="font-medium">{companyData.address.street}</p>
+                      <p>{companyData.address.postalCode} {companyData.address.city}</p>
+                      <p className="text-xs text-green-600 mt-1">
+                        💡 Denne adresse kan redigeres i formularen nedenfor hvis nødvendigt
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
               
               <p className="text-xs text-green-600 pt-2 border-t border-green-200">
-                ✓ Virksomhedsdata hentet fra CVR-registret
+                ✓ Data automatisk hentet fra det officielle CVR-register
               </p>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Submission warning */}
-      {value && !canSubmit && (
-        <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-          <AlertTriangle className="h-4 w-4 text-yellow-600" />
-          <p className="text-sm text-yellow-800">
-            CVR nummer skal være valideret før ansøgningen kan sendes
-          </p>
+      {/* CVR not found info */}
+      {canSubmit && !companyData && value && (
+        <div className="flex items-center gap-2 p-3 bg-orange-50 border border-orange-200 rounded-md">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <div className="text-sm text-orange-800">
+            <p className="font-medium">CVR ikke fundet i registret</p>
+            <p className="text-xs">Du kan stadig fortsætte med ansøgningen. Vores team vil verificere oplysningerne manuelt.</p>
+          </div>
         </div>
       )}
     </div>

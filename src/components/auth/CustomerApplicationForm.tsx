@@ -7,7 +7,7 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Alert, AlertDescription } from '../ui/alert';
-import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle, MapPin } from 'lucide-react';
 import { authService, CustomerApplicationData } from '../../lib/auth';
 import { CVRInput } from '../ui/cvr-input';
 import { CVRData } from '../../lib/cvr';
@@ -20,6 +20,12 @@ const applicationSchema = z.object({
   phone: z.string().min(8, 'Telefonnummer skal være mindst 8 cifre'),
   password: z.string().min(8, 'Password skal være mindst 8 tegn'),
   confirmPassword: z.string(),
+  address: z.object({
+    street: z.string().optional(),
+    city: z.string().optional(),
+    postalCode: z.string().optional(),
+    country: z.string().default('Denmark'),
+  }).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords matcher ikke",
   path: ["confirmPassword"],
@@ -50,6 +56,11 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
     watch,
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
+    defaultValues: {
+      address: {
+        country: 'Denmark',
+      },
+    },
   });
 
   // Watch for company name changes to sync with CVR data
@@ -68,6 +79,14 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
       if (!watchedCompanyName || watchedCompanyName === '') {
         setValue('companyName', data.companyName);
       }
+      
+      // Auto-fill address if available
+      if (data.address) {
+        setValue('address.street', data.address.street);
+        setValue('address.city', data.address.city);
+        setValue('address.postalCode', data.address.postalCode);
+        setValue('address.country', data.address.country);
+      }
     }
   };
 
@@ -81,11 +100,6 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
     console.log('🏢 Company data from CVR:', companyData);
     console.log('✅ CVR valid:', isCvrValid);
 
-    if (!isCvrValid) {
-      setError('CVR nummer skal valideres før ansøgningen kan sendes');
-      return;
-    }
-
     setIsLoading(true);
     setError(null);
 
@@ -97,8 +111,8 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
         email: data.email,
         phone: data.phone,
         password: data.password,
-        // Use address from CVR data if available, otherwise undefined
-        address: companyData?.address || undefined,
+        // Use form address data (which may include CVR auto-filled data)
+        address: data.address && (data.address.street || data.address.city) ? data.address : undefined,
       };
 
       console.log('📤 Sending application data:', applicationData);
@@ -169,9 +183,15 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
           {/* CVR Information with Auto-validation */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">CVR Validering</h3>
-            <p className="text-sm text-muted-foreground">
-              Indtast dit CVR nummer for automatisk at hente virksomhedsoplysninger
-            </p>
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-800 font-medium mb-2">
+                💡 Indtast dit 8-cifrede CVR nummer
+              </p>
+              <p className="text-xs text-blue-700">
+                Vi forsøger automatisk at hente virksomhedsoplysninger fra CVR-registret. 
+                Hvis dit CVR ikke findes, kan du stadig fortsætte med ansøgningen.
+              </p>
+            </div>
             
             <CVRInput
               value={cvrNumber}
@@ -215,6 +235,87 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
                 </p>
               )}
             </div>
+          </div>
+
+          {/* Address Information */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-gray-600" />
+              <h3 className="text-lg font-semibold">Adresseoplysninger</h3>
+              {companyData?.address && (
+                <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                  Hentet fra CVR
+                </span>
+              )}
+            </div>
+            
+            {companyData?.address && (
+              <div className="bg-green-50 p-3 rounded border border-green-200 text-sm text-green-700">
+                <p className="font-medium">Adresse fra CVR-registret:</p>
+                <p>{companyData.address.street}</p>
+                <p>{companyData.address.postalCode} {companyData.address.city}</p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="street">Gade og husnummer</Label>
+                <Input
+                  id="street"
+                  placeholder="Eksempelvej 123"
+                  {...register('address.street')}
+                  disabled={isLoading}
+                  className={companyData?.address ? 'bg-green-50 border-green-200' : ''}
+                />
+                {errors.address?.street && (
+                  <p className="text-sm text-destructive">{errors.address.street.message}</p>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="postalCode">Postnummer</Label>
+                  <Input
+                    id="postalCode"
+                    placeholder="1234"
+                    {...register('address.postalCode')}
+                    disabled={isLoading}
+                    className={companyData?.address ? 'bg-green-50 border-green-200' : ''}
+                  />
+                  {errors.address?.postalCode && (
+                    <p className="text-sm text-destructive">{errors.address.postalCode.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city">By</Label>
+                  <Input
+                    id="city"
+                    placeholder="København"
+                    {...register('address.city')}
+                    disabled={isLoading}
+                    className={companyData?.address ? 'bg-green-50 border-green-200' : ''}
+                  />
+                  {errors.address?.city && (
+                    <p className="text-sm text-destructive">{errors.address.city.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="country">Land</Label>
+                  <Input
+                    id="country"
+                    value="Denmark"
+                    {...register('address.country')}
+                    disabled={true}
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <p className="text-xs text-gray-600">
+              💡 Adressefelterne udfyldes automatisk hvis CVR findes. Du kan redigere dem hvis nødvendigt.
+            </p>
           </div>
 
           {/* Contact Information */}
@@ -299,23 +400,13 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
             </div>
           </div>
 
-          {/* Submission Requirements */}
-          {!isCvrValid && cvrNumber && (
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                CVR nummer skal valideres før ansøgningen kan sendes. Vent venligst på validering.
-              </AlertDescription>
-            </Alert>
-          )}
-
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={isLoading || !isCvrValid}
+            disabled={isLoading}
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {!isCvrValid && cvrNumber ? 'Venter på CVR validering...' : 'Send ansøgning'}
+            Send ansøgning
           </Button>
         </form>
 
