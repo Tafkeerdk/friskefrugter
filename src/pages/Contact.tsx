@@ -100,7 +100,7 @@ const Contact = () => {
                         <Mail className="h-5 w-5 text-green-600 mt-0.5 mr-3" />
                         <div>
                           <h3 className="font-medium text-gray-900">Email</h3>
-                          <p className="text-gray-600">info@greenengros.dk</p>
+                          <p className="text-gray-600">info@multigront.dk</p>
                         </div>
                       </div>
                     </CardContent>
@@ -215,7 +215,7 @@ const Contact = () => {
             {/* B2B Info */}
             <div className="mt-12 bg-green-50 rounded-lg p-8">
               <div className="text-center mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-3">Bliv B2B-kunde hos GreenEngros</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">Bliv B2B-kunde hos Multi Grønt</h2>
                 <p className="text-gray-600 max-w-2xl mx-auto">
                   Vi leverer friske frugt, grønt og mejeriprodukter til virksomheder i hele landet
                 </p>
