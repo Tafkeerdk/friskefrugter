@@ -32,7 +32,7 @@ const EXTERNAL_IMAGE_DOMAINS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v6 with Imgix CDN support and CORS-fixed image loading...');
+  console.log('🚀 SW: Installing v7 with EXPLICIT Imgix bypass and CORS-fixed image loading...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
@@ -42,8 +42,9 @@ self.addEventListener('install', (event) => {
       })
       .then(() => {
         console.log('✅ SW: Static assets cached');
-        // Don't skip waiting immediately - let user finish current session
-        // return self.skipWaiting(); // REMOVED - causes page reload
+        // FORCE IMMEDIATE ACTIVATION for critical Imgix fix
+        console.log('⚡ SW: Force skipping waiting for CRITICAL Imgix fix');
+        return self.skipWaiting(); // CRITICAL: Force immediate activation
       })
       .catch((error) => {
         console.error('❌ SW: Error caching static assets', error);
@@ -53,7 +54,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
-  console.log('🔄 SW: Activating v6 with Imgix CDN support and CORS fixes...');
+  console.log('🔄 SW: Activating v7 with EXPLICIT Imgix bypass and CORS fixes...');
   
   event.waitUntil(
     Promise.all([
