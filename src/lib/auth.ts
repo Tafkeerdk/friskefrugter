@@ -552,18 +552,25 @@ export const authService = {
   },
 
   async approveApplication(applicationId: string): Promise<ApplicationResponse> {
-    const response = await apiClient.put(`/admin/applications/${applicationId}`, { action: 'approve' });
+    const response = await apiClient.put(`/.netlify/functions/admin-applications`, { 
+      applicationId, 
+      action: 'approve' 
+    });
     return response.json();
   },
 
   async rejectApplication(applicationId: string, reason: string): Promise<ApplicationResponse> {
-    const response = await apiClient.put(`/admin/applications/${applicationId}`, { action: 'reject', rejectionReason: reason });
+    const response = await apiClient.put(`/.netlify/functions/admin-applications`, { 
+      applicationId, 
+      action: 'reject', 
+      rejectionReason: reason 
+    });
     return response.json();
   },
 
   // Bulk operations for better admin efficiency
   async bulkApproveApplications(applicationIds: string[]): Promise<{ success: boolean; message: string; processedCount: number }> {
-    const response = await apiClient.post('/api/auth/admin/applications/bulk', {
+    const response = await apiClient.post('/.netlify/functions/admin-applications', {
       applicationIds,
       action: 'approve'
     });
@@ -571,7 +578,7 @@ export const authService = {
   },
 
   async bulkRejectApplications(applicationIds: string[], reason: string): Promise<{ success: boolean; message: string; processedCount: number }> {
-    const response = await apiClient.post('/api/auth/admin/applications/bulk', {
+    const response = await apiClient.post('/.netlify/functions/admin-applications', {
       applicationIds,
       action: 'reject',
       rejectionReason: reason
