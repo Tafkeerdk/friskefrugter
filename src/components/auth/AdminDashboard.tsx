@@ -25,7 +25,7 @@ import {
   TableRow 
 } from '../ui/table';
 import { Loader2, CheckCircle, XCircle, Clock, Eye, ChevronLeft, ChevronRight, Search, Filter } from 'lucide-react';
-import { authService, ApplicationsResponse } from '../../lib/auth';
+import { authService, ApplicationsResponse, ApplicationResponse } from '../../lib/auth';
 import { format } from 'date-fns';
 import { ApplicationListSkeleton, TableLoadingSkeleton } from '../ui/loading-states';
 
@@ -165,13 +165,25 @@ export const AdminDashboard: React.FC = () => {
       const response = await authService.approveApplication(applicationId);
       
       if (response.success) {
-        await loadApplications(false); // Refresh without showing loader
+        // Close modal immediately
         setSelectedApplication(null);
+        
+        // Update UI state
         setSelectedApplications(prev => {
           const newSet = new Set(prev);
           newSet.delete(applicationId);
           return newSet;
         });
+        
+        // Refresh data in background
+        await loadApplications(false);
+        
+        // Show success message
+        if (response.emailSent) {
+          console.log('✅ Application approved and email sent successfully');
+        } else if (response.emailError) {
+          console.warn('⚠️ Application approved but email failed:', response.emailError);
+        }
       } else {
         setError(response.message || 'Kunne ikke godkende ansøgning');
       }
@@ -195,14 +207,19 @@ export const AdminDashboard: React.FC = () => {
       const response = await authService.rejectApplication(applicationId, finalReason);
       
       if (response.success) {
-        await loadApplications(false); // Refresh without showing loader
+        // Close modal immediately
         setSelectedApplication(null);
         setRejectionReason('');
+        
+        // Update UI state
         setSelectedApplications(prev => {
           const newSet = new Set(prev);
           newSet.delete(applicationId);
           return newSet;
         });
+        
+        // Refresh data in background
+        await loadApplications(false);
       } else {
         setError(response.message || 'Kunne ikke afvise ansøgning');
       }

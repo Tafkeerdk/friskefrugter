@@ -94,6 +94,13 @@ export interface ApplicationsResponse {
   };
 }
 
+export interface ApplicationResponse {
+  success: boolean;
+  message: string;
+  emailSent?: boolean;
+  emailError?: string;
+}
+
 // Request cache for deduplication
 class RequestCache {
   private cache = new Map<string, Promise<any>>();
@@ -544,18 +551,13 @@ export const authService = {
     return response.json();
   },
 
-  async approveApplication(applicationId: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.put(`/api/auth/admin/applications/${applicationId}`, { 
-      action: 'approve' 
-    });
+  async approveApplication(applicationId: string): Promise<ApplicationResponse> {
+    const response = await apiClient.put(`/admin/applications/${applicationId}`, { action: 'approve' });
     return response.json();
   },
 
-  async rejectApplication(applicationId: string, reason?: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.put(`/api/auth/admin/applications/${applicationId}`, { 
-      action: 'reject',
-      rejectionReason: reason 
-    });
+  async rejectApplication(applicationId: string, reason: string): Promise<ApplicationResponse> {
+    const response = await apiClient.put(`/admin/applications/${applicationId}`, { action: 'reject', rejectionReason: reason });
     return response.json();
   },
 
@@ -729,6 +731,26 @@ export const authService = {
 
   async deleteDiscountGroup(discountGroupId: string): Promise<{ success: boolean; message: string; customerCount?: number }> {
     const response = await apiClient.delete('/admin/discount-groups', { discountGroupId });
+    return response.json();
+  },
+
+  // Customer management methods
+  async getCustomers(params?: { page?: number; limit?: number; search?: string }): Promise<{ success: boolean; customers: any[]; pagination?: any; message?: string }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.set('page', params.page.toString());
+    if (params?.limit) queryParams.set('limit', params.limit.toString());
+    if (params?.search) queryParams.set('search', params.search);
+    
+    const response = await apiClient.get(`/admin/customers?${queryParams.toString()}`);
+    return response.json();
+  },
+
+  async deleteCustomer(customerId: string, options?: { sendEmail?: boolean; reason?: string }): Promise<{ success: boolean; message: string; emailSent?: boolean; emailError?: string }> {
+    const response = await apiClient.delete('/admin/customers', { 
+      customerId,
+      sendEmail: options?.sendEmail || false,
+      reason: options?.reason || ''
+    });
     return response.json();
   },
 
