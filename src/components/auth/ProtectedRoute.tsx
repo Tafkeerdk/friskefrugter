@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import { isAdmin, isCustomer } from '../../lib/auth';
+import { isAdmin, isCustomer, authService } from '../../lib/auth';
 import { Loader2 } from 'lucide-react';
 
 interface ProtectedRouteProps {
@@ -20,6 +20,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   redirectTo = '/login'
 }) => {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const currentPath = window.location.pathname;
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -31,35 +32,33 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // If authentication is required but user is not authenticated
+  // Determine required session type based on route
+  const isAdminRoute = currentPath.includes('/admin') || currentPath.includes('/super');
+  const isCustomerRoute = currentPath.includes('/dashboard') && !currentPath.includes('/admin');
+
+  // Check specific session authentication
+  const adminUser = authService.getUser('admin');
+  const customerUser = authService.getUser('customer');
+  const isAdminAuthenticated = authService.isAuthenticated('admin');
+  const isCustomerAuthenticated = authService.isAuthenticated('customer');
+
+  // If admin route is required
+  if (requireAdmin || isAdminRoute) {
+    if (!isAdminAuthenticated || !adminUser || !isAdmin(adminUser)) {
+      return <Navigate to="/super/admin" replace />;
+    }
+  }
+
+  // If customer route is required
+  if (requireCustomer || isCustomerRoute) {
+    if (!isCustomerAuthenticated || !customerUser || !isCustomer(customerUser)) {
+      return <Navigate to="/login" replace />;
+    }
+  }
+
+  // General authentication check (fallback)
   if (requireAuth && !isAuthenticated) {
     return <Navigate to={redirectTo} replace />;
-  }
-
-  // If admin access is required but user is not admin
-  if (requireAdmin && (!user || !isAdmin(user))) {
-    return <Navigate to="/super/admin" replace />;
-  }
-
-  // If customer access is required but user is not customer
-  if (requireCustomer && (!user || !isCustomer(user))) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // CRITICAL: Allow simultaneous admin and customer access
-  // Admins should be able to access customer login to test customer experience
-  // Only prevent customers from accessing admin-only areas
-  if (!requireAuth && isAuthenticated) {
-    const currentPath = window.location.pathname;
-    
-    // Only prevent customers from accessing admin login
-    if (currentPath === '/super/admin' && user && isCustomer(user)) {
-      return <Navigate to="/dashboard" replace />;
-    }
-    
-    // Allow admins to access customer login and application pages
-    // This enables admins to test the customer experience
-    // No redirects for admins accessing customer areas
   }
 
   return <>{children}</>;

@@ -5,7 +5,7 @@ import { Footer } from "../components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Badge } from "../components/ui/badge";
-import { 
+import {
   User, 
   Building2, 
   Mail, 
@@ -73,8 +73,8 @@ const Dashboard: React.FC = () => {
             </h1>
             <p className="text-gray-600 text-sm md:text-base">
               Her er dit dashboard med overblik over ordrer og aktivitet
-            </p>
-          </div>
+          </p>
+        </div>
 
           {/* Stats Cards - Mobile responsive grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
@@ -207,7 +207,7 @@ const Dashboard: React.FC = () => {
                           ) : (
                             (user as any).discountGroups?.map((group: string, index: number) => (
                               <Badge 
-                                key={index}
+                key={index}
                                 className={`text-xs ${getDiscountGroupColor(group)}`}
                               >
                                 {group}
@@ -217,8 +217,8 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                     )}
-                  </div>
-                  
+        </div>
+
                   <div className="pt-4 border-t">
                     <Link to="/profile">
                       <Button variant="outline" className="w-full">
@@ -295,8 +295,8 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
-                  
+        </div>
+
                   <div className="mt-4 pt-4 border-t">
                     <Link to="/orders">
                       <Button variant="outline" className="w-full">
@@ -311,7 +311,7 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
       <Footer />
-    </div>
+      </div>
   );
 };
 

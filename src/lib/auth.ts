@@ -159,35 +159,97 @@ class RequestCache {
 
 const requestCache = new RequestCache();
 
-// Token management
-export const tokenManager = {
-  getAccessToken: (): string | null => {
-    return localStorage.getItem('accessToken');
-  },
+// Separate token management for admin and customer
+class TokenManager {
+  private userType: 'admin' | 'customer' | null = null;
 
-  getRefreshToken: (): string | null => {
-    return localStorage.getItem('refreshToken');
-  },
+  private getStorageKey(key: string): string {
+    const userType = this.getCurrentUserType();
+    return userType ? `${userType}_${key}` : key;
+  }
 
-  setTokens: (tokens: AuthTokens): void => {
-    localStorage.setItem('accessToken', tokens.accessToken);
-    localStorage.setItem('refreshToken', tokens.refreshToken);
-  },
+  private getCurrentUserType(): 'admin' | 'customer' | null {
+    // Try to determine user type from stored user data
+    const adminUser = localStorage.getItem('admin_user');
+    const customerUser = localStorage.getItem('customer_user');
+    
+    if (adminUser) return 'admin';
+    if (customerUser) return 'customer';
+    
+    return this.userType;
+  }
 
-  clearTokens: (): void => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
+  setUserType(userType: 'admin' | 'customer'): void {
+    this.userType = userType;
+  }
+
+  getAccessToken(userType?: 'admin' | 'customer'): string | null {
+    if (userType) {
+      return localStorage.getItem(`${userType}_accessToken`);
+    }
+    return localStorage.getItem(this.getStorageKey('accessToken'));
+  }
+
+  getRefreshToken(userType?: 'admin' | 'customer'): string | null {
+    if (userType) {
+      return localStorage.getItem(`${userType}_refreshToken`);
+    }
+    return localStorage.getItem(this.getStorageKey('refreshToken'));
+  }
+
+  setTokens(tokens: AuthTokens, userType?: 'admin' | 'customer'): void {
+    const type = userType || this.userType;
+    if (type) {
+      localStorage.setItem(`${type}_accessToken`, tokens.accessToken);
+      localStorage.setItem(`${type}_refreshToken`, tokens.refreshToken);
+    } else {
+      localStorage.setItem('accessToken', tokens.accessToken);
+      localStorage.setItem('refreshToken', tokens.refreshToken);
+    }
+  }
+
+  clearTokens(userType?: 'admin' | 'customer'): void {
+    if (userType) {
+      localStorage.removeItem(`${userType}_accessToken`);
+      localStorage.removeItem(`${userType}_refreshToken`);
+      localStorage.removeItem(`${userType}_user`);
+    } else {
+      const type = this.getCurrentUserType();
+      if (type) {
+        localStorage.removeItem(`${type}_accessToken`);
+        localStorage.removeItem(`${type}_refreshToken`);
+        localStorage.removeItem(`${type}_user`);
+      } else {
+        // Fallback - clear all
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        localStorage.removeItem('admin_accessToken');
+        localStorage.removeItem('admin_refreshToken');
+        localStorage.removeItem('admin_user');
+        localStorage.removeItem('customer_accessToken');
+        localStorage.removeItem('customer_refreshToken');
+        localStorage.removeItem('customer_user');
+      }
+    }
     requestCache.clear(); // Clear cache on logout
-  },
+  }
 
-  getUser: (): User | null => {
-    const userStr = localStorage.getItem('user');
+  getUser(userType?: 'admin' | 'customer'): User | null {
+    let userStr: string | null;
+    
+    if (userType) {
+      userStr = localStorage.getItem(`${userType}_user`);
+    } else {
+      userStr = localStorage.getItem(this.getStorageKey('user'));
+    }
+    
     return userStr ? JSON.parse(userStr) : null;
-  },
+  }
 
-  setUser: (user: User): void => {
-    const existingUser = tokenManager.getUser();
+  setUser(user: User, userType?: 'admin' | 'customer'): void {
+    const type = userType || user.userType;
+    const existingUser = this.getUser(type);
     
     // Debug logging for profile picture changes
     if (existingUser && existingUser.profilePictureUrl !== user.profilePictureUrl) {
@@ -195,19 +257,58 @@ export const tokenManager = {
         from: existingUser.profilePictureUrl || 'none',
         to: user.profilePictureUrl || 'none',
         userId: user.id,
+        userType: type,
         timestamp: new Date().toISOString()
       });
     } else if (!existingUser && user.profilePictureUrl) {
       console.log('🖼️ Initial profile picture set:', {
         profilePictureUrl: user.profilePictureUrl,
         userId: user.id,
+        userType: type,
         timestamp: new Date().toISOString()
       });
     }
     
-    localStorage.setItem('user', JSON.stringify(user));
+    if (type) {
+      localStorage.setItem(`${type}_user`, JSON.stringify(user));
+    } else {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
   }
-};
+
+  // Check if specific user type is authenticated
+  isAuthenticated(userType?: 'admin' | 'customer'): boolean {
+    return !!this.getAccessToken(userType);
+  }
+
+  // Get current active user (prefer admin if both are logged in)
+  getCurrentUser(): User | null {
+    const adminUser = this.getUser('admin');
+    const customerUser = this.getUser('customer');
+    
+    // Prefer admin user if both are logged in
+    return adminUser || customerUser;
+  }
+
+  // Get current session type based on current route
+  getCurrentSessionType(): 'admin' | 'customer' | null {
+    const path = window.location.pathname;
+    
+    if (path.includes('/admin') || path.includes('/super')) {
+      return 'admin';
+    } else if (path.includes('/dashboard') && !path.includes('/admin')) {
+      return 'customer';
+    }
+    
+    // Default to admin if both are logged in
+    if (this.isAuthenticated('admin')) return 'admin';
+    if (this.isAuthenticated('customer')) return 'customer';
+    
+    return null;
+  }
+}
+
+export const tokenManager = new TokenManager();
 
 // Performance monitoring
 class PerformanceTracker {
@@ -256,9 +357,14 @@ class ApiClient {
     }
 
     const tracker = performanceTracker.trackApiCall(url, method);
-    const accessToken = tokenManager.getAccessToken();
+    
+    // Determine which token to use based on current route/session
+    const sessionType = tokenManager.getCurrentSessionType();
+    const accessToken = sessionType 
+      ? tokenManager.getAccessToken(sessionType)
+      : tokenManager.getAccessToken();
 
-    console.log(`🌐 Making API request to: ${url}`);
+    console.log(`🌐 Making API request to: ${url} (session: ${sessionType})`);
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
@@ -287,7 +393,11 @@ class ApiClient {
             const refreshed = await this.refreshToken();
             if (refreshed) {
               // Retry the request with new token
-              headers.Authorization = `Bearer ${tokenManager.getAccessToken()}`;
+              const newSessionType = tokenManager.getCurrentSessionType();
+              const newAccessToken = newSessionType 
+                ? tokenManager.getAccessToken(newSessionType)
+                : tokenManager.getAccessToken();
+              headers.Authorization = `Bearer ${newAccessToken}`;
               response = await fetch(url, {
                 ...options,
                 headers,
@@ -324,7 +434,11 @@ class ApiClient {
   }
 
   private async refreshToken(): Promise<boolean> {
-    const refreshToken = tokenManager.getRefreshToken();
+    const sessionType = tokenManager.getCurrentSessionType();
+    const refreshToken = sessionType 
+      ? tokenManager.getRefreshToken(sessionType)
+      : tokenManager.getRefreshToken();
+      
     if (!refreshToken) return false;
 
     try {
@@ -338,7 +452,11 @@ class ApiClient {
 
       if (response.ok) {
         const data = await response.json();
-        tokenManager.setTokens(data.tokens);
+        if (sessionType) {
+          tokenManager.setTokens(data.tokens, sessionType);
+        } else {
+          tokenManager.setTokens(data.tokens);
+        }
         requestCache.clear(); // Clear cache after token refresh
         return true;
       }
@@ -346,8 +464,12 @@ class ApiClient {
       console.error('Token refresh failed:', error);
     }
 
-    // If refresh failed, clear tokens
-    tokenManager.clearTokens();
+    // If refresh failed, clear tokens for current session
+    if (sessionType) {
+      tokenManager.clearTokens(sessionType);
+    } else {
+      tokenManager.clearTokens();
+    }
     return false;
   }
 
@@ -439,8 +561,9 @@ export const authService = {
     const data = await response.json();
     
     if (data.success) {
-      tokenManager.setTokens(data.tokens);
-      tokenManager.setUser(data.user);
+      tokenManager.setUserType('customer');
+      tokenManager.setTokens(data.tokens, 'customer');
+      tokenManager.setUser(data.user, 'customer');
     }
     
     return data;
@@ -473,8 +596,9 @@ export const authService = {
     const data = await response.json();
     
     if (data.success) {
-      tokenManager.setTokens(data.tokens);
-      tokenManager.setUser(data.user);
+      tokenManager.setUserType('admin');
+      tokenManager.setTokens(data.tokens, 'admin');
+      tokenManager.setUser(data.user, 'admin');
     } else {
       // Enhanced error handling for better user feedback
       let userFriendlyMessage = data.error || 'Login fejlede';
@@ -515,18 +639,23 @@ export const authService = {
   },
 
   // Logout
-  logout(): void {
-    tokenManager.clearTokens();
+  logout(userType?: 'admin' | 'customer'): void {
+    tokenManager.clearTokens(userType);
   },
 
   // Check if user is authenticated
-  isAuthenticated(): boolean {
-    return !!tokenManager.getAccessToken();
+  isAuthenticated(userType?: 'admin' | 'customer'): boolean {
+    return tokenManager.isAuthenticated(userType);
   },
 
   // Get current user
   getCurrentUser(): User | null {
-    return tokenManager.getUser();
+    return tokenManager.getCurrentUser();
+  },
+
+  // Get user by type
+  getUser(userType: 'admin' | 'customer'): User | null {
+    return tokenManager.getUser(userType);
   },
 
   // Admin functions with pagination and caching

@@ -3,10 +3,14 @@ import { User, authService, tokenManager, LoginResponse, isAdmin } from '../lib/
 
 interface AuthContextType {
   user: User | null;
+  adminUser: User | null;
+  customerUser: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isAdminAuthenticated: boolean;
+  isCustomerAuthenticated: boolean;
   login: (email: string, password: string, userType: 'customer' | 'admin') => Promise<LoginResponse>;
-  logout: () => void;
+  logout: (userType?: 'customer' | 'admin') => void;
   refreshUser: () => Promise<void>;
 }
 
@@ -18,6 +22,8 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [adminUser, setAdminUser] = useState<User | null>(null);
+  const [customerUser, setCustomerUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Utility function to check if token is expired
@@ -50,46 +56,46 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return false;
   };
 
-  // Enhanced initialization with profile data sync
+  // Enhanced initialization with separate session support
   useEffect(() => {
     const initializeAuth = async () => {
-      const savedUser = tokenManager.getUser();
-      const accessToken = tokenManager.getAccessToken();
+      const savedAdminUser = authService.getUser('admin');
+      const savedCustomerUser = authService.getUser('customer');
+      const adminToken = authService.isAuthenticated('admin');
+      const customerToken = authService.isAuthenticated('customer');
       
-      if (savedUser && accessToken) {
-        // Check if token is expired
-        if (isTokenExpired(accessToken)) {
-          console.log('🔄 Token expired on app init, attempting refresh...');
-          const refreshed = await attemptTokenRefresh();
-          if (!refreshed) {
-            // If refresh failed, clear everything and don't set user
-            tokenManager.clearTokens();
-            setUser(null);
-            setIsLoading(false);
-            return;
-          }
-        }
+      // Initialize admin session
+      if (savedAdminUser && adminToken) {
+        setAdminUser(savedAdminUser);
         
-        setUser(savedUser);
-        
-        // For admin users, fetch fresh profile data to ensure we have latest profilePictureUrl
-        if (isAdmin(savedUser)) {
-          try {
-            console.log('🔄 Fetching fresh admin profile data on app initialization...');
-            const profileResponse = await authService.getAdminProfile();
-            if (profileResponse.success && profileResponse.admin) {
-              console.log('✅ Fresh profile data fetched:', {
-                hasProfilePicture: !!profileResponse.admin.profilePictureUrl,
-                profilePictureUrl: profileResponse.admin.profilePictureUrl
-              });
-              tokenManager.setUser(profileResponse.admin);
-              setUser(profileResponse.admin);
-            }
-          } catch (error) {
-            console.warn('⚠️ Could not fetch fresh profile data on init:', error);
-            // Continue with saved user data if profile fetch fails
+        // Fetch fresh admin profile data
+        try {
+          console.log('🔄 Fetching fresh admin profile data on app initialization...');
+          const profileResponse = await authService.getAdminProfile();
+          if (profileResponse.success && profileResponse.admin) {
+            console.log('✅ Fresh admin profile data fetched');
+            tokenManager.setUser(profileResponse.admin, 'admin');
+            setAdminUser(profileResponse.admin);
           }
+        } catch (error) {
+          console.warn('⚠️ Could not fetch fresh admin profile data on init:', error);
         }
+      }
+      
+      // Initialize customer session
+      if (savedCustomerUser && customerToken) {
+        setCustomerUser(savedCustomerUser);
+      }
+      
+      // Set primary user based on current route
+      const currentPath = window.location.pathname;
+      if (currentPath.includes('/admin') || currentPath.includes('/super')) {
+        setUser(savedAdminUser);
+      } else if (currentPath.includes('/dashboard') && !currentPath.includes('/admin')) {
+        setUser(savedCustomerUser);
+      } else {
+        // Default to admin if both are logged in, otherwise use whichever is available
+        setUser(savedAdminUser || savedCustomerUser);
       }
       
       setIsLoading(false);
@@ -109,26 +115,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       if (response.success) {
-        setUser(response.user);
-        
-        // For admin users, fetch fresh profile data immediately after login
-        // This ensures we have the most up-to-date profile information including images
+        // Set user in appropriate state
         if (userType === 'admin') {
+          setAdminUser(response.user);
+          
+          // Fetch fresh admin profile data
           try {
             console.log('🔄 Fetching fresh admin profile data after login...');
             const profileResponse = await authService.getAdminProfile();
             if (profileResponse.success && profileResponse.admin) {
-              console.log('✅ Fresh profile data fetched after login:', {
-                hasProfilePicture: !!profileResponse.admin.profilePictureUrl,
-                profilePictureUrl: profileResponse.admin.profilePictureUrl
-              });
-              tokenManager.setUser(profileResponse.admin);
-              setUser(profileResponse.admin);
+              console.log('✅ Fresh admin profile data fetched after login');
+              tokenManager.setUser(profileResponse.admin, 'admin');
+              setAdminUser(profileResponse.admin);
+              setUser(profileResponse.admin); // Set as primary user
             }
           } catch (error) {
             console.warn('⚠️ Could not fetch fresh profile data after login:', error);
-            // Continue with login response data if profile fetch fails
+            setUser(response.user); // Fallback to login response
           }
+        } else {
+          setCustomerUser(response.user);
+          setUser(response.user); // Set as primary user
         }
         
         return response;
@@ -141,9 +148,31 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = (userType?: 'customer' | 'admin') => {
+    authService.logout(userType);
+    
+    if (userType === 'admin') {
+      setAdminUser(null);
+      // If admin logs out but customer is still logged in, switch to customer
+      if (customerUser) {
+        setUser(customerUser);
+      } else {
+        setUser(null);
+      }
+    } else if (userType === 'customer') {
+      setCustomerUser(null);
+      // If customer logs out but admin is still logged in, switch to admin
+      if (adminUser) {
+        setUser(adminUser);
+      } else {
+        setUser(null);
+      }
+    } else {
+      // Logout all
+      setAdminUser(null);
+      setCustomerUser(null);
+      setUser(null);
+    }
   };
 
   // Enhanced refreshUser function that actually fetches fresh data
@@ -179,8 +208,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const value: AuthContextType = {
     user,
+    adminUser,
+    customerUser,
     isLoading,
     isAuthenticated: !!user,
+    isAdminAuthenticated: !!adminUser,
+    isCustomerAuthenticated: !!customerUser,
     login,
     logout,
     refreshUser,
