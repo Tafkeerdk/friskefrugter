@@ -135,10 +135,10 @@ const PasswordReset = () => {
         <div className="mt-6 text-center space-y-3">
           <div className="text-sm text-muted-foreground">
             Har du brug for hjælp?{' '}
-            <Link to="/faq" className="text-primary hover:underline">
+            <Link to="/faq#password-reset-guide" className="text-primary hover:underline">
               Se vores FAQ
             </Link>{' '}
-            for guide til nulstilling af adgangskode
+            for detaljeret guide til nulstilling af adgangskode
           </div>
           
           <Link 
@@ -245,10 +245,10 @@ const PasswordReset = () => {
           
           <div className="text-sm text-muted-foreground">
             Har du brug for hjælp?{' '}
-            <Link to="/faq" className="text-primary hover:underline">
+            <Link to="/faq#password-reset-guide" className="text-primary hover:underline">
               Se vores FAQ
             </Link>{' '}
-            for guide til nulstilling af adgangskode
+            for detaljeret guide til nulstilling af adgangskode
           </div>
           
           <div>
