@@ -24,6 +24,7 @@ import AdminProfile from "./pages/AdminProfile";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
+import FAQ from "./pages/FAQ";
 import ProductSetup from "./pages/ProductSetup";
 import PasswordReset from "./pages/PasswordReset";
 import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/about" element={<About />} />
+            <Route path="/faq" element={<FAQ />} />
             
             {/* Authentication routes */}
             <Route 

@@ -103,6 +103,12 @@ export function Navbar() {
               Om os
             </Link>
             <Link 
+              to="/faq" 
+              className="px-4 py-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all duration-200 font-medium"
+            >
+              FAQ
+            </Link>
+            <Link 
               to="/contact" 
               className="px-4 py-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all duration-200 font-medium"
             >
@@ -227,6 +233,13 @@ export function Navbar() {
             onClick={() => setIsMenuOpen(false)}
           >
             Om os
+          </Link>
+          <Link 
+            to="/faq" 
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            FAQ
           </Link>
           <Link 
             to="/contact" 

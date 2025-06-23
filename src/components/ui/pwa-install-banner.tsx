@@ -35,7 +35,8 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
   const handleInstall = async () => {
     if (needsManualInstall) {
       // For iOS Safari and other browsers that require manual installation
-      setIsExpanded(true);
+      // Redirect to FAQ page with PWA installation guide
+      window.location.href = '/faq#pwa-installation';
     } else if (isInstallable) {
       // For browsers that support automatic install prompts
       await promptInstall();
