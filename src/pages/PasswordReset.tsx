@@ -90,7 +90,7 @@ const PasswordReset = () => {
   };
 
   const renderRequestStep = () => (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full">
       <CardHeader className="text-center">
         <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
           <Key className="w-6 h-6 text-blue-600" />
@@ -132,7 +132,15 @@ const PasswordReset = () => {
           </Button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-3">
+          <div className="text-sm text-muted-foreground">
+            Har du brug for hjælp?{' '}
+            <Link to="/faq" className="text-primary hover:underline">
+              Se vores FAQ
+            </Link>{' '}
+            for guide til nulstilling af adgangskode
+          </div>
+          
           <Link 
             to="/login" 
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
@@ -146,7 +154,7 @@ const PasswordReset = () => {
   );
 
   const renderVerifyStep = () => (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full">
       <CardHeader className="text-center">
         <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
           <Mail className="w-6 h-6 text-blue-600" />
@@ -173,6 +181,10 @@ const PasswordReset = () => {
               className="text-center text-lg tracking-widest"
               {...verifyForm.register('resetCode')}
               disabled={isLoading}
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
             />
             {verifyForm.formState.errors.resetCode && (
               <p className="text-sm text-destructive">{verifyForm.formState.errors.resetCode.message}</p>
@@ -221,7 +233,7 @@ const PasswordReset = () => {
           </Button>
         </form>
 
-        <div className="mt-6 text-center space-y-2">
+        <div className="mt-6 text-center space-y-3">
           <Button
             variant="ghost"
             size="sm"
@@ -230,6 +242,15 @@ const PasswordReset = () => {
           >
             Anmod om ny kode
           </Button>
+          
+          <div className="text-sm text-muted-foreground">
+            Har du brug for hjælp?{' '}
+            <Link to="/faq" className="text-primary hover:underline">
+              Se vores FAQ
+            </Link>{' '}
+            for guide til nulstilling af adgangskode
+          </div>
+          
           <div>
             <Link 
               to="/login" 
@@ -245,7 +266,7 @@ const PasswordReset = () => {
   );
 
   const renderSuccessStep = () => (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full">
       <CardHeader className="text-center">
         <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
           <CheckCircle className="w-6 h-6 text-green-600" />
@@ -270,11 +291,11 @@ const PasswordReset = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
       <Navbar />
       
-      <main className="container mx-auto px-4 py-16">
-        <div className="max-w-md mx-auto">
+      <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center">
+        <div className="w-full max-w-md">
           {step === 'request' && renderRequestStep()}
           {step === 'verify' && renderVerifyStep()}
           {step === 'success' && renderSuccessStep()}
