@@ -73,20 +73,19 @@ const DashboardDiscountGroups: React.FC = () => {
     name: '',
     description: '',
     discountPercentage: '',
-    color: '#6B7280',
-    sortOrder: 0
+    color: '#6B7280'
   });
 
-  // Color options for discount groups
+  // Enhanced color options with gradient effects
   const colorOptions = [
-    { name: 'Grå', value: '#6B7280' },
-    { name: 'Blå', value: '#3B82F6' },
-    { name: 'Grøn', value: '#10B981' },
-    { name: 'Gul', value: '#F59E0B' },
-    { name: 'Orange', value: '#F97316' },
-    { name: 'Rød', value: '#EF4444' },
-    { name: 'Lilla', value: '#8B5CF6' },
-    { name: 'Pink', value: '#EC4899' },
+    { name: 'Standard', value: '#6B7280', gradient: 'from-gray-400 to-gray-600' },
+    { name: 'Safir', value: '#3B82F6', gradient: 'from-blue-400 to-blue-600' },
+    { name: 'Smaragd', value: '#10B981', gradient: 'from-emerald-400 to-emerald-600' },
+    { name: 'Guld', value: '#F59E0B', gradient: 'from-yellow-400 to-yellow-600' },
+    { name: 'Rav', value: '#F97316', gradient: 'from-orange-400 to-orange-600' },
+    { name: 'Rubin', value: '#EF4444', gradient: 'from-red-400 to-red-600' },
+    { name: 'Ametyst', value: '#8B5CF6', gradient: 'from-violet-400 to-violet-600' },
+    { name: 'Diamant', value: '#EC4899', gradient: 'from-pink-400 to-pink-600' },
   ];
 
   useEffect(() => {
@@ -98,15 +97,15 @@ const DashboardDiscountGroups: React.FC = () => {
       setIsLoading(true);
       setError(null);
       
-      const response = await authService.apiClient.get('/admin/discount-groups');
+      const response = await authService.getDiscountGroups();
       
       if (response.success) {
-        setDiscountGroups(response.discountGroups || []);
+        setDiscountGroups(response.discountGroups as DiscountGroup[] || []);
       } else {
         setError(response.message || 'Kunne ikke hente rabatgrupper');
       }
     } catch (err) {
-      setError('Der opstod en fejl ved hentning af rabatgrupper');
+      setError('Netværksfejl - kontroller din internetforbindelse');
       console.error('Error fetching discount groups:', err);
     } finally {
       setIsLoading(false);
@@ -118,8 +117,7 @@ const DashboardDiscountGroups: React.FC = () => {
       name: '',
       description: '',
       discountPercentage: '',
-      color: '#6B7280',
-      sortOrder: 0
+      color: '#6B7280'
     });
   };
 
@@ -146,12 +144,12 @@ const DashboardDiscountGroups: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const response = await authService.apiClient.post('/admin/discount-groups', {
+      const response = await authService.createDiscountGroup({
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         discountPercentage: percentage,
         color: formData.color,
-        sortOrder: formData.sortOrder
+        sortOrder: 0
       });
 
       if (response.success) {
@@ -205,13 +203,12 @@ const DashboardDiscountGroups: React.FC = () => {
     try {
       setIsSubmitting(true);
       
-      const response = await authService.apiClient.put('/admin/discount-groups', {
-        discountGroupId: editingGroup.id,
+      const response = await authService.updateDiscountGroup(editingGroup.id, {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
         discountPercentage: percentage,
         color: formData.color,
-        sortOrder: formData.sortOrder
+        sortOrder: 0
       });
 
       if (response.success) {
@@ -245,9 +242,7 @@ const DashboardDiscountGroups: React.FC = () => {
 
   const handleDelete = async (group: DiscountGroup) => {
     try {
-      const response = await authService.apiClient.delete('/admin/discount-groups', {
-        discountGroupId: group.id
-      });
+      const response = await authService.deleteDiscountGroup(group.id);
 
       if (response.success) {
         toast({
@@ -279,8 +274,7 @@ const DashboardDiscountGroups: React.FC = () => {
       name: group.name,
       description: group.description || '',
       discountPercentage: group.discountPercentage.toString(),
-      color: group.color,
-      sortOrder: group.sortOrder
+      color: group.color
     });
     setIsEditDialogOpen(true);
   };
@@ -288,6 +282,11 @@ const DashboardDiscountGroups: React.FC = () => {
   const getColorName = (colorValue: string) => {
     const colorOption = colorOptions.find(option => option.value === colorValue);
     return colorOption ? colorOption.name : 'Brugerdefineret';
+  };
+
+  const getColorGradient = (colorValue: string) => {
+    const colorOption = colorOptions.find(option => option.value === colorValue);
+    return colorOption ? colorOption.gradient : 'from-gray-400 to-gray-600';
   };
 
   if (isLoading) {
@@ -365,31 +364,32 @@ const DashboardDiscountGroups: React.FC = () => {
               </div>
               <div>
                 <Label htmlFor="color">Farve</Label>
-                <div className="flex gap-2 mt-2">
+                <div className="grid grid-cols-4 gap-3 mt-2">
                   {colorOptions.map((colorOption) => (
                     <button
                       key={colorOption.value}
                       type="button"
-                      className={`w-8 h-8 rounded-full border-2 ${
-                        formData.color === colorOption.value ? 'border-gray-900' : 'border-gray-300'
-                      }`}
-                      style={{ backgroundColor: colorOption.value }}
                       onClick={() => setFormData({...formData, color: colorOption.value})}
+                      className={`
+                        relative h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
+                        shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200
+                        ${formData.color === colorOption.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
+                      `}
                       title={colorOption.name}
-                    />
+                    >
+                      {formData.color === colorOption.value && (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="w-6 h-6 bg-white rounded-full shadow-sm flex items-center justify-center">
+                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                          </div>
+                        </div>
+                      )}
+                      <span className="absolute bottom-1 left-1 right-1 text-xs text-white font-medium text-center bg-black bg-opacity-30 rounded px-1 py-0.5">
+                        {colorOption.name}
+                      </span>
+                    </button>
                   ))}
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="sortOrder">Sorteringsrækkefølge</Label>
-                <Input
-                  id="sortOrder"
-                  type="number"
-                  min="0"
-                  value={formData.sortOrder}
-                  onChange={(e) => setFormData({...formData, sortOrder: parseInt(e.target.value) || 0})}
-                  placeholder="0"
-                />
               </div>
             </div>
             <div className="flex justify-end space-x-2 mt-6">
@@ -577,31 +577,32 @@ const DashboardDiscountGroups: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="edit-color">Farve</Label>
-              <div className="flex gap-2 mt-2">
+              <div className="grid grid-cols-4 gap-3 mt-2">
                 {colorOptions.map((colorOption) => (
                   <button
                     key={colorOption.value}
                     type="button"
-                    className={`w-8 h-8 rounded-full border-2 ${
-                      formData.color === colorOption.value ? 'border-gray-900' : 'border-gray-300'
-                    }`}
-                    style={{ backgroundColor: colorOption.value }}
                     onClick={() => setFormData({...formData, color: colorOption.value})}
+                    className={`
+                      relative h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
+                      shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200
+                      ${formData.color === colorOption.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
+                    `}
                     title={colorOption.name}
-                  />
+                  >
+                    {formData.color === colorOption.value && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-6 h-6 bg-white rounded-full shadow-sm flex items-center justify-center">
+                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        </div>
+                      </div>
+                    )}
+                    <span className="absolute bottom-1 left-1 right-1 text-xs text-white font-medium text-center bg-black bg-opacity-30 rounded px-1 py-0.5">
+                      {colorOption.name}
+                    </span>
+                  </button>
                 ))}
               </div>
-            </div>
-            <div>
-              <Label htmlFor="edit-sortOrder">Sorteringsrækkefølge</Label>
-              <Input
-                id="edit-sortOrder"
-                type="number"
-                min="0"
-                value={formData.sortOrder}
-                onChange={(e) => setFormData({...formData, sortOrder: parseInt(e.target.value) || 0})}
-                placeholder="0"
-              />
             </div>
           </div>
           <div className="flex justify-end space-x-2 mt-6">
@@ -625,4 +626,4 @@ const DashboardDiscountGroups: React.FC = () => {
   );
 };
 
-export default DashboardDiscountGroups; 
+export default DashboardDiscountGroups;

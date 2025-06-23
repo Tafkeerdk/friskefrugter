@@ -706,7 +706,7 @@ export const authService = {
 
   // Discount Groups Management
   async getDiscountGroups(): Promise<{ success: boolean; discountGroups: unknown[]; message?: string }> {
-    const response = await apiClient.get('/admin/discount-groups');
+    const response = await apiClient.get('/.netlify/functions/admin-discount-groups');
     return response.json();
   },
 
@@ -717,7 +717,7 @@ export const authService = {
     color?: string;
     sortOrder?: number;
   }): Promise<{ success: boolean; message: string; discountGroup?: unknown }> {
-    const response = await apiClient.post('/admin/discount-groups', groupData);
+    const response = await apiClient.post('/.netlify/functions/admin-discount-groups', groupData);
     return response.json();
   },
 
@@ -729,7 +729,7 @@ export const authService = {
     sortOrder?: number;
     isActive?: boolean;
   }): Promise<{ success: boolean; message: string; discountGroup?: unknown }> {
-    const response = await apiClient.put('/admin/discount-groups', {
+    const response = await apiClient.put('/.netlify/functions/admin-discount-groups', {
       discountGroupId,
       ...groupData
     });
@@ -737,7 +737,7 @@ export const authService = {
   },
 
   async deleteDiscountGroup(discountGroupId: string): Promise<{ success: boolean; message: string; customerCount?: number }> {
-    const response = await apiClient.delete('/admin/discount-groups', { discountGroupId });
+    const response = await apiClient.delete('/.netlify/functions/admin-discount-groups', { discountGroupId });
     return response.json();
   },
 
