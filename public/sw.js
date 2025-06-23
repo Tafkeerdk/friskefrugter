@@ -173,20 +173,11 @@ async function handleRequest(request) {
 
 // Enhanced image strategy for both local and external images
 async function enhancedImageStrategy(request, url) {
-  console.log('🔍 SW: Image request intercepted:', {
-    url: url.href,
-    pathname: url.pathname,
-    hostname: url.hostname,
-    isExternal: isExternalImageDomain(url),
-    timestamp: new Date().toISOString()
-  });
-
   const cache = await caches.open(IMAGE_CACHE_NAME);
   
   // Check cache first for all images
   const cachedResponse = await cache.match(request);
   if (cachedResponse) {
-    console.log('✅ SW: Image served from cache:', url.href);
     return cachedResponse;
   }
   
@@ -205,53 +196,33 @@ async function enhancedImageStrategy(request, url) {
         credentials: 'omit', // Don't send credentials for external images
         cache: 'default'
       });
-      console.log('🌐 SW: Fetching external image with CORS:', url.href);
-    } else {
-      console.log('📍 SW: Fetching local image:', url.href);
     }
     
-    console.log('🚀 SW: Starting fetch for image:', url.href);
     const networkResponse = await fetch(fetchRequest);
-    console.log('📥 SW: Fetch response received:', {
-      url: url.href,
-      status: networkResponse.status,
-      statusText: networkResponse.statusText,
-      ok: networkResponse.ok,
-      headers: Object.fromEntries(networkResponse.headers.entries())
-    });
     
     if (networkResponse.ok) {
       // Cache successful responses
       const responseClone = networkResponse.clone();
       try {
         await cache.put(request, responseClone);
-        console.log('💾 SW: Image cached successfully:', url.href);
       } catch (cacheError) {
         console.warn('⚠️ SW: Failed to cache image:', url.href, cacheError);
       }
       return networkResponse;
     } else {
-      console.error('❌ SW: Image fetch failed with status:', networkResponse.status, url.href);
       throw new Error(`Image fetch failed: ${networkResponse.status} ${networkResponse.statusText}`);
     }
     
   } catch (error) {
-    console.error('💥 SW: Network error fetching image:', {
-      url: url.href,
-      error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString()
-    });
+    console.error('💥 SW: Network error fetching image:', url.href, error.message);
     
     // Try to return any cached version (even if stale)
     const staleResponse = await cache.match(request);
     if (staleResponse) {
-      console.log('🔄 SW: Returning stale cached image:', url.href);
       return staleResponse;
     }
     
     // Return placeholder SVG for completely failed images
-    console.log('🎨 SW: Returning placeholder SVG for failed image:', url.href);
     return new Response(
       `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
         <rect width="400" height="300" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="2"/>

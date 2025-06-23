@@ -206,54 +206,25 @@
             console.log('✅ Service Worker is ready:', registration);
             console.log('🔧 SW Controller:', navigator.serviceWorker.controller);
             
-            // Monitor all image loading on the page
+            // Basic image monitoring (reduced logging)
             const observeImages = () => {
               const images = document.querySelectorAll('img');
-              console.log(`🖼️ Found ${images.length} images on page`);
               
               images.forEach((img, index) => {
-                const imageInfo = {
-                  index: index + 1,
-                  src: img.src,
-                  complete: img.complete,
-                  naturalWidth: img.naturalWidth,
-                  naturalHeight: img.naturalHeight,
-                  dataset: img.dataset,
-                  alt: img.alt
-                };
-                
-                if (img.complete && img.naturalWidth > 0) {
-                  console.log(`✅ Image ${index + 1} loaded successfully:`, imageInfo);
-                } else if (img.complete && img.naturalWidth === 0) {
-                  console.error(`❌ Image ${index + 1} failed to load:`, imageInfo);
-                } else {
-                  console.log(`⏳ Image ${index + 1} still loading:`, imageInfo);
-                  
-                  // Add listeners for this image
-                  img.addEventListener('load', () => {
-                    console.log(`✅ Image ${index + 1} loaded after monitoring:`, {
-                      src: img.src,
-                      naturalWidth: img.naturalWidth,
-                      naturalHeight: img.naturalHeight
-                    });
-                  });
-                  
+                if (!img.complete) {
+                  // Only add listeners for images that haven't loaded yet
                   img.addEventListener('error', (event) => {
-                    console.error(`❌ Image ${index + 1} failed after monitoring:`, {
+                    console.error(`❌ Image failed to load:`, {
                       src: img.src,
-                      error: event,
-                      dataset: img.dataset
+                      alt: img.alt
                     });
                   });
                 }
               });
             };
             
-            // Initial check
+            // Initial check only
             observeImages();
-            
-            // Re-check every 5 seconds for new images
-            setInterval(observeImages, 5000);
             
           }).catch(error => {
             console.error('❌ Service Worker not ready:', error);
@@ -262,17 +233,16 @@
           console.warn('⚠️ Service Worker not supported');
         }
         
-        // Monitor for new images added dynamically
+        // Monitor for new images added dynamically (minimal logging)
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
               if (node.nodeType === 1) { // Element node
                 const images = node.tagName === 'IMG' ? [node] : node.querySelectorAll('img');
                 images.forEach((img) => {
-                  console.log('🆕 New image detected:', {
-                    src: img.src,
-                    alt: img.alt,
-                    dataset: img.dataset
+                  // Only log errors for new images
+                  img.addEventListener('error', () => {
+                    console.error('❌ New image failed to load:', img.src);
                   });
                 });
               }
