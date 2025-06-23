@@ -342,12 +342,23 @@ class ApiClient {
   }
 
   async post(endpoint: string, data?: unknown): Promise<Response> {
+    console.log('🔄 ApiClient.post called:', { endpoint, data });
+    
     // Clear relevant cache patterns on mutations
     this.invalidateCache(endpoint);
-    return this.makeRequest(endpoint, {
+    
+    const result = await this.makeRequest(endpoint, {
       method: 'POST',
       body: data ? JSON.stringify(data) : undefined,
     });
+    
+    console.log('🔄 ApiClient.post result:', { 
+      status: result.status, 
+      ok: result.ok,
+      url: result.url 
+    });
+    
+    return result;
   }
 
   async put(endpoint: string, data?: unknown): Promise<Response> {
@@ -381,8 +392,25 @@ export const apiClient = new ApiClient(API_BASE_URL);
 export const authService = {
   // Customer application
   async applyAsCustomer(applicationData: CustomerApplicationData): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post('/api/auth/customer/apply', applicationData);
-    return response.json();
+    console.log('🚀 authService.applyAsCustomer called with:', applicationData);
+    console.log('🌐 API Base URL:', this.baseURL || API_BASE_URL);
+    
+    try {
+      const endpoint = '/api/auth/customer/apply';
+      console.log('📡 Making request to endpoint:', endpoint);
+      
+      const response = await apiClient.post(endpoint, applicationData);
+      console.log('📥 Raw response status:', response.status);
+      console.log('📥 Raw response ok:', response.ok);
+      
+      const data = await response.json();
+      console.log('📥 Response data:', data);
+      
+      return data;
+    } catch (error) {
+      console.error('❌ applyAsCustomer error:', error);
+      throw error;
+    }
   },
 
   // Customer login

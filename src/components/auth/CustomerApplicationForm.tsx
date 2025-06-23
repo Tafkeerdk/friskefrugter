@@ -7,24 +7,19 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Alert, AlertDescription } from '../ui/alert';
-import { Loader2, CheckCircle } from 'lucide-react';
+import { Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { authService, CustomerApplicationData } from '../../lib/auth';
-import { DAWAAddressInput } from '../ui/dawa-address-input';
+import { CVRInput } from '../ui/cvr-input';
+import { CVRData } from '../../lib/cvr';
 
 const applicationSchema = z.object({
   companyName: z.string().min(2, 'Virksomhedsnavn skal være mindst 2 tegn'),
-  cvrNumber: z.string().regex(/^\d{8}$/, 'CVR nummer skal være 8 cifre'),
+  cvrNumber: z.string().min(8, 'CVR nummer er påkrævet'),
   contactPersonName: z.string().min(2, 'Kontaktperson navn skal være mindst 2 tegn'),
   email: z.string().email('Ugyldig email adresse'),
   phone: z.string().min(8, 'Telefonnummer skal være mindst 8 cifre'),
   password: z.string().min(8, 'Password skal være mindst 8 tegn'),
   confirmPassword: z.string(),
-  address: z.object({
-    street: z.string().min(2, 'Gade skal være mindst 2 tegn'),
-    city: z.string().min(2, 'By skal være mindst 2 tegn'),
-    postalCode: z.string().min(4, 'Postnummer skal være mindst 4 cifre'),
-    country: z.string().default('Denmark'),
-  }).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords matcher ikke",
   path: ["confirmPassword"],
@@ -42,23 +37,55 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  const [cvrNumber, setCvrNumber] = useState('');
+  const [companyData, setCompanyData] = useState<CVRData | null>(null);
+  const [isCvrValid, setIsCvrValid] = useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    watch,
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
-    defaultValues: {
-      address: {
-        country: 'Denmark',
-      },
-    },
   });
 
+  // Watch for company name changes to sync with CVR data
+  const watchedCompanyName = watch('companyName');
+
+  const handleCvrChange = (value: string) => {
+    setCvrNumber(value);
+    setValue('cvrNumber', value.replace(/\s/g, ''));
+  };
+
+  const handleCompanyDataChange = (data: CVRData | null) => {
+    setCompanyData(data);
+    
+    if (data) {
+      // Auto-fill company name if not manually changed
+      if (!watchedCompanyName || watchedCompanyName === '') {
+        setValue('companyName', data.companyName);
+      }
+    }
+  };
+
+  const handleCvrValidationChange = (isValid: boolean) => {
+    setIsCvrValid(isValid);
+  };
+
   const onSubmit = async (data: ApplicationFormData) => {
+    console.log('🚀 Starting form submission...');
+    console.log('📋 Form data:', data);
+    console.log('🏢 Company data from CVR:', companyData);
+    console.log('✅ CVR valid:', isCvrValid);
+
+    if (!isCvrValid) {
+      setError('CVR nummer skal valideres før ansøgningen kan sendes');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -70,19 +97,29 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
         email: data.email,
         phone: data.phone,
         password: data.password,
-        address: selectedAddress || data.address,
+        // Use address from CVR data if available, otherwise undefined
+        address: companyData?.address || undefined,
       };
 
+      console.log('📤 Sending application data:', applicationData);
+
       const response = await authService.applyAsCustomer(applicationData);
+      console.log('📥 Application response:', response);
       
       if (response.success) {
+        console.log('✅ Application successful!');
         setSuccess(true);
         reset();
+        setCvrNumber('');
+        setCompanyData(null);
+        setIsCvrValid(false);
         onSuccess?.();
       } else {
+        console.log('❌ Application failed:', response.message);
         setError(response.message || 'Ansøgning fejlede. Prøv igen.');
       }
     } catch (err: unknown) {
+      console.error('❌ Application error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl. Prøv igen senere.';
       setError(errorMessage);
     } finally {
@@ -123,41 +160,60 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
       <CardContent>
         {error && (
           <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* CVR Information with Auto-validation */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">CVR Validering</h3>
+            <p className="text-sm text-muted-foreground">
+              Indtast dit CVR nummer for automatisk at hente virksomhedsoplysninger
+            </p>
+            
+            <CVRInput
+              value={cvrNumber}
+              onChange={handleCvrChange}
+              onCompanyDataChange={handleCompanyDataChange}
+              onValidationChange={handleCvrValidationChange}
+              label="CVR nummer"
+              placeholder="12345678"
+              required
+              disabled={isLoading}
+              error={errors.cvrNumber?.message}
+            />
+          </div>
+
           {/* Company Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Virksomhedsoplysninger</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="companyName">Virksomhedsnavn *</Label>
-                <Input
-                  id="companyName"
-                  placeholder="Din virksomhed ApS"
-                  {...register('companyName')}
-                  disabled={isLoading}
-                />
-                {errors.companyName && (
-                  <p className="text-sm text-destructive">{errors.companyName.message}</p>
+            <div className="space-y-2">
+              <Label htmlFor="companyName">
+                Virksomhedsnavn *
+                {companyData && (
+                  <span className="text-xs text-green-600 ml-2">
+                    (hentet fra CVR)
+                  </span>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="cvrNumber">CVR nummer *</Label>
-                <Input
-                  id="cvrNumber"
-                  placeholder="12345678"
-                  {...register('cvrNumber')}
-                  disabled={isLoading}
-                />
-                {errors.cvrNumber && (
-                  <p className="text-sm text-destructive">{errors.cvrNumber.message}</p>
-                )}
-              </div>
+              </Label>
+              <Input
+                id="companyName"
+                placeholder="Din virksomhed ApS"
+                {...register('companyName')}
+                disabled={isLoading}
+                className={companyData ? 'bg-green-50 border-green-200' : ''}
+              />
+              {errors.companyName && (
+                <p className="text-sm text-destructive">{errors.companyName.message}</p>
+              )}
+              {companyData && (
+                <p className="text-xs text-green-600">
+                  ✓ Virksomhedsnavn hentet fra CVR-registret. Du kan redigere det hvis nødvendigt.
+                </p>
+              )}
             </div>
           </div>
 
@@ -208,26 +264,6 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
             </div>
           </div>
 
-          {/* Address Information with DAWA API */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Adresse (valgfri)</h3>
-            <p className="text-sm text-muted-foreground">
-              Hvis ikke udfyldt, hentes automatisk fra CVR registret
-            </p>
-            
-            <DAWAAddressInput
-              onAddressSelect={setSelectedAddress}
-              label="Virksomhedsadresse"
-              placeholder="Søg efter adresse..."
-              disabled={isLoading}
-            />
-            
-            <p className="text-xs text-gray-600">
-              Vi bruger Danmarks Adressesystem (DAWA) til at sikre korrekte adresser. 
-              Du kan også indtaste adressen manuelt hvis nødvendigt.
-            </p>
-          </div>
-
           {/* Password */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Adgangskode</h3>
@@ -263,9 +299,23 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          {/* Submission Requirements */}
+          {!isCvrValid && cvrNumber && (
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                CVR nummer skal valideres før ansøgningen kan sendes. Vent venligst på validering.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isLoading || !isCvrValid}
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send ansøgning
+            {!isCvrValid && cvrNumber ? 'Venter på CVR validering...' : 'Send ansøgning'}
           </Button>
         </form>
 
