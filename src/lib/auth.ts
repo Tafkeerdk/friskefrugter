@@ -65,6 +65,13 @@ export interface CustomerApplicationData {
     postalCode?: string;
     country?: string;
   };
+  deliveryAddress?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  useRegisteredAddressForDelivery?: boolean;
   password: string;
 }
 

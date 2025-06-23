@@ -294,9 +294,8 @@ export const CVRInput: React.FC<CVRInputProps> = ({
                 
                 <div className="space-y-1">
                   {companyData.industry && (
-                    <div className="flex items-center gap-1 text-green-700">
-                      <span className="text-xs">Branche:</span>
-                      <span className="text-xs">{companyData.industry}</span>
+                    <div className="text-green-700">
+                      <span className="text-xs">Branche: {companyData.industry}</span>
                     </div>
                   )}
                   
@@ -307,7 +306,7 @@ export const CVRInput: React.FC<CVRInputProps> = ({
                     </div>
                   )}
                   
-                  {companyData.foundedYear && (
+                  {companyData.foundedYear && !isNaN(companyData.foundedYear) && companyData.foundedYear > 1800 && (
                     <div className="flex items-center gap-1 text-green-700">
                       <Calendar className="h-3 w-3" />
                       <span className="text-xs">Stiftet {companyData.foundedYear}</span>
@@ -320,22 +319,19 @@ export const CVRInput: React.FC<CVRInputProps> = ({
                 <div className="pt-3 border-t border-green-200">
                   <div className="flex items-center gap-2 mb-2">
                     <MapPin className="h-4 w-4 text-green-600" />
-                    <span className="font-medium text-green-900">Adresse fra CVR</span>
+                    <span className="font-medium text-green-900">Registreret adresse</span>
                   </div>
                   <div className="bg-white p-3 rounded border border-green-200">
                     <div className="text-sm text-green-900">
                       <p className="font-medium">{companyData.address.street}</p>
                       <p>{companyData.address.postalCode} {companyData.address.city}</p>
-                      <p className="text-xs text-green-600 mt-1">
-                        💡 Denne adresse kan redigeres i formularen nedenfor hvis nødvendigt
-                      </p>
                     </div>
                   </div>
                 </div>
               )}
               
               <p className="text-xs text-green-600 pt-2 border-t border-green-200">
-                ✓ Data automatisk hentet fra det officielle CVR-register
+                Data automatisk hentet fra det officielle CVR-register
               </p>
             </div>
           </CardContent>
