@@ -74,7 +74,7 @@ export function Navbar() {
           : "bg-white shadow-sm py-3"
       )}
     >
-      <div className="container mx-auto flex items-center justify-between">
+      <div className="container mx-auto flex items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center group">
             <span className="text-2xl font-bold text-green-600 transition-all duration-300 group-hover:text-green-700">
@@ -105,9 +105,10 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Desktop Search */}
           <div className={cn(
-            "relative md:flex items-center transition-all duration-300",
-            searchActive || searchValue ? "w-60 lg:w-80" : "w-0 md:w-60 lg:w-80"
+            "relative hidden md:flex items-center transition-all duration-300",
+            searchActive || searchValue ? "w-60 lg:w-80" : "w-60 lg:w-80"
           )}>
             <input 
               type="text" 
@@ -131,17 +132,30 @@ export function Navbar() {
             />
           </div>
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="hidden md:flex hover:bg-green-50 hover:text-green-600 transition-all"
-            onClick={() => setSearchActive(!searchActive)}
-            aria-label="Search"
-          >
-            <Search className="h-5 w-5" />
-          </Button>
+          {/* Mobile Search - Always visible */}
+          <div className="relative flex md:hidden flex-1 max-w-xs">
+            <input 
+              type="text" 
+              placeholder="Søg..." 
+              className="border border-gray-200 px-3 py-2 pr-10 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-all text-sm"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onFocus={() => setShowResults(true)}
+              onBlur={() => {
+                setTimeout(() => {
+                  setShowResults(false);
+                }, 200);
+              }}
+            />
+            <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
+            <SearchResults 
+              results={searchResults}
+              isVisible={showResults && searchResults.length > 0}
+            />
+          </div>
           
-          <Link to="/cart" className="relative hidden sm:flex">
+          {/* Cart Button - Always visible */}
+          <Link to="/cart" className="relative">
             <Button 
               variant="ghost" 
               size="icon" 
@@ -154,6 +168,8 @@ export function Navbar() {
               </span>
             </Button>
           </Link>
+
+          {/* Login Button - Hidden on mobile */}
           <Link to="/login" className="hidden sm:block">
             <Button 
               variant="outline" 
@@ -163,6 +179,8 @@ export function Navbar() {
               <span>Log ind</span>
             </Button>
           </Link>
+
+          {/* Mobile Menu Button */}
           <Button 
             variant="default" 
             size="icon" 
@@ -175,54 +193,40 @@ export function Navbar() {
         </div>
       </div>
       
+      {/* Mobile Menu */}
       <div className={cn(
         "md:hidden bg-white w-full shadow-md overflow-hidden transition-all duration-300 ease-in-out",
         isMenuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
       )}>
-        <div className="container mx-auto flex flex-col space-y-3">
-          <div className="relative mb-2">
-            <input 
-              type="text" 
-              placeholder="Søg efter produkter..." 
-              className="w-full border border-gray-200 px-4 py-3 rounded-md bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-all"
-            />
-            <Search className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
-          </div>
-          
+        <div className="container mx-auto px-4 flex flex-col space-y-3 py-4">
           <Link 
             to="/products" 
             className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
           >
             Produkter
           </Link>
           <Link 
             to="/about" 
             className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
           >
             Om os
           </Link>
           <Link 
             to="/contact" 
             className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
           >
             Kontakt
           </Link>
           <Link 
             to="/login" 
-            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center gap-2 hover:pl-2 hover:text-green-600 transition-all duration-200"
+            className="text-gray-700 py-3 flex items-center gap-2 font-medium hover:pl-2 hover:text-green-600 transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
           >
             <User className="h-4 w-4" />
             Log ind
-          </Link>
-          <Link 
-            to="/cart" 
-            className="text-gray-700 py-3 flex items-center gap-2 font-medium hover:pl-2 hover:text-green-600 transition-all duration-200"
-          >
-            <ShoppingCart className="h-4 w-4" />
-            <span className="flex-1">Kurv</span>
-            <span className="bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              0
-            </span>
           </Link>
         </div>
       </div>

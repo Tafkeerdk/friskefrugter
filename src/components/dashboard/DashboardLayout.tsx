@@ -1,4 +1,3 @@
-
 import React from "react";
 import DashboardSidebar from "./DashboardSidebar";
 import DashboardTopbar from "./DashboardTopbar";
@@ -16,8 +15,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
         <SidebarInset>
           <div className="flex flex-col h-full">
             <DashboardTopbar />
-            <main className="flex-1">
-              <div className="container mx-auto py-6">
+            <main className="flex-1 overflow-auto">
+              <div className="container mx-auto px-4 md:px-6 py-4 md:py-6 max-w-full">
                 {children}
               </div>
             </main>

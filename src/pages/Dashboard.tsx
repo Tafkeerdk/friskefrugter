@@ -52,77 +52,78 @@ const Dashboard: React.FC = () => {
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Leveret': return 'bg-green-100 text-green-800';
+      case 'Undervejs': return 'bg-blue-100 text-blue-800';
+      case 'Afventer': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      
-      <main className="container mx-auto px-4 py-8">
-        <div className="space-y-8">
-          {/* Welcome Header */}
-          <div className="bg-white rounded-lg p-6 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Velkommen tilbage, {user.contactPersonName}
-                </h1>
-                <p className="text-gray-600 mt-1">
-                  {user.companyName} • B2B Dashboard
-                </p>
-              </div>
-              <Badge className={`px-3 py-1 ${getDiscountGroupColor(user.discountGroup || 'Bronze')}`}>
-                {user.discountGroup || 'Bronze'} Kunde
-              </Badge>
-            </div>
+      <main className="flex-grow bg-gray-50">
+        <div className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
+          {/* Header */}
+          <div className="text-center md:text-left">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+              Velkommen tilbage, {user.contactPersonName}
+            </h1>
+            <p className="text-gray-600 text-sm md:text-base">
+              Her er dit dashboard med overblik over ordrer og aktivitet
+            </p>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+          {/* Stats Cards - Mobile responsive grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            <Card className="text-center">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Samlede Ordrer</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs md:text-sm font-medium">Samlede Ordrer</CardTitle>
+                <Package className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{customerStats.totalOrders}</div>
+                <div className="text-lg md:text-2xl font-bold">{customerStats.totalOrders}</div>
                 <p className="text-xs text-muted-foreground">
                   Siden du blev kunde
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="text-center">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Månedligt Forbrug</CardTitle>
-                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs md:text-sm font-medium">Månedligt Forbrug</CardTitle>
+                <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{customerStats.monthlySpent.toLocaleString()} kr</div>
+                <div className="text-lg md:text-2xl font-bold">{customerStats.monthlySpent.toLocaleString()} kr</div>
                 <p className="text-xs text-muted-foreground">
                   Denne måned
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="text-center">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Afventende Ordrer</CardTitle>
-                <Clock className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs md:text-sm font-medium">Afventende Ordrer</CardTitle>
+                <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{customerStats.pendingOrders}</div>
+                <div className="text-lg md:text-2xl font-bold">{customerStats.pendingOrders}</div>
                 <p className="text-xs text-muted-foreground">
                   Bliver behandlet
                 </p>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="text-center">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Sidste Ordre</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-xs md:text-sm font-medium">Sidste Ordre</CardTitle>
+                <FileText className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">
+                <div className="text-sm md:text-2xl font-bold">
                   {new Date(customerStats.lastOrderDate).toLocaleDateString('da-DK')}
                 </div>
                 <p className="text-xs text-muted-foreground">
@@ -132,13 +133,14 @@ const Dashboard: React.FC = () => {
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Content - Mobile responsive layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
             {/* Customer Profile */}
             <div className="lg:col-span-1">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <User className="h-4 w-4 md:h-5 md:w-5" />
                     Virksomhedsprofil
                   </CardTitle>
                   <CardDescription>
@@ -148,53 +150,88 @@ const Dashboard: React.FC = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-3">
                     <div className="flex items-center gap-3">
-                      <Building2 className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="font-medium">{user.companyName}</p>
+                      <Building2 className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{user.companyName}</p>
                         <p className="text-sm text-gray-600">Virksomhed</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <User className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="font-medium">{user.contactPersonName}</p>
+                      <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{user.contactPersonName}</p>
                         <p className="text-sm text-gray-600">Kontaktperson</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Mail className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <p className="font-medium">{user.email}</p>
+                      <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium truncate">{user.email}</p>
                         <p className="text-sm text-gray-600">Email</p>
                       </div>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="h-4 w-4 text-gray-500" />
-                      <div>
-                        <Badge className={getDiscountGroupColor(user.discountGroup || 'Bronze')}>
-                          {user.discountGroup || 'Bronze'} Rabatgruppe
-                        </Badge>
-                        <p className="text-sm text-gray-600 mt-1">Din prisniveau</p>
+                    {(user as any).phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium">{(user as any).phone}</p>
+                          <p className="text-sm text-gray-600">Telefon</p>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    {(user as any).address && (
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm leading-relaxed">
+                            {(user as any).address.street}<br />
+                            {(user as any).address.postalCode} {(user as any).address.city}
+                          </p>
+                          <p className="text-sm text-gray-600">Adresse</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {(user.discountGroup || (user as any).discountGroups) && (
+                      <div className="pt-2 border-t">
+                        <p className="text-sm font-medium text-gray-700 mb-2">Rabatgrupper</p>
+                        <div className="flex flex-wrap gap-2">
+                          {user.discountGroup ? (
+                            <Badge className={`text-xs ${getDiscountGroupColor(user.discountGroup)}`}>
+                              {user.discountGroup}
+                            </Badge>
+                          ) : (
+                            (user as any).discountGroups?.map((group: string, index: number) => (
+                              <Badge 
+                                key={index}
+                                className={`text-xs ${getDiscountGroupColor(group)}`}
+                              >
+                                {group}
+                              </Badge>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="pt-4 border-t">
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link to="/profile/edit">
-                        <Settings className="h-4 w-4 mr-2" />
+                    <Link to="/profile">
+                      <Button variant="outline" className="w-full">
+                        <Settings className="mr-2 h-4 w-4" />
                         Rediger profil
-                      </Link>
-                    </Button>
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Recent Orders and Quick Actions */}
+            {/* Quick Actions and Recent Orders */}
             <div className="lg:col-span-2 space-y-6">
               {/* Quick Actions */}
               <Card>
@@ -205,25 +242,25 @@ const Dashboard: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <Button asChild className="h-auto p-4 flex-col gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+                    <Button asChild className="h-auto p-3 md:p-4 flex-col gap-2">
                       <Link to="/products">
-                        <ShoppingCart className="h-6 w-6" />
-                        <span>Se produkter</span>
+                        <ShoppingCart className="h-5 w-5 md:h-6 md:w-6" />
+                        <span className="text-xs md:text-sm">Se produkter</span>
                       </Link>
                     </Button>
                     
-                    <Button variant="outline" asChild className="h-auto p-4 flex-col gap-2">
+                    <Button variant="outline" asChild className="h-auto p-3 md:p-4 flex-col gap-2">
                       <Link to="/cart">
-                        <Package className="h-6 w-6" />
-                        <span>Min kurv</span>
+                        <Package className="h-5 w-5 md:h-6 md:w-6" />
+                        <span className="text-xs md:text-sm">Min kurv</span>
                       </Link>
                     </Button>
                     
-                    <Button variant="outline" asChild className="h-auto p-4 flex-col gap-2">
+                    <Button variant="outline" asChild className="h-auto p-3 md:p-4 flex-col gap-2">
                       <Link to="/orders">
-                        <FileText className="h-6 w-6" />
-                        <span>Mine ordrer</span>
+                        <FileText className="h-5 w-5 md:h-6 md:w-6" />
+                        <span className="text-xs md:text-sm">Mine ordrer</span>
                       </Link>
                     </Button>
                   </div>
@@ -235,40 +272,37 @@ const Dashboard: React.FC = () => {
                 <CardHeader>
                   <CardTitle>Seneste ordrer</CardTitle>
                   <CardDescription>
-                    Dine sidste ordrer og deres status
+                    Dine 3 seneste ordrer og deres status
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3 md:space-y-4">
                     {recentOrders.map((order) => (
-                      <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-4">
-                          <div>
-                            <p className="font-medium">{order.id}</p>
-                            <p className="text-sm text-gray-600">
-                              {new Date(order.date).toLocaleDateString('da-DK')}
-                            </p>
+                      <div key={order.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 md:gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm md:text-base">{order.id}</span>
+                            <Badge className={`text-xs ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </Badge>
                           </div>
+                          <p className="text-xs md:text-sm text-gray-600">
+                            {new Date(order.date).toLocaleDateString('da-DK')}
+                          </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">{order.amount.toLocaleString()} kr</p>
-                          <Badge 
-                            variant={order.status === 'Leveret' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {order.status}
-                          </Badge>
+                          <p className="font-bold text-sm md:text-base">{order.amount.toLocaleString()} kr</p>
                         </div>
                       </div>
                     ))}
                   </div>
                   
                   <div className="mt-4 pt-4 border-t">
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link to="/orders">
+                    <Link to="/orders">
+                      <Button variant="outline" className="w-full">
                         Se alle ordrer
-                      </Link>
-                    </Button>
+                      </Button>
+                    </Link>
                   </div>
                 </CardContent>
               </Card>
@@ -276,7 +310,6 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );
