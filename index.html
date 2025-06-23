@@ -94,69 +94,76 @@
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Enhanced Service Worker Registration with Image Fix -->
+    <!-- Enhanced Service Worker Registration with FIXED Image Loading -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-              console.log('SW registered: ', registration);
+              console.log('🚀 SW registered with FIXED image loading: ', registration);
               
-              // Force immediate update for image fix
+              // Force immediate update for image fix - CRITICAL FOR IMAGE LOADING
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 if (newWorker) {
+                  console.log('🔄 New SW with image fixes installing...');
                   newWorker.addEventListener('statechange', () => {
                     if (newWorker.state === 'installed') {
                       if (navigator.serviceWorker.controller) {
-                        // New content available, force update
-                        console.log('New SW with image fixes available; updating...');
+                        // New content available, force update immediately
+                        console.log('⚡ New SW with image fixes available; updating immediately...');
                         newWorker.postMessage({ type: 'SKIP_WAITING' });
                       } else {
-                        console.log('Content is cached for the first time!');
+                        console.log('✅ SW cached for the first time with image fixes!');
                       }
                     }
                   });
                 }
               });
 
-              // Handle service worker updates
+              // Handle service worker updates - CRITICAL FOR IMAGE FIXES
               let refreshing = false;
               navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshing) return;
                 refreshing = true;
-                console.log('SW controller changed, reloading page for image fixes...');
+                console.log('🔄 SW controller changed with image fixes, reloading page...');
                 window.location.reload();
               });
 
-              // Check for SW updates every 30 seconds when app is active
+              // Check for SW updates more frequently during development
+              const updateInterval = window.location.hostname === 'localhost' ? 5000 : 30000;
               setInterval(() => {
                 if (document.visibilityState === 'visible') {
                   registration.update();
                 }
-              }, 30000);
+              }, updateInterval);
             })
             .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
+              console.error('❌ SW registration failed: ', registrationError);
             });
         });
 
-        // Clear image cache if needed (for debugging)
+        // Enhanced cache clearing for debugging
         if (window.location.search.includes('clear-cache')) {
+          console.log('🗑️ Clear cache requested via URL parameter');
           navigator.serviceWorker.ready.then((registration) => {
             const messageChannel = new MessageChannel();
             messageChannel.port1.onmessage = (event) => {
               if (event.data.success) {
-                console.log('Image cache cleared successfully');
-                window.location.reload();
+                console.log('✅ All caches cleared successfully');
+                window.location.href = window.location.pathname; // Remove query param and reload
+              } else {
+                console.error('❌ Failed to clear caches:', event.data.error);
               }
             };
             registration.active.postMessage(
-              { type: 'CLEAR_IMAGE_CACHE' }, 
+              { type: 'CLEAR_ALL_CACHES' }, 
               [messageChannel.port2]
             );
           });
         }
+      } else {
+        console.warn('⚠️ Service Worker not supported in this browser');
       }
 
       // PWA Install Prompt Enhancement
@@ -164,11 +171,11 @@
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        console.log('PWA install prompt available');
+        console.log('📱 PWA install prompt available');
       });
 
       window.addEventListener('appinstalled', () => {
-        console.log('PWA was installed - images should now work properly');
+        console.log('✅ PWA was installed - images should now work properly with fixed SW');
         deferredPrompt = null;
       });
 
@@ -179,13 +186,16 @@
           'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
         );
         
-        // Optimize image loading on iOS
+        // Optimize image loading on iOS with fixed SW
         document.addEventListener('DOMContentLoaded', () => {
           const images = document.querySelectorAll('img');
           images.forEach(img => {
             if (!img.complete) {
               img.addEventListener('error', () => {
-                console.log('Image failed to load, SW should provide fallback:', img.src);
+                console.warn('⚠️ Image failed to load (SW should handle gracefully):', img.src);
+              });
+              img.addEventListener('load', () => {
+                console.log('✅ Image loaded successfully:', img.src);
               });
             }
           });
@@ -206,24 +216,27 @@
             console.log('✅ Service Worker is ready:', registration);
             console.log('🔧 SW Controller:', navigator.serviceWorker.controller);
             
-            // Basic image monitoring (reduced logging)
+            // Monitor image loading success/failure
             const observeImages = () => {
               const images = document.querySelectorAll('img');
               
               images.forEach((img, index) => {
                 if (!img.complete) {
-                  // Only add listeners for images that haven't loaded yet
+                  img.addEventListener('load', () => {
+                    console.log(`✅ Image ${index + 1} loaded:`, img.src);
+                  });
                   img.addEventListener('error', (event) => {
-                    console.error(`❌ Image failed to load:`, {
+                    console.error(`❌ Image ${index + 1} failed:`, {
                       src: img.src,
-                      alt: img.alt
+                      alt: img.alt,
+                      error: event
                     });
                   });
                 }
               });
             };
             
-            // Initial check only
+            // Initial check
             observeImages();
             
           }).catch(error => {
@@ -233,16 +246,18 @@
           console.warn('⚠️ Service Worker not supported');
         }
         
-        // Monitor for new images added dynamically (minimal logging)
+        // Monitor for new images added dynamically
         const observer = new MutationObserver((mutations) => {
           mutations.forEach((mutation) => {
             mutation.addedNodes.forEach((node) => {
               if (node.nodeType === 1) { // Element node
                 const images = node.tagName === 'IMG' ? [node] : node.querySelectorAll('img');
                 images.forEach((img) => {
-                  // Only log errors for new images
+                  img.addEventListener('load', () => {
+                    console.log('✅ Dynamic image loaded:', img.src);
+                  });
                   img.addEventListener('error', () => {
-                    console.error('❌ New image failed to load:', img.src);
+                    console.error('❌ Dynamic image failed:', img.src);
                   });
                 });
               }
@@ -256,7 +271,7 @@
         });
       });
 
-      // Add global debugging functions for image issues
+      // Enhanced debugging functions for FIXED image loading
       window.debugImages = {
         clearImageCache: async () => {
           if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -271,10 +286,38 @@
               });
               
               console.log('🗑️ Image cache cleared:', response);
-              location.reload();
+              if (response.success) {
+                location.reload();
+              }
             } catch (error) {
               console.error('❌ Failed to clear image cache:', error);
             }
+          } else {
+            console.warn('⚠️ Service Worker not available');
+          }
+        },
+        
+        clearAllCaches: async () => {
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            try {
+              const messageChannel = new MessageChannel();
+              navigator.serviceWorker.controller.postMessage({
+                type: 'CLEAR_ALL_CACHES'
+              }, [messageChannel.port2]);
+              
+              const response = await new Promise((resolve) => {
+                messageChannel.port1.onmessage = (event) => resolve(event.data);
+              });
+              
+              console.log('🗑️ All caches cleared:', response);
+              if (response.success) {
+                location.reload();
+              }
+            } catch (error) {
+              console.error('❌ Failed to clear all caches:', error);
+            }
+          } else {
+            console.warn('⚠️ Service Worker not available');
           }
         },
         
@@ -288,12 +331,14 @@
                 });
               });
             });
+          } else {
+            console.warn('⚠️ Service Worker not available');
           }
         },
         
         reloadAllImages: () => {
           const images = document.querySelectorAll('img');
-          console.log(`🔄 Reloading ${images.length} images...`);
+          console.log(`🔄 Reloading ${images.length} images with fixed SW...`);
           images.forEach((img, index) => {
             const originalSrc = img.src;
             img.src = '';
@@ -321,14 +366,58 @@
             });
           };
           img.src = imageUrl;
+        },
+        
+        testImageWithSW: (imageUrl) => {
+          console.log('🧪 Testing image load through SW:', imageUrl);
+          fetch(imageUrl)
+            .then(response => {
+              if (response.ok) {
+                console.log('✅ SW image fetch successful:', {
+                  url: imageUrl,
+                  status: response.status,
+                  headers: Object.fromEntries(response.headers.entries())
+                });
+              } else {
+                console.error('❌ SW image fetch failed:', {
+                  url: imageUrl,
+                  status: response.status,
+                  statusText: response.statusText
+                });
+              }
+            })
+            .catch(error => {
+              console.error('❌ SW image fetch error:', {
+                url: imageUrl,
+                error: error.message
+              });
+            });
+        },
+        
+        forceServiceWorkerUpdate: () => {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then((registrations) => {
+              registrations.forEach((registration) => {
+                registration.update().then(() => {
+                  console.log('🔄 Service Worker update forced');
+                });
+              });
+            });
+          } else {
+            console.warn('⚠️ Service Worker not available');
+          }
         }
       };
 
       console.log('🛠️ Debug functions available:');
       console.log('- window.debugImages.clearImageCache() - Clear SW image cache');
+      console.log('- window.debugImages.clearAllCaches() - Clear all SW caches');
       console.log('- window.debugImages.bypassServiceWorker() - Disable SW completely');
       console.log('- window.debugImages.reloadAllImages() - Force reload all images');
       console.log('- window.debugImages.testDirectImageLoad(url) - Test direct image loading');
+      console.log('- window.debugImages.testImageWithSW(url) - Test image loading through SW');
+      console.log('- window.debugImages.forceServiceWorkerUpdate() - Force SW update');
+      console.log('📝 URL Parameters: Add ?clear-cache to clear all caches on load');
     </script>
   </body>
 </html>
