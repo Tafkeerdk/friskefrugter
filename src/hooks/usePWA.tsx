@@ -28,15 +28,20 @@ export function usePWA() {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
       const isStandalone = (window.navigator as any).standalone;
       const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+      const isChrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
       
-      setIsIOSInstallable(isIOS && isSafari && !isStandalone);
+      // iOS can only install PWA through Safari, not other browsers
+      const canInstallOnIOS = isIOS && isSafari && !isStandalone && !isFirefox && !isChrome;
+      
+      setIsIOSInstallable(canInstallOnIOS);
     };
 
     // Check on mount
     checkIfInstalled();
     checkIOSInstallable();
 
-    // Listen for install prompt
+    // Listen for install prompt (NOT available on iOS)
     const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -52,7 +57,7 @@ export function usePWA() {
       setInstallPromptOutcome('installed');
     };
 
-    // Add event listeners
+    // Add event listeners (beforeinstallprompt is NOT supported on iOS)
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt as EventListener);
     window.addEventListener('appinstalled', handleAppInstalled);
 
@@ -83,6 +88,15 @@ export function usePWA() {
   }, []);
 
   const promptInstall = async () => {
+    // iOS Safari does NOT support programmatic install prompts
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+      // Cannot programmatically install on iOS - user must do it manually
+      console.log('iOS detected: Manual installation required via Share → Add to Home Screen');
+      return false;
+    }
+
     if (!deferredPrompt) return false;
 
     try {
@@ -108,46 +122,65 @@ export function usePWA() {
     const isAndroid = /Android/.test(navigator.userAgent);
     const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
     const isChrome = /Chrome/.test(navigator.userAgent);
+    const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
 
     if (isIOS && isSafari) {
       return {
         platform: 'iOS Safari',
+        canAutoInstall: false,
         steps: [
-          'Tryk på del-knappen (firkant med pil op)',
-          'Scroll ned og tryk "Føj til hjemmeskærm"',
-          'Tryk "Tilføj" for at installere appen'
+          '1. Tryk på del-knappen (📤) nederst på skærmen',
+          '2. Scroll ned og find "Føj til hjemmeskærm"',
+          '3. Tryk "Føj til hjemmeskærm"',
+          '4. Tryk "Tilføj" for at installere appen'
+        ]
+      };
+    } else if (isIOS && (isFirefox || isChrome)) {
+      return {
+        platform: 'iOS (Ikke Safari)',
+        canAutoInstall: false,
+        steps: [
+          '⚠️ PWA kan kun installeres via Safari på iOS',
+          '1. Åbn denne side i Safari browser',
+          '2. Tryk på del-knappen (📤)',
+          '3. Vælg "Føj til hjemmeskærm"'
         ]
       };
     } else if (isAndroid && isChrome) {
       return {
         platform: 'Android Chrome',
+        canAutoInstall: true,
         steps: [
-          'Tryk på menu-knappen (tre prikker)',
-          'Tryk "Tilføj til hjemmeskærm"',
-          'Tryk "Installér" for at installere appen'
+          '1. Tryk på menu-knappen (⋮)',
+          '2. Tryk "Installér app" eller "Tilføj til hjemmeskærm"',
+          '3. Tryk "Installér" for at installere appen'
         ]
       };
-    } else if (isChrome) {
+    } else if (isChrome && !isAndroid) {
       return {
         platform: 'Chrome Desktop',
+        canAutoInstall: true,
         steps: [
-          'Klik på installér-ikonet i adresselinjen',
-          'Eller tryk Ctrl+Shift+A (Windows) / Cmd+Shift+A (Mac)',
-          'Klik "Installér" for at installere appen'
+          '1. Klik på installér-ikonet (⬇️) i adresselinjen',
+          '2. Eller tryk Ctrl+Shift+A (Windows) / Cmd+Shift+A (Mac)',
+          '3. Klik "Installér" for at installere appen'
         ]
       };
     }
 
     return {
-      platform: 'Browser',
+      platform: 'Anden Browser',
+      canAutoInstall: false,
       steps: [
-        'Kig efter en "Installér app" knap i din browser',
-        'Eller check browser-menuen for installationsmuligheder'
+        '⚠️ PWA installation er begrænset i denne browser',
+        'Prøv at åbne siden i Chrome eller Safari',
+        'Eller kig efter en "Installér app" knap i browser-menuen'
       ]
     };
   };
 
   const canInstall = isInstallable || isIOSInstallable;
+  const instructions = getInstallInstructions();
 
   return {
     isInstalled,
@@ -161,5 +194,9 @@ export function usePWA() {
     isPWASupported: 'serviceWorker' in navigator && 'PushManager' in window,
     isStandalone: window.matchMedia('(display-mode: standalone)').matches,
     isFullscreen: window.matchMedia('(display-mode: fullscreen)').matches,
+    // New properties for better iOS handling
+    needsManualInstall: instructions.canAutoInstall === false,
+    browserSupported: !instructions.platform.includes('⚠️'),
+    platformInstructions: instructions,
   };
 }
