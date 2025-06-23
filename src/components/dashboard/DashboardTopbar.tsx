@@ -142,7 +142,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 md:h-16 items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3 md:px-6">
+    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
       {/* Mobile: Collapsed state */}
       {isMobile && !isSearchExpanded && (
         <>
@@ -304,41 +304,31 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       {/* Desktop Layout */}
       {!isMobile && (
         <>
-          {/* Brand and Title */}
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleHomeClick}
-                className="h-9 w-9"
-              >
-                <Home className="h-4 w-4" />
-              </Button>
-              <div className="font-semibold text-lg text-primary">Multi Grønt</div>
-            </div>
-            <div className="text-muted-foreground text-sm font-medium">
+          {/* Left side - Sidebar trigger and title */}
+          <div className="flex items-center gap-3 min-w-0">
+            <SidebarTrigger className="h-9 w-9" />
+            <div className="font-semibold text-lg tracking-tight">
               {getPageTitle()}
             </div>
           </div>
 
           {/* Search Bar */}
           {showSearch && (
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={getSearchPlaceholder()}
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-8 h-10 rounded-full bg-muted/50 border-0 focus:bg-background focus:ring-2 focus:ring-primary/20 transition-all"
+                className="pl-9 h-9 rounded-md bg-muted/50 border-0 focus:bg-background focus:ring-1 focus:ring-primary/30 transition-all"
               />
               {searchValue && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={clearSearch}
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
                 >
                   <X className="h-3 w-3" />
                 </Button>
@@ -354,7 +344,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                 <Button variant="ghost" size="icon" className="h-9 w-9 relative">
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs bg-destructive text-destructive-foreground rounded-full">
+                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center text-xs bg-destructive text-destructive-foreground rounded-full">
                       {unreadCount}
                     </span>
                   )}
@@ -400,7 +390,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-9 px-3 flex items-center gap-2 min-w-0">
+                <Button variant="ghost" className="h-9 px-2 flex items-center gap-2 min-w-0">
                   <Avatar className="h-7 w-7 flex-shrink-0">
                     <AvatarImage 
                       src={user?.profilePictureUrl} 
@@ -410,14 +400,9 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex flex-col items-start min-w-0 flex-1">
-                    <span className="text-sm font-medium truncate max-w-[120px]">
-                      {user?.name || 'Administrator'}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {user?.role || 'Admin'}
-                    </span>
-                  </div>
+                  <span className="text-sm font-medium truncate max-w-[100px] hidden sm:block">
+                    {user?.name || 'Administrator'}
+                  </span>
                   <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
