@@ -100,7 +100,7 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-              console.log('🚀 SW registered with FIXED image loading: ', registration);
+                              console.log('🚀 SW registered with CORS-FIXED image loading v4: ', registration);
               
               // Force immediate update for image fix - CRITICAL FOR IMAGE LOADING
               registration.addEventListener('updatefound', () => {
@@ -111,10 +111,10 @@
                     if (newWorker.state === 'installed') {
                       if (navigator.serviceWorker.controller) {
                         // New content available, force update immediately
-                        console.log('⚡ New SW with image fixes available; updating immediately...');
+                        console.log('⚡ New SW v4 with CORS fixes available; updating immediately...');
                         newWorker.postMessage({ type: 'SKIP_WAITING' });
                       } else {
-                        console.log('✅ SW cached for the first time with image fixes!');
+                        console.log('✅ SW v4 cached for the first time with CORS fixes!');
                       }
                     }
                   });
@@ -126,7 +126,7 @@
               navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshing) return;
                 refreshing = true;
-                console.log('🔄 SW controller changed with image fixes, reloading page...');
+                console.log('🔄 SW v4 controller changed with CORS fixes, reloading page...');
                 window.location.reload();
               });
 

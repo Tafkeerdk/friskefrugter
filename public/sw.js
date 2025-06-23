@@ -1,5 +1,5 @@
-// Service Worker for Multi Grønt PWA - FIXED Image Loading
-const CACHE_VERSION = 'v3-fixed';
+// Service Worker for Multi Grønt PWA - FIXED Image Loading v4
+const CACHE_VERSION = 'v4-cors-fixed';
 const STATIC_CACHE_NAME = `multi-groent-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `multi-groent-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `multi-groent-images-${CACHE_VERSION}`;
@@ -21,7 +21,7 @@ const API_ENDPOINTS = [
   '/api/',
 ];
 
-// External image domains (for CORS handling)
+// External image domains - DO NOT INTERCEPT (let browser handle naturally)
 const EXTERNAL_IMAGE_DOMAINS = [
   'images.unsplash.com',
   'unsplash.com',
@@ -30,7 +30,7 @@ const EXTERNAL_IMAGE_DOMAINS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v3 with FIXED image loading...');
+  console.log('🚀 SW: Installing v4 with CORS-fixed image loading...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
@@ -50,7 +50,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
-  console.log('🔄 SW: Activating v3 with image fixes...');
+  console.log('🔄 SW: Activating v4 with CORS fixes...');
   
   event.waitUntil(
     Promise.all([
@@ -73,7 +73,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - implement FIXED caching strategies
+// Fetch event - implement CORS-FIXED caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -93,6 +93,12 @@ self.addEventListener('fetch', (event) => {
   if (skipDomains.some(domain => url.hostname.includes(domain) || url.pathname.includes(domain))) {
     console.log('🚫 SW: Skipping external script:', url.href);
     return;
+  }
+
+  // CRITICAL FIX: Skip ALL external images - let browser handle naturally
+  if (isImageRequest(url) && isExternalImageDomain(url)) {
+    console.log('🌐 SW: Bypassing external image (let browser handle):', url.href);
+    return; // Don't intercept external images at all
   }
 
   // Handle the request with improved error handling
@@ -115,9 +121,9 @@ async function handleRequestSafely(request) {
       return await cacheFirstStrategy(request, STATIC_CACHE_NAME);
     }
     
-    // Images - NETWORK FIRST with intelligent caching
+    // Images - Only handle LOCAL images (external images bypassed above)
     if (isImageRequest(url)) {
-      return await networkFirstImageStrategy(request, url);
+      return await localImageStrategy(request, url);
     }
     
     // HTML pages - Network first with fallback to cache
@@ -134,43 +140,26 @@ async function handleRequestSafely(request) {
   }
 }
 
-// FIXED: Network-first image strategy that prevents caching issues
-async function networkFirstImageStrategy(request, url) {
+// FIXED: Local image strategy (external images are bypassed completely)
+async function localImageStrategy(request, url) {
   try {
-    // ALWAYS try network first for images to prevent stale cache issues
-    console.log('🖼️ SW: Fetching image from network:', url.href);
+    // Network first for local images
+    console.log('🖼️ SW: Fetching local image from network:', url.href);
     
-    // Use original request for same-origin, create CORS request for external
-    let fetchRequest = request;
-    
-    if (isExternalImageDomain(url)) {
-      // For external images, ensure proper CORS handling
-      fetchRequest = new Request(request.url, {
-        method: 'GET',
-        mode: 'cors',
-        credentials: 'omit',
-        cache: 'no-cache', // Prevent browser cache conflicts
-        headers: {
-          'Accept': 'image/*,*/*;q=0.8',
-        }
-      });
-    }
-    
-    const networkResponse = await fetch(fetchRequest);
+    const networkResponse = await fetch(request);
     
     if (networkResponse.ok && networkResponse.status === 200) {
-      console.log('✅ SW: Image loaded successfully from network:', url.href);
+      console.log('✅ SW: Local image loaded successfully:', url.href);
       
-      // Only cache successful responses with proper content
+      // Cache successful local image responses
       const contentType = networkResponse.headers.get('content-type');
       if (contentType && contentType.startsWith('image/')) {
         try {
           const cache = await caches.open(IMAGE_CACHE_NAME);
-          // Cache the original request (not the modified CORS request)
           await cache.put(request, networkResponse.clone());
-          console.log('💾 SW: Image cached successfully:', url.href);
+          console.log('💾 SW: Local image cached successfully:', url.href);
         } catch (cacheError) {
-          console.warn('⚠️ SW: Failed to cache image (non-critical):', url.href, cacheError.message);
+          console.warn('⚠️ SW: Failed to cache local image (non-critical):', url.href, cacheError.message);
         }
       }
       
@@ -180,24 +169,24 @@ async function networkFirstImageStrategy(request, url) {
     }
     
   } catch (networkError) {
-    console.warn('⚠️ SW: Network failed for image:', url.href, networkError.message);
+    console.warn('⚠️ SW: Network failed for local image:', url.href, networkError.message);
     
-    // Only fallback to cache if network completely fails
+    // Fallback to cache for local images
     try {
       const cache = await caches.open(IMAGE_CACHE_NAME);
       const cachedResponse = await cache.match(request);
       
       if (cachedResponse) {
-        console.log('📦 SW: Serving cached image after network failure:', url.href);
+        console.log('📦 SW: Serving cached local image:', url.href);
         return cachedResponse;
       }
     } catch (cacheError) {
-      console.warn('⚠️ SW: Cache lookup failed for image:', url.href, cacheError.message);
+      console.warn('⚠️ SW: Cache lookup failed for local image:', url.href, cacheError.message);
     }
     
-    // If both network and cache fail, let the browser handle it naturally
-    console.log('🔄 SW: Bypassing service worker for failed image:', url.href);
-    throw networkError; // This will cause the browser to handle the request normally
+    // Let browser handle local image errors naturally
+    console.log('🔄 SW: Letting browser handle local image error:', url.href);
+    throw networkError;
   }
 }
 
@@ -428,4 +417,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('🚀 SW: Multi Grønt Service Worker v3 loaded with FIXED image handling'); 
+console.log('🚀 SW: Multi Grønt Service Worker v4 loaded with CORS-FIXED image handling'); 
