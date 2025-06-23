@@ -94,15 +94,25 @@ export const DAWAAddressInput: React.FC<DAWAAddressInputProps> = ({
 
         if (response.ok) {
           const data = await response.json();
+          console.log('✅ DAWA API success:', { query, results: data.length });
           setSuggestions(data);
           setShowSuggestions(true);
         } else {
-          console.warn('DAWA API request failed:', response.status);
+          console.warn('❌ DAWA API request failed:', {
+            status: response.status,
+            statusText: response.statusText,
+            query,
+            url: response.url
+          });
           setSuggestions([]);
           setShowSuggestions(false);
         }
       } catch (error) {
-        console.error('DAWA API error:', error);
+        console.error('❌ DAWA API network error:', {
+          error: error instanceof Error ? error.message : error,
+          query,
+          timestamp: new Date().toISOString()
+        });
         setSuggestions([]);
         setShowSuggestions(false);
       } finally {
