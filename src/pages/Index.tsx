@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ContactOverlay } from "@/components/layout/ContactOverlay";
 import { ProductCard } from "@/components/products/ProductCard";
+import PWAInstallBanner from "@/components/ui/pwa-install-banner";
 import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock, User } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { usePWA } from "@/hooks/usePWA";
+import { cn } from "@/lib/utils";
 
 // Sample product data
 const featuredProducts = [
@@ -40,37 +44,80 @@ const featuredProducts = [
 ];
 
 const Index = () => {
+  const isMobile = useIsMobile();
+  const { canInstall } = usePWA();
+  const [showPWABanner, setShowPWABanner] = useState(true);
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
+      
+      {/* PWA Install Banner */}
+      {canInstall && showPWABanner && (
+        <div className={cn(
+          "sticky top-16 z-40",
+          isMobile ? "px-3 py-2" : "px-4 py-3"
+        )}>
+          <PWAInstallBanner 
+            compact={isMobile}
+            onDismiss={() => setShowPWABanner(false)}
+          />
+        </div>
+      )}
+
       <main className="flex-grow">
-        {/* Hero Section with enhanced animations */}
+        {/* Hero Section with enhanced mobile design */}
         <section className="relative">
-          <div className="bg-green-500/10 w-full h-[500px] md:h-[700px] overflow-hidden relative">
+          <div className={cn(
+            "bg-green-500/10 w-full overflow-hidden relative",
+            isMobile ? "h-[400px]" : "h-[500px] md:h-[700px]"
+          )}>
             <img 
               src="https://images.unsplash.com/photo-1518843875459-f738682238a6?auto=format&fit=crop&q=80&w=2000" 
               alt="Fresh organic vegetables" 
-              className="w-full h-full object-cover img-zoom"
+              className="w-full h-full object-cover"
+              loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-black/10" />
-            <div className="absolute inset-0 flex flex-col justify-center container mx-auto px-4">
-              <div className="max-w-lg text-white animate-fade-slide-up">
-                <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/20" />
+            <div className={cn(
+              "absolute inset-0 flex flex-col justify-center container mx-auto",
+              isMobile ? "px-4" : "px-4"
+            )}>
+              <div className={cn(
+                "text-white",
+                isMobile ? "max-w-full text-center" : "max-w-lg"
+              )}>
+                <h1 className={cn(
+                  "font-bold mb-4 leading-tight",
+                  isMobile ? "text-2xl" : "text-4xl md:text-6xl"
+                )}>
                   Friske råvarer til professionelle
                 </h1>
-                <p className="text-xl md:text-2xl mb-8 text-gray-100 animate-fade-slide-up-delay-1">
+                <p className={cn(
+                  "mb-6 text-gray-100",
+                  isMobile ? "text-base" : "text-xl md:text-2xl mb-8"
+                )}>
                   Nemt og hurtigt – direkte til din virksomhed
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4 animate-fade-slide-up-delay-2">
+                <div className={cn(
+                  "flex gap-3",
+                  isMobile ? "flex-col space-y-3" : "flex-col sm:flex-row gap-4"
+                )}>
                   <Link to="/products">
-                    <Button className="text-lg py-6 px-8 bg-green-600 hover:bg-green-700 shadow-lg btn-scale">
-                      Se produkter <ChevronRight className="ml-1" />
+                    <Button className={cn(
+                      "bg-green-600 hover:bg-green-700 shadow-lg transition-all duration-200 active:scale-95",
+                      isMobile ? "w-full py-3 px-6 text-base" : "text-lg py-6 px-8"
+                    )}>
+                      Se produkter <ChevronRight className={cn(isMobile ? "ml-1 h-4 w-4" : "ml-1 h-5 w-5")} />
                     </Button>
                   </Link>
                   <Link to="/login">
                     <Button 
                       variant="outline" 
-                      className="text-lg py-6 px-8 bg-white text-green-700 hover:bg-green-50 hover:text-green-800 border-green-200 shadow-soft btn-scale" 
+                      className={cn(
+                        "bg-white text-green-700 hover:bg-green-50 hover:text-green-800 border-green-200 shadow-lg transition-all duration-200 active:scale-95",
+                        isMobile ? "w-full py-3 px-6 text-base" : "text-lg py-6 px-8"
+                      )}
                     >
                       Log ind
                     </Button>
@@ -81,82 +128,189 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Features Bar */}
-        <section className="bg-white border-b py-6">
+        {/* Features Bar with mobile optimization */}
+        <section className="bg-white border-b py-4 md:py-6">
           <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center justify-center gap-3 animate-fade-slide-up-delay-1">
-                <Truck className="h-6 w-6 text-green-600" />
-                <span className="text-gray-700 font-medium">Levering til hele Danmark</span>
+            <div className={cn(
+              "grid gap-4",
+              isMobile ? "grid-cols-1 space-y-2" : "grid-cols-1 md:grid-cols-3"
+            )}>
+              <div className={cn(
+                "flex items-center gap-3",
+                isMobile ? "justify-start bg-green-50 p-3 rounded-lg" : "justify-center"
+              )}>
+                <Truck className={cn("text-green-600", isMobile ? "h-5 w-5" : "h-6 w-6")} />
+                <span className={cn(
+                  "text-gray-700 font-medium",
+                  isMobile ? "text-sm" : "text-base"
+                )}>
+                  Levering til hele Danmark
+                </span>
               </div>
-              <div className="flex items-center justify-center gap-3 animate-fade-slide-up-delay-2">
-                <CreditCard className="h-6 w-6 text-green-600" />
-                <span className="text-gray-700 font-medium">Betaling via faktura</span>
+              <div className={cn(
+                "flex items-center gap-3",
+                isMobile ? "justify-start bg-green-50 p-3 rounded-lg" : "justify-center"
+              )}>
+                <CreditCard className={cn("text-green-600", isMobile ? "h-5 w-5" : "h-6 w-6")} />
+                <span className={cn(
+                  "text-gray-700 font-medium",
+                  isMobile ? "text-sm" : "text-base"
+                )}>
+                  Betaling via faktura
+                </span>
               </div>
-              <div className="flex items-center justify-center gap-3 animate-fade-slide-up-delay-3">
-                <Clock className="h-6 w-6 text-green-600" />
-                <span className="text-gray-700 font-medium">Bestil inden kl. 14 - levering næste dag</span>
+              <div className={cn(
+                "flex items-center gap-3",
+                isMobile ? "justify-start bg-green-50 p-3 rounded-lg" : "justify-center"
+              )}>
+                <Clock className={cn("text-green-600", isMobile ? "h-5 w-5" : "h-6 w-6")} />
+                <span className={cn(
+                  "text-gray-700 font-medium",
+                  isMobile ? "text-sm" : "text-base"
+                )}>
+                  {isMobile ? "Bestil inden 14:00" : "Bestil inden kl. 14 - levering næste dag"}
+                </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* B2B Info Section with enhanced styling */}
-        <section className="bg-gradient-to-b from-green-50 to-white py-16">
+        {/* B2B Info Section with mobile improvements */}
+        <section className="bg-gradient-to-b from-green-50 to-white py-12 md:py-16">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
-              <div className="bg-white border border-gray-200 rounded-xl p-8 shadow-soft shadow-hover transition-all duration-300">
-                <h2 className="text-xl md:text-2xl font-semibold text-center text-gray-900 mb-8 relative">
+              <div className={cn(
+                "bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md",
+                isMobile ? "p-6" : "p-8"
+              )}>
+                <h2 className={cn(
+                  "font-semibold text-center text-gray-900 mb-6 relative",
+                  isMobile ? "text-lg" : "text-xl md:text-2xl mb-8"
+                )}>
                   <span className="relative">
-                    Velkommen til <span className="text-green-600">Multi Grønt</span> - Professionel frugt- og grøntleverandør
+                    Velkommen til <span className="text-green-600">Multi Grønt</span> 
+                    {!isMobile && " - Professionel frugt- og grøntleverandør"}
                     <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-green-500 rounded-full"></div>
                   </span>
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div className="flex flex-col gap-5">
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                <div className={cn(
+                  "grid gap-6",
+                  isMobile ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 gap-8"
+                )}>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start gap-3 group">
+                      <div className={cn(
+                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        isMobile ? "p-1.5" : "p-2"
+                      )}>
+                        <CheckCircle className={cn(
+                          "text-green-600 flex-shrink-0",
+                          isMobile ? "h-5 w-5" : "h-6 w-6"
+                        )} />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Kun for erhvervskunder</h3>
-                        <p className="text-gray-600 text-sm mt-1">Vores webshop er udelukkende for professionelle indkøbere og erhvervskunder.</p>
+                        <h3 className={cn(
+                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          isMobile ? "text-sm" : "text-base"
+                        )}>
+                          Kun for erhvervskunder
+                        </h3>
+                        <p className={cn(
+                          "text-gray-600 mt-1",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}>
+                          Vores webshop er udelukkende for professionelle indkøbere og erhvervskunder.
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                    <div className="flex items-start gap-3 group">
+                      <div className={cn(
+                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        isMobile ? "p-1.5" : "p-2"
+                      )}>
+                        <CheckCircle className={cn(
+                          "text-green-600 flex-shrink-0",
+                          isMobile ? "h-5 w-5" : "h-6 w-6"
+                        )} />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Betaling via faktura</h3>
-                        <p className="text-gray-600 text-sm mt-1">Vi tilbyder nemme betalingsvilkår med faktura og integration til e-conomic.</p>
+                        <h3 className={cn(
+                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          isMobile ? "text-sm" : "text-base"
+                        )}>
+                          Betaling via faktura
+                        </h3>
+                        <p className={cn(
+                          "text-gray-600 mt-1",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}>
+                          Vi tilbyder nemme betalingsvilkår med faktura og integration til e-conomic.
+                        </p>
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-5">
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-start gap-3 group">
+                      <div className={cn(
+                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        isMobile ? "p-1.5" : "p-2"
+                      )}>
+                        <CheckCircle className={cn(
+                          "text-green-600 flex-shrink-0",
+                          isMobile ? "h-5 w-5" : "h-6 w-6"
+                        )} />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Friske kvalitetsvarer</h3>
-                        <p className="text-gray-600 text-sm mt-1">Vi håndplukker de bedste råvarer til din virksomhed med fokus på kvalitet og friskhed.</p>
+                        <h3 className={cn(
+                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          isMobile ? "text-sm" : "text-base"
+                        )}>
+                          Friske kvalitetsvarer
+                        </h3>
+                        <p className={cn(
+                          "text-gray-600 mt-1",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}>
+                          Vi håndplukker de bedste råvarer til din virksomhed med fokus på kvalitet og friskhed.
+                        </p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-4 group">
-                      <div className="mt-0.5 bg-green-100 p-2 rounded-lg group-hover:bg-green-200 transition-colors">
-                        <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0" />
+                    <div className="flex items-start gap-3 group">
+                      <div className={cn(
+                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        isMobile ? "p-1.5" : "p-2"
+                      )}>
+                        <CheckCircle className={cn(
+                          "text-green-600 flex-shrink-0",
+                          isMobile ? "h-5 w-5" : "h-6 w-6"
+                        )} />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 group-hover:text-green-700 transition-colors">Hurtig og pålidelig levering</h3>
-                        <p className="text-gray-600 text-sm mt-1">Bestil nemt online og få leveret direkte til din virksomheds adresse.</p>
+                        <h3 className={cn(
+                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          isMobile ? "text-sm" : "text-base"
+                        )}>
+                          Hurtig og pålidelig levering
+                        </h3>
+                        <p className={cn(
+                          "text-gray-600 mt-1",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}>
+                          Bestil nemt online og få leveret direkte til din virksomheds adresse.
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-                <div className="mt-8 text-center">
+                <div className={cn("text-center", isMobile ? "mt-6" : "mt-8")}>
                   <Link to="/about">
-                    <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
+                    <Button 
+                      variant="outline" 
+                      className={cn(
+                        "border-green-200 text-green-700 hover:bg-green-50 active:scale-95",
+                        isMobile ? "w-full py-3" : ""
+                      )}
+                    >
                       Læs mere om os <ArrowRight className="ml-1 h-4 w-4" />
                     </Button>
                   </Link>
@@ -166,61 +320,89 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Featured Products with enhanced styling */}
-        <section className="py-16 bg-gray-50">
+        {/* Featured Products with mobile optimization */}
+        <section className="py-12 md:py-16 bg-gray-50">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 relative inline-block">
+            <div className={cn("text-center", isMobile ? "mb-8" : "mb-12")}>
+              <h2 className={cn(
+                "font-bold text-gray-900 mb-4 relative inline-block",
+                isMobile ? "text-2xl" : "text-3xl md:text-4xl"
+              )}>
                 Udvalgte produkter
                 <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-green-500 rounded-full"></div>
               </h2>
-              <p className="text-gray-600 max-w-2xl mx-auto">
+              <p className={cn(
+                "text-gray-600 max-w-2xl mx-auto",
+                isMobile ? "text-sm px-4" : "text-base"
+              )}>
                 Se et udvalg af vores mest populære produkter til din virksomhed.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className={cn(
+              "grid gap-6",
+              isMobile 
+                ? "grid-cols-2" 
+                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
+            )}>
               {featuredProducts.map((product, index) => (
-                <div className={`animate-fade-slide-up-delay-${index % 3 + 1}`} key={product.id}>
+                <div key={product.id}>
                   <ProductCard {...product} />
                 </div>
               ))}
             </div>
-            <div className="mt-12 text-center flex justify-center">
+            <div className={cn("text-center flex justify-center", isMobile ? "mt-8" : "mt-12")}>
               <Link to="/products">
-                <Button className="px-8 py-6 text-lg bg-green-600 hover:bg-green-700 shadow-md flex items-center btn-scale">
+                <Button className={cn(
+                  "bg-green-600 hover:bg-green-700 shadow-md flex items-center transition-all duration-200 active:scale-95",
+                  isMobile ? "w-full py-3 px-6" : "px-8 py-6 text-lg"
+                )}>
                   <span>Se alle produkter</span>
-                  <ArrowRight className="ml-2 h-5 w-5" />
+                  <ArrowRight className={cn("ml-2", isMobile ? "h-4 w-4" : "h-5 w-5")} />
                 </Button>
               </Link>
             </div>
           </div>
         </section>
 
-        {/* CTA Section with enhanced design - Fixed Text and Button Colors */}
+        {/* CTA Section with mobile optimization */}
         <section className="relative overflow-hidden">
           <div className="absolute inset-0 z-0">
             <img 
               src="https://images.unsplash.com/photo-1488459716781-31db52582fe9?auto=format&fit=crop&q=80&w=2000" 
               alt="Friske grøntsager baggrund" 
               className="w-full h-full object-cover"
+              loading="lazy"
             />
             <div className="absolute inset-0 bg-green-900/80"></div>
           </div>
-          <div className="container mx-auto px-4 py-20 relative z-10">
+          <div className={cn(
+            "container mx-auto relative z-10",
+            isMobile ? "px-4 py-12" : "px-4 py-20"
+          )}>
             <div className="max-w-3xl mx-auto text-center">
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6 animate-fade-slide-up">
+              <h2 className={cn(
+                "font-bold text-white mb-6",
+                isMobile ? "text-2xl" : "text-3xl md:text-4xl"
+              )}>
                 Klar til at blive kunde?
               </h2>
-              <p className="text-white text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-slide-up-delay-1">
+              <p className={cn(
+                "text-white max-w-2xl mx-auto mb-8",
+                isMobile ? "text-sm px-4" : "text-lg md:text-xl mb-10"
+              )}>
                 Opret en B2B-konto og få adgang til vores fulde sortiment, kundespecifikke priser og nemme bestillingsmuligheder.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-slide-up-delay-2">
+              <div className={cn(
+                "flex gap-3 justify-center",
+                isMobile ? "flex-col space-y-3" : "flex-col sm:flex-row gap-4"
+              )}>
                 <Link to="/contact">
-                  <Button className="text-lg bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 shadow-lg btn-scale py-6 px-8">
+                  <Button className={cn(
+                    "bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 shadow-lg transition-all duration-200 active:scale-95",
+                    isMobile ? "w-full py-3 px-6" : "text-lg py-6 px-8"
+                  )}>
                     Kontakt os
                   </Button>
-                </Link>
-                <Link to="/login">
                 </Link>
               </div>
             </div>
