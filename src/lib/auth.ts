@@ -377,10 +377,13 @@ class ApiClient {
     });
   }
 
-  async delete(endpoint: string): Promise<Response> {
+  async delete(endpoint: string, data?: unknown): Promise<Response> {
     // Clear relevant cache patterns on mutations
     this.invalidateCache(endpoint);
-    return this.makeRequest(endpoint, { method: 'DELETE' });
+    return this.makeRequest(endpoint, { 
+      method: 'DELETE',
+      body: data ? JSON.stringify(data) : undefined,
+    });
   }
 
   private invalidateCache(endpoint: string): void {
@@ -690,7 +693,47 @@ export const authService = {
       tokenManager.clearTokens();
       return { success: false, message: 'Token refresh failed' };
     }
-  }
+  },
+
+  // Discount Groups Management
+  async getDiscountGroups(): Promise<{ success: boolean; discountGroups: unknown[]; message?: string }> {
+    const response = await apiClient.get('/admin/discount-groups');
+    return response.json();
+  },
+
+  async createDiscountGroup(groupData: {
+    name: string;
+    description?: string;
+    discountPercentage: number;
+    color?: string;
+    sortOrder?: number;
+  }): Promise<{ success: boolean; message: string; discountGroup?: unknown }> {
+    const response = await apiClient.post('/admin/discount-groups', groupData);
+    return response.json();
+  },
+
+  async updateDiscountGroup(discountGroupId: string, groupData: {
+    name?: string;
+    description?: string;
+    discountPercentage?: number;
+    color?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+  }): Promise<{ success: boolean; message: string; discountGroup?: unknown }> {
+    const response = await apiClient.put('/admin/discount-groups', {
+      discountGroupId,
+      ...groupData
+    });
+    return response.json();
+  },
+
+  async deleteDiscountGroup(discountGroupId: string): Promise<{ success: boolean; message: string; customerCount?: number }> {
+    const response = await apiClient.delete('/admin/discount-groups', { discountGroupId });
+    return response.json();
+  },
+
+  // Expose apiClient for direct use when needed
+  apiClient
 };
 
 // Utility functions

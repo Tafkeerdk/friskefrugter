@@ -25,6 +25,7 @@ import {
   LogOut,
   Shield,
   UserCheck,
+  Percent,
 } from "lucide-react";
 
 const DashboardSidebar: React.FC = () => {
@@ -119,6 +120,13 @@ const DashboardSidebar: React.FC = () => {
                 <SidebarMenuButton onClick={handleNavigation("/admin/customers")}>
                   <Users className="mr-2 h-5 w-5" />
                   <span>B2B Kunder</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={handleNavigation("/admin/discount-groups")}>
+                  <Percent className="mr-2 h-5 w-5" />
+                  <span>Rabatgrupper</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

@@ -42,6 +42,13 @@ interface Application {
     postalCode?: string;
     country?: string;
   };
+  deliveryAddress?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  useRegisteredAddressForDelivery?: boolean;
   status: 'Afventer godkendelse' | 'Godkendt' | 'Afvist';
   appliedAt: string;
   reviewedAt?: string;
@@ -553,7 +560,7 @@ export const AdminDashboard: React.FC = () => {
 
                                   {selectedApplication.address && (
                                     <div>
-                                      <Label className="font-semibold">Adresse</Label>
+                                      <Label className="font-semibold">Registreret Adresse (CVR)</Label>
                                       <p>
                                         {selectedApplication.address.street}<br />
                                         {selectedApplication.address.postalCode} {selectedApplication.address.city}<br />
@@ -561,6 +568,30 @@ export const AdminDashboard: React.FC = () => {
                                       </p>
                                     </div>
                                   )}
+
+                                  <div>
+                                    <Label className="font-semibold">Leveringsadresse</Label>
+                                    {selectedApplication.useRegisteredAddressForDelivery ? (
+                                      <p className="text-sm text-muted-foreground">
+                                        ✅ Bruger registreret adresse til levering
+                                      </p>
+                                    ) : selectedApplication.deliveryAddress ? (
+                                      <div>
+                                        <p className="text-sm text-muted-foreground mb-1">
+                                          📦 Separat leveringsadresse:
+                                        </p>
+                                        <p>
+                                          {selectedApplication.deliveryAddress.street}<br />
+                                          {selectedApplication.deliveryAddress.postalCode} {selectedApplication.deliveryAddress.city}<br />
+                                          {selectedApplication.deliveryAddress.country}
+                                        </p>
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm text-muted-foreground">
+                                        Ingen leveringsadresse angivet
+                                      </p>
+                                    )}
+                                  </div>
 
                                   {selectedApplication.cvrData && (
                                     <div>

@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import ProductSetup from "./pages/ProductSetup";
 import PasswordReset from "./pages/PasswordReset";
+import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -151,6 +152,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardCustomers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/discount-groups" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardDiscountGroups />
                 </ProtectedRoute>
               } 
             />
