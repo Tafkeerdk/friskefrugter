@@ -45,6 +45,7 @@ import { ProductFormData, ProductSetupFormProps, ProductImage } from '@/types/pr
 import { productSetupSchema } from './validation/productSchema';
 import { EANInput } from './components/EANInput';
 import { CurrencyInput } from './components/CurrencyInput';
+import { RabatGruppePreview } from './components/RabatGruppePreview';
 import { api, productFormDataToFormData, handleApiError } from '@/lib/api';
 
 // Unit options with Danish labels
@@ -132,6 +133,18 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
       eanNummer: initialData?.eanNummer || '',
       enhed: initialData?.enhed || 'kg',
       basispris: initialData?.basispris || 0,
+      discount: {
+        enabled: initialData?.discount?.enabled || false,
+        beforePrice: initialData?.discount?.beforePrice,
+        discountPercentage: initialData?.discount?.discountPercentage,
+        discountAmount: initialData?.discount?.discountAmount,
+        eligibleDiscountGroups: initialData?.discount?.eligibleDiscountGroups || [],
+        eligibleCustomers: initialData?.discount?.eligibleCustomers || [],
+        showStrikethrough: initialData?.discount?.showStrikethrough !== undefined ? initialData.discount.showStrikethrough : true,
+        discountLabel: initialData?.discount?.discountLabel || 'Tilbud',
+        validFrom: initialData?.discount?.validFrom,
+        validTo: initialData?.discount?.validTo
+      },
       kategori: initialData?.kategori || { navn: '', isNew: false },
       lagerstyring: {
         enabled: initialData?.lagerstyring?.enabled || false,
@@ -682,7 +695,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                   Prissætning og salgsenheder
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Base Price */}
                   <FormField
@@ -694,6 +707,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         onChange={field.onChange}
                         error={errors.basispris?.message}
                         disabled={isLoading}
+                        label="Nuværende pris"
+                        description="Den aktuelle salgspris for produktet"
                       />
                     )}
                   />
@@ -734,8 +749,168 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                     )}
                   />
                 </div>
+
+                {/* Discount Section */}
+                <div className="border-t pt-6">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="discount.enabled"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">
+                              Aktivér generel produktrabat
+                            </FormLabel>
+                            <FormDescription>
+                              Vis produktet med før/efter priser og rabat-badge
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                              disabled={isLoading}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch('discount.enabled') && (
+                      <div className="space-y-4 pl-4 border-l-2 border-muted">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Before Price */}
+                          <FormField
+                            control={form.control}
+                            name="discount.beforePrice"
+                            render={({ field }) => (
+                              <CurrencyInput
+                                value={field.value || 0}
+                                onChange={field.onChange}
+                                error={errors.discount?.beforePrice?.message}
+                                disabled={isLoading}
+                                label="Før-pris (valgfrit)"
+                                description="Oprindelig pris før rabat"
+                                placeholder="0,00"
+                                min={0}
+                              />
+                            )}
+                          />
+
+                          {/* Discount Percentage */}
+                          <FormField
+                            control={form.control}
+                            name="discount.discountPercentage"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Rabat procent (valgfrit)</FormLabel>
+                                <FormControl>
+                                  <div className="relative">
+                                    <Input
+                                      type="number"
+                                      {...field}
+                                      onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
+                                      placeholder="0"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      disabled={isLoading}
+                                      className="pr-8"
+                                    />
+                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
+                                  </div>
+                                </FormControl>
+                                <FormDescription>
+                                  Rabat i procent (0-100%)
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Discount Amount */}
+                          <FormField
+                            control={form.control}
+                            name="discount.discountAmount"
+                            render={({ field }) => (
+                              <CurrencyInput
+                                value={field.value || 0}
+                                onChange={field.onChange}
+                                error={errors.discount?.discountAmount?.message}
+                                disabled={isLoading}
+                                label="Rabat beløb (valgfrit)"
+                                description="Fast rabat i kroner"
+                                placeholder="0,00"
+                                min={0}
+                              />
+                            )}
+                          />
+
+                          {/* Discount Label */}
+                          <FormField
+                            control={form.control}
+                            name="discount.discountLabel"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Rabat label</FormLabel>
+                                <FormControl>
+                                  <Input
+                                    {...field}
+                                    placeholder="Tilbud"
+                                    disabled={isLoading}
+                                    maxLength={50}
+                                  />
+                                </FormControl>
+                                <FormDescription>
+                                  Tekst der vises på rabat-badge
+                                </FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+
+                        {/* Show Strikethrough */}
+                        <FormField
+                          control={form.control}
+                          name="discount.showStrikethrough"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                              <div className="space-y-0.5">
+                                <FormLabel className="text-sm">
+                                  Vis gennemstregning
+                                </FormLabel>
+                                <FormDescription className="text-xs">
+                                  Vis før-prisen med gennemstregning
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                  disabled={isLoading}
+                                />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
+
+            {/* Rabat Gruppe Preview */}
+            <RabatGruppePreview 
+              basispris={form.watch('basispris')}
+              discount={form.watch('discount')}
+              produktnavn={form.watch('produktnavn')}
+              isLoading={isLoading}
+            />
 
             {/* Category */}
             <Card>

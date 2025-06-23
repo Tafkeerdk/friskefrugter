@@ -1,17 +1,20 @@
 import { z } from 'zod';
 
-// Danish EAN validation helper
+// EAN validation helper
 const validateEAN13 = (ean: string): boolean => {
-  if (!/^\d{13}$/.test(ean)) return false;
+  if (!ean || ean.length !== 13) return false;
   
-  // EAN-13 checksum validation
   const digits = ean.split('').map(Number);
-  const checksum = digits.slice(0, 12).reduce((sum, digit, index) => {
-    return sum + digit * (index % 2 === 0 ? 1 : 3);
-  }, 0);
+  if (digits.some(isNaN)) return false;
   
-  const calculatedCheck = (10 - (checksum % 10)) % 10;
-  return calculatedCheck === digits[12];
+  // Calculate checksum
+  let sum = 0;
+  for (let i = 0; i < 12; i++) {
+    sum += digits[i] * (i % 2 === 0 ? 1 : 3);
+  }
+  
+  const checksum = (10 - (sum % 10)) % 10;
+  return checksum === digits[12];
 };
 
 // Danish currency validation (DKK)
@@ -22,6 +25,26 @@ const danishCurrencySchema = z.number()
     // Ensure max 2 decimal places for DKK
     return Number(val.toFixed(2)) === val;
   }, 'Prisen må kun have op til 2 decimaler');
+
+// Optional Danish currency validation (for discount fields)
+const optionalDanishCurrencySchema = z.number()
+  .min(0.01, 'Prisen skal være større end 0 kr')
+  .max(999999.99, 'Prisen må ikke overstige 999.999,99 kr')
+  .refine((val) => {
+    // Ensure max 2 decimal places for DKK
+    return Number(val.toFixed(2)) === val;
+  }, 'Prisen må kun have op til 2 decimaler')
+  .optional();
+
+// Discount percentage validation
+const discountPercentageSchema = z.number()
+  .min(0, 'Rabat procent skal være 0 eller højere')
+  .max(100, 'Rabat procent må ikke overstige 100%')
+  .refine((val) => {
+    // Ensure max 2 decimal places
+    return Number(val.toFixed(2)) === val;
+  }, 'Rabat procent må kun have op til 2 decimaler')
+  .optional();
 
 // Product name validation with Danish characters
 const produktnavnSchema = z.string()
@@ -56,37 +79,18 @@ const enhedSchema = z.enum(['kg', 'stk', 'bakke', 'kasse'], {
 // Category validation
 const kategoriSchema = z.object({
   id: z.string().optional(),
-  navn: z.string()
-    .min(1, 'Kategori navn er påkrævet')
-    .max(50, 'Kategori navn må maksimalt være 50 tegn')
-    .regex(/^[a-zA-ZæøåÆØÅ0-9\s\-&]+$/, 'Kategori navn indeholder ugyldige tegn'),
-  isNew: z.boolean().default(false)
-}).refine((data) => {
-  // If it's a new category, id should not be present
-  if (data.isNew && data.id) return false;
-  // If it's an existing category, id should be present
-  if (!data.isNew && !data.id) return false;
-  return true;
-}, {
-  message: 'Kategori data er inkonsistent',
-  path: ['navn']
+  navn: z.string().min(1, 'Kategori navn er påkrævet'),
+  isNew: z.boolean().optional()
 });
 
 // Inventory management validation
 const lagerstyringSchema = z.object({
   enabled: z.boolean().default(false),
-  antalPaaLager: z.number()
-    .int('Antal på lager skal være et helt tal')
-    .min(0, 'Antal på lager kan ikke være negativt')
-    .max(999999, 'Antal på lager er for højt')
-    .optional(),
-  minimumslager: z.number()
-    .int('Minimumslager skal være et helt tal')
-    .min(0, 'Minimumslager kan ikke være negativt')
-    .max(999999, 'Minimumslager er for højt')
-    .optional()
+  antalPaaLager: z.number().int().min(0).optional(),
+  minimumslager: z.number().int().min(0).optional()
 }).refine((data) => {
-  if (data.enabled && data.antalPaaLager === undefined) {
+  // If inventory management is enabled, stock amount is required
+  if (data.enabled && (data.antalPaaLager === undefined || data.antalPaaLager === null)) {
     return false;
   }
   return true;
@@ -94,13 +98,54 @@ const lagerstyringSchema = z.object({
   message: 'Antal på lager er påkrævet når lagerstyring er aktiveret',
   path: ['antalPaaLager']
 }).refine((data) => {
-  if (data.enabled && data.minimumslager !== undefined && data.antalPaaLager !== undefined) {
+  // Minimum stock cannot exceed current stock
+  if (data.antalPaaLager !== undefined && data.minimumslager !== undefined) {
     return data.minimumslager <= data.antalPaaLager;
   }
   return true;
 }, {
   message: 'Minimumslager kan ikke være højere end antal på lager',
   path: ['minimumslager']
+});
+
+// General Product Discount validation
+const discountSchema = z.object({
+  enabled: z.boolean().default(false),
+  beforePrice: optionalDanishCurrencySchema,
+  discountPercentage: discountPercentageSchema,
+  discountAmount: optionalDanishCurrencySchema,
+  eligibleDiscountGroups: z.array(z.string()).optional(),
+  eligibleCustomers: z.array(z.string()).optional(),
+  showStrikethrough: z.boolean().default(true),
+  discountLabel: z.string().max(50, 'Rabat label må maksimalt være 50 tegn').optional(),
+  validFrom: z.string().optional(),
+  validTo: z.string().optional()
+}).refine((data) => {
+  // If discount is enabled, at least one discount value must be provided
+  if (data.enabled) {
+    const hasBeforePrice = data.beforePrice !== undefined && data.beforePrice !== null;
+    const hasPercentage = data.discountPercentage !== undefined && data.discountPercentage !== null;
+    const hasAmount = data.discountAmount !== undefined && data.discountAmount !== null;
+    
+    if (!hasBeforePrice && !hasPercentage && !hasAmount) {
+      return false;
+    }
+  }
+  return true;
+}, {
+  message: 'Når rabat er aktiveret, skal mindst én rabat-værdi angives (før-pris, procent eller beløb)',
+  path: ['enabled']
+}).refine((data) => {
+  // If valid dates are provided, validFrom should be before validTo
+  if (data.validFrom && data.validTo) {
+    const fromDate = new Date(data.validFrom);
+    const toDate = new Date(data.validTo);
+    return fromDate < toDate;
+  }
+  return true;
+}, {
+  message: 'Gyldig fra-dato skal være før gyldig til-dato',
+  path: ['validTo']
 });
 
 // Image validation - supports both new uploads and existing images
@@ -119,6 +164,7 @@ const billedeSchema = z.object({
   originalname: z.string().optional(),
   size: z.number().optional(),
   uploadedAt: z.string().optional(),
+  altText: z.string().optional(),
   
   // Indicates if this is an existing image or new upload
   isExisting: z.boolean().optional()
@@ -157,23 +203,38 @@ export const productSetupSchema = z.object({
   eanNummer: eanNummerSchema,
   enhed: enhedSchema,
   basispris: danishCurrencySchema,
+  discount: discountSchema,
   kategori: kategoriSchema,
   lagerstyring: lagerstyringSchema,
   billeder: z.array(billedeSchema)
     .min(1, 'Mindst ét billede er påkrævet')
     .max(3, 'Maksimalt 3 billeder er tilladt'),
   aktiv: z.boolean().default(true)
+}).refine((data) => {
+  // If discount is enabled with beforePrice, beforePrice must be higher than basispris
+  if (data.discount.enabled && data.discount.beforePrice) {
+    return data.discount.beforePrice > data.basispris;
+  }
+  return true;
+}, {
+  message: 'Før-prisen skal være højere end den nuværende pris',
+  path: ['discount', 'beforePrice']
 });
 
-// Type inference from schema
-export type ProductSetupFormData = z.infer<typeof productSetupSchema>;
+export type ProductSetupData = z.infer<typeof productSetupSchema>;
 
 // Partial schema for draft validation (less strict)
-export const productDraftSchema = productSetupSchema.partial({
-  produktnavn: true,
-  basispris: true,
-  kategori: true,
-  billeder: true
+export const productDraftSchema = z.object({
+  produktnavn: produktnavnSchema.optional(),
+  beskrivelse: beskrivelseSchema,
+  eanNummer: eanNummerSchema,
+  enhed: enhedSchema.optional(),
+  basispris: danishCurrencySchema.optional(),
+  discount: discountSchema.optional(),
+  kategori: kategoriSchema.optional(),
+  lagerstyring: lagerstyringSchema.optional(),
+  billeder: z.array(billedeSchema).optional(),
+  aktiv: z.boolean().default(true)
 });
 
 export type ProductDraftData = z.infer<typeof productDraftSchema>;
@@ -185,6 +246,9 @@ export const fieldValidationSchemas = {
   eanNummer: eanNummerSchema,
   enhed: enhedSchema,
   basispris: danishCurrencySchema,
+  'discount.beforePrice': optionalDanishCurrencySchema,
+  'discount.discountPercentage': discountPercentageSchema,
+  'discount.discountAmount': optionalDanishCurrencySchema,
   kategoriNavn: z.string().min(1, 'Kategori navn er påkrævet'),
   antalPaaLager: z.number().int().min(0).optional(),
   minimumslager: z.number().int().min(0).optional()

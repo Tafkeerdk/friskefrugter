@@ -4,6 +4,19 @@ export interface ProductFormData {
   eanNummer?: string;
   enhed: 'kg' | 'stk' | 'bakke' | 'kasse';
   basispris: number;
+  // General Product Discount System
+  discount: {
+    enabled: boolean;
+    beforePrice?: number;
+    discountPercentage?: number;
+    discountAmount?: number;
+    eligibleDiscountGroups?: string[];
+    eligibleCustomers?: string[];
+    showStrikethrough?: boolean;
+    discountLabel?: string;
+    validFrom?: string;
+    validTo?: string;
+  };
   kategori: {
     id?: string;
     navn: string;
@@ -36,6 +49,7 @@ export interface ProductImage {
   
   // Indicates if this is an existing image or new upload
   isExisting?: boolean;
+  altText?: string;
 }
 
 export interface Category {
@@ -53,6 +67,19 @@ export interface Product {
   eanNummer?: string;
   enhed: 'kg' | 'stk' | 'bakke' | 'kasse';
   basispris: number;
+  // General Product Discount System
+  discount: {
+    enabled: boolean;
+    beforePrice?: number;
+    discountPercentage?: number;
+    discountAmount?: number;
+    eligibleDiscountGroups?: string[];
+    eligibleCustomers?: string[];
+    showStrikethrough?: boolean;
+    discountLabel?: string;
+    validFrom?: string;
+    validTo?: string;
+  };
   kategori: Category;
   lagerstyring: {
     enabled: boolean;
@@ -63,6 +90,11 @@ export interface Product {
   aktiv: boolean;
   createdAt: string;
   updatedAt: string;
+  // Virtual fields
+  formattedPrice?: string;
+  formattedBeforePrice?: string;
+  discountStatus?: 'none' | 'active' | 'scheduled' | 'expired';
+  stockStatus?: 'not_managed' | 'in_stock' | 'low_stock' | 'out_of_stock';
 }
 
 export interface ProductSetupFormProps {
@@ -72,6 +104,34 @@ export interface ProductSetupFormProps {
   onCancel: () => void;
   mode: 'create' | 'edit';
   isLoading?: boolean;
+}
+
+export interface ProductSetupInterfaceProps {
+  productId?: string;
+  onSuccess?: (data: any) => void;
+  onCancel?: () => void;
+}
+
+// Discount Group interface for rabat gruppe preview
+export interface DiscountGroup {
+  id: string;
+  name: string;
+  description?: string;
+  discountPercentage: number;
+  color: string;
+  customerCount: number;
+  formattedDiscount: string;
+}
+
+// Price calculation result for preview
+export interface PriceCalculationResult {
+  type: 'none' | 'general' | 'group' | 'customer';
+  originalPrice: number;
+  finalPrice: number;
+  discountAmount: number;
+  discountPercentage: number;
+  label?: string;
+  groupName?: string;
 }
 
 export interface ValidationError {
