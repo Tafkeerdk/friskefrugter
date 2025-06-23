@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Alert, AlertDescription } from '../ui/alert';
 import { Loader2, CheckCircle } from 'lucide-react';
 import { authService, CustomerApplicationData } from '../../lib/auth';
+import { DAWAAddressInput } from '../ui/dawa-address-input';
 
 const applicationSchema = z.object({
   companyName: z.string().min(2, 'Virksomhedsnavn skal være mindst 2 tegn'),
@@ -41,6 +42,7 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<any>(null);
 
   const {
     register,
@@ -68,7 +70,7 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
         email: data.email,
         phone: data.phone,
         password: data.password,
-        address: data.address,
+        address: selectedAddress || data.address,
       };
 
       const response = await authService.applyAsCustomer(applicationData);
@@ -206,63 +208,24 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
             </div>
           </div>
 
-          {/* Address Information */}
+          {/* Address Information with DAWA API */}
           <div className="space-y-4">
             <h3 className="text-lg font-semibold">Adresse (valgfri)</h3>
             <p className="text-sm text-muted-foreground">
               Hvis ikke udfyldt, hentes automatisk fra CVR registret
             </p>
             
-            <div className="space-y-2">
-              <Label htmlFor="street">Gade og husnummer</Label>
-              <Input
-                id="street"
-                placeholder="Eksempelvej 123"
-                {...register('address.street')}
-                disabled={isLoading}
-              />
-              {errors.address?.street && (
-                <p className="text-sm text-destructive">{errors.address.street.message}</p>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="postalCode">Postnummer</Label>
-                <Input
-                  id="postalCode"
-                  placeholder="1234"
-                  {...register('address.postalCode')}
-                  disabled={isLoading}
-                />
-                {errors.address?.postalCode && (
-                  <p className="text-sm text-destructive">{errors.address.postalCode.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="city">By</Label>
-                <Input
-                  id="city"
-                  placeholder="København"
-                  {...register('address.city')}
-                  disabled={isLoading}
-                />
-                {errors.address?.city && (
-                  <p className="text-sm text-destructive">{errors.address.city.message}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="country">Land</Label>
-                <Input
-                  id="country"
-                  value="Denmark"
-                  {...register('address.country')}
-                  disabled={true}
-                />
-              </div>
-            </div>
+            <DAWAAddressInput
+              onAddressSelect={setSelectedAddress}
+              label="Virksomhedsadresse"
+              placeholder="Søg efter adresse..."
+              disabled={isLoading}
+            />
+            
+            <p className="text-xs text-gray-600">
+              Vi bruger Danmarks Adressesystem (DAWA) til at sikre korrekte adresser. 
+              Du kan også indtaste adressen manuelt hvis nødvendigt.
+            </p>
           </div>
 
           {/* Password */}

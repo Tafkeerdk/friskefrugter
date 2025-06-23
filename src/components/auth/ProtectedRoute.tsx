@@ -46,9 +46,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/login" replace />;
   }
 
-  // CRITICAL: Allow all users (including logged-in admins) to access customer login page
-  // The navbar login button must ALWAYS lead to customer login, never admin dashboard
-  // Admin access is exclusively through direct navigation to /super/admin
+  // CRITICAL: Allow simultaneous admin and customer access
+  // Admins should be able to access customer login to test customer experience
+  // Only prevent customers from accessing admin-only areas
   if (!requireAuth && isAuthenticated) {
     const currentPath = window.location.pathname;
     
@@ -57,9 +57,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
       return <Navigate to="/dashboard" replace />;
     }
     
-    // REMOVED: Admin redirect from customer login page
-    // This ensures logged-in admins can access /login for customer-first UX
-    // Admins should access their dashboard only via direct /super/admin navigation
+    // Allow admins to access customer login and application pages
+    // This enables admins to test the customer experience
+    // No redirects for admins accessing customer areas
   }
 
   return <>{children}</>;

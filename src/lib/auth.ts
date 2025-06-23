@@ -401,6 +401,24 @@ export const authService = {
     return data;
   },
 
+  // Customer password reset request
+  async requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/api/auth/customer/password-reset-request', {
+      email,
+    });
+    return response.json();
+  },
+
+  // Customer password reset verification
+  async verifyPasswordReset(email: string, resetCode: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.post('/api/auth/customer/password-reset-verify', {
+      email,
+      resetCode,
+      newPassword,
+    });
+    return response.json();
+  },
+
   // Admin login with enhanced error handling
   async loginAdmin(email: string, password: string): Promise<LoginResponse> {
     const response = await apiClient.post('/api/auth/admin/super', {

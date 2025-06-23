@@ -121,7 +121,7 @@ const Login = () => {
                             Adgangskode
                           </Label>
                           <Link 
-                            to="/forgot-password" 
+                            to="/password-reset" 
                             className="text-sm font-medium text-green-600 hover:text-green-800 transition-colors"
                           >
                             Glemt adgangskode?

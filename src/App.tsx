@@ -25,6 +25,7 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import ProductSetup from "./pages/ProductSetup";
+import PasswordReset from "./pages/PasswordReset";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -68,6 +69,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAuth={false}>
                   <Apply />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/password-reset" 
+              element={
+                <ProtectedRoute requireAuth={false}>
+                  <PasswordReset />
                 </ProtectedRoute>
               } 
             />
