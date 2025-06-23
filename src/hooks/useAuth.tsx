@@ -59,46 +59,67 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Enhanced initialization with separate session support
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('🔄 Initializing auth state...');
+      
       const savedAdminUser = authService.getUser('admin');
       const savedCustomerUser = authService.getUser('customer');
       const adminToken = authService.isAuthenticated('admin');
       const customerToken = authService.isAuthenticated('customer');
       
+      console.log('📊 Auth state check:', {
+        hasAdminUser: !!savedAdminUser,
+        hasCustomerUser: !!savedCustomerUser,
+        hasAdminToken: adminToken,
+        hasCustomerToken: customerToken,
+        currentPath: window.location.pathname
+      });
+      
       // Initialize admin session
       if (savedAdminUser && adminToken) {
+        console.log('✅ Setting admin user from localStorage');
         setAdminUser(savedAdminUser);
         
-        // Fetch fresh admin profile data
-        try {
-          console.log('🔄 Fetching fresh admin profile data on app initialization...');
-          const profileResponse = await authService.getAdminProfile();
-          if (profileResponse.success && profileResponse.admin) {
-            console.log('✅ Fresh admin profile data fetched');
-            tokenManager.setUser(profileResponse.admin, 'admin');
-            setAdminUser(profileResponse.admin);
-          }
-        } catch (error) {
-          console.warn('⚠️ Could not fetch fresh admin profile data on init:', error);
-        }
+        // Fetch fresh admin profile data (but don't block initialization)
+        authService.getAdminProfile()
+          .then(profileResponse => {
+            if (profileResponse.success && profileResponse.admin) {
+              console.log('✅ Fresh admin profile data fetched');
+              tokenManager.setUser(profileResponse.admin, 'admin');
+              setAdminUser(profileResponse.admin);
+            }
+          })
+          .catch(error => {
+            console.warn('⚠️ Could not fetch fresh admin profile data on init:', error);
+          });
+      } else {
+        console.log('❌ No valid admin session found');
       }
       
       // Initialize customer session
       if (savedCustomerUser && customerToken) {
+        console.log('✅ Setting customer user from localStorage');
         setCustomerUser(savedCustomerUser);
+      } else {
+        console.log('❌ No valid customer session found');
       }
       
       // Set primary user based on current route
       const currentPath = window.location.pathname;
       if (currentPath.includes('/admin') || currentPath.includes('/super')) {
+        console.log('🔒 Admin route detected - setting admin as primary user');
         setUser(savedAdminUser);
       } else if (currentPath.includes('/dashboard') && !currentPath.includes('/admin')) {
+        console.log('👤 Customer route detected - setting customer as primary user');
         setUser(savedCustomerUser);
       } else {
         // Default to admin if both are logged in, otherwise use whichever is available
-        setUser(savedAdminUser || savedCustomerUser);
+        const primaryUser = savedAdminUser || savedCustomerUser;
+        console.log('🎯 Setting primary user:', primaryUser ? primaryUser.userType : 'none');
+        setUser(primaryUser);
       }
       
       setIsLoading(false);
+      console.log('✅ Auth initialization complete');
     };
 
     initializeAuth();

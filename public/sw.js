@@ -88,6 +88,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Skip specific external scripts that should not be cached
+  const skipDomains = ['cdn.gpteng.co', 'gptengineer.js'];
+  if (skipDomains.some(domain => url.hostname.includes(domain) || url.pathname.includes(domain))) {
+    console.log('🚫 SW: Skipping external script:', url.href);
+    return;
+  }
+
   // Handle the request
   event.respondWith(
     handleRequest(request)

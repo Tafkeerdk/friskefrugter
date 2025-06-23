@@ -45,6 +45,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // If admin route is required
   if (requireAdmin || isAdminRoute) {
     if (!isAdminAuthenticated || !adminUser || !isAdmin(adminUser)) {
+      // Don't redirect if we're already on the admin login page
+      if (currentPath === '/super/admin') {
+        return <>{children}</>;
+      }
       return <Navigate to="/super/admin" replace />;
     }
   }

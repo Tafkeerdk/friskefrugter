@@ -18,10 +18,10 @@ import {
 } from "@/components/dashboard/mockData";
 
 const Admin: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { adminUser, isAdminAuthenticated } = useAuth();
 
   // Enhanced security check - redirect if not authenticated or not admin
-  if (!isAuthenticated || !user || !isAdmin(user)) {
+  if (!isAdminAuthenticated || !adminUser || !isAdmin(adminUser)) {
     return <Navigate to="/super/admin" replace />;
   }
 
@@ -34,11 +34,11 @@ const Admin: React.FC = () => {
             <div>
               <h2 className="text-3xl font-bold tracking-tight">Administrator Dashboard</h2>
               <p className="text-blue-100 mt-1">
-                Velkommen {user.name || user.email} - Sikker admin adgang til B2B systemet
+                Velkommen {adminUser.name || adminUser.email} - Sikker admin adgang til B2B systemet
               </p>
             </div>
             <div className="text-right text-sm text-blue-100">
-              <p>Rolle: {user.role}</p>
+              <p>Rolle: {adminUser.role}</p>
               <p>Sikkerhedsniveau: Høj</p>
             </div>
           </div>
