@@ -142,7 +142,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+    <header className="sticky top-0 z-30 flex h-14 lg:h-16 items-center gap-3 lg:gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 w-full">
       {/* Mobile: Collapsed state */}
       {isMobile && !isSearchExpanded && (
         <>
@@ -301,56 +301,56 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
         </div>
       )}
 
-      {/* Desktop Layout */}
+      {/* Desktop Layout - Fully responsive */}
       {!isMobile && (
         <>
           {/* Left side - Sidebar trigger and title */}
-          <div className="flex items-center gap-3 min-w-0">
-            <SidebarTrigger className="h-9 w-9" />
-            <div className="font-semibold text-lg tracking-tight">
+          <div className="flex items-center gap-3 lg:gap-4 min-w-0 flex-shrink-0">
+            <SidebarTrigger className="h-9 w-9 lg:h-10 lg:w-10" />
+            <div className="font-semibold text-lg lg:text-xl tracking-tight whitespace-nowrap">
               {getPageTitle()}
             </div>
           </div>
 
-          {/* Search Bar */}
+          {/* Search Bar - Expanded to use available space */}
           {showSearch && (
-            <div className="relative flex-1 max-w-sm">
+            <div className="relative flex-1 max-w-md lg:max-w-lg xl:max-w-xl 2xl:max-w-2xl mx-4 lg:mx-6">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={getSearchPlaceholder()}
                 value={searchValue}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-9 h-9 rounded-md bg-muted/50 border-0 focus:bg-background focus:ring-1 focus:ring-primary/30 transition-all"
+                className="pl-9 h-9 lg:h-10 rounded-md bg-muted/50 border-0 focus:bg-background focus:ring-1 focus:ring-primary/30 transition-all w-full"
               />
               {searchValue && (
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={clearSearch}
-                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 h-7 w-7 lg:h-8 lg:w-8"
                 >
-                  <X className="h-3 w-3" />
+                  <X className="h-3 w-3 lg:h-4 lg:w-4" />
                 </Button>
               )}
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-shrink-0">
+          <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-                  <Bell className="h-4 w-4" />
+                <Button variant="ghost" size="icon" className="h-9 w-9 lg:h-10 lg:w-10 relative">
+                  <Bell className="h-4 w-4 lg:h-5 lg:w-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center text-xs bg-destructive text-destructive-foreground rounded-full">
+                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 lg:h-5 lg:w-5 flex items-center justify-center text-xs bg-destructive text-destructive-foreground rounded-full">
                       {unreadCount}
                     </span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-[280px] max-h-[400px] overflow-y-auto">
+              <DropdownMenuContent align="end" className="w-[280px] lg:w-[320px] max-h-[400px] overflow-y-auto">
                 <DropdownMenuLabel className="flex items-center justify-between">
                   <span>Notifikationer</span>
                   {unreadCount > 0 && (
@@ -390,23 +390,23 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-9 px-2 flex items-center gap-2 min-w-0">
-                  <Avatar className="h-7 w-7 flex-shrink-0">
+                <Button variant="ghost" className="h-9 lg:h-10 px-2 lg:px-3 flex items-center gap-2 min-w-0">
+                  <Avatar className="h-7 w-7 lg:h-8 lg:w-8 flex-shrink-0">
                     <AvatarImage 
                       src={user?.profilePictureUrl} 
                       alt={user?.name || 'Admin'}
                     />
-                    <AvatarFallback className="text-xs font-medium">
+                    <AvatarFallback className="text-xs lg:text-sm font-medium">
                       {getUserInitials()}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-sm font-medium truncate max-w-[100px] hidden sm:block">
+                  <span className="text-sm lg:text-base font-medium truncate max-w-[100px] lg:max-w-[150px] hidden md:block">
                     {user?.name || 'Administrator'}
                   </span>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                  <ChevronDown className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground flex-shrink-0" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="w-[200px] lg:w-[220px]">
                 <DropdownMenuLabel>
                   <div className="flex flex-col">
                     <span className="truncate">Min konto</span>
