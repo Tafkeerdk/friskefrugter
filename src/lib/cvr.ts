@@ -78,12 +78,27 @@ export const validateCVR = async (cvrNumber: string): Promise<CVRValidationResul
     // Check if CVR number was found and is valid
     // The API returns the company data directly when found, or an error object when not found
     if (data.vat && data.vat === parseInt(cleanCVR) && data.name) {
+      let foundedYear: number | undefined = undefined;
+      
+      // Parse founded year safely
+      if (data.startdate) {
+        try {
+          const year = new Date(data.startdate).getFullYear();
+          // Only use year if it's a reasonable value
+          if (!isNaN(year) && year > 1800 && year <= new Date().getFullYear()) {
+            foundedYear = year;
+          }
+        } catch (error) {
+          console.warn('Failed to parse startdate:', data.startdate);
+        }
+      }
+      
       const cvrData: CVRData = {
         companyName: data.name || '',
         companyType: data.companytype || '',
         industry: data.industrydesc || '',
         employees: data.employees || 0,
-        foundedYear: data.startdate ? new Date(data.startdate).getFullYear() : undefined,
+        foundedYear: foundedYear,
         address: data.address && data.city && data.zipcode ? {
           street: data.address,
           city: data.city,

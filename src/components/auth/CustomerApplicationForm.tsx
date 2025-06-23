@@ -82,6 +82,11 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
     setIsCvrValid(isValid);
   };
 
+  const handleDeliveryAddressChange = (value: string) => {
+    const boolValue = value === 'true';
+    setValue('useRegisteredAddressForDelivery', boolValue);
+  };
+
   const onSubmit = async (data: ApplicationFormData) => {
     console.log('🚀 Starting form submission...');
     console.log('📋 Form data:', data);
@@ -256,8 +261,10 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
                 <input
                   type="radio"
                   id="use-registered"
-                  {...register('useRegisteredAddressForDelivery')}
+                  name="deliveryAddressOption"
                   value="true"
+                  defaultChecked={true}
+                  onChange={(e) => handleDeliveryAddressChange(e.target.value)}
                   className="h-4 w-4 text-blue-600"
                 />
                 <Label htmlFor="use-registered" className="text-sm">
@@ -269,8 +276,9 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
                 <input
                   type="radio"
                   id="use-different"
-                  {...register('useRegisteredAddressForDelivery')}
+                  name="deliveryAddressOption"
                   value="false"
+                  onChange={(e) => handleDeliveryAddressChange(e.target.value)}
                   className="h-4 w-4 text-blue-600"
                 />
                 <Label htmlFor="use-different" className="text-sm">
@@ -280,7 +288,7 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
             </div>
             
             {/* Different Delivery Address Input */}
-            {!useRegisteredForDelivery && (
+            {useRegisteredForDelivery === false && (
               <div className="mt-4 p-4 border border-blue-200 rounded-lg bg-blue-50">
                 <DAWAAddressInput
                   onAddressSelect={setDeliveryAddress}
