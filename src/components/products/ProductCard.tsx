@@ -1,3 +1,4 @@
+import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Minus, Plus, ShoppingCart } from "lucide-react";
@@ -19,6 +20,8 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
   const [quantity, setQuantity] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const isMobile = useIsMobile();
 
   const increaseQuantity = () => {
@@ -35,6 +38,59 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
 
   const handleTouchEnd = () => {
     if (isMobile) setTimeout(() => setIsPressed(false), 150);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    console.log('Image failed to load in ProductCard:', image);
+    setImageError(true);
+    setImageLoaded(true);
+  };
+
+  const renderImage = () => {
+    if (imageError) {
+      return (
+        <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+            <p className="text-xs text-gray-500">Billede ikke tilgængeligt</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
+            <div className="text-center">
+              <div className="h-8 w-8 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin mx-auto mb-2"></div>
+              <p className="text-xs text-gray-500">Indlæser...</p>
+            </div>
+          </div>
+        )}
+        <img 
+          src={image} 
+          alt={name} 
+          className={cn(
+            "h-full w-full object-cover transition-all duration-500",
+            !isMobile && isHovered && "scale-110",
+            imageLoaded ? "opacity-100" : "opacity-0"
+          )}
+          loading="lazy"
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+          // Add crossorigin for external images (like Unsplash)
+          crossOrigin="anonymous"
+          // Add referrer policy for better compatibility
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </>
+    );
   };
 
   return (
@@ -55,20 +111,13 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
           "aspect-square overflow-hidden bg-gray-50 relative",
           isMobile ? "rounded-t-xl" : "rounded-t-xl"
         )}>
-          <img 
-            src={image} 
-            alt={name} 
-            className={cn(
-              "h-full w-full object-cover transition-all duration-500",
-              !isMobile && isHovered && "scale-110",
-              "loading-placeholder"
-            )}
-            loading="lazy"
-          />
+          {renderImage()}
+          
           <div className={cn(
             "absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent transition-opacity duration-300",
             isHovered && !isMobile ? "opacity-100" : "opacity-0"
           )} />
+          
           <div className={cn(
             "absolute bottom-3 left-3 transition-all duration-300",
             isHovered && !isMobile ? "translate-y-0 opacity-100" : isMobile ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"

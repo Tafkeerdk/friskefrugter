@@ -94,7 +94,7 @@
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Enhanced Service Worker Registration -->
+    <!-- Enhanced Service Worker Registration with Image Fix -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -102,23 +102,61 @@
             .then((registration) => {
               console.log('SW registered: ', registration);
               
-              // Check for updates
+              // Force immediate update for image fix
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 if (newWorker) {
                   newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                      // New content available, show update notification
-                      console.log('New content available; please refresh.');
+                    if (newWorker.state === 'installed') {
+                      if (navigator.serviceWorker.controller) {
+                        // New content available, force update
+                        console.log('New SW with image fixes available; updating...');
+                        newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      } else {
+                        console.log('Content is cached for the first time!');
+                      }
                     }
                   });
                 }
               });
+
+              // Handle service worker updates
+              let refreshing = false;
+              navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (refreshing) return;
+                refreshing = true;
+                console.log('SW controller changed, reloading page for image fixes...');
+                window.location.reload();
+              });
+
+              // Check for SW updates every 30 seconds when app is active
+              setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                  registration.update();
+                }
+              }, 30000);
             })
             .catch((registrationError) => {
               console.log('SW registration failed: ', registrationError);
             });
         });
+
+        // Clear image cache if needed (for debugging)
+        if (window.location.search.includes('clear-cache')) {
+          navigator.serviceWorker.ready.then((registration) => {
+            const messageChannel = new MessageChannel();
+            messageChannel.port1.onmessage = (event) => {
+              if (event.data.success) {
+                console.log('Image cache cleared successfully');
+                window.location.reload();
+              }
+            };
+            registration.active.postMessage(
+              { type: 'CLEAR_IMAGE_CACHE' }, 
+              [messageChannel.port2]
+            );
+          });
+        }
       }
 
       // PWA Install Prompt Enhancement
@@ -126,21 +164,59 @@
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        // Show custom install button/banner if needed
         console.log('PWA install prompt available');
       });
 
       window.addEventListener('appinstalled', () => {
-        console.log('PWA was installed');
+        console.log('PWA was installed - images should now work properly');
         deferredPrompt = null;
       });
 
-      // Enhanced viewport handling for mobile
+      // Enhanced viewport handling for mobile with image loading optimization
       if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
         const viewportMeta = document.querySelector('meta[name="viewport"]');
         viewportMeta.setAttribute('content', 
           'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
         );
+        
+        // Optimize image loading on iOS
+        document.addEventListener('DOMContentLoaded', () => {
+          const images = document.querySelectorAll('img');
+          images.forEach(img => {
+            if (!img.complete) {
+              img.addEventListener('error', () => {
+                console.log('Image failed to load, SW should provide fallback:', img.src);
+              });
+            }
+          });
+        });
+      }
+
+      // Debug helper for PWA image issues
+      if (window.location.search.includes('debug-images')) {
+        window.addEventListener('load', () => {
+          console.log('=== PWA Image Debug Info ===');
+          console.log('Is PWA installed?', window.matchMedia('(display-mode: standalone)').matches);
+          console.log('Service Worker available?', 'serviceWorker' in navigator);
+          console.log('Current URL:', window.location.href);
+          
+          navigator.serviceWorker.ready.then(() => {
+            console.log('Service Worker is ready');
+            
+            // Check image loading
+            const images = document.querySelectorAll('img');
+            console.log(`Found ${images.length} images on page`);
+            
+            images.forEach((img, index) => {
+              console.log(`Image ${index + 1}:`, {
+                src: img.src,
+                complete: img.complete,
+                naturalWidth: img.naturalWidth,
+                naturalHeight: img.naturalHeight
+              });
+            });
+          });
+        });
       }
     </script>
   </body>

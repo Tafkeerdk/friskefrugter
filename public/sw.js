@@ -1,7 +1,8 @@
-// Service Worker for Multi Grønt PWA
-const CACHE_NAME = 'multi-groent-v1';
-const STATIC_CACHE_NAME = 'multi-groent-static-v1';
-const DYNAMIC_CACHE_NAME = 'multi-groent-dynamic-v1';
+// Service Worker for Multi Grønt PWA - Enhanced Image Loading
+const CACHE_NAME = 'multi-groent-v2';
+const STATIC_CACHE_NAME = 'multi-groent-static-v2';
+const DYNAMIC_CACHE_NAME = 'multi-groent-dynamic-v2';
+const IMAGE_CACHE_NAME = 'multi-groent-images-v2';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [
@@ -20,9 +21,16 @@ const API_ENDPOINTS = [
   '/api/',
 ];
 
+// External image domains that should be cached (like Unsplash)
+const EXTERNAL_IMAGE_DOMAINS = [
+  'images.unsplash.com',
+  'unsplash.com',
+  'cdn.example.com', // Add other image CDNs as needed
+];
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('Service Worker: Installing...');
+  console.log('Service Worker: Installing v2 with enhanced image support...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
@@ -40,30 +48,32 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// Activate event - clean up old caches
+// Activate event - clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker: Activating...');
+  console.log('Service Worker: Activating v2...');
   
   event.waitUntil(
-    caches.keys()
-      .then((cacheNames) => {
+    Promise.all([
+      // Clean up old caches
+      caches.keys().then((cacheNames) => {
         return Promise.all(
           cacheNames.map((cacheName) => {
-            if (cacheName !== STATIC_CACHE_NAME && cacheName !== DYNAMIC_CACHE_NAME) {
+            if (!cacheName.includes('v2')) {
               console.log('Service Worker: Deleting old cache', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
-      })
-      .then(() => {
-        console.log('Service Worker: Activated');
-        return self.clients.claim();
-      })
+      }),
+      // Take control of all clients immediately
+      self.clients.claim()
+    ]).then(() => {
+      console.log('Service Worker: Activated and claimed all clients');
+    })
   );
 });
 
-// Fetch event - implement caching strategies
+// Fetch event - implement enhanced caching strategies
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -78,6 +88,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Handle the request
   event.respondWith(
     handleRequest(request)
   );
@@ -97,23 +108,23 @@ async function handleRequest(request) {
       return await cacheFirstStrategy(request, STATIC_CACHE_NAME);
     }
     
+    // Images (both local and external) - Enhanced handling
+    if (isImageRequest(url)) {
+      return await enhancedImageStrategy(request, url);
+    }
+    
     // HTML pages - Network first with fallback to cache
     if (isHtmlRequest(request)) {
       return await networkFirstStrategy(request, DYNAMIC_CACHE_NAME);
     }
     
-    // Images and other assets - Cache first
-    if (isImageRequest(url)) {
-      return await cacheFirstStrategy(request, DYNAMIC_CACHE_NAME);
-    }
-    
-    // Default: Network first
+    // Default: Network first for other resources
     return await networkFirstStrategy(request, DYNAMIC_CACHE_NAME);
     
   } catch (error) {
-    console.error('Service Worker: Error handling request', error);
+    console.error('Service Worker: Error handling request for', url.href, error);
     
-    // Return offline fallback if available
+    // Return offline fallback for HTML requests
     if (isHtmlRequest(request)) {
       const cache = await caches.open(STATIC_CACHE_NAME);
       const cachedResponse = await cache.match('/');
@@ -122,7 +133,27 @@ async function handleRequest(request) {
       }
     }
     
-    // Return a basic offline response
+    // For images, try to return a placeholder or cached version
+    if (isImageRequest(url)) {
+      const cache = await caches.open(IMAGE_CACHE_NAME);
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      
+      // Return a simple placeholder response for failed images
+      return new Response(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><rect width="400" height="300" fill="#f3f4f6"/><text x="200" y="150" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="16">Billede ikke tilgængeligt</text></svg>',
+        {
+          headers: {
+            'Content-Type': 'image/svg+xml',
+            'Cache-Control': 'max-age=3600'
+          }
+        }
+      );
+    }
+    
+    // Default offline response
     return new Response('Offline - ingen internetforbindelse', {
       status: 503,
       statusText: 'Service Unavailable',
@@ -130,6 +161,79 @@ async function handleRequest(request) {
         'Content-Type': 'text/plain; charset=utf-8'
       }
     });
+  }
+}
+
+// Enhanced image strategy for both local and external images
+async function enhancedImageStrategy(request, url) {
+  const cache = await caches.open(IMAGE_CACHE_NAME);
+  
+  // Check cache first for all images
+  const cachedResponse = await cache.match(request);
+  if (cachedResponse) {
+    console.log('Service Worker: Image served from cache:', url.href);
+    return cachedResponse;
+  }
+  
+  try {
+    // Create request with appropriate headers for external images
+    let fetchRequest = request;
+    
+    if (isExternalImageDomain(url)) {
+      // For external images, create a new request with CORS headers
+      fetchRequest = new Request(request.url, {
+        method: request.method,
+        headers: new Headers({
+          ...Object.fromEntries(request.headers.entries()),
+        }),
+        mode: 'cors',
+        credentials: 'omit', // Don't send credentials for external images
+        cache: 'default'
+      });
+      console.log('Service Worker: Fetching external image with CORS:', url.href);
+    } else {
+      console.log('Service Worker: Fetching local image:', url.href);
+    }
+    
+    const networkResponse = await fetch(fetchRequest);
+    
+    if (networkResponse.ok) {
+      // Cache successful responses
+      const responseClone = networkResponse.clone();
+      cache.put(request, responseClone);
+      console.log('Service Worker: Image cached:', url.href);
+      return networkResponse;
+    } else {
+      console.error('Service Worker: Image fetch failed with status:', networkResponse.status, url.href);
+      throw new Error(`Image fetch failed: ${networkResponse.status}`);
+    }
+    
+  } catch (error) {
+    console.error('Service Worker: Network error fetching image:', url.href, error);
+    
+    // Try to return any cached version (even if stale)
+    const staleResponse = await cache.match(request);
+    if (staleResponse) {
+      console.log('Service Worker: Returning stale cached image:', url.href);
+      return staleResponse;
+    }
+    
+    // Return placeholder SVG for completely failed images
+    return new Response(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+        <rect width="400" height="300" fill="#f3f4f6" stroke="#e5e7eb" stroke-width="2"/>
+        <circle cx="200" cy="120" r="30" fill="#d1d5db"/>
+        <path d="M170 140 L230 140 L210 180 L190 180 Z" fill="#d1d5db"/>
+        <text x="200" y="220" text-anchor="middle" fill="#6b7280" font-family="Arial, sans-serif" font-size="14">Billede kunne ikke indlæses</text>
+        <text x="200" y="240" text-anchor="middle" fill="#9ca3af" font-family="Arial, sans-serif" font-size="12">Prøv at opdatere siden</text>
+      </svg>`,
+      {
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Cache-Control': 'max-age=60' // Cache placeholder for 1 minute
+        }
+      }
+    );
   }
 }
 
@@ -145,7 +249,7 @@ async function networkFirstStrategy(request, cacheName) {
     
     return networkResponse;
   } catch (error) {
-    console.log('Service Worker: Network failed, trying cache', error);
+    console.log('Service Worker: Network failed, trying cache for:', request.url);
     const cachedResponse = await caches.match(request);
     
     if (cachedResponse) {
@@ -174,7 +278,7 @@ async function cacheFirstStrategy(request, cacheName) {
     
     return networkResponse;
   } catch (error) {
-    console.error('Service Worker: Both cache and network failed', error);
+    console.error('Service Worker: Both cache and network failed for:', request.url, error);
     throw error;
   }
 }
@@ -196,8 +300,24 @@ function isHtmlRequest(request) {
 }
 
 function isImageRequest(url) {
-  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico'];
-  return imageExtensions.some(ext => url.pathname.toLowerCase().endsWith(ext));
+  // Check file extension in pathname
+  const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico', '.bmp', '.tiff'];
+  const hasImageExtension = imageExtensions.some(ext => url.pathname.toLowerCase().includes(ext));
+  
+  // Check if it's a known external image domain (like Unsplash)
+  const isExternalImage = isExternalImageDomain(url);
+  
+  // Check for common image URL patterns (even without extensions)
+  const hasImageKeywords = url.pathname.includes('/photo') || 
+                          url.pathname.includes('/image') || 
+                          url.pathname.includes('/img') ||
+                          url.searchParams.has('auto') && url.searchParams.get('auto') === 'format'; // Unsplash pattern
+  
+  return hasImageExtension || isExternalImage || hasImageKeywords;
+}
+
+function isExternalImageDomain(url) {
+  return EXTERNAL_IMAGE_DOMAINS.some(domain => url.hostname.includes(domain));
 }
 
 // Background sync for offline actions
@@ -215,7 +335,7 @@ async function doBackgroundSync() {
   // For example, sync offline orders, form submissions, etc.
 }
 
-// Push notifications (for future use)
+// Push notifications
 self.addEventListener('push', (event) => {
   console.log('Service Worker: Push received', event);
   
@@ -256,6 +376,22 @@ self.addEventListener('notificationclick', (event) => {
   if (event.action === 'explore') {
     event.waitUntil(
       clients.openWindow('/')
+    );
+  }
+});
+
+// Message handling for cache management
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'CLEAR_IMAGE_CACHE') {
+    event.waitUntil(
+      caches.delete(IMAGE_CACHE_NAME).then(() => {
+        console.log('Service Worker: Image cache cleared');
+        event.ports[0].postMessage({ success: true });
+      })
     );
   }
 }); 
