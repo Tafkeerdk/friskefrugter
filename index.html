@@ -100,34 +100,42 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-                              console.log('🚀 SW registered with CORS-FIXED image loading v4: ', registration);
+                              console.log('🚀 SW registered with smooth updates v5: ', registration);
               
               // Force immediate update for image fix - CRITICAL FOR IMAGE LOADING
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 if (newWorker) {
-                  console.log('🔄 New SW with image fixes installing...');
+                  console.log('🔄 New SW v5 with smooth updates installing...');
                   newWorker.addEventListener('statechange', () => {
-                    if (newWorker.state === 'installed') {
-                      if (navigator.serviceWorker.controller) {
-                        // New content available, force update immediately
-                        console.log('⚡ New SW v4 with CORS fixes available; updating immediately...');
-                        newWorker.postMessage({ type: 'SKIP_WAITING' });
-                      } else {
-                        console.log('✅ SW v4 cached for the first time with CORS fixes!');
+                                          if (newWorker.state === 'installed') {
+                        if (navigator.serviceWorker.controller) {
+                          // New content available, but don't force immediate update
+                          console.log('⚡ New SW v5 with smooth updates available - will activate on next visit');
+                          
+                          // Show subtle notification instead of forcing reload
+                          if (window.location.hostname !== 'localhost') {
+                            // Only show in production, not during development
+                            setTimeout(() => {
+                              console.log('💡 Tip: Refresh page to get latest improvements');
+                            }, 5000);
+                          }
+                        } else {
+                          console.log('✅ SW v5 cached for the first time with smooth updates!');
+                        }
                       }
-                    }
                   });
                 }
               });
 
-              // Handle service worker updates - CRITICAL FOR IMAGE FIXES
+              // Handle service worker updates - SMOOTH UPDATE WITHOUT RELOAD
               let refreshing = false;
               navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshing) return;
                 refreshing = true;
-                console.log('🔄 SW v4 controller changed with CORS fixes, reloading page...');
-                window.location.reload();
+                console.log('🔄 SW v5 controller changed with smooth updates - NO RELOAD NEEDED');
+                // Don't reload automatically - let images load naturally
+                // window.location.reload(); // REMOVED - causes poor UX
               });
 
               // Check for SW updates more frequently during development

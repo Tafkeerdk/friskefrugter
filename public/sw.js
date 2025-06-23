@@ -1,5 +1,5 @@
 // Service Worker for Multi Grønt PWA - FIXED Image Loading v4
-const CACHE_VERSION = 'v4-cors-fixed';
+const CACHE_VERSION = 'v5-smooth-update';
 const STATIC_CACHE_NAME = `multi-groent-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `multi-groent-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `multi-groent-images-${CACHE_VERSION}`;
@@ -30,7 +30,7 @@ const EXTERNAL_IMAGE_DOMAINS = [
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v4 with CORS-fixed image loading...');
+  console.log('🚀 SW: Installing v5 with smooth updates and CORS-fixed image loading...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
@@ -39,8 +39,9 @@ self.addEventListener('install', (event) => {
         return cache.addAll(STATIC_ASSETS);
       })
       .then(() => {
-        console.log('✅ SW: Static assets cached, skipping waiting');
-        return self.skipWaiting();
+        console.log('✅ SW: Static assets cached');
+        // Don't skip waiting immediately - let user finish current session
+        // return self.skipWaiting(); // REMOVED - causes page reload
       })
       .catch((error) => {
         console.error('❌ SW: Error caching static assets', error);
@@ -50,7 +51,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
-  console.log('🔄 SW: Activating v4 with CORS fixes...');
+  console.log('🔄 SW: Activating v5 with smooth updates and CORS fixes...');
   
   event.waitUntil(
     Promise.all([
@@ -417,4 +418,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('🚀 SW: Multi Grønt Service Worker v4 loaded with CORS-FIXED image handling'); 
+console.log('🚀 SW: Multi Grønt Service Worker v5 loaded with smooth updates and CORS-FIXED image handling'); 
