@@ -28,6 +28,7 @@ import FAQ from "./pages/FAQ";
 import ProductSetup from "./pages/ProductSetup";
 import PasswordReset from "./pages/PasswordReset";
 import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
+import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -154,6 +155,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardCustomers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/customers/new" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminCustomerCreate />
                 </ProtectedRoute>
               } 
             />

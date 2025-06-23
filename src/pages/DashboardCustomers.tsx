@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { MoreHorizontal, Mail, Phone, Calendar, Plus, Trash2, AlertTriangle, Send, Percent } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -87,6 +88,7 @@ interface DiscountGroup {
 }
 
 const DashboardCustomers: React.FC = () => {
+  const navigate = useNavigate();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [discountGroups, setDiscountGroups] = useState<DiscountGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -282,7 +284,10 @@ const DashboardCustomers: React.FC = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <Button className="flex items-center gap-1">
+          <Button 
+            className="flex items-center gap-1"
+            onClick={() => navigate('/admin/customers/new')}
+          >
             <Plus className="h-4 w-4" />
             <span>Tilføj kunde</span>
           </Button>

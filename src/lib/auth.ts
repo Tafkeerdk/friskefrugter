@@ -769,6 +769,23 @@ export const authService = {
     return response.json();
   },
 
+  async createCustomerAsAdmin(customerData: {
+    companyName: string;
+    cvrNumber: string;
+    contactPersonName: string;
+    email: string;
+    phone: string;
+    discountGroupId: string;
+    address?: any;
+    deliveryAddress?: any;
+    useRegisteredAddressForDelivery?: boolean;
+    passwordOption: 'generate' | 'link';
+    password?: string;
+  }): Promise<{ success: boolean; message: string; customer?: any; passwordResetLink?: string }> {
+    const response = await apiClient.post('/.netlify/functions/admin-customers', customerData);
+    return response.json();
+  },
+
   // Expose apiClient for direct use when needed
   apiClient
 };
