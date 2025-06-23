@@ -1,5 +1,5 @@
-// Service Worker for Multi Grønt PWA - FIXED Image Loading v6
-const CACHE_VERSION = 'v6-imgix-fixed';
+// Service Worker for Multi Grønt PWA - FIXED Image Loading v7
+const CACHE_VERSION = 'v7-imgix-bypass';
 const STATIC_CACHE_NAME = `multi-groent-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `multi-groent-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `multi-groent-images-${CACHE_VERSION}`;
@@ -102,6 +102,12 @@ self.addEventListener('fetch', (event) => {
   if (isImageRequest(url) && isExternalImageDomain(url)) {
     console.log('🌐 SW: Bypassing external image (let browser handle):', url.href);
     return; // Don't intercept external images at all
+  }
+
+  // ADDITIONAL FIX: Explicitly bypass Imgix domains
+  if (url.hostname.includes('imgix.net') || url.hostname.includes('multigrontimg.imgix.net')) {
+    console.log('🖼️ SW: Bypassing Imgix CDN (explicit check):', url.href);
+    return; // Don't intercept Imgix images at all
   }
 
   // Handle the request with improved error handling
@@ -315,7 +321,17 @@ function isImageRequest(url) {
 }
 
 function isExternalImageDomain(url) {
-  return EXTERNAL_IMAGE_DOMAINS.some(domain => url.hostname.includes(domain));
+  // Check against known external domains
+  const isExternal = EXTERNAL_IMAGE_DOMAINS.some(domain => url.hostname.includes(domain));
+  
+  // Additional explicit check for Imgix
+  const isImgix = url.hostname.includes('imgix.net') || url.hostname.includes('multigrontimg.imgix.net');
+  
+  if (isExternal || isImgix) {
+    console.log('🔍 SW: Detected external image domain:', url.hostname, '(bypass required)');
+  }
+  
+  return isExternal || isImgix;
 }
 
 // Background sync for offline actions
@@ -424,4 +440,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('🚀 SW: Multi Grønt Service Worker v6 loaded with Imgix CDN support and CORS-FIXED image handling'); 
+console.log('🚀 SW: Multi Grønt Service Worker v7 loaded with EXPLICIT Imgix bypass and CORS-FIXED image handling'); 
