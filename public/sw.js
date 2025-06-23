@@ -1,5 +1,5 @@
-// Service Worker for Multi Grønt PWA - FIXED Image Loading v4
-const CACHE_VERSION = 'v5-smooth-update';
+// Service Worker for Multi Grønt PWA - FIXED Image Loading v6
+const CACHE_VERSION = 'v6-imgix-fixed';
 const STATIC_CACHE_NAME = `multi-groent-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE_NAME = `multi-groent-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE_NAME = `multi-groent-images-${CACHE_VERSION}`;
@@ -25,12 +25,14 @@ const API_ENDPOINTS = [
 const EXTERNAL_IMAGE_DOMAINS = [
   'images.unsplash.com',
   'unsplash.com',
+  'multigrontimg.imgix.net', // Multi Grønt Imgix CDN
+  'imgix.net', // General Imgix domains
   'cdn.example.com', // Add other image CDNs as needed
 ];
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
-  console.log('🚀 SW: Installing v5 with smooth updates and CORS-fixed image loading...');
+  console.log('🚀 SW: Installing v6 with Imgix CDN support and CORS-fixed image loading...');
   
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
@@ -51,7 +53,7 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches and claim clients
 self.addEventListener('activate', (event) => {
-  console.log('🔄 SW: Activating v5 with smooth updates and CORS fixes...');
+  console.log('🔄 SW: Activating v6 with Imgix CDN support and CORS fixes...');
   
   event.waitUntil(
     Promise.all([
@@ -296,14 +298,18 @@ function isImageRequest(url) {
   const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico', '.bmp', '.tiff'];
   const hasImageExtension = imageExtensions.some(ext => url.pathname.toLowerCase().includes(ext));
   
-  // Check if it's a known external image domain (like Unsplash)
+  // Check if it's a known external image domain (like Unsplash, Imgix)
   const isExternalImage = isExternalImageDomain(url);
   
   // Check for common image URL patterns (even without extensions)
   const hasImageKeywords = url.pathname.includes('/photo') || 
                           url.pathname.includes('/image') || 
                           url.pathname.includes('/img') ||
-                          url.searchParams.has('auto') && url.searchParams.get('auto') === 'format'; // Unsplash pattern
+                          url.searchParams.has('auto') && url.searchParams.get('auto') === 'format' || // Unsplash pattern
+                          url.searchParams.has('fm') || // Imgix format parameter
+                          url.searchParams.has('w') || // Imgix width parameter
+                          url.searchParams.has('h') || // Imgix height parameter
+                          url.searchParams.has('q'); // Imgix quality parameter
   
   return hasImageExtension || isExternalImage || hasImageKeywords;
 }
@@ -418,4 +424,4 @@ self.addEventListener('message', (event) => {
   }
 });
 
-console.log('🚀 SW: Multi Grønt Service Worker v5 loaded with smooth updates and CORS-FIXED image handling'); 
+console.log('🚀 SW: Multi Grønt Service Worker v6 loaded with Imgix CDN support and CORS-FIXED image handling'); 

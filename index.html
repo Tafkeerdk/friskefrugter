@@ -100,18 +100,18 @@
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-                              console.log('🚀 SW registered with smooth updates v5: ', registration);
+                              console.log('🚀 SW registered with Imgix CDN support v6: ', registration);
               
               // Force immediate update for image fix - CRITICAL FOR IMAGE LOADING
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
                 if (newWorker) {
-                  console.log('🔄 New SW v5 with smooth updates installing...');
+                  console.log('🔄 New SW v6 with Imgix CDN support installing...');
                   newWorker.addEventListener('statechange', () => {
                                           if (newWorker.state === 'installed') {
                         if (navigator.serviceWorker.controller) {
                           // New content available, but don't force immediate update
-                          console.log('⚡ New SW v5 with smooth updates available - will activate on next visit');
+                          console.log('⚡ New SW v6 with Imgix CDN support available - will activate on next visit');
                           
                           // Show subtle notification instead of forcing reload
                           if (window.location.hostname !== 'localhost') {
@@ -121,7 +121,7 @@
                             }, 5000);
                           }
                         } else {
-                          console.log('✅ SW v5 cached for the first time with smooth updates!');
+                          console.log('✅ SW v6 cached for the first time with Imgix CDN support!');
                         }
                       }
                   });
@@ -133,7 +133,7 @@
               navigator.serviceWorker.addEventListener('controllerchange', () => {
                 if (refreshing) return;
                 refreshing = true;
-                console.log('🔄 SW v5 controller changed with smooth updates - NO RELOAD NEEDED');
+                console.log('🔄 SW v6 controller changed with Imgix CDN support - NO RELOAD NEEDED');
                 // Don't reload automatically - let images load naturally
                 // window.location.reload(); // REMOVED - causes poor UX
               });
