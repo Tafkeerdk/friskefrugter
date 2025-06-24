@@ -120,6 +120,9 @@ const DashboardDiscountGroups: React.FC = () => {
     color: '#6B7280'
   });
   
+  // Category filtering state
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+
   const { toast } = useToast();
 
   // Form state
@@ -388,7 +391,7 @@ const DashboardDiscountGroups: React.FC = () => {
         const allProducts = (allProductsResponse.data as any).products || [];
         setTotalProducts(allProducts.length);
         
-        // Count products with sale price (førpris)
+        // Count products with sale price (førpris) - these are NOT affected by discount groups
         const withSalePrice = allProducts.filter((product: Product) => 
           product.førpris && product.førpris > 0
         ).length;
@@ -396,8 +399,15 @@ const DashboardDiscountGroups: React.FC = () => {
       }
 
       if (eligibleProductsResponse.success && eligibleProductsResponse.data) {
+        // These should be products WITHOUT førpris - products that CAN be affected by discount groups
         const eligibleProducts = (eligibleProductsResponse.data as any).products || [];
-        setDiscountEligibleProducts(eligibleProducts);
+        
+        // Double-check filtering: only products without førpris should be eligible
+        const filteredEligibleProducts = eligibleProducts.filter((product: Product) => 
+          !product.førpris || product.førpris === 0
+        );
+        
+        setDiscountEligibleProducts(filteredEligibleProducts);
       }
     } catch (error) {
       console.error('Error loading product statistics:', error);
@@ -407,6 +417,7 @@ const DashboardDiscountGroups: React.FC = () => {
   // Nielsen's Heuristic #6: Recognition Rather Than Recall
   const openProductsDialog = (group: DiscountGroup) => {
     setSelectedGroup(group);
+    setSelectedCategory('all'); // Reset category filter
     setIsProductsDialogOpen(true);
   };
 
@@ -803,22 +814,38 @@ const DashboardDiscountGroups: React.FC = () => {
 
       {/* Products Dialog - Nielsen's Heuristic #6: Recognition Rather Than Recall */}
       <Dialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg">
               <div
-                className="w-4 h-4 rounded-full"
+                className="w-4 h-4 rounded-full flex-shrink-0"
                 style={{ backgroundColor: selectedGroup?.color }}
               />
-              Varer påvirket af "{selectedGroup?.name}"
+              <span>Varer påvirket af "{selectedGroup?.name}"</span>
             </DialogTitle>
-            <DialogDescription>
-              Disse varer får {selectedGroup?.discountPercentage}% rabat for kunder i denne rabatgruppe.
-              Varer med fast udsalgspris (førpris) påvirkes ikke af rabatgrupper.
+            <DialogDescription className="text-sm">
+              Disse varer får {selectedGroup?.discountPercentage}% rabat. Produkter med før-pris påvirkes ikke.
             </DialogDescription>
+            
+            {/* CATEGORY FILTER */}
+            {discountEligibleProducts.length > 0 && (
+              <div className="flex items-center gap-2 pt-2">
+                <span className="text-sm text-gray-600">Filtrer kategori:</span>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="text-sm border border-gray-300 rounded px-2 py-1 bg-white"
+                >
+                  <option value="all">Alle kategorier</option>
+                  {[...new Set(discountEligibleProducts.map(p => p.kategori.navn))].sort().map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto min-h-0">
             {loadingProducts ? (
               <div className="flex items-center justify-center p-8">
                 <div className="text-center">
@@ -827,47 +854,109 @@ const DashboardDiscountGroups: React.FC = () => {
                 </div>
               </div>
             ) : discountEligibleProducts.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                  {discountEligibleProducts.map((product) => (
-                    <Card key={product._id} className="p-4">
-                      <div className="flex items-start gap-3">
-                        {product.billeder && product.billeder.length > 0 && (
-                          <img
-                            src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
-                            alt={product.produktnavn}
-                            className="w-12 h-12 object-cover rounded-md"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-brand-gray-900 truncate">
-                            {product.produktnavn}
-                          </h4>
-                          <p className="text-sm text-brand-gray-500">
-                            {product.varenummer} • {product.kategori.navn}
-                          </p>
-                          <div className="mt-2 space-y-1">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-brand-gray-600">Basispris:</span>
-                              <span className="font-medium">{formatPrice(product.basispris)}</span>
+              <div className="space-y-6 p-1">
+                {/* CLEAR CATEGORY GROUPING */}
+                {Object.entries(
+                  discountEligibleProducts
+                    .filter(product => selectedCategory === 'all' || product.kategori.navn === selectedCategory)
+                    .reduce((acc, product) => {
+                      const categoryName = product.kategori.navn;
+                      if (!acc[categoryName]) {
+                        acc[categoryName] = [];
+                      }
+                      acc[categoryName].push(product);
+                      return acc;
+                    }, {} as Record<string, typeof discountEligibleProducts>)
+                ).sort(([a], [b]) => a.localeCompare(b)).map(([categoryName, products]) => (
+                  <div key={categoryName} className="bg-gray-50 rounded-lg p-4">
+                    {/* PROMINENT CATEGORY HEADER */}
+                    <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-brand-primary/20">
+                      <h3 className="text-lg font-bold text-brand-primary">
+                        📦 {categoryName}
+                      </h3>
+                      <span className="bg-brand-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+                        {products.length} varer
+                      </span>
+                    </div>
+                    
+                    {/* CLEAN PRODUCT GRID - NO TEXT OVERLAPPING */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {products.map((product) => (
+                        <div key={product._id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                          <div className="flex gap-3">
+                            {/* PRODUCT IMAGE WITH FALLBACK */}
+                            <div className="w-16 h-16 flex-shrink-0 rounded-lg border border-gray-200 overflow-hidden bg-gray-100">
+                              {product.billeder && product.billeder.length > 0 ? (
+                                <img
+                                  src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
+                                  alt={product.produktnavn}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    // Replace broken image with placeholder
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const placeholder = target.nextElementSibling as HTMLElement;
+                                    if (placeholder) placeholder.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              {/* DEFAULT PLACEHOLDER */}
+                              <div 
+                                className={`w-full h-full flex items-center justify-center bg-gray-100 ${
+                                  product.billeder && product.billeder.length > 0 ? 'hidden' : 'flex'
+                                }`}
+                                style={{ display: product.billeder && product.billeder.length > 0 ? 'none' : 'flex' }}
+                              >
+                                <Package className="w-6 h-6 text-gray-400" />
+                              </div>
                             </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-brand-primary">Med {selectedGroup?.discountPercentage}% rabat:</span>
-                              <span className="font-bold text-brand-primary">
-                                {formatPrice(calculateDiscountedPrice(product.basispris, selectedGroup?.discountPercentage || 0))}
-                              </span>
+                            
+                            {/* PRODUCT INFO - WELL SPACED */}
+                            <div className="flex-1 min-w-0 space-y-2">
+                              <h4 className="font-semibold text-gray-900 text-sm leading-tight">
+                                {product.produktnavn}
+                              </h4>
+                              <p className="text-xs text-gray-500 font-mono">
+                                {product.varenummer}
+                              </p>
+                              
+                              {/* PRICING INFO - CLEAR LAYOUT */}
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-xs text-gray-600">Basispris:</span>
+                                  <span className="text-sm font-medium text-gray-900">
+                                    {formatPrice(product.basispris)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between items-center bg-green-50 px-2 py-1 rounded">
+                                  <span className="text-xs text-green-700 font-medium">
+                                    Med {selectedGroup?.discountPercentage}% rabat:
+                                  </span>
+                                  <span className="text-sm font-bold text-green-700">
+                                    {formatPrice(calculateDiscountedPrice(product.basispris, selectedGroup?.discountPercentage || 0))}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
                 
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between text-sm text-brand-gray-600">
-                    <span>Total påvirkede varer:</span>
-                    <span className="font-medium">{discountEligibleProducts.length}</span>
+                {/* SUMMARY SECTION */}
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-800 font-medium">
+                      📊 {selectedCategory === 'all' ? 'Total påvirkede varer' : `Varer i ${selectedCategory}`}:
+                    </span>
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
+                      {selectedCategory === 'all' 
+                        ? discountEligibleProducts.length 
+                        : discountEligibleProducts.filter(p => p.kategori.navn === selectedCategory).length
+                      }
+                    </span>
                   </div>
                 </div>
               </div>
@@ -877,17 +966,18 @@ const DashboardDiscountGroups: React.FC = () => {
                 <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
                   Ingen påvirkede varer
                 </h3>
-                <p className="text-brand-gray-500">
-                  Alle produkter har enten fast udsalgspris eller er ikke aktive.
+                <p className="text-brand-gray-500 text-sm">
+                  Alle produkter har enten før-pris eller er ikke aktive.
                 </p>
               </div>
             )}
           </div>
           
-          <div className="flex justify-end pt-4 border-t">
+          <div className="flex-shrink-0 flex justify-end pt-4 border-t bg-white">
             <Button
               variant="outline"
               onClick={() => setIsProductsDialogOpen(false)}
+              className="px-6"
             >
               Luk
             </Button>
