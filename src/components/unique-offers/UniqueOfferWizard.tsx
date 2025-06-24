@@ -192,7 +192,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     try {
       const response = await authService.getDiscountGroups();
       if (response.success) {
-        setDiscountGroups(response.groups || []);
+        setDiscountGroups((response.discountGroups as DiscountGroup[]) || []);
       }
     } catch (error) {
       console.error('Error loading discount groups:', error);
@@ -288,14 +288,14 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.produktnavn.toLowerCase().includes(productSearch.toLowerCase()) ||
                          product.varenummer?.toLowerCase().includes(productSearch.toLowerCase());
-    const matchesCategory = !selectedCategory || product.kategori?._id === selectedCategory;
+    const matchesCategory = !selectedCategory || selectedCategory === 'all' || product.kategori?._id === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
                          customer.contactPersonName.toLowerCase().includes(customerSearch.toLowerCase());
-    const matchesGroup = !selectedDiscountGroup || customer.discountGroup?._id === selectedDiscountGroup;
+    const matchesGroup = !selectedDiscountGroup || selectedDiscountGroup === 'all' || customer.discountGroup?._id === selectedDiscountGroup;
     return matchesSearch && matchesGroup;
   });
 
@@ -383,7 +383,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             <SelectValue placeholder="Alle kategorier" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Alle kategorier</SelectItem>
+            <SelectItem value="all">Alle kategorier</SelectItem>
             {categories.map(category => (
               <SelectItem key={category._id} value={category._id}>
                 {category.navn}
@@ -495,7 +495,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             <SelectValue placeholder="Alle rabatgrupper" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Alle rabatgrupper</SelectItem>
+            <SelectItem value="all">Alle rabatgrupper</SelectItem>
             {discountGroups.map(group => (
               <SelectItem key={group._id} value={group._id}>
                 {group.name}
