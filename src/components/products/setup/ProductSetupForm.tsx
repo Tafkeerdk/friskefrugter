@@ -423,21 +423,41 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     });
   };
 
-  const setPrimaryImage = (index: number) => {
+  const setPrimaryImage = async (index: number) => {
     const currentImages = form.getValues('billeder') || [];
+    const selectedImage = currentImages[index];
     
     console.log('🌟 Setting primary image:', {
       selectedIndex: index,
       totalImages: currentImages.length,
       currentPrimary: currentImages.findIndex(img => img.isPrimary),
-      currentImagesStatus: currentImages.map((img, i) => ({
-        index: i,
-        _id: img._id,
-        filename: img.filename || 'new upload',
-        isPrimary: img.isPrimary,
-        isExisting: img.isExisting
-      }))
+      selectedImage: {
+        _id: selectedImage._id,
+        filename: selectedImage.filename || 'new upload',
+        isExisting: selectedImage.isExisting
+      }
     });
+    
+    // If we're in edit mode and this is an existing image, call the API
+    if (mode === 'edit' && productId && selectedImage.isExisting && selectedImage._id) {
+      try {
+        await api.setPrimaryProductImage(productId, selectedImage._id);
+        toast({
+          title: 'Primært billede opdateret',
+          description: 'Primærbilledet blev opdateret på serveren.',
+          duration: 3000,
+        });
+      } catch (error) {
+        console.error('Failed to set primary image:', error);
+        toast({
+          title: 'Fejl ved opdatering',
+          description: 'Kunne ikke opdatere primærbilledet på serveren.',
+          variant: 'destructive',
+          duration: 3000,
+        });
+        return; // Don't update UI if server update failed
+      }
+    }
     
     // Update all images to set the selected one as primary
     const updatedImages = currentImages.map((img, i) => ({
@@ -455,12 +475,14 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     
     form.setValue('billeder', updatedImages, { shouldValidate: true });
     
-    // Show feedback
-    toast({
-      title: 'Primært billede ændret',
-      description: `Billede ${index + 1} er nu det primære produktbillede.`,
-      duration: 3000,
-    });
+    // Show feedback for local changes
+    if (!selectedImage.isExisting) {
+      toast({
+        title: 'Primært billede ændret',
+        description: `Billede ${index + 1} er nu det primære produktbillede.`,
+        duration: 3000,
+      });
+    }
   };
 
   // Cleanup object URLs on unmount

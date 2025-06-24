@@ -507,6 +507,13 @@ class ApiClient {
     });
   }
 
+  async setPrimaryProductImage(productId: string, imageId: string) {
+    const endpoint = this.getEndpoint(`/api/products/${productId}/images/${imageId}/set-primary`);
+    return this.request(endpoint, {
+      method: 'PUT',
+    });
+  }
+
   // Category API methods
   async getCategories(params: {
     includeProductCount?: boolean;
