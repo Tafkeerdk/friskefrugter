@@ -231,18 +231,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           await attemptTokenRefresh();
         }
         
-        // Fetch fresh customer profile data (but don't block initialization)
-        authService.getCustomerProfile()
-          .then(profileResponse => {
-            if (profileResponse.success && profileResponse.customer) {
-              console.log('✅ Fresh customer profile data fetched');
-              tokenManager.setUser(profileResponse.customer, 'customer');
-              setCustomerUser(profileResponse.customer);
+        // Fetch fresh customer profile data
+        try {
+          console.log('🔄 Fetching fresh customer profile data on init...');
+          const profileResponse = await authService.getCustomerProfile();
+          if (profileResponse.success && profileResponse.customer) {
+            // Validate that essential customer data exists before setting state
+            const customer = profileResponse.customer;
+            if (customer.contactPersonName && customer.email && customer.companyName) {
+              console.log('✅ Fresh customer profile data fetched on init');
+              tokenManager.setUser(customer, 'customer');
+              setCustomerUser(customer);
+            } else {
+              console.warn('⚠️ Customer profile data incomplete on init');
             }
-          })
-          .catch(error => {
-            console.warn('⚠️ Could not fetch fresh customer profile data on init:', error);
-          });
+          } else {
+            console.warn('⚠️ Customer profile fetch failed on init');
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not fetch fresh customer profile data on init:', error);
+        }
       } else if (savedCustomerUser || customerToken) {
         console.warn('🚨 SECURITY: Customer session invalid - clearing');
         tokenManager.clearTokens('customer');
@@ -318,10 +326,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             console.log('🔄 Fetching fresh customer profile data after login...');
             const profileResponse = await authService.getCustomerProfile();
             if (profileResponse.success && profileResponse.customer) {
-              console.log('✅ Fresh customer profile data fetched after login');
-              tokenManager.setUser(profileResponse.customer, 'customer');
-              setCustomerUser(profileResponse.customer);
-              setUser(profileResponse.customer); // Set as primary user
+              // Validate that essential customer data exists before setting state
+              const customer = profileResponse.customer;
+              if (customer && customer.contactPersonName && customer.email && customer.companyName) {
+                console.log('✅ Fresh customer profile data fetched after login');
+                
+                // Additional safety: wrap state updates in try-catch
+                try {
+                  tokenManager.setUser(customer, 'customer');
+                  setCustomerUser(customer);
+                  setUser(customer); // Set as primary user
+                } catch (stateError) {
+                  console.error('❌ Error updating customer state after profile fetch:', stateError);
+                  setUser(response.user); // Fallback to login response
+                }
+              } else {
+                console.warn('⚠️ Customer profile data incomplete, using login response');
+                setUser(response.user); // Fallback to login response
+              }
+            } else {
+              console.warn('⚠️ Customer profile fetch failed, using login response');
+              setUser(response.user); // Fallback to login response
             }
           } catch (error) {
             console.warn('⚠️ Could not fetch fresh customer profile data after login:', error);
