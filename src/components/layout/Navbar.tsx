@@ -1,11 +1,12 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, User, Menu, Search, Shield } from "lucide-react";
+import { ShoppingCart, User, Menu, Search, Shield, UserPlus } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { SearchResults } from "../search/SearchResults";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePWA } from "@/hooks/usePWA";
+import { useAuth } from "@/hooks/useAuth";
 
 const sampleProducts = [
   {
@@ -40,6 +41,7 @@ export function Navbar() {
   const [showResults, setShowResults] = useState(false);
   const isMobile = useIsMobile();
   const { isInstalled } = usePWA();
+  const { isCustomerAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -114,6 +116,16 @@ export function Navbar() {
             >
               Kontakt
             </Link>
+            
+            {/* Bliv kunde CTA - Only show when not logged in as customer */}
+            {!isCustomerAuthenticated && (
+              <Link 
+                to="/apply" 
+                className="ml-2 px-4 py-2 rounded-md bg-gradient-to-r from-brand-primary to-brand-secondary text-white hover:from-brand-primary-hover hover:to-brand-secondary-hover transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
+              >
+                Bliv kunde
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -220,6 +232,18 @@ export function Navbar() {
         isMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
       )}>
         <div className="page-container flex flex-col space-y-2 py-4">
+          {/* Bliv kunde CTA - Mobile - Only show when not logged in as customer */}
+          {!isCustomerAuthenticated && (
+            <Link 
+              to="/apply" 
+              className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white py-3 px-4 rounded-lg font-semibold flex items-center gap-2 hover:from-brand-primary-hover hover:to-brand-secondary-hover transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] mb-2"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <UserPlus className="h-5 w-5" />
+              Bliv kunde
+            </Link>
+          )}
+          
           <Link 
             to="/products" 
             className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
