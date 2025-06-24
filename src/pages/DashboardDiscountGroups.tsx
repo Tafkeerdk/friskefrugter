@@ -778,14 +778,32 @@ const DashboardDiscountGroups: React.FC = () => {
                       {products.map((product) => (
                         <div key={product._id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
                           <div className="flex gap-3">
-                            {/* PRODUCT IMAGE */}
-                            {product.billeder && product.billeder.length > 0 && (
-                              <img
-                                src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
-                                alt={product.produktnavn}
-                                className="w-16 h-16 object-cover rounded-lg flex-shrink-0 border border-gray-200"
-                              />
-                            )}
+                            {/* PRODUCT IMAGE WITH FALLBACK */}
+                            <div className="w-16 h-16 flex-shrink-0 rounded-lg border border-gray-200 overflow-hidden bg-gray-100">
+                              {product.billeder && product.billeder.length > 0 ? (
+                                <img
+                                  src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
+                                  alt={product.produktnavn}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    // Replace broken image with placeholder
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const placeholder = target.nextElementSibling as HTMLElement;
+                                    if (placeholder) placeholder.style.display = 'flex';
+                                  }}
+                                />
+                              ) : null}
+                              {/* DEFAULT PLACEHOLDER */}
+                              <div 
+                                className={`w-full h-full flex items-center justify-center bg-gray-100 ${
+                                  product.billeder && product.billeder.length > 0 ? 'hidden' : 'flex'
+                                }`}
+                                style={{ display: product.billeder && product.billeder.length > 0 ? 'none' : 'flex' }}
+                              >
+                                <Package className="w-6 h-6 text-gray-400" />
+                              </div>
+                            </div>
                             
                             {/* PRODUCT INFO - WELL SPACED */}
                             <div className="flex-1 min-w-0 space-y-2">
