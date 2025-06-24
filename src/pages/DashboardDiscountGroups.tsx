@@ -165,7 +165,9 @@ const DashboardDiscountGroups: React.FC = () => {
       
       if (response.success) {
         setDiscountGroups(response.discountGroups as DiscountGroup[] || []);
-        console.log('🔄 DashboardDiscountGroups: Fetched', response.discountGroups?.length || 0, 'discount groups');
+        if (import.meta.env.DEV) {
+          console.log('🔄 DashboardDiscountGroups: Fetched', response.discountGroups?.length || 0, 'discount groups');
+        }
       } else {
         setError(response.message || 'Kunne ikke hente rabatgrupper');
       }
@@ -179,18 +181,23 @@ const DashboardDiscountGroups: React.FC = () => {
 
   // Helper function to notify other components about discount group changes
   const notifyDiscountGroupUpdate = () => {
-    console.log('📢 Broadcasting discount group update event');
+    if (import.meta.env.DEV) {
+      console.log('📢 Broadcasting discount group update event');
+    }
     
-    // Dispatch custom event
-    window.dispatchEvent(new CustomEvent('discountGroupsUpdated'));
-    
-    // Also set localStorage as fallback for cross-tab communication
-    localStorage.setItem('discountGroupsUpdated', Date.now().toString());
-    
-    // Remove the localStorage item after a short delay to avoid constant triggers
+    // Small delay to ensure all state updates are complete
     setTimeout(() => {
-      localStorage.removeItem('discountGroupsUpdated');
-    }, 100);
+      // Dispatch custom event
+      window.dispatchEvent(new CustomEvent('discountGroupsUpdated'));
+      
+      // Also set localStorage as fallback for cross-tab communication
+      localStorage.setItem('discountGroupsUpdated', Date.now().toString());
+      
+      // Remove the localStorage item after a short delay to avoid constant triggers
+      setTimeout(() => {
+        localStorage.removeItem('discountGroupsUpdated');
+      }, 200);
+    }, 50);
   };
 
   const resetForm = () => {
@@ -222,8 +229,30 @@ const DashboardDiscountGroups: React.FC = () => {
       return;
     }
 
+    // Store original groups for potential rollback
+    const originalGroups = [...discountGroups];
+
     try {
       setIsSubmitting(true);
+      
+      // Create optimistic temporary group for immediate UI feedback
+      const tempId = `temp-${Date.now()}`;
+      const optimisticGroup: DiscountGroup = {
+        id: tempId,
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        discountPercentage: percentage,
+        color: formData.color,
+        customerCount: 0,
+        formattedDiscount: `${percentage}%`,
+        isActive: true,
+        sortOrder: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      // Add optimistic group to UI immediately
+      setDiscountGroups(prev => [...prev, optimisticGroup]);
       
       const response = await authService.createDiscountGroup({
         name: formData.name.trim(),
@@ -241,11 +270,15 @@ const DashboardDiscountGroups: React.FC = () => {
         
         setIsCreateDialogOpen(false);
         resetForm();
+        
+        // Replace optimistic group with real data from server
         await fetchDiscountGroups();
         
-        // Notify other components about the update
+        // Notify other components about the update AFTER the data is loaded
         notifyDiscountGroupUpdate();
       } else {
+        // Revert optimistic update on failure
+        setDiscountGroups(originalGroups);
         toast({
           title: 'Fejl',
           description: response.message || 'Kunne ikke oprette rabatgruppe',
@@ -253,6 +286,8 @@ const DashboardDiscountGroups: React.FC = () => {
         });
       }
     } catch (err) {
+      // Revert optimistic update on error
+      setDiscountGroups(originalGroups);
       toast({
         title: 'Fejl',
         description: 'Der opstod en fejl ved oprettelse af rabatgruppe',

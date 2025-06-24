@@ -189,7 +189,9 @@ export const RabatGruppePreview: React.FC<RabatGruppePreviewProps> = ({
       const response = await authService.getDiscountGroups();
       if (response.success && response.discountGroups) {
         setDiscountGroups(response.discountGroups as DiscountGroup[]);
-        console.log('🔄 RabatGruppePreview: Loaded', response.discountGroups.length, 'discount groups');
+        if (import.meta.env.DEV) {
+          console.log('🔄 RabatGruppePreview: Loaded', response.discountGroups.length, 'discount groups');
+        }
       }
     } catch (error) {
       console.error('Failed to load discount groups:', error);
@@ -204,8 +206,13 @@ export const RabatGruppePreview: React.FC<RabatGruppePreviewProps> = ({
 
     // Listen for custom events when discount groups are updated
     const handleDiscountGroupUpdate = () => {
-      console.log('🔄 RabatGruppePreview: Received discount group update event');
-      loadDiscountGroups();
+      if (import.meta.env.DEV) {
+        console.log('🔄 RabatGruppePreview: Received discount group update event');
+      }
+      // Add small delay to ensure data is ready
+      setTimeout(() => {
+        loadDiscountGroups();
+      }, 100);
     };
 
     // Listen for the custom event
@@ -214,17 +221,33 @@ export const RabatGruppePreview: React.FC<RabatGruppePreviewProps> = ({
     // Also listen for storage changes as a fallback
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'discountGroupsUpdated') {
-        console.log('🔄 RabatGruppePreview: Received storage update event');
-        loadDiscountGroups();
+        if (import.meta.env.DEV) {
+          console.log('🔄 RabatGruppePreview: Received storage update event');
+        }
+        // Add small delay to ensure data is ready
+        setTimeout(() => {
+          loadDiscountGroups();
+        }, 100);
       }
     };
 
     window.addEventListener('storage', handleStorageChange);
 
+    // Also listen for focus events to refresh data when user returns to tab
+    const handleFocus = () => {
+      if (import.meta.env.DEV) {
+        console.log('🔄 RabatGruppePreview: Window focused - refreshing discount groups');
+      }
+      loadDiscountGroups();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
     // Cleanup
     return () => {
       window.removeEventListener('discountGroupsUpdated', handleDiscountGroupUpdate);
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
     };
   }, []);
 
