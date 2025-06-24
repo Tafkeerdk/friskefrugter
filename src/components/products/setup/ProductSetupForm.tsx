@@ -117,6 +117,9 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [units, setUnits] = useState<Unit[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [newUnitName, setNewUnitName] = useState('');
+  const [newUnitValue, setNewUnitValue] = useState('');
+  const [isCreatingUnit, setIsCreatingUnit] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [loadingUnits, setLoadingUnits] = useState(true);
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
@@ -589,6 +592,57 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     }
   };
 
+  // Handle unit creation
+  const handleCreateUnit = async () => {
+    if (newUnitName.trim() && newUnitValue.trim()) {
+      try {
+        console.log('🔄 Creating unit:', { value: newUnitValue.trim(), label: newUnitName.trim() });
+        
+        const response = await api.createUnit({
+          value: newUnitValue.trim(),
+          label: newUnitName.trim(),
+          description: `Brugerdefineret enhed: ${newUnitName.trim()}`,
+          sortOrder: 999 // Put custom units at the end
+        });
+        
+        console.log('✅ Unit creation response:', response);
+        
+        if (response.success && response.data) {
+          const newUnit = response.data as Unit;
+          console.log('✅ New unit created:', newUnit);
+          
+          setUnits([...units, newUnit]);
+          setValue('enhed', newUnit._id);
+          setNewUnitName('');
+          setNewUnitValue('');
+          setIsCreatingUnit(false);
+          
+          toast({
+            title: 'Enhed oprettet',
+            description: `Enheden "${newUnit.label}" er blevet oprettet.`,
+            duration: 3000,
+          });
+        } else {
+          console.error('❌ Unit creation failed - no data in response:', response);
+          toast({
+            title: 'Fejl',
+            description: 'Enheden blev ikke oprettet korrekt. Prøv igen.',
+            variant: 'destructive',
+            duration: 3000,
+          });
+        }
+      } catch (error) {
+        console.error('❌ Unit creation error:', error);
+        toast({
+          title: 'Fejl',
+          description: 'Kunne ikke oprette enheden. Prøv igen.',
+          variant: 'destructive',
+          duration: 3000,
+        });
+      }
+    }
+  };
+
   // Character counter component
   const CharacterCounter: React.FC<{ current: number; max: number }> = ({ current, max }) => (
     <div className={cn(
@@ -759,27 +813,142 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         <FormLabel className="flex items-center gap-2">
                           Enhed
                           <span className="text-red-500">*</span>
+                          {isCreatingUnit && (
+                            <Badge variant="secondary" className="ml-2">
+                              Opretter ny enhed
+                            </Badge>
+                          )}
                         </FormLabel>
                         <Select
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          disabled={isLoading}
+                          onValueChange={(value) => {
+                            if (value === 'create-new') {
+                              setIsCreatingUnit(true);
+                              // Clear the current unit selection when creating new
+                              setValue('enhed', '');
+                            } else {
+                              field.onChange(value);
+                            }
+                          }}
+                          value={isCreatingUnit ? 'create-new' : field.value}
+                          disabled={isLoading || isCreatingUnit}
                         >
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Vælg enhed" />
+                            <SelectTrigger className={cn(
+                              isCreatingUnit && "border-green-300 bg-green-50"
+                            )}>
+                              <SelectValue placeholder="Vælg enhed">
+                                {isCreatingUnit 
+                                  ? "Opretter ny enhed..." 
+                                  : (units.find(u => u._id === field.value)?.label || 'Vælg enhed')
+                                }
+                              </SelectValue>
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {units.map((unit) => (
-                              <SelectItem key={unit._id} value={unit._id}>
-                                {unit.label}
+                            {loadingUnits ? (
+                              <SelectItem value="loading" disabled>
+                                Indlæser enheder...
                               </SelectItem>
-                            ))}
+                            ) : (
+                              <>
+                                {units.map((unit) => (
+                                  <SelectItem key={unit._id} value={unit._id}>
+                                    {unit.label}
+                                  </SelectItem>
+                                ))}
+                                <Separator />
+                                <SelectItem value="create-new">
+                                  + Opret ny enhed
+                                </SelectItem>
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
+
+                        {/* Create new unit */}
+                        {isCreatingUnit && (
+                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
+                            <div className="flex items-center gap-2 mb-3">
+                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <span className="text-sm font-medium text-green-700">
+                                Opret ny enhed
+                              </span>
+                            </div>
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <Input
+                                  placeholder="Kort værdi (f.eks. ml, cl, dl)"
+                                  value={newUnitValue}
+                                  onChange={(e) => setNewUnitValue(e.target.value.toLowerCase())}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (newUnitName.trim() && newUnitValue.trim()) {
+                                        handleCreateUnit();
+                                      }
+                                    }
+                                    if (e.key === 'Escape') {
+                                      setIsCreatingUnit(false);
+                                      setNewUnitName('');
+                                      setNewUnitValue('');
+                                    }
+                                  }}
+                                  className="flex-1"
+                                  maxLength={10}
+                                />
+                                <Input
+                                  placeholder="Fuldt navn (f.eks. Milliliter (ml))"
+                                  value={newUnitName}
+                                  onChange={(e) => setNewUnitName(e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      e.preventDefault();
+                                      if (newUnitName.trim() && newUnitValue.trim()) {
+                                        handleCreateUnit();
+                                      }
+                                    }
+                                    if (e.key === 'Escape') {
+                                      setIsCreatingUnit(false);
+                                      setNewUnitName('');
+                                      setNewUnitValue('');
+                                    }
+                                  }}
+                                  className="flex-1"
+                                  maxLength={50}
+                                />
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={handleCreateUnit}
+                                  disabled={!newUnitName.trim() || !newUnitValue.trim()}
+                                  className="bg-green-600 hover:bg-green-700"
+                                >
+                                  Opret enhed
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setIsCreatingUnit(false);
+                                    setNewUnitName('');
+                                    setNewUnitValue('');
+                                  }}
+                                >
+                                  Annuller
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <FormDescription>
-                          Salgsenheden for produktet
+                          {isCreatingUnit 
+                            ? "Indtast kort værdi (f.eks. ml) og fuldt navn (f.eks. Milliliter (ml))" 
+                            : "Vælg salgsenheden for produktet eller opret en ny"
+                          }
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
