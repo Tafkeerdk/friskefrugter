@@ -718,7 +718,7 @@ const DashboardProducts: React.FC = () => {
                                 </div>
                                 <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
                                   <span>EAN: {product.eanNummer}</span>
-                                  <span>{product.enhed}</span>
+                                  <span>{product.enhed.label}</span>
                                 </div>
                               </div>
                             </div>

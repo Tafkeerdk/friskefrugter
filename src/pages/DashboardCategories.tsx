@@ -67,7 +67,14 @@ interface Product {
   _id: string;
   produktnavn: string;
   basispris: number;
-  enhed: string;
+  enhed: {
+    _id: string;
+    value: string;
+    label: string;
+    description?: string;
+    isActive: boolean;
+    sortOrder: number;
+  };
   aktiv: boolean;
   lagerstyring: {
     enabled: boolean;
@@ -579,7 +586,7 @@ const DashboardCategories: React.FC = () => {
                       <TableRow key={product._id}>
                         <TableCell className="font-medium">{product.produktnavn}</TableCell>
                         <TableCell>{formatPrice(product.basispris)}</TableCell>
-                        <TableCell>{product.enhed}</TableCell>
+                        <TableCell>{product.enhed.label}</TableCell>
                         <TableCell>
                           {product.lagerstyring.enabled ? (
                             <Badge variant="outline">
