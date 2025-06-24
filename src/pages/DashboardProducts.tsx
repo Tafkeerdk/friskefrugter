@@ -43,7 +43,9 @@ import {
   X,
   Grid3X3,
   List,
-  SlidersHorizontal
+  SlidersHorizontal,
+  ShoppingCart,
+  Zap
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -107,6 +109,95 @@ interface Category {
   aktiv: boolean;
   productCount: number;
 }
+
+// Enhanced Product Image Component with better placeholder
+const ProductImage: React.FC<{
+  src?: string;
+  alt: string;
+  className?: string;
+  onClick?: () => void;
+  size?: 'small' | 'medium' | 'large';
+}> = ({ src, alt, className = '', onClick, size = 'medium' }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoading(false);
+  };
+
+  const handleImageLoad = () => {
+    setImageLoading(false);
+    setImageError(false);
+  };
+
+  const sizeClasses = {
+    small: 'h-10 w-10',
+    medium: 'h-12 w-12',
+    large: 'w-full h-full'
+  };
+
+  const iconSizes = {
+    small: 'h-4 w-4',
+    medium: 'h-6 w-6', 
+    large: 'h-8 w-8'
+  };
+
+  if (!src || imageError) {
+    return (
+      <div 
+        className={cn(
+          "flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-dashed border-blue-200 rounded-lg transition-colors hover:from-blue-100 hover:to-indigo-200",
+          sizeClasses[size],
+          className,
+          onClick && "cursor-pointer"
+        )}
+        onClick={onClick}
+      >
+        <div className="flex flex-col items-center justify-center space-y-1">
+          <div className="relative">
+            <Package className={cn("text-blue-400", iconSizes[size])} />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-orange-400 rounded-full flex items-center justify-center">
+              <Zap className="h-2 w-2 text-white" />
+            </div>
+          </div>
+          {size === 'large' && (
+            <div className="text-center">
+              <p className="text-xs font-medium text-blue-600">Intet billede</p>
+              <p className="text-xs text-blue-500">Klik for at tilføje</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("relative overflow-hidden", className)}>
+      {imageLoading && (
+        <div className={cn(
+          "absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse",
+          sizeClasses[size]
+        )}>
+          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          "object-cover transition-all duration-200",
+          sizeClasses[size],
+          onClick && "cursor-pointer hover:scale-105",
+          imageLoading && "opacity-0"
+        )}
+        onClick={onClick}
+        onError={handleImageError}
+        onLoad={handleImageLoad}
+      />
+    </div>
+  );
+};
 
 const DashboardProducts: React.FC = () => {
   const navigate = useNavigate();
@@ -519,24 +610,18 @@ const DashboardProducts: React.FC = () => {
                   return (
                     <Card key={product._id} className="overflow-hidden h-full hover:shadow-lg transition-shadow">
                       <div className={cn(
-                        "relative overflow-hidden bg-muted",
+                        "relative overflow-hidden",
                         isMobile ? "aspect-square" : "aspect-video"
                       )}>
-                        {primaryImage ? (
-                          <img
-                            src={primaryImage.url}
-                            alt={primaryImage.altText || product.produktnavn}
-                            className="object-cover w-full h-full cursor-pointer hover:scale-105 transition-transform duration-200"
-                            onClick={() => openImageGallery(product, 0)}
-                          />
-                        ) : (
-                          <div className="flex items-center justify-center w-full h-full bg-muted">
-                            <ImageIcon className={cn(
-                              "text-muted-foreground",
-                              isMobile ? "h-8 w-8" : "h-12 w-12"
-                            )} />
-                          </div>
-                        )}
+                        <ProductImage
+                          src={primaryImage?.url}
+                          alt={primaryImage?.altText || product.produktnavn}
+                          size="large"
+                          className={cn(
+                            isMobile ? "aspect-square" : "aspect-video"
+                          )}
+                          onClick={() => product.billeder.length > 0 && openImageGallery(product, 0)}
+                        />
                         <div className={cn(
                           "absolute flex gap-1",
                           isMobile ? "top-2 right-2" : "top-2 right-2"
@@ -658,19 +743,14 @@ const DashboardProducts: React.FC = () => {
                         return (
                           <div key={product._id} className="border rounded-lg p-3 bg-white">
                             <div className="flex items-start gap-3">
-                              <div className="h-12 w-12 rounded overflow-hidden bg-muted flex-shrink-0">
-                                {primaryImage ? (
-                                  <img
-                                    src={primaryImage.url}
-                                    alt={primaryImage.altText || product.produktnavn}
-                                    className="h-full w-full object-cover cursor-pointer"
-                                    onClick={() => openImageGallery(product, 0)}
-                                  />
-                                ) : (
-                                  <div className="flex items-center justify-center w-full h-full">
-                                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                                  </div>
-                                )}
+                              <div className="flex-shrink-0">
+                                <ProductImage
+                                  src={primaryImage?.url}
+                                  alt={primaryImage?.altText || product.produktnavn}
+                                  size="medium"
+                                  className="rounded"
+                                  onClick={() => product.billeder.length > 0 && openImageGallery(product, 0)}
+                                />
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-start justify-between mb-1">
@@ -746,20 +826,13 @@ const DashboardProducts: React.FC = () => {
                               <TableRow key={product._id}>
                                 <TableCell>
                                   <div className="flex items-center gap-3">
-                                    <div className="h-10 w-10 rounded overflow-hidden bg-muted flex-shrink-0">
-                                      {primaryImage ? (
-                                        <img
-                                          src={primaryImage.url}
-                                          alt={primaryImage.altText || product.produktnavn}
-                                          className="h-full w-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                                          onClick={() => openImageGallery(product, 0)}
-                                        />
-                                      ) : (
-                                        <div className="flex items-center justify-center w-full h-full">
-                                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                                        </div>
-                                      )}
-                                    </div>
+                                    <ProductImage
+                                      src={primaryImage?.url}
+                                      alt={primaryImage?.altText || product.produktnavn}
+                                      size="small"
+                                      className="rounded flex-shrink-0"
+                                      onClick={() => product.billeder.length > 0 && openImageGallery(product, 0)}
+                                    />
                                     <div className="min-w-0">
                                       <div className="font-medium truncate">{product.produktnavn}</div>
                                       <div className="text-sm text-muted-foreground truncate">
