@@ -757,7 +757,7 @@ const FAQ = () => {
 
             {/* FAQ Items */}
             <div className="space-y-4">
-              {filteredItems.filter(item => !item.featured).map((item) => (
+              {filteredItems.map((item) => (
                 <Card key={item.id} className="shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-0">
                     <button
