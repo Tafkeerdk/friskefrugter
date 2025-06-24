@@ -137,13 +137,19 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         loadProducts();
       }
       loadCustomers();
-      loadCategories();
       loadDiscountGroups();
       
       // Set initial step based on preselected product
       setCurrentStep(preselectedProduct ? 'customer' : 'product');
     }
   }, [isOpen, preselectedProduct]);
+
+  // Load categories only when needed for product step
+  useEffect(() => {
+    if (isOpen && currentStep === 'product' && categories.length === 0) {
+      loadCategories();
+    }
+  }, [isOpen, currentStep, categories.length]);
 
   const loadProducts = async () => {
     try {
@@ -171,8 +177,12 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     try {
       setLoadingCustomers(true);
       const response = await authService.getAllCustomers();
+      console.log('🔍 Raw customer response:', response);
       if (response.success) {
-        setCustomers(response.customers?.filter((c: Customer) => c.isActive) || []);
+        const customerList = response.customers?.filter((c: Customer) => c.isActive) || [];
+        console.log('🔍 Filtered customers:', customerList);
+        console.log('🔍 First customer structure:', customerList[0]);
+        setCustomers(customerList);
       }
     } catch (error) {
       console.error('Error loading customers:', error);
@@ -292,7 +302,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   };
 
   const getSelectedCustomer = () => {
-    return customers.find(c => c._id === offerData.customerId);
+    return customers.find(c => (c._id || (c as any).id) === offerData.customerId);
   };
 
   const filteredProducts = products.filter(product => {
@@ -598,23 +608,31 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 key={customer._id}
                 type="button"
                 onClick={() => {
-                  console.log('🎯 Customer clicked:', customer.companyName, 'ID:', customer._id);
+                  console.log('🎯 Customer clicked:', customer.companyName);
+                  console.log('🔍 Full customer object:', customer);
+                  console.log('🔍 Customer._id:', customer._id);
+                  console.log('🔍 Customer.id:', (customer as any).id);
                   console.log('🔍 Current customerId:', offerData.customerId);
+                  
+                  // Try both _id and id properties
+                  const customerId = customer._id || (customer as any).id;
+                  console.log('🔍 Resolved customerId:', customerId);
+                  
                   setOfferData(prev => {
-                    const newData = { ...prev, customerId: customer._id };
+                    const newData = { ...prev, customerId };
                     console.log('✅ New offer data:', newData);
                     return newData;
                   });
                 }}
                 className={cn(
                   "w-full p-4 text-left hover:bg-brand-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
-                  offerData.customerId === customer._id && "bg-brand-primary/10 border-l-4 border-brand-primary"
+                  offerData.customerId === (customer._id || (customer as any).id) && "bg-brand-primary/10 border-l-4 border-brand-primary"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     "p-3 rounded-lg",
-                    offerData.customerId === customer._id ? "bg-brand-primary text-white" : "bg-brand-gray-100 text-brand-gray-600"
+                    offerData.customerId === (customer._id || (customer as any).id) ? "bg-brand-primary text-white" : "bg-brand-gray-100 text-brand-gray-600"
                   )}>
                     <Building2 className="h-5 w-5" />
                   </div>
@@ -631,7 +649,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                       </Badge>
                     )}
                   </div>
-                  {offerData.customerId === customer._id && (
+                  {offerData.customerId === (customer._id || (customer as any).id) && (
                     <CheckCircle2 className="h-5 w-5 text-brand-primary" />
                   )}
                 </div>
