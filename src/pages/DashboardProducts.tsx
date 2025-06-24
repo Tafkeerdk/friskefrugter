@@ -117,19 +117,29 @@ const ProductImage: React.FC<{
   className?: string;
   onClick?: () => void;
   size?: 'small' | 'medium' | 'large';
-}> = ({ src, alt, className = '', onClick, size = 'medium' }) => {
+  onImageStateChange?: (hasValidImage: boolean) => void;
+}> = ({ src, alt, className = '', onClick, size = 'medium', onImageStateChange }) => {
   const [imageError, setImageError] = useState(false);
   const [imageLoading, setImageLoading] = useState(true);
 
   const handleImageError = () => {
     setImageError(true);
     setImageLoading(false);
+    onImageStateChange?.(false); // Image failed to load
   };
 
   const handleImageLoad = () => {
     setImageLoading(false);
     setImageError(false);
+    onImageStateChange?.(true); // Image loaded successfully
   };
+
+  // Notify parent when component mounts with no src or initial error state
+  React.useEffect(() => {
+    if (!src || imageError) {
+      onImageStateChange?.(false);
+    }
+  }, [src, imageError, onImageStateChange]);
 
   const sizeClasses = {
     small: 'h-10 w-10',
@@ -227,6 +237,17 @@ const DashboardProducts: React.FC = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
   const itemsPerPage = isMobile ? 12 : 20; // Fewer items on mobile for better performance
+
+  // Track image validity for each product
+  const [productImageStates, setProductImageStates] = useState<Record<string, boolean>>({});
+
+  // Helper function to update product image state
+  const updateProductImageState = (productId: string, hasValidImage: boolean) => {
+    setProductImageStates(prev => ({
+      ...prev,
+      [productId]: hasValidImage
+    }));
+  };
 
   // Load data on component mount and when filters change
   useEffect(() => {
@@ -623,14 +644,14 @@ const DashboardProducts: React.FC = () => {
                         )}
                         data-product-id={product._id}
                         onClick={() => {
-                          console.log('Card image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Primary image:', primaryImage);
+                          const imageIsValid = productImageStates[product._id];
+                          const hasImages = product.billeder.length > 0;
                           
-                          // Check if we have images AND the primary image has a valid URL that can load
-                          const hasValidImages = product.billeder.length > 0 && primaryImage?.url;
+                          console.log('Card image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Image valid:', imageIsValid, 'Has images:', hasImages);
                           
-                          // If no images or primary image failed to load (showing placeholder), go to edit
-                          if (!hasValidImages || !primaryImage?.url) {
-                            console.log('🔄 Navigating to edit page - no valid images');
+                          // If no images OR image failed to load, go to edit page
+                          if (!hasImages || imageIsValid === false) {
+                            console.log('🔄 Navigating to edit page - no images or image failed to load');
                             toast({
                               title: 'Åbner redigeringsside',
                               description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
@@ -638,22 +659,8 @@ const DashboardProducts: React.FC = () => {
                             });
                             navigate(`/admin/products/edit/${product._id}`);
                           } else {
-                            // Check if the image element is actually showing a placeholder
-                            const imageContainer = document.querySelector(`[data-product-id="${product._id}"] .product-image-container`);
-                            const isShowingPlaceholder = imageContainer?.querySelector('.placeholder-content');
-                            
-                            if (isShowingPlaceholder) {
-                              console.log('🔄 Navigating to edit page - placeholder detected');
-                              toast({
-                                title: 'Åbner redigeringsside',
-                                description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
-                                duration: 2000,
-                              });
-                              navigate(`/admin/products/edit/${product._id}`);
-                            } else {
-                              console.log('🖼️ Opening image gallery - valid image detected');
-                              openImageGallery(product, 0);
-                            }
+                            console.log('🖼️ Opening image gallery - valid image detected');
+                            openImageGallery(product, 0);
                           }
                         }}
                       >
@@ -664,6 +671,7 @@ const DashboardProducts: React.FC = () => {
                           className={cn(
                             isMobile ? "aspect-square" : "aspect-video"
                           )}
+                          onImageStateChange={(hasValidImage) => updateProductImageState(product._id, hasValidImage)}
                         />
                         <div className={cn(
                           "absolute flex gap-1",
@@ -796,14 +804,14 @@ const DashboardProducts: React.FC = () => {
                                 className="flex-shrink-0 cursor-pointer product-image-container"
                                 data-product-id={product._id}
                                 onClick={() => {
-                                  console.log('Mobile list image clicked:', product.produktnavn, 'Images:', product.billeder.length);
+                                  const imageIsValid = productImageStates[product._id];
+                                  const hasImages = product.billeder.length > 0;
                                   
-                                  // Check if we have images AND the primary image has a valid URL that can load
-                                  const hasValidImages = product.billeder.length > 0 && primaryImage?.url;
+                                  console.log('Mobile list image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Image valid:', imageIsValid, 'Has images:', hasImages);
                                   
-                                  // If no images or primary image failed to load (showing placeholder), go to edit
-                                  if (!hasValidImages || !primaryImage?.url) {
-                                    console.log('🔄 Mobile: Navigating to edit page - no valid images');
+                                  // If no images OR image failed to load, go to edit page
+                                  if (!hasImages || imageIsValid === false) {
+                                    console.log('🔄 Mobile: Navigating to edit page - no images or image failed to load');
                                     toast({
                                       title: 'Åbner redigeringsside',
                                       description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
@@ -811,22 +819,8 @@ const DashboardProducts: React.FC = () => {
                                     });
                                     navigate(`/admin/products/edit/${product._id}`);
                                   } else {
-                                    // Check if the image element is actually showing a placeholder
-                                    const imageContainer = document.querySelector(`[data-product-id="${product._id}"] .product-image-container`);
-                                    const isShowingPlaceholder = imageContainer?.querySelector('.placeholder-content');
-                                    
-                                    if (isShowingPlaceholder) {
-                                      console.log('🔄 Mobile: Navigating to edit page - placeholder detected');
-                                      toast({
-                                        title: 'Åbner redigeringsside',
-                                        description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
-                                        duration: 2000,
-                                      });
-                                      navigate(`/admin/products/edit/${product._id}`);
-                                    } else {
-                                      console.log('🖼️ Mobile: Opening image gallery - valid image detected');
-                                      openImageGallery(product, 0);
-                                    }
+                                    console.log('🖼️ Mobile: Opening image gallery - valid image detected');
+                                    openImageGallery(product, 0);
                                   }
                                 }}
                               >
@@ -835,6 +829,7 @@ const DashboardProducts: React.FC = () => {
                                   alt={primaryImage?.altText || product.produktnavn}
                                   size="medium"
                                   className="rounded"
+                                  onImageStateChange={(hasValidImage) => updateProductImageState(product._id, hasValidImage)}
                                 />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -915,14 +910,14 @@ const DashboardProducts: React.FC = () => {
                                       className="cursor-pointer product-image-container"
                                       data-product-id={product._id}
                                       onClick={() => {
-                                        console.log('Desktop table image clicked:', product.produktnavn, 'Images:', product.billeder.length);
+                                        const imageIsValid = productImageStates[product._id];
+                                        const hasImages = product.billeder.length > 0;
                                         
-                                        // Check if we have images AND the primary image has a valid URL that can load
-                                        const hasValidImages = product.billeder.length > 0 && primaryImage?.url;
+                                        console.log('Desktop table image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Image valid:', imageIsValid, 'Has images:', hasImages);
                                         
-                                        // If no images or primary image failed to load (showing placeholder), go to edit
-                                        if (!hasValidImages || !primaryImage?.url) {
-                                          console.log('🔄 Desktop: Navigating to edit page - no valid images');
+                                        // If no images OR image failed to load, go to edit page
+                                        if (!hasImages || imageIsValid === false) {
+                                          console.log('🔄 Desktop: Navigating to edit page - no images or image failed to load');
                                           toast({
                                             title: 'Åbner redigeringsside',
                                             description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
@@ -930,22 +925,8 @@ const DashboardProducts: React.FC = () => {
                                           });
                                           navigate(`/admin/products/edit/${product._id}`);
                                         } else {
-                                          // Check if the image element is actually showing a placeholder
-                                          const imageContainer = document.querySelector(`[data-product-id="${product._id}"] .product-image-container`);
-                                          const isShowingPlaceholder = imageContainer?.querySelector('.placeholder-content');
-                                          
-                                          if (isShowingPlaceholder) {
-                                            console.log('🔄 Desktop: Navigating to edit page - placeholder detected');
-                                            toast({
-                                              title: 'Åbner redigeringsside',
-                                              description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
-                                              duration: 2000,
-                                            });
-                                            navigate(`/admin/products/edit/${product._id}`);
-                                          } else {
-                                            console.log('🖼️ Desktop: Opening image gallery - valid image detected');
-                                            openImageGallery(product, 0);
-                                          }
+                                          console.log('🖼️ Desktop: Opening image gallery - valid image detected');
+                                          openImageGallery(product, 0);
                                         }
                                       }}
                                     >
@@ -954,6 +935,7 @@ const DashboardProducts: React.FC = () => {
                                         alt={primaryImage?.altText || product.produktnavn}
                                         size="small"
                                         className="rounded flex-shrink-0"
+                                        onImageStateChange={(hasValidImage) => updateProductImageState(product._id, hasValidImage)}
                                       />
                                     </div>
                                     <div className="min-w-0">
