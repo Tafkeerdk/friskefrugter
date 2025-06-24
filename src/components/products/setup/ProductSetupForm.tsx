@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/components/ui/use-toast';
@@ -30,7 +31,9 @@ import {
   ImageIcon,
   Star,
   Phone,
-  Calculator
+  Calculator,
+  Building2,
+  Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -50,6 +53,7 @@ import { VarenummerInput } from './components/VarenummerInput';
 import { CurrencyInput } from './components/CurrencyInput';
 import { RabatGruppePreview } from './components/RabatGruppePreview';
 import { api, productFormDataToFormData, handleApiError } from '@/lib/api';
+import { authService } from '@/lib/auth';
 
 // Units will be loaded dynamically from the API
 
@@ -60,6 +64,15 @@ interface Category {
   beskrivelse?: string;
   aktiv: boolean;
   productCount?: number;
+}
+
+// Customer interface for unique offers
+interface Customer {
+  _id: string;
+  companyName: string;
+  contactPersonName: string;
+  email: string;
+  isActive: boolean;
 }
 
 // Fixed DialogTrigger component with proper React hierarchy - 2024-12-31
@@ -131,6 +144,25 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [isCreatingUnitLoading, setIsCreatingUnitLoading] = useState(false);
   const [unitCreationStatus, setUnitCreationStatus] = useState<'idle' | 'creating' | 'success' | 'error'>('idle');
   const [unitCreationError, setUnitCreationError] = useState<string | null>(null);
+
+  // Unique Offers Integration States
+  const [showUniqueOfferDialog, setShowUniqueOfferDialog] = useState(false);
+  const [createdProduct, setCreatedProduct] = useState<any>(null);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [productSearchTerm, setProductSearchTerm] = useState('');
+  const [uniqueOfferForm, setUniqueOfferForm] = useState({
+    customerId: '',
+    productId: '',
+    fixedPrice: '',
+    description: '',
+    validFrom: new Date().toISOString().split('T')[0],
+    validTo: '',
+    isUnlimited: false
+  });
+  const [isCreatingUniqueOffer, setIsCreatingUniqueOffer] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(mode === 'edit' ? productEditSchema : productSetupSchema),
@@ -554,6 +586,17 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           description: `${data.produktnavn} blev ${mode === 'create' ? 'oprettet' : 'opdateret'} succesfuldt.`,
           duration: 5000,
         });
+        
+        // Show unique offer dialog only for new products (create mode)
+        if (mode === 'create' && response.data) {
+          setCreatedProduct(response.data);
+          setShowUniqueOfferDialog(true);
+          await Promise.all([
+            loadCustomersForUniqueOffer(),
+            loadProductsForUniqueOffer()
+          ]);
+        }
+        
         onSubmit(data); // Call the parent callback
       } else {
         throw new Error(response.error || 'Unknown error');
@@ -710,6 +753,130 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
       {current}/{max}
     </div>
   );
+
+  // Load customers for unique offer creation
+  const loadCustomersForUniqueOffer = async () => {
+    try {
+      setLoadingCustomers(true);
+      const response = await authService.getAllCustomers();
+      
+      if (response.success) {
+        const activeCustomers = response.customers?.filter((c: Customer) => c.isActive) || [];
+        setCustomers(activeCustomers);
+      } else {
+        console.error('Failed to load customers:', response.message);
+      }
+    } catch (error) {
+      console.error('Error loading customers:', error);
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  // Load products for unique offer creation
+  const loadProductsForUniqueOffer = async () => {
+    try {
+      setLoadingProducts(true);
+      const response = await api.getProducts();
+      
+      if (response.success && Array.isArray(response.data)) {
+        const activeProducts = response.data.filter((p: any) => p.aktiv) || [];
+        setProducts(activeProducts);
+      } else {
+        console.error('Failed to load products:', response.error || 'Unknown error');
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+    } finally {
+      setLoadingProducts(false);
+    }
+  };
+
+  // Handle unique offer creation
+  const handleCreateUniqueOffer = async () => {
+    // Determine which product to use - created product or selected product
+    const productId = createdProduct?._id || createdProduct?.id || uniqueOfferForm.productId;
+    
+    if (!productId || !uniqueOfferForm.customerId || !uniqueOfferForm.fixedPrice) {
+      toast({
+        title: 'Manglende felter',
+        description: 'Vælg produkt, kunde og indtast pris for at oprette tilbud.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const price = parseFloat(uniqueOfferForm.fixedPrice);
+    if (isNaN(price) || price <= 0) {
+      toast({
+        title: 'Ugyldig pris',
+        description: 'Prisen skal være et positivt tal.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsCreatingUniqueOffer(true);
+      
+      const offerData = {
+        productId,
+        customerId: uniqueOfferForm.customerId,
+        fixedPrice: price,
+        isUnlimited: uniqueOfferForm.isUnlimited,
+        ...(uniqueOfferForm.description && { description: uniqueOfferForm.description }),
+        ...(uniqueOfferForm.validFrom && { validFrom: uniqueOfferForm.validFrom }),
+        ...(!uniqueOfferForm.isUnlimited && uniqueOfferForm.validTo && { validTo: uniqueOfferForm.validTo })
+      };
+      
+      const response = await authService.createUniqueOffer(offerData);
+      
+      if (response.success) {
+        toast({
+          title: 'Unikt tilbud oprettet',
+          description: 'Tilbuddet er oprettet succesfuldt og er nu aktivt.',
+          variant: 'default'
+        });
+        
+        setShowUniqueOfferDialog(false);
+        resetUniqueOfferForm();
+      } else {
+        toast({
+          title: 'Fejl',
+          description: response.message || 'Kunne ikke oprette tilbud.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Error creating unique offer:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl. Prøv igen.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsCreatingUniqueOffer(false);
+    }
+  };
+
+  // Reset unique offer form
+  const resetUniqueOfferForm = () => {
+    setUniqueOfferForm({
+      customerId: '',
+      productId: '',
+      fixedPrice: '',
+      description: '',
+      validFrom: new Date().toISOString().split('T')[0],
+      validTo: '',
+      isUnlimited: false
+    });
+  };
+
+  // Skip unique offer creation
+  const handleSkipUniqueOffer = () => {
+    setShowUniqueOfferDialog(false);
+    resetUniqueOfferForm();
+  };
 
   return (
     <Dialog open={!!imageToPreview} onOpenChange={(isOpen) => !isOpen && setImageToPreview(null)}>
@@ -1802,6 +1969,32 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
               </div>
               
               <div className="flex items-center gap-3">
+                {/* Create Unique Offer button for edit mode */}
+                {mode === 'edit' && productId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={async () => {
+                      const productData = form.getValues();
+                      setCreatedProduct({ 
+                        _id: productId, 
+                        produktnavn: productData.produktnavn,
+                        ...productData 
+                      });
+                      setShowUniqueOfferDialog(true);
+                      await Promise.all([
+                        loadCustomersForUniqueOffer(),
+                        loadProductsForUniqueOffer()
+                      ]);
+                    }}
+                    disabled={isLoading}
+                    className="text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary"
+                  >
+                    <Star className="h-4 w-4 mr-2" />
+                    Opret Unikt Tilbud
+                  </Button>
+                )}
+                
                 <Button
                   type="button"
                   variant="outline"
@@ -1868,6 +2061,227 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           </DialogFooter>
         </DialogContent>
       </div>
+
+      {/* Unique Offer Creation Dialog */}
+      <Dialog open={showUniqueOfferDialog} onOpenChange={setShowUniqueOfferDialog}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Star className="h-5 w-5 text-brand-primary" />
+              Opret Unikt Tilbud
+            </DialogTitle>
+            <DialogDescription>
+              {createdProduct ? (
+                <>Produktet "{createdProduct?.produktnavn}" er oprettet succesfuldt! Vil du oprette et specialtilbud for en specifik kunde?</>
+              ) : (
+                <>Opret et specialtilbud for en specifik kunde på et specifikt produkt.</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Product Selection - only show if no created product */}
+            {!createdProduct && (
+              <div>
+                <Label htmlFor="unique-product">Produkt *</Label>
+                <div className="space-y-2">
+                  {/* Product Search */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="Søg efter produktnavn..."
+                      value={productSearchTerm}
+                      onChange={(e) => setProductSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  {/* Product Select */}
+                  <Select 
+                    value={uniqueOfferForm.productId} 
+                    onValueChange={(value) => setUniqueOfferForm(prev => ({ ...prev, productId: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Vælg produkt" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      {loadingProducts ? (
+                        <SelectItem value="loading" disabled>
+                          Indlæser produkter...
+                        </SelectItem>
+                      ) : (
+                        (() => {
+                          // Filter products based on search term
+                          const filteredProducts = products.filter(product => 
+                            product.produktnavn.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                            product.varenummer?.toLowerCase().includes(productSearchTerm.toLowerCase())
+                          );
+                          
+                          // Group products by category
+                          const groupedProducts = filteredProducts.reduce((acc: any, product: any) => {
+                            const categoryName = product.kategori?.navn || 'Ingen kategori';
+                            if (!acc[categoryName]) {
+                              acc[categoryName] = [];
+                            }
+                            acc[categoryName].push(product);
+                            return acc;
+                          }, {});
+                          
+                          return Object.entries(groupedProducts).map(([categoryName, categoryProducts]: [string, any]) => (
+                            <div key={categoryName}>
+                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-700 bg-gray-100 sticky top-0">
+                                {categoryName}
+                              </div>
+                              {categoryProducts.map((product: any) => (
+                                <SelectItem key={product._id} value={product._id}>
+                                  <div className="flex items-center gap-2 w-full">
+                                    <Package className="h-4 w-4 flex-shrink-0" />
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-medium truncate">{product.produktnavn}</div>
+                                      <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                        <span>{product.varenummer}</span>
+                                        <span>•</span>
+                                        <span>{new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(product.basispris)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </div>
+                          ));
+                        })()
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+            
+            {/* Customer Selection */}
+            <div>
+              <Label htmlFor="unique-customer">Kunde *</Label>
+              <Select 
+                value={uniqueOfferForm.customerId} 
+                onValueChange={(value) => setUniqueOfferForm(prev => ({ ...prev, customerId: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Vælg kunde" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px]">
+                  {loadingCustomers ? (
+                    <SelectItem value="loading" disabled>
+                      Indlæser kunder...
+                    </SelectItem>
+                  ) : (
+                    customers.map(customer => (
+                      <SelectItem key={customer._id} value={customer._id}>
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          <div>
+                            <div className="font-medium">{customer.companyName}</div>
+                            <div className="text-xs text-muted-foreground">{customer.contactPersonName}</div>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Price */}
+            <div>
+              <Label htmlFor="unique-price">Fast Pris (DKK) *</Label>
+              <Input
+                id="unique-price"
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="0.00"
+                value={uniqueOfferForm.fixedPrice}
+                onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, fixedPrice: e.target.value }))}
+              />
+            </div>
+            
+            {/* Description */}
+            <div>
+              <Label htmlFor="unique-description">Beskrivelse</Label>
+              <Textarea
+                id="unique-description"
+                placeholder="Valgfri beskrivelse af tilbuddet"
+                value={uniqueOfferForm.description}
+                onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, description: e.target.value }))}
+                rows={2}
+              />
+            </div>
+            
+            {/* Validity Period */}
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="unique-validFrom">Gyldig fra</Label>
+                <Input
+                  id="unique-validFrom"
+                  type="date"
+                  value={uniqueOfferForm.validFrom}
+                  onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, validFrom: e.target.value }))}
+                />
+              </div>
+              
+              {/* Unlimited Toggle */}
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="unlimited-toggle"
+                  checked={uniqueOfferForm.isUnlimited}
+                  onCheckedChange={(checked) => setUniqueOfferForm(prev => ({ 
+                    ...prev, 
+                    isUnlimited: checked,
+                    validTo: checked ? '' : prev.validTo
+                  }))}
+                />
+                <Label htmlFor="unlimited-toggle" className="text-sm font-medium">
+                  Tidsubegrænset tilbud
+                </Label>
+              </div>
+              
+              {/* Valid To - only show if not unlimited */}
+              {!uniqueOfferForm.isUnlimited && (
+                <div>
+                  <Label htmlFor="unique-validTo">Gyldig til</Label>
+                  <Input
+                    id="unique-validTo"
+                    type="date"
+                    value={uniqueOfferForm.validTo}
+                    onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, validTo: e.target.value }))}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <DialogFooter className="flex gap-2 mt-6">
+            <Button
+              variant="outline"
+              onClick={handleSkipUniqueOffer}
+              disabled={isCreatingUniqueOffer}
+              className="flex-1"
+            >
+              {createdProduct ? 'Spring over' : 'Annuller'}
+            </Button>
+            <Button
+              onClick={handleCreateUniqueOffer}
+              disabled={
+                isCreatingUniqueOffer || 
+                !uniqueOfferForm.customerId || 
+                !uniqueOfferForm.fixedPrice ||
+                (!createdProduct && !uniqueOfferForm.productId)
+              }
+              className="btn-brand-primary flex-1"
+            >
+              {isCreatingUniqueOffer ? 'Opretter...' : 'Opret Tilbud'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }; 
