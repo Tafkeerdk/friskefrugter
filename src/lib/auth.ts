@@ -1312,6 +1312,20 @@ export const authService = {
     return response.json();
   },
 
+  async getDiscountGroupCustomers(discountGroupId: string): Promise<{ success: boolean; customers: any[]; message?: string }> {
+    const response = await apiClient.get(`/.netlify/functions/admin-discount-groups?action=customers&discountGroupId=${discountGroupId}`);
+    return response.json();
+  },
+
+  async removeCustomerFromDiscountGroup(customerId: string, discountGroupId: string): Promise<{ success: boolean; message: string; customer?: any }> {
+    const response = await apiClient.put('/.netlify/functions/admin-discount-groups', { 
+      action: 'removeCustomer',
+      customerId,
+      discountGroupId
+    });
+    return response.json();
+  },
+
   // Expose apiClient for direct use when needed
   apiClient
 };

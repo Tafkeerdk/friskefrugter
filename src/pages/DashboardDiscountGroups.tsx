@@ -332,6 +332,11 @@ const DashboardDiscountGroups: React.FC = () => {
     }
 
     try {
+      console.log(`🔄 Deleting discount group: ${group.name} (${group.id})`);
+      
+      // Optimistic update - remove from UI immediately
+      setDiscountGroups(prev => prev.filter(g => g.id !== group.id));
+      
       const response = await authService.deleteDiscountGroup(group.id);
 
       if (response.success) {
@@ -340,8 +345,16 @@ const DashboardDiscountGroups: React.FC = () => {
           description: `${group.name} er blevet slettet. ${group.customerCount > 0 ? 'Kunder er flyttet til Standard gruppen.' : ''}`,
         });
         
-        await fetchDiscountGroups();
+        console.log(`✅ Successfully deleted discount group: ${group.name}`);
+        
+        // Refresh data to ensure consistency and get updated customer counts
+        await Promise.all([
+          fetchDiscountGroups(),
+          loadProductStatistics()
+        ]);
       } else {
+        // Revert optimistic update on failure
+        await fetchDiscountGroups();
         toast({
           title: 'Fejl',
           description: response.message || 'Kunne ikke slette rabatgruppe',
@@ -349,12 +362,14 @@ const DashboardDiscountGroups: React.FC = () => {
         });
       }
     } catch (err) {
+      console.error('❌ Error deleting discount group:', err);
+      // Revert optimistic update on error
+      await fetchDiscountGroups();
       toast({
         title: 'Fejl',
         description: 'Der opstod en fejl ved sletning af rabatgruppe',
         variant: 'destructive',
       });
-      console.error('Error deleting discount group:', err);
     }
   };
 
@@ -391,30 +406,32 @@ const DashboardDiscountGroups: React.FC = () => {
   // Nielsen's Heuristic #1: Visibility of System Status
   const loadProductStatistics = async () => {
     try {
-      // Get all active products and discount eligible products separately
-      const [allProductsResponse, eligibleProductsResponse] = await Promise.all([
-        api.getProducts({ limit: 1000, aktiv: true }),
+      console.log('🔄 Loading product statistics...');
+      
+      // Use the new statistics endpoint for accurate counts
+      const [statisticsResponse, eligibleProductsResponse] = await Promise.all([
+        api.getProductStatistics(),
         api.getDiscountEligibleProducts({ limit: 1000, activeOnly: true })
       ]);
 
-      if (allProductsResponse.success && allProductsResponse.data) {
-        const allProducts = (allProductsResponse.data as any).products || [];
-        setTotalProducts(allProducts.length);
+      if (statisticsResponse.success && statisticsResponse.data) {
+        const stats = statisticsResponse.data as any;
+        console.log('📊 Product statistics from API:', stats);
         
-        // Count products with sale price (førpris) - these are NOT affected by discount groups
-        const withSalePrice = allProducts.filter((product: Product) => 
-          product.førpris && product.førpris > 0
-        ).length;
-        setProductsWithSalePrice(withSalePrice);
+        setTotalProducts(stats.totalActiveProducts);
+        setProductsWithSalePrice(stats.productsWithSalePrice); // Products with førpris (fast udsalgspris)
+        
+        console.log(`✅ Statistics loaded: ${stats.totalActiveProducts} total, ${stats.productsWithSalePrice} with sale price, ${stats.discountEligibleProducts} discount eligible`);
       }
 
       if (eligibleProductsResponse.success && eligibleProductsResponse.data) {
         // These are products that CAN be affected by discount groups (no førpris)
         const eligibleProducts = (eligibleProductsResponse.data as any).products || [];
         setDiscountEligibleProducts(eligibleProducts);
+        console.log(`📦 Loaded ${eligibleProducts.length} discount eligible products`);
       }
     } catch (error) {
-      console.error('Error loading product statistics:', error);
+      console.error('❌ Error loading product statistics:', error);
     }
   };
 
@@ -443,33 +460,74 @@ const DashboardDiscountGroups: React.FC = () => {
     setLoadingCustomers(true);
     
     try {
-      // For now, we'll show a placeholder since the backend endpoint was removed
-      // You can implement this when the customer management API is ready
-      setGroupCustomers([
-        {
-          id: '1',
-          companyName: 'Eksempel Firma A/S',
-          contactPersonName: 'John Doe',
-          email: 'john@eksempel.dk',
-          phone: '+45 12 34 56 78',
-          cvrNumber: '12345678',
-          createdAt: new Date().toISOString()
-        }
-      ]);
+      console.log(`🔄 Loading customers for discount group: ${group.name} (${group.id})`);
       
-      toast({
-        title: 'Kunde funktionalitet',
-        description: 'Kunde management kommer snart tilbage',
-      });
+      const response = await authService.getDiscountGroupCustomers(group.id);
+      
+      if (response.success) {
+        setGroupCustomers(response.customers || []);
+        console.log(`✅ Loaded ${response.customers?.length || 0} customers for group ${group.name}`);
+      } else {
+        console.error('❌ Failed to load customers:', response.message);
+        toast({
+          title: 'Fejl',
+          description: response.message || 'Kunne ikke hente kunder for denne rabatgruppe',
+          variant: 'destructive',
+        });
+        setGroupCustomers([]);
+      }
     } catch (error) {
-      console.error('Error loading customers:', error);
+      console.error('❌ Error loading customers:', error);
       toast({
         title: 'Fejl',
         description: 'Der opstod en fejl ved hentning af kunder',
         variant: 'destructive',
       });
+      setGroupCustomers([]);
     } finally {
       setLoadingCustomers(false);
+    }
+  };
+
+  const handleRemoveCustomerFromGroup = async (customerId: string, customerName: string) => {
+    if (!selectedGroupForCustomers) return;
+
+    try {
+      console.log(`🔄 Removing customer ${customerName} from group ${selectedGroupForCustomers.name}`);
+      
+      const response = await authService.removeCustomerFromDiscountGroup(customerId, selectedGroupForCustomers.id);
+      
+      if (response.success) {
+        // Update local state immediately
+        setGroupCustomers(prev => prev.filter(customer => customer.id !== customerId));
+        
+        // Update the discount group customer count
+        setDiscountGroups(prev => prev.map(group => 
+          group.id === selectedGroupForCustomers.id 
+            ? { ...group, customerCount: Math.max(0, group.customerCount - 1) }
+            : group
+        ));
+        
+        toast({
+          title: 'Kunde flyttet',
+          description: `${customerName} er flyttet til Standard rabatgruppen`,
+        });
+        
+        console.log(`✅ Customer ${customerName} removed from group ${selectedGroupForCustomers.name}`);
+      } else {
+        toast({
+          title: 'Fejl',
+          description: response.message || 'Kunne ikke fjerne kunde fra rabatgruppe',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error removing customer from group:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl ved fjernelse af kunde',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -1189,6 +1247,44 @@ const DashboardDiscountGroups: React.FC = () => {
                             <div className="text-xs text-gray-500">
                               Tilmeldt: {new Date(customer.createdAt).toLocaleDateString('da-DK')}
                             </div>
+                          </div>
+                          
+                          {/* Customer Actions */}
+                          <div className="flex-shrink-0 ml-3">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 min-h-[36px]"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Fjern
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="mx-4">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Fjern kunde fra rabatgruppe?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Er du sikker på at du vil fjerne "{customer.companyName}" fra rabatgruppen "{selectedGroupForCustomers?.name}"?
+                                    <span className="block mt-2 text-blue-600 font-medium">
+                                      Kunden vil blive flyttet til Standard rabatgruppen (0% rabat).
+                                    </span>
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="flex-col sm:flex-row gap-3 sm:gap-2">
+                                  <AlertDialogCancel className="w-full sm:w-auto min-h-[44px]">
+                                    Annuller
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleRemoveCustomerFromGroup(customer.id, customer.companyName)}
+                                    className="w-full sm:w-auto min-h-[44px] bg-red-600 hover:bg-red-700"
+                                  >
+                                    Fjern kunde
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </div>
                       </div>

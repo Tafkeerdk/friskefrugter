@@ -707,6 +707,12 @@ class ApiClient {
     const endpoint = this.getEndpoint(`/api/products?${searchParams.toString()}`);
     return this.request(endpoint);
   }
+
+  // Get product statistics for discount groups
+  async getProductStatistics() {
+    const endpoint = this.getEndpoint('/api/products/statistics');
+    return this.request(endpoint);
+  }
 }
 
 // Create and export API client instance
