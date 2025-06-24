@@ -126,6 +126,11 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [imageToPreview, setImageToPreview] = useState<ProductImage | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false); // Prevent multiple submissions
   const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]); // Track deleted existing images
+  
+  // Nielsen's Heuristics: System Status and User Control for Unit Creation
+  const [isCreatingUnitLoading, setIsCreatingUnitLoading] = useState(false);
+  const [unitCreationStatus, setUnitCreationStatus] = useState<'idle' | 'creating' | 'success' | 'error'>('idle');
+  const [unitCreationError, setUnitCreationError] = useState<string | null>(null);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(mode === 'edit' ? productEditSchema : productSetupSchema),
@@ -615,53 +620,83 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   };
 
   // Handle unit creation
+  // Nielsen's Heuristic #1: Visibility of System Status & #3: User Control and Freedom
   const handleCreateUnit = async () => {
-    if (newUnitName.trim() && newUnitValue.trim()) {
-      try {
-        console.log('🔄 Creating unit:', { value: newUnitValue.trim(), label: newUnitName.trim() });
+    // Prevent multiple submissions (Heuristic #3: User Control and Freedom)
+    if (isCreatingUnitLoading) {
+      toast({
+        title: 'Vent venligst',
+        description: 'Enheden bliver allerede oprettet...',
+        variant: 'default',
+        duration: 2000,
+      });
+      return;
+    }
+
+    if (!newUnitName.trim() || !newUnitValue.trim()) {
+      setUnitCreationError('Både kort værdi og fuldt navn skal udfyldes');
+      return;
+    }
+
+    try {
+      // Heuristic #1: Visibility of System Status - Show loading state
+      setIsCreatingUnitLoading(true);
+      setUnitCreationStatus('creating');
+      setUnitCreationError(null);
+      
+      console.log('🔄 Creating unit:', { value: newUnitValue.trim(), label: newUnitName.trim() });
+      
+      const response = await api.createUnit({
+        value: newUnitValue.trim(),
+        label: newUnitName.trim(),
+        description: `Brugerdefineret enhed: ${newUnitName.trim()}`,
+        sortOrder: 999 // Put custom units at the end
+      });
+      
+      console.log('✅ Unit creation response:', response);
+      
+      if (response.success && response.data) {
+        const newUnit = response.data as Unit;
+        console.log('✅ New unit created:', newUnit);
         
-        const response = await api.createUnit({
-          value: newUnitValue.trim(),
-          label: newUnitName.trim(),
-          description: `Brugerdefineret enhed: ${newUnitName.trim()}`,
-          sortOrder: 999 // Put custom units at the end
-        });
+        // Heuristic #1: Show success status
+        setUnitCreationStatus('success');
         
-        console.log('✅ Unit creation response:', response);
+        setUnits([...units, newUnit]);
+        setValue('enhed', newUnit._id);
+        setNewUnitName('');
+        setNewUnitValue('');
         
-        if (response.success && response.data) {
-          const newUnit = response.data as Unit;
-          console.log('✅ New unit created:', newUnit);
-          
-          setUnits([...units, newUnit]);
-          setValue('enhed', newUnit._id);
-          setNewUnitName('');
-          setNewUnitValue('');
+        // Brief success indication before closing (Nielsen's Heuristic #1: Feedback)
+        setTimeout(() => {
           setIsCreatingUnit(false);
-          
-          toast({
-            title: 'Enhed oprettet',
-            description: `Enheden "${newUnit.label}" er blevet oprettet.`,
-            duration: 3000,
-          });
-        } else {
-          console.error('❌ Unit creation failed - no data in response:', response);
-          toast({
-            title: 'Fejl',
-            description: 'Enheden blev ikke oprettet korrekt. Prøv igen.',
-            variant: 'destructive',
-            duration: 3000,
-          });
-        }
-      } catch (error) {
-        console.error('❌ Unit creation error:', error);
+          setUnitCreationStatus('idle');
+          setIsCreatingUnitLoading(false);
+        }, 1500);
+        
         toast({
-          title: 'Fejl',
-          description: 'Kunne ikke oprette enheden. Prøv igen.',
-          variant: 'destructive',
+          title: '✅ Enhed oprettet',
+          description: `Enheden "${newUnit.label}" er blevet oprettet succesfuldt.`,
           duration: 3000,
         });
+      } else {
+        throw new Error(response.error || 'Enheden blev ikke oprettet korrekt');
       }
+    } catch (error: any) {
+      console.error('❌ Unit creation error:', error);
+      
+      // Heuristic #1: Show error status with helpful message
+      setUnitCreationStatus('error');
+      setUnitCreationError(error.message || 'Kunne ikke oprette enheden. Prøv igen.');
+      
+      toast({
+        title: '❌ Fejl ved oprettelse',
+        description: error.message || 'Kunne ikke oprette enheden. Prøv igen.',
+        variant: 'destructive',
+        duration: 4000,
+      });
+    } finally {
+      setIsCreatingUnitLoading(false);
     }
   };
 
@@ -887,25 +922,70 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                           </SelectContent>
                         </Select>
 
-                        {/* Create new unit */}
+                        {/* Create new unit - Nielsen's Heuristics Implementation */}
                         {isCreatingUnit && (
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-3">
+                          <div className={cn(
+                            "border rounded-lg p-4 mt-3 transition-all duration-300",
+                            unitCreationStatus === 'creating' && "bg-blue-50 border-blue-200",
+                            unitCreationStatus === 'success' && "bg-green-50 border-green-200",
+                            unitCreationStatus === 'error' && "bg-red-50 border-red-200",
+                            unitCreationStatus === 'idle' && "bg-green-50 border-green-200"
+                          )}>
                             <div className="flex items-center gap-2 mb-3">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span className="text-sm font-medium text-green-700">
-                                Opret ny enhed
+                              {/* Nielsen's Heuristic #1: System Status Indicator */}
+                              {unitCreationStatus === 'creating' && (
+                                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                              )}
+                              {unitCreationStatus === 'success' && (
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              )}
+                              {unitCreationStatus === 'error' && (
+                                <AlertTriangle className="w-4 h-4 text-red-600" />
+                              )}
+                              {unitCreationStatus === 'idle' && (
+                                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              )}
+                              
+                              <span className={cn(
+                                "text-sm font-medium",
+                                unitCreationStatus === 'creating' && "text-blue-700",
+                                unitCreationStatus === 'success' && "text-green-700",
+                                unitCreationStatus === 'error' && "text-red-700",
+                                unitCreationStatus === 'idle' && "text-green-700"
+                              )}>
+                                {unitCreationStatus === 'creating' && "Opretter enhed..."}
+                                {unitCreationStatus === 'success' && "✅ Enhed oprettet succesfuldt!"}
+                                {unitCreationStatus === 'error' && "❌ Fejl ved oprettelse"}
+                                {unitCreationStatus === 'idle' && "Opret ny enhed"}
                               </span>
                             </div>
                             <div className="space-y-3">
+                              {/* Nielsen's Heuristic #9: Error Recognition and Recovery */}
+                              {unitCreationError && (
+                                <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                                  <div className="flex items-center gap-2">
+                                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                                    <span className="text-sm font-medium text-red-800">Fejl</span>
+                                  </div>
+                                  <p className="text-sm text-red-700 mt-1">{unitCreationError}</p>
+                                  <p className="text-xs text-red-600 mt-2">
+                                    💡 <strong>Løsning:</strong> Kontroller at begge felter er udfyldt korrekt og prøv igen.
+                                  </p>
+                                </div>
+                              )}
+                              
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <Input
                                   placeholder="Kort værdi (f.eks. ml, cl, dl)"
                                   value={newUnitValue}
-                                  onChange={(e) => setNewUnitValue(e.target.value.toLowerCase())}
+                                  onChange={(e) => {
+                                    setNewUnitValue(e.target.value.toLowerCase());
+                                    if (unitCreationError) setUnitCreationError(null); // Clear error on change
+                                  }}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
-                                      if (newUnitName.trim() && newUnitValue.trim()) {
+                                      if (newUnitName.trim() && newUnitValue.trim() && !isCreatingUnitLoading) {
                                         handleCreateUnit();
                                       }
                                     }
@@ -913,19 +993,28 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                       setIsCreatingUnit(false);
                                       setNewUnitName('');
                                       setNewUnitValue('');
+                                      setUnitCreationError(null);
+                                      setUnitCreationStatus('idle');
                                     }
                                   }}
-                                  className="flex-1"
+                                  className={cn(
+                                    "flex-1",
+                                    unitCreationError && "border-red-500 focus:border-red-500"
+                                  )}
                                   maxLength={10}
+                                  disabled={isCreatingUnitLoading || unitCreationStatus === 'success'}
                                 />
                                 <Input
                                   placeholder="Fuldt navn (f.eks. Milliliter (ml))"
                                   value={newUnitName}
-                                  onChange={(e) => setNewUnitName(e.target.value)}
+                                  onChange={(e) => {
+                                    setNewUnitName(e.target.value);
+                                    if (unitCreationError) setUnitCreationError(null); // Clear error on change
+                                  }}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                       e.preventDefault();
-                                      if (newUnitName.trim() && newUnitValue.trim()) {
+                                      if (newUnitName.trim() && newUnitValue.trim() && !isCreatingUnitLoading) {
                                         handleCreateUnit();
                                       }
                                     }
@@ -933,21 +1022,50 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                       setIsCreatingUnit(false);
                                       setNewUnitName('');
                                       setNewUnitValue('');
+                                      setUnitCreationError(null);
+                                      setUnitCreationStatus('idle');
                                     }
                                   }}
-                                  className="flex-1"
+                                  className={cn(
+                                    "flex-1",
+                                    unitCreationError && "border-red-500 focus:border-red-500"
+                                  )}
                                   maxLength={50}
+                                  disabled={isCreatingUnitLoading || unitCreationStatus === 'success'}
                                 />
                               </div>
+                              {/* Nielsen's Heuristic #3: User Control and Freedom - Clear Actions */}
                               <div className="flex gap-2">
                                 <Button
                                   type="button"
                                   size="sm"
                                   onClick={handleCreateUnit}
-                                  disabled={!newUnitName.trim() || !newUnitValue.trim()}
-                                  className="bg-green-600 hover:bg-green-700"
+                                  disabled={
+                                    !newUnitName.trim() || 
+                                    !newUnitValue.trim() || 
+                                    isCreatingUnitLoading || 
+                                    unitCreationStatus === 'success'
+                                  }
+                                  className={cn(
+                                    "min-w-[100px] transition-all duration-200",
+                                    unitCreationStatus === 'success' 
+                                      ? "bg-green-600 hover:bg-green-700" 
+                                      : "bg-brand-primary hover:bg-brand-primary-hover"
+                                  )}
                                 >
-                                  Opret enhed
+                                  {isCreatingUnitLoading ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin" />
+                                      <span>Opretter...</span>
+                                    </div>
+                                  ) : unitCreationStatus === 'success' ? (
+                                    <div className="flex items-center gap-2">
+                                      <CheckCircle2 className="w-3 h-3" />
+                                      <span>Oprettet!</span>
+                                    </div>
+                                  ) : (
+                                    'Opret enhed'
+                                  )}
                                 </Button>
                                 <Button
                                   type="button"
@@ -957,9 +1075,13 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                     setIsCreatingUnit(false);
                                     setNewUnitName('');
                                     setNewUnitValue('');
+                                    setUnitCreationError(null);
+                                    setUnitCreationStatus('idle');
                                   }}
+                                  disabled={isCreatingUnitLoading}
+                                  className="min-w-[80px]"
                                 >
-                                  Annuller
+                                  {isCreatingUnitLoading ? 'Vent...' : 'Annuller'}
                                 </Button>
                               </div>
                             </div>
@@ -967,10 +1089,33 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         )}
 
                         <FormDescription>
-                          {isCreatingUnit 
-                            ? "Indtast kort værdi (f.eks. ml) og fuldt navn (f.eks. Milliliter (ml))" 
-                            : "Vælg salgsenheden for produktet eller opret en ny"
-                          }
+                          {isCreatingUnit ? (
+                            <div className="space-y-1">
+                              {unitCreationStatus === 'idle' && (
+                                <span>Indtast kort værdi (f.eks. ml) og fuldt navn (f.eks. Milliliter (ml))</span>
+                              )}
+                              {unitCreationStatus === 'creating' && (
+                                <div className="flex items-center gap-2 text-blue-600">
+                                  <div className="w-3 h-3 border border-blue-500 border-t-transparent rounded-full animate-spin" />
+                                  <span>Opretter enheden i systemet...</span>
+                                </div>
+                              )}
+                              {unitCreationStatus === 'success' && (
+                                <div className="flex items-center gap-2 text-green-600">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>Enheden blev oprettet og er klar til brug!</span>
+                                </div>
+                              )}
+                              {unitCreationStatus === 'error' && (
+                                <div className="flex items-center gap-2 text-red-600">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  <span>Der opstod en fejl. Prøv venligst igen.</span>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            "Vælg salgsenheden for produktet eller opret en ny"
+                          )}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
