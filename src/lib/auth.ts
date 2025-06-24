@@ -1313,24 +1313,7 @@ export const authService = {
   },
 
   // Expose apiClient for direct use when needed
-  apiClient,
-
-  async getDiscountGroupCustomers(discountGroupId: string): Promise<{ success: boolean; discountGroup?: any; customers?: any[]; message?: string }> {
-    const response = await apiClient.get(`/.netlify/functions/admin-discount-groups?discountGroupId=${discountGroupId}`);
-    return response.json();
-  },
-
-  async removeCustomerFromDiscountGroup(customerId: string): Promise<{ success: boolean; message: string }> {
-    // Move customer to Standard group (0% discount)
-    const standardGroupResponse = await this.getDiscountGroups();
-    if (standardGroupResponse.success) {
-      const standardGroup = standardGroupResponse.discountGroups?.find((g: any) => g.name === 'Standard' && g.discountPercentage === 0);
-      if (standardGroup) {
-        return this.updateCustomerDiscountGroup(customerId, standardGroup.id);
-      }
-    }
-    throw new Error('Standard rabatgruppe ikke fundet');
-  }
+  apiClient
 };
 
 // Utility functions

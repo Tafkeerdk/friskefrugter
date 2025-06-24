@@ -1188,17 +1188,7 @@ const DashboardDiscountGroups: React.FC = () => {
                 </div>
                 
                 {/* Summary */}
-                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <span className="text-blue-800 font-medium">📊 Total kunder i gruppen:</span>
-                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
-                      {groupCustomers.length}
-                    </span>
-                  </div>
-                  <p className="text-xs text-blue-700 mt-2">
-                    💡 Kunde management funktionalitet kommer snart tilbage med fuld funktionalitet.
-                  </p>
-                </div>
+
               </div>
             ) : (
               <div className="text-center py-8">
