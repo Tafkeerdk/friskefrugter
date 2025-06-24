@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, Phone, MapPin, CheckCircle, ArrowRight } from "lucide-react";
+import { Mail, Phone, MapPin, CheckCircle, ArrowRight, User } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 // Cache-busting: Force deployment with Multi Grønt branding - v2.0
 
@@ -46,9 +47,36 @@ const Contact = () => {
           <div className="content-width">
             <div className="text-center mb-10">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Kontakt os</h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Har du spørgsmål eller ønsker du at blive kunde? Vi er klar til at hjælpe dig.
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
+                Har du spørgsmål om Multi Grønt eller vil du komme i kontakt med vores team? 
+                Vi er klar til at hjælpe dig.
               </p>
+              
+              {/* Clear distinction between contact and apply */}
+              <div className="bg-brand-gray-100 rounded-lg p-6 max-w-4xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="text-center">
+                    <Mail className="h-8 w-8 text-brand-primary mx-auto mb-3" />
+                    <h3 className="font-semibold text-gray-900 mb-2">Kontakt vores team</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Stil spørgsmål, få hjælp eller kontakt os for generel information
+                    </p>
+                    <p className="text-xs text-gray-500">Brug formularen nedenfor</p>
+                  </div>
+                  <div className="text-center">
+                    <User className="h-8 w-8 text-brand-primary mx-auto mb-3" />
+                    <h3 className="font-semibold text-gray-900 mb-2">Ansøg om B2B-adgang</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Vil du blive kunde og få adgang til vores webshop?
+                    </p>
+                    <Link to="/apply">
+                      <Button className="btn-brand-primary text-sm px-4 py-2">
+                        Ansøg her <ArrowRight className="ml-1 h-3 w-3" />
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {isSubmitted ? (

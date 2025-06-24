@@ -370,7 +370,9 @@ const Index = () => {
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-brand-primary-dark/80"></div>
+            {/* Enhanced dark overlay for better text readability */}
+            <div className="absolute inset-0 bg-black/60"></div>
+            <div className="absolute inset-0 bg-brand-primary-dark/70"></div>
           </div>
           <div className={cn(
             "hero-container relative z-10",
@@ -378,13 +380,13 @@ const Index = () => {
           )}>
             <div className="content-width text-center">
               <h2 className={cn(
-                "font-bold text-white mb-6",
+                "font-bold text-white mb-6 drop-shadow-lg",
                 isMobile ? "text-2xl" : "text-3xl md:text-4xl"
               )}>
                 Klar til at blive kunde?
               </h2>
               <p className={cn(
-                "text-white max-w-2xl mx-auto mb-8",
+                "text-white/95 max-w-2xl mx-auto mb-8 drop-shadow-md",
                 isMobile ? "text-sm px-4" : "text-lg md:text-xl mb-10"
               )}>
                 Opret en B2B-konto og få adgang til vores fulde sortiment, kundespecifikke priser og nemme bestillingsmuligheder.
@@ -393,11 +395,22 @@ const Index = () => {
                 "flex gap-3 justify-center",
                 isMobile ? "flex-col space-y-3" : "flex-col sm:flex-row gap-4"
               )}>
-                <Link to="/contact">
+                <Link to="/apply">
                   <Button className={cn(
                     "btn-brand-primary shadow-lg",
                     isMobile ? "w-full py-3 px-6" : "text-lg py-6 px-8"
                   )}>
+                    Ansøg adgang
+                  </Button>
+                </Link>
+                <Link to="/contact">
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "bg-white text-brand-primary hover:bg-brand-gray-100 hover:text-brand-primary-dark border-white shadow-lg transition-all duration-200 active:scale-95",
+                      isMobile ? "w-full py-3 px-6" : "text-lg py-6 px-8"
+                    )}
+                  >
                     Kontakt os
                   </Button>
                 </Link>
