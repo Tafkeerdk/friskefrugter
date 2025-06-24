@@ -28,6 +28,17 @@ const Dashboard: React.FC = () => {
     return null;
   }
 
+  // Add safety checks for user properties
+  const safeUser = {
+    contactPersonName: user.contactPersonName || 'Ikke angivet',
+    companyName: user.companyName || 'Ikke angivet',
+    email: user.email || 'Ikke angivet',
+    phone: (user as any).phone || null,
+    address: (user as any).address || null,
+    discountGroup: user.discountGroup || null,
+    discountGroups: (user as any).discountGroups || null
+  };
+
   // Mock data for customer dashboard
   const customerStats = {
     totalOrders: 24,
@@ -69,7 +80,7 @@ const Dashboard: React.FC = () => {
           {/* Header */}
           <div className="text-center md:text-left">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-              Velkommen tilbage, {user.contactPersonName}
+              Velkommen tilbage, {safeUser.contactPersonName}
             </h1>
             <p className="text-gray-600 text-sm md:text-base">
               Her er dit dashboard med overblik over ordrer og aktivitet
@@ -152,7 +163,7 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <Building2 className="h-4 w-4 text-gray-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{user.companyName}</p>
+                        <p className="font-medium truncate">{safeUser.companyName}</p>
                         <p className="text-sm text-gray-600">Virksomhed</p>
                       </div>
                     </div>
@@ -160,7 +171,7 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <User className="h-4 w-4 text-gray-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{user.contactPersonName}</p>
+                        <p className="font-medium truncate">{safeUser.contactPersonName}</p>
                         <p className="text-sm text-gray-600">Kontaktperson</p>
                       </div>
                     </div>
@@ -168,56 +179,55 @@ const Dashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                       <Mail className="h-4 w-4 text-gray-500 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{user.email}</p>
+                        <p className="font-medium truncate">{safeUser.email}</p>
                         <p className="text-sm text-gray-600">Email</p>
                       </div>
                     </div>
                     
-                    {(user as any).phone && (
+                    {safeUser.phone && (
                       <div className="flex items-center gap-3">
                         <Phone className="h-4 w-4 text-gray-500 flex-shrink-0" />
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium">{(user as any).phone}</p>
+                          <p className="font-medium">{safeUser.phone}</p>
                           <p className="text-sm text-gray-600">Telefon</p>
                         </div>
                       </div>
                     )}
                     
-                    {(user as any).address && (
+                    {safeUser.address && safeUser.address.street && (
                       <div className="flex items-start gap-3">
                         <MapPin className="h-4 w-4 text-gray-500 flex-shrink-0 mt-0.5" />
                         <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm leading-relaxed">
-                            {(user as any).address.street}<br />
-                            {(user as any).address.postalCode} {(user as any).address.city}
+                            {safeUser.address.street}<br />
+                            {safeUser.address.postalCode} {safeUser.address.city}
                           </p>
                           <p className="text-sm text-gray-600">Adresse</p>
                         </div>
                       </div>
                     )}
                     
-                    {(user.discountGroup || (user as any).discountGroups) && (
+                    {(safeUser.discountGroup || safeUser.discountGroups) && (
                       <div className="pt-2 border-t">
                         <p className="text-sm font-medium text-gray-700 mb-2">Rabatgrupper</p>
                         <div className="flex flex-wrap gap-2">
-                          {user.discountGroup ? (
-                            <Badge className={`text-xs ${getDiscountGroupColor(user.discountGroup)}`}>
-                              {user.discountGroup}
+                          {safeUser.discountGroup && (
+                            <Badge className={`text-xs ${getDiscountGroupColor(safeUser.discountGroup)}`}>
+                              {safeUser.discountGroup}
                             </Badge>
-                          ) : (
-                            (user as any).discountGroups?.map((group: string, index: number) => (
-                              <Badge 
-                key={index}
-                                className={`text-xs ${getDiscountGroupColor(group)}`}
-                              >
-                                {group}
-                              </Badge>
-                            ))
                           )}
+                          {safeUser.discountGroups && safeUser.discountGroups.map((group: string, index: number) => (
+                            <Badge 
+                              key={index}
+                              className={`text-xs ${getDiscountGroupColor(group)}`}
+                            >
+                              {group}
+                            </Badge>
+                          ))}
                         </div>
                       </div>
                     )}
-        </div>
+                  </div>
 
                   <div className="pt-4 border-t">
                     <Link to="/profile">
@@ -295,7 +305,7 @@ const Dashboard: React.FC = () => {
                         </div>
                       </div>
                     ))}
-        </div>
+                  </div>
 
                   <div className="mt-4 pt-4 border-t">
                     <Link to="/orders">
@@ -311,7 +321,7 @@ const Dashboard: React.FC = () => {
         </div>
       </main>
       <Footer />
-      </div>
+    </div>
   );
 };
 
