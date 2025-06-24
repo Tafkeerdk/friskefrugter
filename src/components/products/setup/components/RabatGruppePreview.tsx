@@ -348,15 +348,7 @@ export const RabatGruppePreview: React.FC<RabatGruppePreviewProps> = ({
         </div>
 
         {/* Preview Notes */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h5 className="font-medium text-blue-900 mb-2">Forhåndsvisning noter:</h5>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Kunder vil se den bedste tilgængelige pris (laveste pris vinder)</li>
-            <li>• Generel produktrabat gælder for alle kunder, medmindre andet er specificeret</li>
-            <li>• Rabat gruppe priser kombineres med generel produktrabat hvis det giver en bedre pris</li>
-            <li>• Priserne vises med dansk valuta formatering (DKK)</li>
-          </ul>
-        </div>
+  
       </CardContent>
     </Card>
   );
