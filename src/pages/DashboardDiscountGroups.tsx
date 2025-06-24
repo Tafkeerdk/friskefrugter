@@ -271,7 +271,8 @@ const DashboardDiscountGroups: React.FC = () => {
         setIsCreateDialogOpen(false);
         resetForm();
         
-        // Replace optimistic group with real data from server
+        // Clear cache and fetch fresh data from server
+        authService.clearDiscountGroupsCache();
         await fetchDiscountGroups();
         
         // Notify other components about the update AFTER the data is loaded
@@ -356,7 +357,8 @@ const DashboardDiscountGroups: React.FC = () => {
         setIsEditDialogOpen(false);
         setEditingGroup(null);
         resetForm();
-        // Refresh data to ensure consistency
+        // Clear cache and refresh data to ensure consistency
+        authService.clearDiscountGroupsCache();
         await fetchDiscountGroups();
         
         // Notify other components about the update

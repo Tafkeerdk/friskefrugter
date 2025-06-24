@@ -745,6 +745,9 @@ class ApiClient {
     if (endpoint.includes('profile')) {
       requestCache.clearPattern('.*profile.*');
     }
+    if (endpoint.includes('discount-groups')) {
+      requestCache.clearPattern('.*discount-groups.*');
+    }
   }
 }
 
@@ -1144,6 +1147,10 @@ export const authService = {
     requestCache.clearPattern(pattern);
   },
 
+  clearDiscountGroupsCache(): void {
+    requestCache.clearPattern('.*discount-groups.*');
+  },
+
   // CRITICAL SECURITY FIX: Enhanced public refresh token method with multi-session support
   async refreshToken(): Promise<{ success: boolean; tokens?: AuthTokens; message?: string }> {
     const sessionType = tokenManager.getCurrentSessionType();
@@ -1272,7 +1279,14 @@ export const authService = {
     sortOrder?: number;
   }): Promise<{ success: boolean; message: string; discountGroup?: unknown }> {
     const response = await apiClient.post('/.netlify/functions/admin-discount-groups', groupData);
-    return response.json();
+    const result = await response.json();
+    
+    // Clear discount groups cache on successful creation
+    if (result.success) {
+      requestCache.clearPattern('.*discount-groups.*');
+    }
+    
+    return result;
   },
 
   async updateDiscountGroup(discountGroupId: string, groupData: {
@@ -1287,12 +1301,26 @@ export const authService = {
       discountGroupId,
       ...groupData
     });
-    return response.json();
+    const result = await response.json();
+    
+    // Clear discount groups cache on successful update
+    if (result.success) {
+      requestCache.clearPattern('.*discount-groups.*');
+    }
+    
+    return result;
   },
 
   async deleteDiscountGroup(discountGroupId: string): Promise<{ success: boolean; message: string; customerCount?: number }> {
     const response = await apiClient.delete('/.netlify/functions/admin-discount-groups', { discountGroupId });
-    return response.json();
+    const result = await response.json();
+    
+    // Clear discount groups cache on successful deletion
+    if (result.success) {
+      requestCache.clearPattern('.*discount-groups.*');
+    }
+    
+    return result;
   },
 
   // Customer management methods
