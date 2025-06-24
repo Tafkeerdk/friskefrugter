@@ -117,7 +117,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.refreshToken();
       if (response.success && response.tokens) {
         tokenManager.setTokens(response.tokens);
-        console.log('✅ SECURITY: Token refresh successful');
+        if (import.meta.env.DEV) {
+          console.log('✅ SECURITY: Token refresh successful');
+        }
         return true;
       } else {
         console.warn('🚨 SECURITY: Token refresh failed - server rejected');
@@ -154,7 +156,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // CRITICAL SECURITY FIX: Also check on focus (when user returns to tab)
     const handleFocus = () => {
-      console.log('🔍 SECURITY: Page focused - validating tokens');
+      if (import.meta.env.DEV) {
+        console.log('🔍 SECURITY: Page focused - validating tokens');
+      }
       validateTokensPeriodically();
     };
 
@@ -196,12 +200,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Initialize admin session ONLY if token is valid
       if (savedAdminUser && adminToken && !isTokenExpired(adminToken)) {
-        console.log('✅ SECURITY: Setting admin user with valid token');
+        if (import.meta.env.DEV) {
+          console.log('✅ SECURITY: Setting admin user with valid token');
+        }
         setAdminUser(savedAdminUser);
         
         // Check if token is expiring soon and attempt refresh
         if (isTokenExpiringSoon(adminToken)) {
+          if (import.meta.env.DEV) {
           console.log('⚠️ SECURITY: Admin token expiring soon - attempting refresh');
+        }
           await attemptTokenRefresh();
         }
         
@@ -225,12 +233,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Initialize customer session ONLY if token is valid
       if (savedCustomerUser && customerToken && !isTokenExpired(customerToken)) {
-        console.log('✅ SECURITY: Setting customer user with valid token');
+        if (import.meta.env.DEV) {
+          console.log('✅ SECURITY: Setting customer user with valid token');
+        }
         setCustomerUser(savedCustomerUser);
         
         // Check if token is expiring soon and attempt refresh
         if (isTokenExpiringSoon(customerToken)) {
+          if (import.meta.env.DEV) {
           console.log('⚠️ SECURITY: Customer token expiring soon - attempting refresh');
+        }
           await attemptTokenRefresh();
         }
         
@@ -364,7 +376,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         }
         
+        if (import.meta.env.DEV) {
         console.log('✅ SECURITY: Login successful with valid tokens');
+      }
         return response;
       } else {
         throw new Error(response.message || 'Login failed');

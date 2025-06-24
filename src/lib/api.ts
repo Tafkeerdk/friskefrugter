@@ -130,7 +130,11 @@ class ApiClient {
       credentials: 'include',
     };
 
-    console.log('📋 Final request headers:', config.headers);
+    if (import.meta.env.DEV) {
+      console.log('📋 Request method:', options.method || 'GET');
+      console.log('📋 Request URL:', url);
+      // Never log headers in production as they contain sensitive auth data
+    }
 
     try {
       console.log('🚀 Sending request...');
@@ -138,8 +142,10 @@ class ApiClient {
       const response = await fetch(url, config);
       const duration = Date.now() - startTime;
       
-      console.log(`📡 Response status: ${response.status} for ${url}`);
-      console.log(`⏱️ Request duration: ${duration}ms`);
+      if (import.meta.env.DEV) {
+        console.log(`📡 Response status: ${response.status} for ${url}`);
+        console.log(`⏱️ Request duration: ${duration}ms`);
+      }
       
       // Handle non-JSON responses
       const contentType = response.headers.get('content-type');
@@ -148,7 +154,10 @@ class ApiClient {
       if (contentType && contentType.includes('application/json')) {
         try {
           data = await response.json();
-          console.log('📥 Response data:', data);
+          if (import.meta.env.DEV) {
+            console.log('📥 Response success:', data.success);
+            // Never log full response data as it may contain sensitive information
+          }
         } catch (parseError) {
           console.error('JSON parse error:', parseError);
           throw new Error('Invalid JSON response from server');

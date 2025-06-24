@@ -504,7 +504,9 @@ class ApiClient {
               return response;
             }
             
-            console.log('🔄 Token expired, attempting refresh...');
+            if (import.meta.env.DEV) {
+              console.log('🔄 Token expired, attempting refresh...');
+            }
             const refreshed = await this.refreshToken();
             if (refreshed) {
               // Retry the request with new token
@@ -600,7 +602,9 @@ class ApiClient {
     }
 
     try {
-      console.log('🔄 SECURITY: Attempting token refresh for session type:', sessionType);
+      if (import.meta.env.DEV) {
+        console.log('🔄 SECURITY: Attempting token refresh for session type:', sessionType);
+      }
       const response = await fetch(`${this.baseURL}${getEndpoint('/api/auth/refresh')}`, {
         method: 'POST',
         headers: {
@@ -649,7 +653,9 @@ class ApiClient {
             }
             
             requestCache.clear(); // Clear cache after token refresh
-            console.log('✅ SECURITY: Token refresh successful for session type:', sessionType);
+            if (import.meta.env.DEV) {
+              console.log('✅ SECURITY: Token refresh successful for session type:', sessionType);
+            }
             return true;
           } catch (tokenError) {
             console.error('🚨 SECURITY: Error validating refreshed tokens:', tokenError);
@@ -756,11 +762,17 @@ export const authService = {
       console.log('📡 Making request to endpoint:', endpoint);
       
       const response = await apiClient.post(getEndpoint(endpoint), applicationData);
-      console.log('📥 Raw response status:', response.status);
-      console.log('📥 Raw response ok:', response.ok);
+      if (import.meta.env.DEV) {
+        console.log('📥 Raw response status:', response.status);
+        console.log('📥 Raw response ok:', response.ok);
+      }
       
       const data = await response.json();
-      console.log('📥 Response data:', data);
+      if (import.meta.env.DEV) {
+        console.log('📥 Response success:', data.success);
+        console.log('📥 Response message:', data.message);
+        // Never log full response data as it may contain sensitive information
+      }
       
       return data;
     } catch (error) {
@@ -991,9 +1003,15 @@ export const authService = {
             contentType: imageFile.type
           });
           
-          console.log('📡 Response status:', response.status);
+          if (import.meta.env.DEV) {
+            console.log('📡 Response status:', response.status);
+          }
           const data = await response.json();
-          console.log('📥 Response data:', data);
+          if (import.meta.env.DEV) {
+            console.log('📥 Response success:', data.success);
+            console.log('📥 Response message:', data.message);
+            // Never log full response data as it may contain sensitive information
+          }
           
           if (data.success) {
             // Update stored user data
@@ -1086,9 +1104,15 @@ export const authService = {
             contentType: imageFile.type
           });
           
-          console.log('📡 Customer upload response status:', response.status);
+          if (import.meta.env.DEV) {
+            console.log('📡 Customer upload response status:', response.status);
+          }
           const data = await response.json();
-          console.log('📥 Customer upload response data:', data);
+          if (import.meta.env.DEV) {
+            console.log('📥 Customer upload success:', data.success);
+            console.log('📥 Customer upload message:', data.message);
+            // Never log full response data as it may contain sensitive information
+          }
           
           if (data.success) {
             // Update stored user data
@@ -1159,7 +1183,9 @@ export const authService = {
     }
 
     try {
-      console.log('🔄 SECURITY: AuthService attempting token refresh for session type:', sessionType);
+      if (import.meta.env.DEV) {
+        console.log('🔄 SECURITY: AuthService attempting token refresh for session type:', sessionType);
+      }
       const response = await apiClient.post(getEndpoint('/api/auth/refresh'), { refreshToken });
       const data = await response.json();
       
@@ -1199,7 +1225,9 @@ export const authService = {
             tokenManager.setTokens(data.tokens);
           }
           
-          console.log('✅ SECURITY: AuthService token refresh successful for session type:', sessionType);
+          if (import.meta.env.DEV) {
+            console.log('✅ SECURITY: AuthService token refresh successful for session type:', sessionType);
+          }
           return { success: true, tokens: data.tokens };
         } catch (tokenError) {
           console.error('🚨 SECURITY: AuthService error validating refreshed tokens:', tokenError);

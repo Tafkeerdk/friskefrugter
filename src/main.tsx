@@ -24,15 +24,15 @@ if (import.meta.env.DEV) {
   }, 60000);
 }
 
-// Global debug functions for session management
-if (typeof window !== 'undefined') {
+// Global debug functions for session management (production-safe)
+if (typeof window !== 'undefined' && import.meta.env.DEV) {
   (window as any).debugSession = {
     checkSessions: () => {
       console.log('🔍 Current Session State:');
       console.log('Admin Token:', localStorage.getItem('admin_accessToken') ? 'Present' : 'Missing');
       console.log('Customer Token:', localStorage.getItem('customer_accessToken') ? 'Present' : 'Missing');
-      console.log('Admin User:', JSON.parse(localStorage.getItem('admin_user') || 'null'));
-      console.log('Customer User:', JSON.parse(localStorage.getItem('customer_user') || 'null'));
+      console.log('Admin User Status:', localStorage.getItem('admin_user') ? 'Present' : 'Missing');
+      console.log('Customer User Status:', localStorage.getItem('customer_user') ? 'Present' : 'Missing');
       console.log('Current Path:', window.location.pathname);
     },
     clearAdminSession: () => {
@@ -56,7 +56,7 @@ if (typeof window !== 'undefined') {
     }
   };
   
-  console.log('🛠️ Session debug functions available:');
+  console.log('🛠️ Session debug functions available (DEV only):');
   console.log('- window.debugSession.checkSessions() - Check current sessions');
   console.log('- window.debugSession.clearAdminSession() - Clear admin session');
   console.log('- window.debugSession.clearCustomerSession() - Clear customer session');
