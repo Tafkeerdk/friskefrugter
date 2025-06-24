@@ -30,7 +30,12 @@ export const VarenummerInput: React.FC<VarenummerInputProps> = ({
 
   // Debounced lookup function
   useEffect(() => {
-    if (!value || value.length < 3) {
+    if (!value || value.trim().length === 0) {
+      setLookupResult({ status: null });
+      return;
+    }
+
+    if (value.length < 3) {
       setLookupResult({ status: null });
       return;
     }
@@ -140,8 +145,7 @@ export const VarenummerInput: React.FC<VarenummerInputProps> = ({
   return (
     <FormItem>
       <FormLabel className="flex items-center gap-2">
-        Varenummer
-        <span className="text-red-500">*</span>
+        Varenummer (valgfrit)
       </FormLabel>
       <FormControl>
         <div className="relative">
@@ -166,7 +170,7 @@ export const VarenummerInput: React.FC<VarenummerInputProps> = ({
       
       <div className="flex items-center justify-between">
         <FormDescription>
-          Unikt varenummer til identifikation af produktet
+          Valgfrit unikt varenummer til identifikation af produktet
         </FormDescription>
         {getStatusBadge()}
       </div>

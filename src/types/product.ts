@@ -9,7 +9,7 @@ export interface Unit {
 
 export interface ProductFormData {
   produktnavn: string;
-  varenummer: string;
+  varenummer?: string;
   beskrivelse?: string;
   eanNummer?: string;
   enhed: string; // Unit ID instead of hardcoded values
@@ -73,9 +73,10 @@ export interface Category {
 export interface Product {
   id: string;
   produktnavn: string;
+  varenummer?: string;
   beskrivelse?: string;
   eanNummer?: string;
-  enhed: 'kg' | 'stk' | 'bakke' | 'kasse';
+  enhed: Unit; // Changed to Unit object instead of string enum
   basispris: number;
   // General Product Discount System
   discount: {

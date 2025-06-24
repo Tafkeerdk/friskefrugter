@@ -69,9 +69,17 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 interface Product {
   _id: string;
   produktnavn: string;
+  varenummer: string;
   beskrivelse?: string;
   eanNummer: string;
-  enhed: string;
+  enhed: {
+    _id: string;
+    value: string;
+    label: string;
+    description?: string;
+    isActive: boolean;
+    sortOrder: number;
+  };
   basispris: number;
   kategori: {
     _id: string;
@@ -609,7 +617,7 @@ const DashboardProducts: React.FC = () => {
                             isMobile ? "text-xs" : "text-sm"
                           )}>
                             <span>EAN: {product.eanNummer}</span>
-                            <span>{product.enhed}</span>
+                            <span>{product.enhed.label}</span>
                           </div>
                         </div>
                       </CardContent>

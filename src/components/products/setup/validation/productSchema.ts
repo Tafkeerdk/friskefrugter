@@ -70,11 +70,12 @@ const eanNummerSchema = z.string()
     return validateEAN13(val);
   }, 'EAN-nummer skal være 13 cifre');
 
-// Varenummer validation
+// Varenummer validation - now optional
 const varenummerSchema = z.string()
-  .min(1, 'Varenummer er påkrævet')
   .max(50, 'Varenummer må maksimalt være 50 tegn')
-  .regex(/^[A-Za-z0-9\-_]+$/, 'Varenummer må kun indeholde bogstaver, tal, bindestreg og underscore');
+  .regex(/^[A-Za-z0-9\-_]*$/, 'Varenummer må kun indeholde bogstaver, tal, bindestreg og underscore')
+  .optional()
+  .transform((val) => val?.trim() || undefined);
 
 // Unit validation (now using ObjectId)
 const enhedSchema = z.string()
