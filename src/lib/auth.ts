@@ -101,6 +101,45 @@ export interface ApplicationResponse {
   emailError?: string;
 }
 
+// Session management utilities
+export const getDeviceFingerprint = (): string => {
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.textBaseline = 'top';
+    ctx.font = '14px Arial';
+    ctx.fillText('Device fingerprint', 2, 2);
+  }
+  
+  const fingerprint = [
+    navigator.userAgent,
+    navigator.language,
+    screen.width + 'x' + screen.height,
+    new Date().getTimezoneOffset(),
+    canvas.toDataURL()
+  ].join('|');
+  
+  // Simple hash function
+  let hash = 0;
+  for (let i = 0; i < fingerprint.length; i++) {
+    const char = fingerprint.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  return Math.abs(hash).toString(16);
+};
+
+export const isPWAMode = (): boolean => {
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         (window.navigator as any).standalone === true ||
+         document.referrer.includes('android-app://');
+};
+
+export const getSessionType = (): 'browser' | 'pwa' => {
+  return isPWAMode() ? 'pwa' : 'browser';
+};
+
 // Request cache for deduplication
 class RequestCache {
   private cache = new Map<string, Promise<any>>();
@@ -375,6 +414,13 @@ class ApiClient {
       headers.Authorization = `Bearer ${accessToken}`;
     }
 
+    // Add session management headers
+    if (isPWAMode()) {
+      headers['X-PWA'] = 'true';
+      headers['X-Display-Mode'] = 'standalone';
+    }
+    headers['X-Session-Type'] = getSessionType();
+
     try {
       // Use request deduplication for concurrent requests
       const response = await requestCache.getOrSetPromise(
@@ -387,8 +433,22 @@ class ApiClient {
 
           console.log(`📡 Response status: ${response.status} for ${url}`);
 
-          // If token expired, try to refresh
+          // If token expired or session invalid, try to refresh or logout
           if (response.status === 403 && accessToken) {
+            const errorData = await response.clone().json().catch(() => ({}));
+            
+            if (errorData.errorType === 'session_invalid') {
+              console.warn('🚨 Session invalid - forcing logout');
+              if (sessionType) {
+                tokenManager.clearTokens(sessionType);
+              } else {
+                tokenManager.clearTokens();
+              }
+              // Redirect to login
+              window.location.href = '/login';
+              return response;
+            }
+            
             console.log('🔄 Token expired, attempting refresh...');
             const refreshed = await this.refreshToken();
             if (refreshed) {
@@ -398,6 +458,14 @@ class ApiClient {
                 ? tokenManager.getAccessToken(newSessionType)
                 : tokenManager.getAccessToken();
               headers.Authorization = `Bearer ${newAccessToken}`;
+              
+              // Add session headers again for retry
+              if (isPWAMode()) {
+                headers['X-PWA'] = 'true';
+                headers['X-Display-Mode'] = 'standalone';
+              }
+              headers['X-Session-Type'] = getSessionType();
+              
               response = await fetch(url, {
                 ...options,
                 headers,
