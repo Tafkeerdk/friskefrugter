@@ -229,6 +229,33 @@ export const productSetupSchema = z.object({
   path: ['discount', 'beforePrice']
 });
 
+// Edit mode schema - billeder field is optional for updates
+export const productEditSchema = z.object({
+  produktnavn: produktnavnSchema,
+  varenummer: varenummerSchema,
+  beskrivelse: beskrivelseSchema,
+  eanNummer: eanNummerSchema,
+  enhed: enhedSchema,
+  basispris: danishCurrencySchema,
+  discount: discountSchema,
+  kategori: kategoriSchema,
+  lagerstyring: lagerstyringSchema,
+  billeder: z.array(billedeSchema)
+    .max(3, 'Maksimalt 3 billeder er tilladt')
+    .optional()
+    .default([]),
+  aktiv: z.boolean().default(true)
+}).refine((data) => {
+  // If discount is enabled with beforePrice, beforePrice must be higher than basispris
+  if (data.discount.enabled && data.discount.beforePrice) {
+    return data.discount.beforePrice > data.basispris;
+  }
+  return true;
+}, {
+  message: 'Før-prisen skal være højere end den nuværende pris',
+  path: ['discount', 'beforePrice']
+});
+
 export type ProductSetupData = z.infer<typeof productSetupSchema>;
 
 // Partial schema for draft validation (less strict)

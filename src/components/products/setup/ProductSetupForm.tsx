@@ -44,7 +44,7 @@ import {
 } from '@/components/ui/dialog';
 
 import { ProductFormData, ProductSetupFormProps, ProductImage, Unit } from '@/types/product';
-import { productSetupSchema } from './validation/productSchema';
+import { productSetupSchema, productEditSchema } from './validation/productSchema';
 import { EANInput } from './components/EANInput';
 import { VarenummerInput } from './components/VarenummerInput';
 import { CurrencyInput } from './components/CurrencyInput';
@@ -128,7 +128,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]); // Track deleted existing images
 
   const form = useForm<ProductFormData>({
-    resolver: zodResolver(productSetupSchema),
+    resolver: zodResolver(mode === 'edit' ? productEditSchema : productSetupSchema),
     defaultValues: {
       produktnavn: initialData?.produktnavn || '',
       varenummer: initialData?.varenummer || '',

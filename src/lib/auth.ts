@@ -478,7 +478,7 @@ class ApiClient {
           console.log(`📡 Response status: ${response.status} for ${url}`);
 
           // If token expired or session invalid, try to refresh or logout
-          if (response.status === 403 && accessToken) {
+          if ((response.status === 401 || response.status === 403) && accessToken) {
             const errorData = await response.clone().json().catch(() => ({}));
             
             if (errorData.errorType === 'session_invalid') {
@@ -515,6 +515,11 @@ class ApiClient {
                 headers,
               });
               console.log(`📡 Retry response status: ${response.status} for ${url}`);
+            } else {
+              // Refresh failed - show error but don't redirect automatically
+              console.error('🚨 SECURITY: Token refresh failed - session expired');
+              // Return the original 401/403 response so the calling code can handle it
+              return response;
             }
           }
 
