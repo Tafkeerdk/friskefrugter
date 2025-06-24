@@ -777,16 +777,42 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const loadProductsForUniqueOffer = async () => {
     try {
       setLoadingProducts(true);
-      const response = await api.getProducts();
+      console.log('🔄 Loading products for unique offers...');
       
-      if (response.success && Array.isArray(response.data)) {
-        const activeProducts = response.data.filter((p: any) => p.aktiv) || [];
+      const response = await api.getProducts({ 
+        limit: 1000, // Get more products for selection
+        aktiv: true  // Only active products
+      });
+      
+      console.log('📦 Products API response:', response);
+      
+      if (response.success && response.data) {
+        // Handle both formats: response.data.products (paginated) or response.data (direct array)
+        const responseData = response.data as any;
+        const productsArray = Array.isArray(responseData) 
+          ? responseData 
+          : responseData.products || [];
+          
+        const activeProducts = productsArray.filter((p: any) => p.aktiv !== false);
         setProducts(activeProducts);
+        console.log('✅ Loaded products for unique offers:', activeProducts.length);
       } else {
-        console.error('Failed to load products:', response.error || 'Unknown error');
+        console.error('❌ Failed to load products:', response.error || 'Unknown error');
+        setProducts([]);
+        toast({
+          title: 'Fejl ved indlæsning',
+          description: 'Kunne ikke indlæse produkter. Prøv igen.',
+          variant: 'destructive'
+        });
       }
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error('❌ Error loading products:', error);
+      setProducts([]);
+      toast({
+        title: 'Fejl ved indlæsning',
+        description: 'Der opstod en fejl ved indlæsning af produkter.',
+        variant: 'destructive'
+      });
     } finally {
       setLoadingProducts(false);
     }
@@ -2062,126 +2088,180 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
         </DialogContent>
       </div>
 
-      {/* Unique Offer Creation Dialog */}
+      {/* Unique Offer Creation Dialog - COMPLETELY REDESIGNED */}
       <Dialog open={showUniqueOfferDialog} onOpenChange={setShowUniqueOfferDialog}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-3xl max-h-[95vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Star className="h-5 w-5 text-brand-primary" />
               Opret Unikt Tilbud
             </DialogTitle>
             <DialogDescription>
               {createdProduct ? (
-                <>Produktet "{createdProduct?.produktnavn}" er oprettet succesfuldt! Vil du oprette et specialtilbud for en specifik kunde?</>
+                <>Produktet "{createdProduct?.produktnavn}" er oprettet! Opret nu et specialtilbud for en specifik kunde.</>
               ) : (
-                <>Opret et specialtilbud for en specifik kunde på et specifikt produkt.</>
+                <>Opret et specialtilbud med kundespecifik pris for et produkt.</>
               )}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="space-y-6">
-            {/* Product Selection - only show if no created product */}
+          <div className="flex-1 overflow-y-auto space-y-6 py-4">
+            {/* Product Selection - Enhanced UX */}
             {!createdProduct && (
-              <div>
-                <Label htmlFor="unique-product">Produkt *</Label>
-                <div className="space-y-2">
-                  {/* Product Search */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <Input
-                      placeholder="Søg efter produktnavn..."
-                      value={productSearchTerm}
-                      onChange={(e) => setProductSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                  
-                  {/* Product Select */}
-                  <Select 
-                    value={uniqueOfferForm.productId} 
-                    onValueChange={(value) => setUniqueOfferForm(prev => ({ ...prev, productId: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Vælg produkt" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      {loadingProducts ? (
-                        <SelectItem value="loading" disabled>
-                          Indlæser produkter...
-                        </SelectItem>
-                      ) : (
-                        (() => {
-                          // Filter products based on search term
-                          const filteredProducts = products.filter(product => 
-                            product.produktnavn.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
-                            product.varenummer?.toLowerCase().includes(productSearchTerm.toLowerCase())
-                          );
-                          
-                          // Group products by category
-                          const groupedProducts = filteredProducts.reduce((acc: any, product: any) => {
-                            const categoryName = product.kategori?.navn || 'Ingen kategori';
-                            if (!acc[categoryName]) {
-                              acc[categoryName] = [];
-                            }
-                            acc[categoryName].push(product);
-                            return acc;
-                          }, {});
-                          
-                          return Object.entries(groupedProducts).map(([categoryName, categoryProducts]: [string, any]) => (
+              <div className="space-y-3">
+                <Label className="text-base font-semibold text-brand-gray-900">Vælg Produkt *</Label>
+                
+                {/* Improved Product Search */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-gray-400" />
+                  <Input
+                    placeholder="Søg produktnavn eller varenummer..."
+                    value={productSearchTerm}
+                    onChange={(e) => setProductSearchTerm(e.target.value)}
+                    className="pl-10 input-brand"
+                  />
+                </div>
+
+                {/* Product Grid - Better UX than dropdown */}
+                <div className="border border-brand-gray-200 rounded-lg max-h-[300px] overflow-y-auto">
+                  {loadingProducts ? (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="flex items-center gap-2 text-brand-primary">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-primary"></div>
+                        <span>Indlæser produkter...</span>
+                      </div>
+                    </div>
+                  ) : (
+                    (() => {
+                      // Filter products based on search term
+                      const filteredProducts = products.filter(product => 
+                        product.produktnavn.toLowerCase().includes(productSearchTerm.toLowerCase()) ||
+                        product.varenummer?.toLowerCase().includes(productSearchTerm.toLowerCase())
+                      );
+                      
+                      if (filteredProducts.length === 0) {
+                        return (
+                          <div className="p-8 text-center text-brand-gray-500">
+                            <Package className="h-12 w-12 mx-auto mb-3 text-brand-gray-300" />
+                            <p>Ingen produkter fundet</p>
+                            <p className="text-sm">Prøv at justere din søgning</p>
+                          </div>
+                        );
+                      }
+                      
+                      // Group products by category
+                      const groupedProducts = filteredProducts.reduce((acc: any, product: any) => {
+                        const categoryName = product.kategori?.navn || 'Ingen kategori';
+                        if (!acc[categoryName]) {
+                          acc[categoryName] = [];
+                        }
+                        acc[categoryName].push(product);
+                        return acc;
+                      }, {});
+                      
+                      return (
+                        <div className="divide-y divide-brand-gray-100">
+                          {Object.entries(groupedProducts).map(([categoryName, categoryProducts]: [string, any]) => (
                             <div key={categoryName}>
-                              <div className="px-2 py-1.5 text-sm font-semibold text-gray-700 bg-gray-100 sticky top-0">
-                                {categoryName}
+                              {/* Category Header */}
+                              <div className="sticky top-0 bg-brand-gray-50 px-4 py-2 border-b border-brand-gray-200">
+                                <h4 className="text-sm font-semibold text-brand-gray-700 flex items-center gap-2">
+                                  <Tags className="h-4 w-4" />
+                                  {categoryName} ({categoryProducts.length})
+                                </h4>
                               </div>
-                              {categoryProducts.map((product: any) => (
-                                <SelectItem key={product._id} value={product._id}>
-                                  <div className="flex items-center gap-2 w-full">
-                                    <Package className="h-4 w-4 flex-shrink-0" />
-                                    <div className="flex-1 min-w-0">
-                                      <div className="font-medium truncate">{product.produktnavn}</div>
-                                      <div className="text-xs text-muted-foreground flex items-center gap-2">
-                                        <span>{product.varenummer}</span>
-                                        <span>•</span>
-                                        <span>{new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(product.basispris)}</span>
+                              
+                              {/* Products in Category */}
+                              <div className="divide-y divide-brand-gray-50">
+                                {categoryProducts.map((product: any) => (
+                                  <button
+                                    key={product._id}
+                                    type="button"
+                                    onClick={() => setUniqueOfferForm(prev => ({ ...prev, productId: product._id }))}
+                                    className={cn(
+                                      "w-full p-4 text-left hover:bg-brand-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
+                                      uniqueOfferForm.productId === product._id && "bg-brand-primary/10 border-l-4 border-brand-primary"
+                                    )}
+                                  >
+                                    <div className="flex items-center gap-3">
+                                      <div className={cn(
+                                        "p-2 rounded-lg",
+                                        uniqueOfferForm.productId === product._id ? "bg-brand-primary text-white" : "bg-brand-gray-100 text-brand-gray-600"
+                                      )}>
+                                        <Package className="h-4 w-4" />
                                       </div>
+                                      <div className="flex-1 min-w-0">
+                                        <div className="font-medium text-brand-gray-900 truncate">
+                                          {product.produktnavn}
+                                        </div>
+                                        <div className="text-sm text-brand-gray-500 flex items-center gap-2">
+                                          <span>{product.varenummer}</span>
+                                          <span>•</span>
+                                          <span className="font-medium text-brand-primary">
+                                            {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(product.basispris)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {uniqueOfferForm.productId === product._id && (
+                                        <div className="text-brand-primary">
+                                          <CheckCircle2 className="h-5 w-5" />
+                                        </div>
+                                      )}
                                     </div>
-                                  </div>
-                                </SelectItem>
-                              ))}
+                                  </button>
+                                ))}
+                              </div>
                             </div>
-                          ));
-                        })()
-                      )}
-                    </SelectContent>
-                  </Select>
+                          ))}
+                        </div>
+                      );
+                    })()
+                  )}
                 </div>
               </div>
             )}
             
-            {/* Customer Selection */}
-            <div>
-              <Label htmlFor="unique-customer">Kunde *</Label>
+            {/* Selected Product Display */}
+            {(createdProduct || uniqueOfferForm.productId) && (
+              <div className="bg-brand-gray-50 border border-brand-gray-200 rounded-lg p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-brand-primary text-white rounded-lg">
+                    <Package className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-brand-gray-900">
+                      {createdProduct ? createdProduct.produktnavn : products.find(p => p._id === uniqueOfferForm.productId)?.produktnavn}
+                    </h4>
+                    <p className="text-sm text-brand-gray-600">
+                      Valgt produkt for unikt tilbud
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Customer Selection - Simplified */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold text-brand-gray-900">Vælg Kunde *</Label>
               <Select 
                 value={uniqueOfferForm.customerId} 
                 onValueChange={(value) => setUniqueOfferForm(prev => ({ ...prev, customerId: value }))}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Vælg kunde" />
+                <SelectTrigger className="h-12 input-brand">
+                  <SelectValue placeholder="Vælg en kunde..." />
                 </SelectTrigger>
-                <SelectContent className="max-h-[200px]">
+                <SelectContent className="max-h-[250px]">
                   {loadingCustomers ? (
-                    <SelectItem value="loading" disabled>
-                      Indlæser kunder...
-                    </SelectItem>
+                    <div className="flex items-center justify-center p-4">
+                      <div className="flex items-center gap-2 text-brand-primary">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-primary"></div>
+                        <span>Indlæser kunder...</span>
+                      </div>
+                    </div>
                   ) : (
                     customers.map(customer => (
-                      <SelectItem key={customer._id} value={customer._id}>
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4" />
-                          <div>
-                            <div className="font-medium">{customer.companyName}</div>
-                            <div className="text-xs text-muted-foreground">{customer.contactPersonName}</div>
-                          </div>
-                        </div>
+                      <SelectItem key={customer._id} value={customer._id} className="py-2">
+                        {customer.companyName} - {customer.contactPersonName}
                       </SelectItem>
                     ))
                   )}
@@ -2189,46 +2269,70 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
               </Select>
             </div>
             
-            {/* Price */}
-            <div>
-              <Label htmlFor="unique-price">Fast Pris (DKK) *</Label>
-              <Input
-                id="unique-price"
-                type="number"
-                step="0.01"
-                min="0.01"
-                placeholder="0.00"
-                value={uniqueOfferForm.fixedPrice}
-                onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, fixedPrice: e.target.value }))}
-              />
+            {/* Price Input - Enhanced */}
+            <div className="space-y-3">
+              <Label className="text-base font-semibold text-brand-gray-900">Fast Pris *</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-gray-400" />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder="0,00"
+                  value={uniqueOfferForm.fixedPrice}
+                  onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, fixedPrice: e.target.value }))}
+                  className="pl-10 h-12 input-brand text-lg"
+                />
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-brand-gray-500 text-sm">
+                  DKK
+                </div>
+              </div>
             </div>
             
             {/* Description */}
-            <div>
-              <Label htmlFor="unique-description">Beskrivelse</Label>
+            <div className="space-y-3">
+              <Label className="text-base font-semibold text-brand-gray-900">Beskrivelse</Label>
               <Textarea
-                id="unique-description"
-                placeholder="Valgfri beskrivelse af tilbuddet"
+                placeholder="Valgfri beskrivelse af tilbuddet..."
                 value={uniqueOfferForm.description}
                 onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, description: e.target.value }))}
-                rows={2}
+                rows={3}
+                className="input-brand resize-none"
               />
             </div>
             
-            {/* Validity Period */}
+            {/* Validity Period - Enhanced */}
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="unique-validFrom">Gyldig fra</Label>
-                <Input
-                  id="unique-validFrom"
-                  type="date"
-                  value={uniqueOfferForm.validFrom}
-                  onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, validFrom: e.target.value }))}
-                />
+              <Label className="text-base font-semibold text-brand-gray-900">Gyldighedsperiode</Label>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="unique-validFrom" className="text-sm text-brand-gray-600">Gyldig fra</Label>
+                  <Input
+                    id="unique-validFrom"
+                    type="date"
+                    value={uniqueOfferForm.validFrom}
+                    onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, validFrom: e.target.value }))}
+                    className="input-brand"
+                  />
+                </div>
+                
+                {!uniqueOfferForm.isUnlimited && (
+                  <div>
+                    <Label htmlFor="unique-validTo" className="text-sm text-brand-gray-600">Gyldig til</Label>
+                    <Input
+                      id="unique-validTo"
+                      type="date"
+                      value={uniqueOfferForm.validTo}
+                      onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, validTo: e.target.value }))}
+                      className="input-brand"
+                    />
+                  </div>
+                )}
               </div>
               
               {/* Unlimited Toggle */}
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3 p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200">
                 <Switch
                   id="unlimited-toggle"
                   checked={uniqueOfferForm.isUnlimited}
@@ -2238,32 +2342,22 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                     validTo: checked ? '' : prev.validTo
                   }))}
                 />
-                <Label htmlFor="unlimited-toggle" className="text-sm font-medium">
-                  Tidsubegrænset tilbud
-                </Label>
-              </div>
-              
-              {/* Valid To - only show if not unlimited */}
-              {!uniqueOfferForm.isUnlimited && (
                 <div>
-                  <Label htmlFor="unique-validTo">Gyldig til</Label>
-                  <Input
-                    id="unique-validTo"
-                    type="date"
-                    value={uniqueOfferForm.validTo}
-                    onChange={(e) => setUniqueOfferForm(prev => ({ ...prev, validTo: e.target.value }))}
-                  />
+                  <Label htmlFor="unlimited-toggle" className="text-sm font-medium text-brand-gray-900">
+                    Tidsubegrænset tilbud
+                  </Label>
+                  <p className="text-xs text-brand-gray-500">Tilbuddet udløber aldrig</p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
           
-          <DialogFooter className="flex gap-2 mt-6">
+          <DialogFooter className="flex-shrink-0 flex gap-3 pt-4 border-t border-brand-gray-200">
             <Button
               variant="outline"
               onClick={handleSkipUniqueOffer}
               disabled={isCreatingUniqueOffer}
-              className="flex-1"
+              className="flex-1 h-12"
             >
               {createdProduct ? 'Spring over' : 'Annuller'}
             </Button>
@@ -2275,9 +2369,19 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                 !uniqueOfferForm.fixedPrice ||
                 (!createdProduct && !uniqueOfferForm.productId)
               }
-              className="btn-brand-primary flex-1"
+              className="btn-brand-primary flex-1 h-12"
             >
-              {isCreatingUniqueOffer ? 'Opretter...' : 'Opret Tilbud'}
+              {isCreatingUniqueOffer ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Opretter...
+                </div>
+              ) : (
+                <>
+                  <Star className="h-4 w-4 mr-2" />
+                  Opret Tilbud
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
