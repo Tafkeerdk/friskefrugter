@@ -30,6 +30,7 @@ import {
   Percent,
   Bell,
   ExternalLink,
+  Scale,
 } from "lucide-react";
 
 const DashboardSidebar: React.FC = () => {
@@ -187,6 +188,24 @@ const DashboardSidebar: React.FC = () => {
                     isMobile ? "h-4 w-4" : "h-5 w-5"
                   )} />
                   <span className="truncate">Kategorier</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={handleNavigation("/admin/units")}
+                  isActive={isActive("/admin/units")}
+                  className={cn(
+                    "transition-all duration-200",
+                    isMobile ? "h-10 text-sm" : "h-11",
+                    isActive("/admin/units") && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <Scale className={cn(
+                    "transition-all flex-shrink-0",
+                    isMobile ? "h-4 w-4" : "h-5 w-5"
+                  )} />
+                  <span className="truncate">Enheder</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               

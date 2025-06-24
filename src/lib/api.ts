@@ -654,6 +654,25 @@ class ApiClient {
       method: 'DELETE',
     });
   }
+
+  async getUnitProducts(unitId: string, params: {
+    page?: number;
+    limit?: number;
+    activeOnly?: boolean;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    searchParams.append('enhed', unitId);
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    const endpoint = this.getEndpoint(`/api/products?${searchParams.toString()}`);
+    return this.request(endpoint);
+  }
 }
 
 // Create and export API client instance

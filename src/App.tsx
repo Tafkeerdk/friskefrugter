@@ -20,6 +20,7 @@ import DashboardInvoices from "./pages/DashboardInvoices";
 import DashboardCustomers from "./pages/DashboardCustomers";
 import DashboardStatistics from "./pages/DashboardStatistics";
 import DashboardCategories from "./pages/DashboardCategories";
+import DashboardUnits from "./pages/DashboardUnits";
 import AdminProfile from "./pages/AdminProfile";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
@@ -122,6 +123,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardCategories />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/units" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardUnits />
                 </ProtectedRoute>
               } 
             />
@@ -254,6 +263,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireCustomer={true}>
                   <DashboardCategories />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/dashboard/units" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <DashboardUnits />
                 </ProtectedRoute>
               } 
             />
