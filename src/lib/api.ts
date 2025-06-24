@@ -687,6 +687,26 @@ class ApiClient {
     const endpoint = this.getEndpoint(`/api/products?${searchParams.toString()}`);
     return this.request(endpoint);
   }
+
+  // Get products eligible for discount groups (products without førpris/sale price)
+  async getDiscountEligibleProducts(params: {
+    page?: number;
+    limit?: number;
+    activeOnly?: boolean;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    searchParams.append('discountEligible', 'true'); // Products without førpris
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    const endpoint = this.getEndpoint(`/api/products?${searchParams.toString()}`);
+    return this.request(endpoint);
+  }
 }
 
 // Create and export API client instance

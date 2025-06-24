@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Users, Palette, Percent } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Palette, Percent, Package, Eye, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +35,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { authService } from '@/lib/auth';
+import { api, handleApiError } from '@/lib/api';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils';
 
 interface DiscountGroup {
   id: string;
@@ -58,6 +68,27 @@ interface DiscountGroup {
   updatedAt: string;
 }
 
+interface Product {
+  _id: string;
+  produktnavn: string;
+  varenummer: string;
+  basispris: number;
+  førpris?: number; // Sale price - if set, discount groups don't apply
+  aktiv: boolean;
+  kategori: {
+    _id: string;
+    navn: string;
+  };
+  enhed: {
+    _id: string;
+    label: string;
+  };
+  billeder?: Array<{
+    url: string;
+    isPrimary: boolean;
+  }>;
+}
+
 const DashboardDiscountGroups: React.FC = () => {
   const [discountGroups, setDiscountGroups] = useState<DiscountGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -66,6 +97,15 @@ const DashboardDiscountGroups: React.FC = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingGroup, setEditingGroup] = useState<DiscountGroup | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Product visibility states - Nielsen's Heuristic #6: Recognition Rather Than Recall
+  const [isProductsDialogOpen, setIsProductsDialogOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<DiscountGroup | null>(null);
+  const [discountEligibleProducts, setDiscountEligibleProducts] = useState<Product[]>([]);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [productsWithSalePrice, setProductsWithSalePrice] = useState(0);
+  
   const { toast } = useToast();
 
   // Form state
@@ -90,6 +130,7 @@ const DashboardDiscountGroups: React.FC = () => {
 
   useEffect(() => {
     fetchDiscountGroups();
+    loadProductStatistics();
   }, []);
 
   const fetchDiscountGroups = async () => {
@@ -289,6 +330,52 @@ const DashboardDiscountGroups: React.FC = () => {
     return colorOption ? colorOption.gradient : 'from-gray-400 to-gray-600';
   };
 
+  // Nielsen's Heuristic #1: Visibility of System Status
+  const loadProductStatistics = async () => {
+    try {
+      // Get all products to calculate statistics
+      const [allProductsResponse, eligibleProductsResponse] = await Promise.all([
+        api.getProducts({ limit: 1000, aktiv: true }),
+        api.getDiscountEligibleProducts({ limit: 1000, activeOnly: true })
+      ]);
+
+      if (allProductsResponse.success && allProductsResponse.data) {
+        const allProducts = (allProductsResponse.data as any).products || [];
+        setTotalProducts(allProducts.length);
+        
+        // Count products with sale price (førpris)
+        const withSalePrice = allProducts.filter((product: Product) => 
+          product.førpris && product.førpris > 0
+        ).length;
+        setProductsWithSalePrice(withSalePrice);
+      }
+
+      if (eligibleProductsResponse.success && eligibleProductsResponse.data) {
+        const eligibleProducts = (eligibleProductsResponse.data as any).products || [];
+        setDiscountEligibleProducts(eligibleProducts);
+      }
+    } catch (error) {
+      console.error('Error loading product statistics:', error);
+    }
+  };
+
+  // Nielsen's Heuristic #6: Recognition Rather Than Recall
+  const openProductsDialog = (group: DiscountGroup) => {
+    setSelectedGroup(group);
+    setIsProductsDialogOpen(true);
+  };
+
+  const calculateDiscountedPrice = (basePrice: number, discountPercentage: number) => {
+    return basePrice * (1 - discountPercentage / 100);
+  };
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('da-DK', {
+      style: 'currency',
+      currency: 'DKK'
+    }).format(price);
+  };
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -306,15 +393,28 @@ const DashboardDiscountGroups: React.FC = () => {
     <DashboardLayout>
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Rabatgrupper</h2>
-          <p className="text-muted-foreground">
+          <h2 className="text-3xl font-bold tracking-tight text-brand-gray-900">Rabatgrupper</h2>
+          <p className="text-brand-gray-600">
             Administrer op til 5 rabatgrupper med forskellige rabatsatser.
           </p>
+          {/* Nielsen's Heuristic #1: Visibility of System Status */}
+          {totalProducts > 0 && (
+            <div className="mt-2 flex items-center gap-4 text-sm">
+              <span className="flex items-center gap-1 text-brand-success">
+                <CheckCircle2 className="h-3 w-3" />
+                {discountEligibleProducts.length} varer påvirkes af rabatgrupper
+              </span>
+              <span className="flex items-center gap-1 text-brand-warning">
+                <AlertTriangle className="h-3 w-3" />
+                {productsWithSalePrice} varer har fast udsalgspris
+              </span>
+            </div>
+          )}
         </div>
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button 
-              className="flex items-center gap-2"
+              className="btn-brand-primary flex items-center gap-2"
               disabled={discountGroups.length >= 5}
             >
               <Plus className="h-4 w-4" />
@@ -462,18 +562,32 @@ const DashboardDiscountGroups: React.FC = () => {
                   <Percent className="h-4 w-4" />
                   <span>{group.discountPercentage}% rabat</span>
                 </div>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Package className="h-4 w-4" />
+                  <span>{discountEligibleProducts.length} påvirkede varer</span>
+                </div>
               </div>
               
-              <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
+              <div className="flex justify-between mt-4 pt-4 border-t">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => openEditDialog(group)}
+                  onClick={() => openProductsDialog(group)}
+                  className="text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary"
                 >
-                  <Edit className="h-4 w-4 mr-1" />
-                  Rediger
+                  <Eye className="h-4 w-4 mr-1" />
+                  Se varer
                 </Button>
-                <AlertDialog>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(group)}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Rediger
+                  </Button>
+                  <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
                       variant="outline"
@@ -510,6 +624,7 @@ const DashboardDiscountGroups: React.FC = () => {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -517,20 +632,144 @@ const DashboardDiscountGroups: React.FC = () => {
       </div>
 
       {discountGroups.length === 0 && (
-        <Card className="mt-6">
+        <Card className="card-brand mt-6">
           <CardContent className="text-center py-8">
-            <Percent className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Ingen rabatgrupper endnu</h3>
-            <p className="text-muted-foreground mb-4">
+            <Percent className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-brand-gray-900 mb-2">Ingen rabatgrupper endnu</h3>
+            <p className="text-brand-gray-600 mb-4">
               Opret din første rabatgruppe for at begynde at tildele forskellige rabatsatser til dine kunder.
             </p>
-            <Button onClick={() => setIsCreateDialogOpen(true)}>
+            <Button 
+              className="btn-brand-primary"
+              onClick={() => setIsCreateDialogOpen(true)}
+            >
               <Plus className="h-4 w-4 mr-2" />
               Opret din første rabatgruppe
             </Button>
           </CardContent>
         </Card>
       )}
+
+      {/* Nielsen's Heuristic #1: Visibility of System Status */}
+      {totalProducts > 0 && (
+        <Alert className="mt-6 border-brand-primary/30 bg-brand-primary/5">
+          <Info className="h-4 w-4 text-brand-primary" />
+          <AlertDescription className="text-brand-gray-700">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">Produktoversigt:</span>
+                <div className="flex gap-4 text-sm">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3 text-brand-success" />
+                    {discountEligibleProducts.length} påvirket af rabatgrupper
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <AlertTriangle className="h-3 w-3 text-brand-warning" />
+                    {productsWithSalePrice} med fast udsalgspris
+                  </span>
+                </div>
+              </div>
+              <p className="text-xs text-brand-gray-500">
+                💡 Rabatgrupper påvirker kun produkter uden fast udsalgspris (førpris). Når et produkt har en udsalgspris, slås rabatgruppen fra.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Products Dialog - Nielsen's Heuristic #6: Recognition Rather Than Recall */}
+      <Dialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: selectedGroup?.color }}
+              />
+              Varer påvirket af "{selectedGroup?.name}"
+            </DialogTitle>
+            <DialogDescription>
+              Disse varer får {selectedGroup?.discountPercentage}% rabat for kunder i denne rabatgruppe.
+              Varer med fast udsalgspris (førpris) påvirkes ikke af rabatgrupper.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto">
+            {loadingProducts ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+                  <p className="mt-2 text-brand-gray-600">Henter produkter...</p>
+                </div>
+              </div>
+            ) : discountEligibleProducts.length > 0 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
+                  {discountEligibleProducts.map((product) => (
+                    <Card key={product._id} className="p-4">
+                      <div className="flex items-start gap-3">
+                        {product.billeder && product.billeder.length > 0 && (
+                          <img
+                            src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
+                            alt={product.produktnavn}
+                            className="w-12 h-12 object-cover rounded-md"
+                          />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-brand-gray-900 truncate">
+                            {product.produktnavn}
+                          </h4>
+                          <p className="text-sm text-brand-gray-500">
+                            {product.varenummer} • {product.kategori.navn}
+                          </p>
+                          <div className="mt-2 space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-brand-gray-600">Basispris:</span>
+                              <span className="font-medium">{formatPrice(product.basispris)}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-brand-primary">Med {selectedGroup?.discountPercentage}% rabat:</span>
+                              <span className="font-bold text-brand-primary">
+                                {formatPrice(calculateDiscountedPrice(product.basispris, selectedGroup?.discountPercentage || 0))}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+                
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between text-sm text-brand-gray-600">
+                    <span>Total påvirkede varer:</span>
+                    <span className="font-medium">{discountEligibleProducts.length}</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
+                  Ingen påvirkede varer
+                </h3>
+                <p className="text-brand-gray-500">
+                  Alle produkter har enten fast udsalgspris eller er ikke aktive.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex justify-end pt-4 border-t">
+            <Button
+              variant="outline"
+              onClick={() => setIsProductsDialogOpen(false)}
+            >
+              Luk
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
