@@ -815,7 +815,7 @@ const Profile = () => {
                             <>
                               <h5 className="font-medium">Leveringsadresse</h5>
                               <p className="text-xs text-brand-gray-500 mb-3">
-                                Brug DAWA adressesøgning for præcise adresser
+                                Brug adressesøgning for at vælge din leveringsadresse
                               </p>
                               
                               <div className="space-y-3">
@@ -824,34 +824,19 @@ const Profile = () => {
                                   placeholder="Søg leveringsadresse..."
                                 />
                                 
-                                {/* Manual fields for fine-tuning */}
-                                <div className="space-y-2">
-                                  <Label>Gade og nummer</Label>
-                                  <Input
-                                    value={formData.deliveryAddress.street}
-                                    onChange={(e) => handleInputChange('deliveryAddress.street', e.target.value)}
-                                    className="input-brand"
-                                  />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                  <div className="space-y-2">
-                                    <Label>Postnummer</Label>
-                                    <Input
-                                      value={formData.deliveryAddress.postalCode}
-                                      onChange={(e) => handleInputChange('deliveryAddress.postalCode', e.target.value)}
-                                      className="input-brand"
-                                    />
+                                {/* Show selected address for confirmation */}
+                                {formData.deliveryAddress.street && (
+                                  <div className="p-3 bg-brand-gray-50 rounded-lg border">
+                                    <div className="flex items-center gap-2 text-brand-primary mb-1">
+                                      <MapPin className="h-4 w-4" />
+                                      <span className="font-medium text-sm">Valgt leveringsadresse:</span>
+                                    </div>
+                                    <p className="text-sm text-brand-gray-700">
+                                      {formData.deliveryAddress.street}<br />
+                                      {formData.deliveryAddress.postalCode} {formData.deliveryAddress.city}
+                                    </p>
                                   </div>
-                                  <div className="space-y-2">
-                                    <Label>By</Label>
-                                    <Input
-                                      value={formData.deliveryAddress.city}
-                                      onChange={(e) => handleInputChange('deliveryAddress.city', e.target.value)}
-                                      className="input-brand"
-                                    />
-                                  </div>
-                                </div>
+                                )}
                               </div>
                             </>
                           )}
