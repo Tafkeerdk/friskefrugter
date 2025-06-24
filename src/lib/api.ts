@@ -621,6 +621,20 @@ class ApiClient {
     return this.request(endpoint);
   }
 
+  async getUnitsWithCounts(params: {
+    includeInactive?: boolean;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    const endpoint = this.getEndpoint(`/api/units?${searchParams.toString()}`);
+    return this.request(endpoint);
+  }
+
   async createUnit(unitData: {
     value: string;
     label: string;

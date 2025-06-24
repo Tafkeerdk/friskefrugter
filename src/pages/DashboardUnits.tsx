@@ -134,34 +134,16 @@ const DashboardUnits: React.FC = () => {
   const loadUnits = async () => {
     try {
       setLoading(true);
-      const response = await api.getUnits();
+      
+      // Call optimized backend API that includes product counts
+      const response = await api.getUnitsWithCounts({
+        includeInactive: showInactive
+      });
       
       if (response.success && response.data) {
-        let unitsData = response.data as Unit[];
-        
-        // Get product counts for each unit
-        const unitsWithCounts = await Promise.all(
-          unitsData.map(async (unit) => {
-            try {
-              const productsResponse = await api.getUnitProducts(unit._id, {
-                limit: 1
-              });
-              
-              return {
-                ...unit,
-                productCount: (productsResponse.data as any)?.totalProducts || 0
-              };
-            } catch (error) {
-              return {
-                ...unit,
-                productCount: 0
-              };
-            }
-          })
-        );
-        
-        const filteredUnits = showInactive ? unitsWithCounts : unitsWithCounts.filter(unit => unit.isActive);
-        setUnits(filteredUnits);
+        const unitsData = response.data as Unit[];
+        console.log('📊 Units loaded with counts:', unitsData);
+        setUnits(unitsData);
       }
     } catch (error) {
       const apiError = handleApiError(error);
