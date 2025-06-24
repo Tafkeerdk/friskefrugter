@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Bell, Search, ChevronDown, User, Settings, LogOut, X, Home } from "lucide-react";
+import { Bell, Search, ChevronDown, User, Settings, LogOut, X, Home, ExternalLink } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -83,6 +83,11 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
     navigate('/admin');
   };
 
+  // Navigate to the base route (homepage)
+  const handleGoToHomepage = () => {
+    navigate('/');
+  };
+
   const getUserInitials = () => {
     return user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD';
   };
@@ -153,8 +158,19 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
               size="icon"
               onClick={handleHomeClick}
               className="h-8 w-8 flex-shrink-0"
+              title="Gå til admin dashboard"
             >
               <Home className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGoToHomepage}
+              className="h-8 px-3 flex-shrink-0 text-xs font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors"
+              title="Gå til forsiden"
+            >
+              <ExternalLink className="h-3 w-3 mr-1" />
+              Forside
             </Button>
             <div className="font-semibold text-sm truncate">{getPageTitle()}</div>
           </div>
@@ -246,6 +262,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleGoToHomepage} className="cursor-pointer">
+                  <ExternalLink className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Gå til forsiden</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
                   <User className="mr-2 h-4 w-4 flex-shrink-0" />
                   <span className="truncate">Min profil</span>
@@ -304,12 +324,22 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       {/* Desktop Layout - Full width utilization */}
       {!isMobile && (
         <>
-          {/* Left side - Sidebar trigger and title */}
+          {/* Left side - Sidebar trigger, title, and homepage button */}
           <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0">
             <SidebarTrigger className="h-9 w-9 lg:h-10 lg:w-10" />
             <div className="font-semibold text-lg lg:text-xl tracking-tight whitespace-nowrap">
               {getPageTitle()}
             </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleGoToHomepage}
+              className="h-9 lg:h-10 px-3 lg:px-4 font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors whitespace-nowrap"
+              title="Gå til forsiden"
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Gå til forsiden
+            </Button>
           </div>
 
           {/* Spacer to push content apart */}
@@ -422,6 +452,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleGoToHomepage} className="cursor-pointer">
+                  <ExternalLink className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="truncate">Gå til forsiden</span>
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleProfileClick} className="cursor-pointer">
                   <User className="mr-2 h-4 w-4 flex-shrink-0" />
                   <span className="truncate">Min profil</span>

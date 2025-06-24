@@ -29,6 +29,7 @@ import {
   UserCheck,
   Percent,
   Bell,
+  ExternalLink,
 } from "lucide-react";
 
 const DashboardSidebar: React.FC = () => {
@@ -51,6 +52,11 @@ const DashboardSidebar: React.FC = () => {
       console.error('Logout error:', error);
       navigate('/super/admin');
     }
+  };
+
+  const handleGoToHomepage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    navigate('/');
   };
 
   const isActive = (path: string) => location.pathname === path;
@@ -80,6 +86,23 @@ const DashboardSidebar: React.FC = () => {
               )}
             </div>
           </div>
+        </div>
+        
+        {/* Prominent "Gå til forsiden" button */}
+        <div className="mt-3 pt-3 border-t border-border/50">
+          <SidebarMenuButton 
+            onClick={handleGoToHomepage}
+            className={cn(
+              "w-full justify-center bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white hover:text-white font-medium transition-all duration-200 shadow-sm hover:shadow-md",
+              isMobile ? "h-10 text-sm" : "h-11 text-base"
+            )}
+          >
+            <ExternalLink className={cn(
+              "mr-2 flex-shrink-0",
+              isMobile ? "h-4 w-4" : "h-5 w-5"
+            )} />
+            <span className="truncate">Gå til forsiden</span>
+          </SidebarMenuButton>
         </div>
       </SidebarHeader>
       
