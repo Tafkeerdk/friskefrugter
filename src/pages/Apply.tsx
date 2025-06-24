@@ -92,8 +92,8 @@ const Apply: React.FC = () => {
           {isMobile && (
             <div className="grid grid-cols-1 gap-3 mb-6">
               <div className="flex items-center space-x-3 bg-white p-3 rounded-lg border">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
+                                      <div className="flex-shrink-0 w-8 h-8 bg-brand-gray-100 rounded-full flex items-center justify-center">
+                        <CheckCircle className="w-4 h-4 text-brand-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900">Kundespecifikke priser</p>

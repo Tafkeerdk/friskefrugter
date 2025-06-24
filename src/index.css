@@ -4,91 +4,146 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* 🎨 MULTI GRØNT BRAND COLOR SYSTEM - CRITICAL: USE ONLY THESE COLORS */
+    
+    /* PRIMARY BRAND COLORS - Main Green Palette */
+    --brand-primary: 142 76% 36%;        /* #16a34a - Main brand green */
+    --brand-primary-hover: 142 76% 32%;  /* #15803d - Hover state */
+    --brand-primary-light: 142 76% 45%;  /* #22c55e - Light variant */
+    --brand-primary-dark: 142 76% 25%;   /* #166534 - Dark variant */
+    
+    /* SECONDARY BRAND COLORS */
+    --brand-secondary: 160 84% 39%;      /* #059669 - Emerald accent */
+    --brand-secondary-hover: 160 84% 35%; /* #047857 - Hover state */
+    --brand-secondary-light: 160 84% 50%; /* #10b981 - Light variant */
+    
+    /* NEUTRAL BRAND COLORS */
+    --brand-gray-50: 220 14% 96%;        /* #f8fafc */
+    --brand-gray-100: 220 14% 93%;       /* #f1f5f9 */
+    --brand-gray-200: 220 13% 87%;       /* #e2e8f0 */
+    --brand-gray-300: 215 14% 79%;       /* #cbd5e1 */
+    --brand-gray-400: 215 16% 65%;       /* #94a3b8 */
+    --brand-gray-500: 215 19% 50%;       /* #64748b */
+    --brand-gray-600: 215 25% 35%;       /* #475569 */
+    --brand-gray-700: 215 25% 27%;       /* #334155 */
+    --brand-gray-800: 217 33% 17%;       /* #1e293b */
+    --brand-gray-900: 222 84% 5%;        /* #0f172a */
+    
+    /* SUCCESS/ERROR STATES */
+    --brand-success: 142 76% 36%;        /* Same as primary green */
+    --brand-success-light: 142 76% 45%;  /* Light success */
+    --brand-warning: 45 93% 47%;         /* #eab308 - Yellow */
+    --brand-warning-light: 45 93% 58%;   /* Light warning */
+    --brand-error: 0 84% 60%;            /* #ef4444 - Red */
+    --brand-error-light: 0 84% 70%;      /* Light error */
+    
+    /* BACKGROUND COLORS */
+    --brand-bg-primary: 0 0% 100%;       /* White */
+    --brand-bg-secondary: 220 14% 96%;   /* Light gray */
+    --brand-bg-accent: 142 76% 97%;      /* Very light green */
+    
+    /* TEXT COLORS */
+    --brand-text-primary: 222 84% 5%;    /* Dark gray/black */
+    --brand-text-secondary: 215 25% 35%; /* Medium gray */
+    --brand-text-muted: 215 16% 65%;     /* Light gray */
+    --brand-text-inverse: 0 0% 100%;     /* White text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /* SHADCN/UI VARIABLES - MAPPED TO BRAND COLORS */
+    --background: var(--brand-bg-primary);
+    --foreground: var(--brand-text-primary);
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --card: var(--brand-bg-primary);
+    --card-foreground: var(--brand-text-primary);
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --popover: var(--brand-bg-primary);
+    --popover-foreground: var(--brand-text-primary);
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --primary: var(--brand-primary);
+    --primary-foreground: var(--brand-text-inverse);
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --secondary: var(--brand-gray-100);
+    --secondary-foreground: var(--brand-text-primary);
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
+    --muted: var(--brand-gray-100);
+    --muted-foreground: var(--brand-text-muted);
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: var(--brand-gray-100);
+    --accent-foreground: var(--brand-text-primary);
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --destructive: var(--brand-error);
+    --destructive-foreground: var(--brand-text-inverse);
+
+    --border: var(--brand-gray-200);
+    --input: var(--brand-gray-200);
+    --ring: var(--brand-primary);
 
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    
+    /* SIDEBAR COLORS - BRAND ALIGNED */
+    --sidebar-background: var(--brand-bg-primary);
+    --sidebar-foreground: var(--brand-text-secondary);
+    --sidebar-primary: var(--brand-primary);
+    --sidebar-primary-foreground: var(--brand-text-inverse);
+    --sidebar-accent: var(--brand-gray-100);
+    --sidebar-accent-foreground: var(--brand-text-primary);
+    --sidebar-border: var(--brand-gray-200);
+    --sidebar-ring: var(--brand-primary);
+    
+    /* CHART COLORS - BRAND HARMONIZED */
+    --chart-1: var(--brand-primary);
+    --chart-2: var(--brand-secondary);
+    --chart-3: var(--brand-gray-600);
+    --chart-4: var(--brand-warning);
+    --chart-5: var(--brand-error);
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* DARK MODE BRAND COLORS */
+    --brand-bg-primary: 222 84% 5%;      /* Dark background */
+    --brand-bg-secondary: 217 33% 17%;   /* Darker gray */
+    --brand-bg-accent: 142 76% 8%;       /* Very dark green */
+    
+    --brand-text-primary: 0 0% 100%;     /* White text */
+    --brand-text-secondary: 215 16% 75%; /* Light gray */
+    --brand-text-muted: 215 16% 55%;     /* Medium gray */
+    --brand-text-inverse: 222 84% 5%;    /* Dark text */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --background: var(--brand-bg-primary);
+    --foreground: var(--brand-text-primary);
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --card: var(--brand-bg-primary);
+    --card-foreground: var(--brand-text-primary);
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --popover: var(--brand-bg-primary);
+    --popover-foreground: var(--brand-text-primary);
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --primary: var(--brand-primary-light);
+    --primary-foreground: var(--brand-text-inverse);
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --secondary: var(--brand-gray-800);
+    --secondary-foreground: var(--brand-text-primary);
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --muted: var(--brand-gray-800);
+    --muted-foreground: var(--brand-text-muted);
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --accent: var(--brand-gray-800);
+    --accent-foreground: var(--brand-text-primary);
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 94.1%;
-    --sidebar-primary-foreground: 240 5.9% 10%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --destructive: var(--brand-error);
+    --destructive-foreground: var(--brand-text-primary);
+
+    --border: var(--brand-gray-700);
+    --input: var(--brand-gray-700);
+    --ring: var(--brand-primary-light);
+    
+    --sidebar-background: var(--brand-bg-secondary);
+    --sidebar-foreground: var(--brand-text-secondary);
+    --sidebar-primary: var(--brand-primary-light);
+    --sidebar-primary-foreground: var(--brand-text-inverse);
+    --sidebar-accent: var(--brand-gray-700);
+    --sidebar-accent-foreground: var(--brand-text-primary);
+    --sidebar-border: var(--brand-gray-700);
+    --sidebar-ring: var(--brand-primary-light);
   }
 }
 
@@ -103,12 +158,92 @@
   }
 }
 
-/* Page Width Container System */
+/* 🚨 CRITICAL: BRAND COLOR UTILITY CLASSES - USE THESE INSTEAD OF ARBITRARY COLORS */
 @layer components {
-  /* Standard page container that aligns with topbar width */
+  
+  /* PRIMARY BRAND COLORS */
+  .bg-brand-primary { background-color: hsl(var(--brand-primary)); }
+  .bg-brand-primary-hover { background-color: hsl(var(--brand-primary-hover)); }
+  .bg-brand-primary-light { background-color: hsl(var(--brand-primary-light)); }
+  .bg-brand-primary-dark { background-color: hsl(var(--brand-primary-dark)); }
+  
+  .text-brand-primary { color: hsl(var(--brand-primary)); }
+  .text-brand-primary-hover { color: hsl(var(--brand-primary-hover)); }
+  .text-brand-primary-light { color: hsl(var(--brand-primary-light)); }
+  .text-brand-primary-dark { color: hsl(var(--brand-primary-dark)); }
+  
+  .border-brand-primary { border-color: hsl(var(--brand-primary)); }
+  .border-brand-primary-light { border-color: hsl(var(--brand-primary-light)); }
+  
+  /* SECONDARY BRAND COLORS */
+  .bg-brand-secondary { background-color: hsl(var(--brand-secondary)); }
+  .bg-brand-secondary-hover { background-color: hsl(var(--brand-secondary-hover)); }
+  .bg-brand-secondary-light { background-color: hsl(var(--brand-secondary-light)); }
+  
+  .text-brand-secondary { color: hsl(var(--brand-secondary)); }
+  .text-brand-secondary-hover { color: hsl(var(--brand-secondary-hover)); }
+  .text-brand-secondary-light { color: hsl(var(--brand-secondary-light)); }
+  
+  /* BRAND GRAY SCALE */
+  .bg-brand-gray-50 { background-color: hsl(var(--brand-gray-50)); }
+  .bg-brand-gray-100 { background-color: hsl(var(--brand-gray-100)); }
+  .bg-brand-gray-200 { background-color: hsl(var(--brand-gray-200)); }
+  .bg-brand-gray-500 { background-color: hsl(var(--brand-gray-500)); }
+  .bg-brand-gray-900 { background-color: hsl(var(--brand-gray-900)); }
+  
+  .text-brand-gray-500 { color: hsl(var(--brand-gray-500)); }
+  .text-brand-gray-600 { color: hsl(var(--brand-gray-600)); }
+  .text-brand-gray-700 { color: hsl(var(--brand-gray-700)); }
+  .text-brand-gray-900 { color: hsl(var(--brand-gray-900)); }
+  
+  /* STATUS COLORS */
+  .bg-brand-success { background-color: hsl(var(--brand-success)); }
+  .bg-brand-success-light { background-color: hsl(var(--brand-success-light)); }
+  .bg-brand-warning { background-color: hsl(var(--brand-warning)); }
+  .bg-brand-error { background-color: hsl(var(--brand-error)); }
+  
+  .text-brand-success { color: hsl(var(--brand-success)); }
+  .text-brand-warning { color: hsl(var(--brand-warning)); }
+  .text-brand-error { color: hsl(var(--brand-error)); }
+  
+  /* BRAND BUTTON STYLES - CONSISTENT ACROSS ALL COMPONENTS */
+  .btn-brand-primary {
+    @apply bg-brand-primary hover:bg-brand-primary-hover text-white font-medium px-4 py-2 rounded-md transition-colors duration-200;
+  }
+  
+  .btn-brand-secondary {
+    @apply bg-brand-secondary hover:bg-brand-secondary-hover text-white font-medium px-4 py-2 rounded-md transition-colors duration-200;
+  }
+  
+  .btn-brand-outline {
+    @apply border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white font-medium px-4 py-2 rounded-md transition-all duration-200;
+  }
+  
+  .btn-brand-ghost {
+    @apply text-brand-primary hover:bg-brand-gray-100 font-medium px-4 py-2 rounded-md transition-colors duration-200;
+  }
+
+  /* BRAND CARD STYLES */
+  .card-brand {
+    @apply bg-white border border-brand-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+  
+  .card-brand-accent {
+    @apply bg-brand-gray-50 border border-brand-gray-200 rounded-lg shadow-sm;
+  }
+
+  /* BRAND INPUT STYLES */
+  .input-brand {
+    @apply border border-brand-gray-200 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 rounded-md px-3 py-2 transition-all duration-200;
+  }
+}
+
+/* 📐 CRITICAL: WIDTH CONTAINER SYSTEM - ALIGNED WITH TOPBAR */
+@layer components {
+  /* Standard page container that MUST align with topbar width */
   .page-container {
     width: 100%;
-    max-width: 1400px;
+    max-width: 1400px; /* CRITICAL: Must match topbar max-width */
     margin: 0 auto;
     padding: 0 1rem;
   }
@@ -131,7 +266,45 @@
     }
   }
 
-  /* Full-width sections for heroes and special content */
+  /* Content width for optimal reading and form layouts */
+  .content-width {
+    width: 100%;
+    max-width: 1200px; /* Optimal content width */
+    margin: 0 auto;
+  }
+
+  /* Dashboard specific containers */
+  .dashboard-page-container {
+    @apply page-container py-6 md:py-8;
+  }
+
+  /* CRITICAL: Hero sections must align with page content */
+  .hero-container {
+    width: 100%;
+    max-width: 1400px; /* MUST match page-container */
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .hero-container {
+      padding: 0 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .hero-container {
+      padding: 0 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .hero-container {
+      padding: 0 2.5rem;
+    }
+  }
+
+  /* Full-width sections for background images only */
   .full-width-section {
     width: 100vw;
     position: relative;
@@ -141,24 +314,10 @@
     margin-right: -50vw;
   }
 
-  /* Dashboard specific containers */
-  .dashboard-page-container {
-    width: 100%;
-    max-width: 1600px;
-    margin: 0 auto;
-  }
-
-  /* Content width that matches dashboard layout */
-  .content-width {
-    width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
   /* Mobile-specific fixes for sidebar and width overflow */
   [data-mobile="true"] {
     background-color: white !important;
-    color: #1f2937 !important;
+    color: hsl(var(--brand-text-primary)) !important;
   }
 
   /* Fix width overflow on mobile */
@@ -186,42 +345,47 @@
       max-width: 100vw;
     }
 
+    .hero-container {
+      padding: 0 0.75rem;
+      max-width: 100vw;
+    }
+
     .dashboard-page-container {
       max-width: 100vw;
     }
 
     /* Ensure mobile sidebar menu items are readable */
     [data-sidebar="sidebar"][data-mobile="true"] * {
-      color: #1f2937 !important;
+      color: hsl(var(--brand-text-primary)) !important;
     }
 
     [data-sidebar="sidebar"][data-mobile="true"] .text-muted-foreground {
-      color: #6b7280 !important;
+      color: hsl(var(--brand-text-muted)) !important;
     }
 
     [data-sidebar="sidebar"][data-mobile="true"] .text-sidebar-foreground {
-      color: #1f2937 !important;
+      color: hsl(var(--brand-text-primary)) !important;
     }
 
     /* Fix any remaining transparent elements in mobile sidebar */
     [data-sidebar="sidebar"][data-mobile="true"] button,
     [data-sidebar="sidebar"][data-mobile="true"] a {
       background-color: transparent;
-      color: #1f2937 !important;
+      color: hsl(var(--brand-text-primary)) !important;
     }
 
     [data-sidebar="sidebar"][data-mobile="true"] button:hover,
     [data-sidebar="sidebar"][data-mobile="true"] a:hover {
-      background-color: #f3f4f6 !important;
-      color: #1f2937 !important;
+      background-color: hsl(var(--brand-gray-100)) !important;
+      color: hsl(var(--brand-text-primary)) !important;
     }
   }
 
   /* Ensure proper text contrast in mobile sidebar */
   [data-sidebar="sidebar"][data-mobile="true"] {
-    --sidebar-foreground: #1f2937;
-    --sidebar-background: #ffffff;
-    --muted-foreground: #6b7280;
+    --sidebar-foreground: var(--brand-text-primary);
+    --sidebar-background: var(--brand-bg-primary);
+    --muted-foreground: var(--brand-text-muted);
   }
 }
 

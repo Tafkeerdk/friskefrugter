@@ -80,8 +80,8 @@ const Index = () => {
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-black/20" />
             <div className={cn(
-              "absolute inset-0 flex flex-col justify-center container mx-auto",
-              isMobile ? "px-4" : "px-4"
+              "absolute inset-0 flex flex-col justify-center hero-container",
+              isMobile ? "" : ""
             )}>
               <div className={cn(
                 "text-white",
@@ -376,7 +376,7 @@ const Index = () => {
             <div className="absolute inset-0 bg-green-900/80"></div>
           </div>
           <div className={cn(
-            "page-container relative z-10",
+            "hero-container relative z-10",
             isMobile ? "py-12" : "py-20"
           )}>
             <div className="content-width text-center">

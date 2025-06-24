@@ -55,8 +55,8 @@ const Contact = () => {
               <Card className="shadow-md border-0">
                 <CardContent className="pt-6 pb-8">
                   <div className="text-center">
-                    <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
-                      <CheckCircle className="h-8 w-8 text-green-600" />
+                                      <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand-gray-100 mb-4">
+                    <CheckCircle className="h-8 w-8 text-brand-primary" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Tak for din henvendelse!</h2>
                     <p className="text-gray-600 mb-6 max-w-md mx-auto">
@@ -82,7 +82,7 @@ const Contact = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div className="flex items-start">
-                        <MapPin className="h-5 w-5 text-green-600 mt-0.5 mr-3" />
+                        <MapPin className="h-5 w-5 text-brand-primary mt-0.5 mr-3" />
                         <div>
                           <h3 className="font-medium text-gray-900">Adresse</h3>
                           <p className="text-gray-600">Grøntvej 123</p>
@@ -90,7 +90,7 @@ const Contact = () => {
                         </div>
                       </div>
                       <div className="flex items-start">
-                        <Phone className="h-5 w-5 text-green-600 mt-0.5 mr-3" />
+                        <Phone className="h-5 w-5 text-brand-primary mt-0.5 mr-3" />
                         <div>
                           <h3 className="font-medium text-gray-900">Telefon</h3>
                           <p className="text-gray-600">+45 12 34 56 78</p>
@@ -98,7 +98,7 @@ const Contact = () => {
                         </div>
                       </div>
                       <div className="flex items-start">
-                        <Mail className="h-5 w-5 text-green-600 mt-0.5 mr-3" />
+                        <Mail className="h-5 w-5 text-brand-primary mt-0.5 mr-3" />
                         <div>
                           <h3 className="font-medium text-gray-900">Email</h3>
                           <p className="text-gray-600">info@multigront.dk</p>

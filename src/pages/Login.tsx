@@ -77,8 +77,8 @@ const Login = () => {
               <Card className="border border-gray-100 shadow-sm rounded-xl overflow-hidden bg-white">
                 <div className="bg-white rounded-lg overflow-hidden">
                   <CardHeader className="space-y-1 pb-6">
-                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-green-50 mx-auto flex items-center justify-center mb-2 shadow-sm">
-                      <User className="h-7 w-7 md:h-8 md:w-8 text-green-600" />
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-brand-gray-100 mx-auto flex items-center justify-center mb-2 shadow-sm">
+                      <User className="h-7 w-7 md:h-8 md:w-8 text-brand-primary" />
                     </div>
                     <CardTitle className="text-xl md:text-2xl font-bold text-center text-gray-800">
                       B2B Kunde Login
@@ -97,7 +97,7 @@ const Login = () => {
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-medium flex items-center gap-1.5">
-                          <Mail className="h-3.5 w-3.5 text-green-600" />
+                          <Mail className="h-3.5 w-3.5 text-brand-primary" />
                           Email
                         </Label>
                         <div className="relative group">
@@ -117,12 +117,12 @@ const Login = () => {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <Label htmlFor="password" className="text-sm font-medium flex items-center gap-1.5">
-                            <Lock className="h-3.5 w-3.5 text-green-600" />
+                            <Lock className="h-3.5 w-3.5 text-brand-primary" />
                             Adgangskode
                           </Label>
                           <Link 
                             to="/password-reset" 
-                            className="text-sm font-medium text-green-600 hover:text-green-800 transition-colors"
+                            className="text-sm font-medium text-brand-primary hover:text-brand-primary-hover transition-colors"
                           >
                             Glemt adgangskode?
                           </Link>
@@ -142,8 +142,7 @@ const Login = () => {
                       </div>
                       <Button 
                         type="submit" 
-                        className="w-full bg-green-600 hover:bg-green-700 text-white
-                                 transition-all duration-300 py-5 md:py-6 rounded-xl text-base"
+                        className="w-full btn-brand-primary py-5 md:py-6 rounded-xl text-base"
                         disabled={isLoading}
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2">
@@ -159,7 +158,7 @@ const Login = () => {
                       <span>Har du ikke en B2B konto? </span>
                       <Link 
                         to="/apply" 
-                        className="font-medium text-green-600 hover:text-green-800 transition-colors"
+                        className="font-medium text-brand-primary hover:text-brand-primary-hover transition-colors"
                       >
                         Ansøg om adgang her
                       </Link>
@@ -191,8 +190,8 @@ const Login = () => {
 
                 <div className="space-y-4">
                   <div className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                      <ShoppingCart className="h-5 w-5 text-green-600" />
+                                    <div className="flex-shrink-0 w-10 h-10 bg-brand-gray-100 rounded-lg flex items-center justify-center">
+                  <ShoppingCart className="h-5 w-5 text-brand-primary" />
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-1">Kundespecifikke priser</h3>
@@ -231,12 +230,12 @@ const Login = () => {
                   </div>
                 </div>
 
-                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
-                  <div className="flex items-start space-x-3">
-                    <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="font-semibold text-green-900 mb-1">Sikker platform</h4>
-                      <p className="text-green-800 text-sm">
+                            <div className="bg-brand-gray-100 p-6 rounded-lg border border-brand-gray-200">
+              <div className="flex items-start space-x-3">
+                <Shield className="h-6 w-6 text-brand-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-brand-primary-dark mb-1">Sikker platform</h4>
+                  <p className="text-brand-gray-700 text-sm">
                         Dine data er beskyttet med moderne sikkerhedsforanstaltninger
                       </p>
                     </div>

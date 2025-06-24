@@ -269,7 +269,7 @@ const Products = () => {
               <Button 
                 onClick={loadMoreProducts}
                 disabled={isLoadingMore}
-                className="bg-green-600 hover:bg-green-700"
+                className="btn-brand-primary"
               >
                 {isLoadingMore ? (
                   <>

@@ -9,8 +9,8 @@ export function Footer() {
   return (
     <footer className="bg-gradient-to-b from-gray-50 to-gray-100 border-t border-gray-200">
       <div className={cn(
-        "container mx-auto",
-        isMobile ? "py-6 px-4" : "py-8 md:py-12 px-6"
+        "page-container",
+        isMobile ? "py-6" : "py-8 md:py-12"
       )}>
         <div className={cn(
           "grid gap-6",

@@ -78,7 +78,7 @@ export function Navbar() {
           : "bg-white shadow-sm py-3"
       )}
     >
-      <div className="container mx-auto flex items-center justify-between px-4">
+      <div className="page-container flex items-center justify-between">
         <div className="flex items-center gap-4 md:gap-8">
           <Link to="/" className="flex items-center group">
             <span className={cn(
@@ -219,7 +219,7 @@ export function Navbar() {
         "md:hidden bg-white w-full shadow-md overflow-hidden transition-all duration-300 ease-in-out",
         isMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
       )}>
-        <div className="container mx-auto px-4 flex flex-col space-y-2 py-4">
+        <div className="page-container flex flex-col space-y-2 py-4">
           <Link 
             to="/products" 
             className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"

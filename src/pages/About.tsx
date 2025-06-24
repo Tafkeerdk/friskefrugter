@@ -30,7 +30,7 @@ export default function About() {
               </p>
               <div className="mt-8 flex gap-4 animate-fade-slide-up-delay-2">
                 <Link to="/contact">
-                  <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
+                  <Button size="lg" className="bg-white text-brand-primary hover:bg-brand-gray-50">
                     Kontakt os <ChevronRight className="ml-2" />
                   </Button>
                 </Link>
@@ -44,9 +44,9 @@ export default function About() {
           <div className="content-width">
             <div className="max-w-3xl mx-auto text-center mb-20">
               <div className="inline-block">
-                <h2 className="text-4xl font-bold mb-6 text-green-800 relative">
+                <h2 className="text-4xl font-bold mb-6 text-brand-primary-dark relative">
                   Vores Mission
-                  <div className="absolute -bottom-3 left-0 w-full h-1 bg-green-500 rounded-full transform scale-x-0 animate-scale-in" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}></div>
+                  <div className="absolute -bottom-3 left-0 w-full h-1 bg-brand-primary rounded-full transform scale-x-0 animate-scale-in" style={{ animationDelay: '0.5s', animationFillMode: 'forwards' }}></div>
                 </h2>
               </div>
               <p className="text-xl text-gray-600 leading-relaxed animate-fade-slide-up-delay-1">
@@ -59,7 +59,7 @@ export default function About() {
             {/* Enhanced Values Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
               <div className="bg-white p-8 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 group">
-                <div className="text-green-600 mb-6 group-hover:scale-110 transition-transform duration-300">
+                <div className="text-brand-primary mb-6 group-hover:scale-110 transition-transform duration-300">
                   <Leaf className="h-12 w-12 mx-auto" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-4 text-center">Friskhed</h3>
@@ -103,15 +103,15 @@ export default function About() {
             <div className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl shadow-lg p-12 transform hover:scale-[1.02] transition-transform duration-500">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                 <div className="text-center transform hover:-translate-y-2 transition-all duration-300">
-                  <div className="text-5xl font-bold text-green-600 mb-3 animate-count-up">1000+</div>
+                  <div className="text-5xl font-bold text-brand-primary mb-3 animate-count-up">1000+</div>
                   <div className="text-lg text-gray-600">Tilfredse kunder</div>
                 </div>
                 <div className="text-center transform hover:-translate-y-2 transition-all duration-300">
-                  <div className="text-5xl font-bold text-green-600 mb-3">24/7</div>
+                  <div className="text-5xl font-bold text-brand-primary mb-3">24/7</div>
                   <div className="text-lg text-gray-600">Support</div>
                 </div>
                 <div className="text-center transform hover:-translate-y-2 transition-all duration-300">
-                  <div className="text-5xl font-bold text-green-600 mb-3">98%</div>
+                  <div className="text-5xl font-bold text-brand-primary mb-3">98%</div>
                   <div className="text-lg text-gray-600">Leveringspræcision</div>
                 </div>
               </div>
