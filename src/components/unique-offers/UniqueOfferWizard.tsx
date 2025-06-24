@@ -310,18 +310,23 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   });
 
   const canProceedFromStep = (step: WizardStep): boolean => {
-    switch (step) {
-      case 'product':
-        return !!offerData.productId;
-      case 'customer':
-        return !!offerData.customerId;
-      case 'details':
-        return !!offerData.fixedPrice && parseFloat(offerData.fixedPrice) > 0;
-      case 'confirmation':
-        return true;
-      default:
-        return false;
-    }
+    const result = (() => {
+      switch (step) {
+        case 'product':
+          return !!offerData.productId;
+        case 'customer':
+          return !!offerData.customerId;
+        case 'details':
+          return !!offerData.fixedPrice && parseFloat(offerData.fixedPrice) > 0;
+        case 'confirmation':
+          return true;
+        default:
+          return false;
+      }
+    })();
+    
+    console.log(`🚦 canProceedFromStep(${step}):`, result, 'offerData:', offerData);
+    return result;
   };
 
   const renderStepIndicator = () => (
@@ -505,8 +510,38 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         <Card className="bg-brand-gray-50 border-brand-gray-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-brand-primary text-white rounded-lg">
-                <Package className="h-4 w-4" />
+              {/* Selected Product Image */}
+              <div className="w-12 h-12 flex-shrink-0 rounded-lg border border-brand-gray-200 overflow-hidden bg-brand-gray-100 relative">
+                {getSelectedProduct()?.billeder && getSelectedProduct()!.billeder!.length > 0 ? (
+                  <>
+                    <img
+                      src={getSelectedProduct()!.billeder!.find(img => img.isPrimary)?.url || getSelectedProduct()!.billeder![0]?.url}
+                      alt={getSelectedProduct()?.produktnavn}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Replace broken image with placeholder
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
+                        if (placeholder) {
+                          placeholder.style.display = 'flex';
+                        }
+                      }}
+                    />
+                    {/* Fallback placeholder for broken images */}
+                    <div 
+                      className="image-placeholder absolute inset-0 w-full h-full flex items-center justify-center bg-brand-primary text-white"
+                      style={{ display: 'none' }}
+                    >
+                      <Package className="w-4 h-4" />
+                    </div>
+                  </>
+                ) : (
+                  /* Default placeholder for products without images */
+                  <div className="w-full h-full flex items-center justify-center bg-brand-primary text-white">
+                    <Package className="w-4 h-4" />
+                  </div>
+                )}
               </div>
               <div>
                 <h4 className="font-medium text-brand-gray-900">{getSelectedProduct()?.produktnavn}</h4>
@@ -562,7 +597,15 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
               <button
                 key={customer._id}
                 type="button"
-                onClick={() => setOfferData(prev => ({ ...prev, customerId: customer._id }))}
+                onClick={() => {
+                  console.log('🎯 Customer clicked:', customer.companyName, 'ID:', customer._id);
+                  console.log('🔍 Current customerId:', offerData.customerId);
+                  setOfferData(prev => {
+                    const newData = { ...prev, customerId: customer._id };
+                    console.log('✅ New offer data:', newData);
+                    return newData;
+                  });
+                }}
                 className={cn(
                   "w-full p-4 text-left hover:bg-brand-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
                   offerData.customerId === customer._id && "bg-brand-primary/10 border-l-4 border-brand-primary"
