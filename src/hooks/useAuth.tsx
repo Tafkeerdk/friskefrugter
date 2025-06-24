@@ -26,58 +26,181 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [customerUser, setCustomerUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Utility function to check if token is expired
+  // CRITICAL SECURITY FIX: Enhanced token expiration check
   const isTokenExpired = (token: string): boolean => {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
-      return payload.exp < currentTime;
+      const isExpired = payload.exp < currentTime;
+      
+      if (isExpired) {
+        console.warn('🚨 SECURITY: Token has expired!', {
+          tokenExp: new Date(payload.exp * 1000).toISOString(),
+          currentTime: new Date().toISOString(),
+          expiredBy: Math.floor(currentTime - payload.exp) + ' seconds'
+        });
+      }
+      
+      return isExpired;
     } catch (error) {
-      console.error('Error parsing token:', error);
+      console.error('🚨 SECURITY: Error parsing token - treating as expired:', error);
       return true; // Assume expired if we can't parse
     }
   };
 
-  // Utility function to attempt token refresh
+  // CRITICAL SECURITY FIX: Check if token is expiring soon (within 5 minutes)
+  const isTokenExpiringSoon = (token: string, minutesBeforeExpiry: number = 5): boolean => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      const timeUntilExpiry = payload.exp - currentTime;
+      const minutesUntilExpiry = timeUntilExpiry / 60;
+      
+      return minutesUntilExpiry <= minutesBeforeExpiry && minutesUntilExpiry > 0;
+    } catch (error) {
+      return true; // Assume expiring if we can't parse
+    }
+  };
+
+  // CRITICAL SECURITY FIX: Force logout if tokens are expired
+  const validateAndCleanupExpiredTokens = (): boolean => {
+    let hasValidSession = false;
+    
+    // Check admin session
+    const adminToken = tokenManager.getAccessToken('admin');
+    if (adminToken) {
+      if (isTokenExpired(adminToken)) {
+        console.warn('🚨 SECURITY: Admin token expired - forcing logout');
+        tokenManager.clearTokens('admin');
+        setAdminUser(null);
+      } else {
+        hasValidSession = true;
+      }
+    }
+    
+    // Check customer session
+    const customerToken = tokenManager.getAccessToken('customer');
+    if (customerToken) {
+      if (isTokenExpired(customerToken)) {
+        console.warn('🚨 SECURITY: Customer token expired - forcing logout');
+        tokenManager.clearTokens('customer');
+        setCustomerUser(null);
+      } else {
+        hasValidSession = true;
+      }
+    }
+    
+    return hasValidSession;
+  };
+
+  // CRITICAL SECURITY FIX: Attempt token refresh only if refresh token is valid
   const attemptTokenRefresh = async (): Promise<boolean> => {
     const refreshToken = tokenManager.getRefreshToken();
-    if (!refreshToken) return false;
+    if (!refreshToken) {
+      console.warn('🚨 SECURITY: No refresh token available');
+      return false;
+    }
+
+    // Check if refresh token is expired
+    if (isTokenExpired(refreshToken)) {
+      console.warn('🚨 SECURITY: Refresh token expired - forcing complete logout');
+      tokenManager.clearTokens();
+      setUser(null);
+      setAdminUser(null);
+      setCustomerUser(null);
+      return false;
+    }
 
     try {
       const response = await authService.refreshToken();
       if (response.success && response.tokens) {
         tokenManager.setTokens(response.tokens);
+        console.log('✅ SECURITY: Token refresh successful');
         return true;
+      } else {
+        console.warn('🚨 SECURITY: Token refresh failed - server rejected');
+        return false;
       }
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error('🚨 SECURITY: Token refresh failed:', error);
+      return false;
     }
-
-    return false;
   };
 
-  // Enhanced initialization with separate session support
+  // CRITICAL SECURITY FIX: Periodic token validation
+  useEffect(() => {
+    const validateTokensPeriodically = () => {
+      const hasValidSession = validateAndCleanupExpiredTokens();
+      
+      if (!hasValidSession && (adminUser || customerUser)) {
+        console.warn('🚨 SECURITY: No valid sessions found - clearing user state');
+        setUser(null);
+        setAdminUser(null);
+        setCustomerUser(null);
+        
+        // Redirect to login if on protected route
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/admin') || currentPath.includes('/dashboard')) {
+          console.warn('🚨 SECURITY: Redirecting to login due to expired session');
+          window.location.href = '/login';
+        }
+      }
+    };
+
+    // CRITICAL SECURITY FIX: Check tokens every 30 seconds
+    const tokenValidationInterval = setInterval(validateTokensPeriodically, 30000);
+
+    // CRITICAL SECURITY FIX: Also check on focus (when user returns to tab)
+    const handleFocus = () => {
+      console.log('🔍 SECURITY: Page focused - validating tokens');
+      validateTokensPeriodically();
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(tokenValidationInterval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [adminUser, customerUser]);
+
+  // Enhanced initialization with strict security validation
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('🔄 Initializing auth state...');
+      console.log('🔄 Initializing auth state with STRICT security validation...');
+      
+      // CRITICAL SECURITY FIX: Validate all tokens before setting user state
+      const hasValidSession = validateAndCleanupExpiredTokens();
+      
+      if (!hasValidSession) {
+        console.log('❌ SECURITY: No valid sessions found during initialization');
+        setIsLoading(false);
+        return;
+      }
       
       const savedAdminUser = authService.getUser('admin');
       const savedCustomerUser = authService.getUser('customer');
-      const adminToken = authService.isAuthenticated('admin');
-      const customerToken = authService.isAuthenticated('customer');
+      const adminToken = tokenManager.getAccessToken('admin');
+      const customerToken = tokenManager.getAccessToken('customer');
       
       console.log('📊 Auth state check:', {
         hasAdminUser: !!savedAdminUser,
         hasCustomerUser: !!savedCustomerUser,
-        hasAdminToken: adminToken,
-        hasCustomerToken: customerToken,
+        hasValidAdminToken: adminToken && !isTokenExpired(adminToken),
+        hasValidCustomerToken: customerToken && !isTokenExpired(customerToken),
         currentPath: window.location.pathname
       });
       
-      // Initialize admin session
-      if (savedAdminUser && adminToken) {
-        console.log('✅ Setting admin user from localStorage');
+      // Initialize admin session ONLY if token is valid
+      if (savedAdminUser && adminToken && !isTokenExpired(adminToken)) {
+        console.log('✅ SECURITY: Setting admin user with valid token');
         setAdminUser(savedAdminUser);
+        
+        // Check if token is expiring soon and attempt refresh
+        if (isTokenExpiringSoon(adminToken)) {
+          console.log('⚠️ SECURITY: Admin token expiring soon - attempting refresh');
+          await attemptTokenRefresh();
+        }
         
         // Fetch fresh admin profile data (but don't block initialization)
         authService.getAdminProfile()
@@ -91,35 +214,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           .catch(error => {
             console.warn('⚠️ Could not fetch fresh admin profile data on init:', error);
           });
-      } else {
-        console.log('❌ No valid admin session found');
+      } else if (savedAdminUser || adminToken) {
+        console.warn('🚨 SECURITY: Admin session invalid - clearing');
+        tokenManager.clearTokens('admin');
+        setAdminUser(null);
       }
       
-      // Initialize customer session
-      if (savedCustomerUser && customerToken) {
-        console.log('✅ Setting customer user from localStorage');
+      // Initialize customer session ONLY if token is valid
+      if (savedCustomerUser && customerToken && !isTokenExpired(customerToken)) {
+        console.log('✅ SECURITY: Setting customer user with valid token');
         setCustomerUser(savedCustomerUser);
-      } else {
-        console.log('❌ No valid customer session found');
+        
+        // Check if token is expiring soon and attempt refresh
+        if (isTokenExpiringSoon(customerToken)) {
+          console.log('⚠️ SECURITY: Customer token expiring soon - attempting refresh');
+          await attemptTokenRefresh();
+        }
+      } else if (savedCustomerUser || customerToken) {
+        console.warn('🚨 SECURITY: Customer session invalid - clearing');
+        tokenManager.clearTokens('customer');
+        setCustomerUser(null);
       }
       
-      // Set primary user based on current route
+      // Set primary user based on current route and valid sessions
       const currentPath = window.location.pathname;
+      const validAdminUser = adminToken && !isTokenExpired(adminToken) ? savedAdminUser : null;
+      const validCustomerUser = customerToken && !isTokenExpired(customerToken) ? savedCustomerUser : null;
+      
       if (currentPath.includes('/admin') || currentPath.includes('/super')) {
         console.log('🔒 Admin route detected - setting admin as primary user');
-        setUser(savedAdminUser);
+        setUser(validAdminUser);
       } else if (currentPath.includes('/dashboard') && !currentPath.includes('/admin')) {
         console.log('👤 Customer route detected - setting customer as primary user');
-        setUser(savedCustomerUser);
+        setUser(validCustomerUser);
       } else {
         // Default to admin if both are logged in, otherwise use whichever is available
-        const primaryUser = savedAdminUser || savedCustomerUser;
+        const primaryUser = validAdminUser || validCustomerUser;
         console.log('🎯 Setting primary user:', primaryUser ? primaryUser.userType : 'none');
         setUser(primaryUser);
       }
       
       setIsLoading(false);
-      console.log('✅ Auth initialization complete');
+      console.log('✅ SECURITY: Auth initialization complete with strict validation');
     };
 
     initializeAuth();
@@ -136,6 +272,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       if (response.success) {
+        // CRITICAL SECURITY FIX: Validate tokens immediately after login
+        const { accessToken } = response.tokens;
+        if (isTokenExpired(accessToken)) {
+          console.error('🚨 SECURITY: Received expired token from server!');
+          throw new Error('Server returned expired token');
+        }
+        
         // Set user in appropriate state
         if (userType === 'admin') {
           setAdminUser(response.user);
@@ -159,24 +302,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(response.user); // Set as primary user
         }
         
+        console.log('✅ SECURITY: Login successful with valid tokens');
         return response;
       } else {
         throw new Error(response.message || 'Login failed');
       }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ SECURITY: Login error:', error);
       throw error;
     }
   };
 
   const logout = (userType?: 'customer' | 'admin') => {
+    console.log('🚪 SECURITY: Logging out', userType || 'all sessions');
     authService.logout(userType);
     
     if (userType === 'admin') {
       setAdminUser(null);
       // If admin logs out but customer is still logged in, switch to customer
       if (customerUser) {
-        setUser(customerUser);
+        const customerToken = tokenManager.getAccessToken('customer');
+        if (customerToken && !isTokenExpired(customerToken)) {
+          setUser(customerUser);
+        } else {
+          tokenManager.clearTokens('customer');
+          setCustomerUser(null);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -184,7 +336,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setCustomerUser(null);
       // If customer logs out but admin is still logged in, switch to admin
       if (adminUser) {
-        setUser(adminUser);
+        const adminToken = tokenManager.getAccessToken('admin');
+        if (adminToken && !isTokenExpired(adminToken)) {
+          setUser(adminUser);
+        } else {
+          tokenManager.clearTokens('admin');
+          setAdminUser(null);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -204,6 +363,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return;
     }
 
+    // CRITICAL SECURITY FIX: Validate token before refreshing user data
+    const userType = savedUser.userType as 'admin' | 'customer';
+    const token = tokenManager.getAccessToken(userType);
+    
+    if (!token || isTokenExpired(token)) {
+      console.warn('🚨 SECURITY: Token expired during refresh - clearing user');
+      tokenManager.clearTokens(userType);
+      setUser(null);
+      if (userType === 'admin') setAdminUser(null);
+      if (userType === 'customer') setCustomerUser(null);
+      return;
+    }
+
     // If it's an admin user, fetch fresh profile data from server
     if (isAdmin(savedUser)) {
       try {
@@ -220,6 +392,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
       } catch (error) {
         console.warn('⚠️ Could not refresh profile data from server:', error);
+        // Check if error is due to token expiration
+        if (error.message?.includes('expired') || error.message?.includes('unauthorized')) {
+          console.warn('🚨 SECURITY: Token expired during profile refresh - forcing logout');
+          logout('admin');
+          return;
+        }
       }
     }
     

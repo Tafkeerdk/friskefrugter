@@ -433,15 +433,46 @@ class ApiClient {
     return 15000; // 15 seconds default
   }
 
+  // CRITICAL SECURITY FIX: Enhanced refresh token logic with multi-session support
   private async refreshToken(): Promise<boolean> {
     const sessionType = tokenManager.getCurrentSessionType();
     const refreshToken = sessionType 
       ? tokenManager.getRefreshToken(sessionType)
       : tokenManager.getRefreshToken();
       
-    if (!refreshToken) return false;
+    if (!refreshToken) {
+      console.warn('🚨 SECURITY: No refresh token available for session type:', sessionType);
+      return false;
+    }
+
+    // CRITICAL SECURITY FIX: Check if refresh token is expired before attempting refresh
+    try {
+      const payload = JSON.parse(atob(refreshToken.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      if (payload.exp < currentTime) {
+        console.error('🚨 SECURITY: Refresh token is expired - cannot refresh', {
+          sessionType,
+          expiredBy: Math.floor(currentTime - payload.exp) + ' seconds'
+        });
+        if (sessionType) {
+          tokenManager.clearTokens(sessionType);
+        } else {
+          tokenManager.clearTokens();
+        }
+        return false;
+      }
+    } catch (error) {
+      console.error('🚨 SECURITY: Error parsing refresh token:', error);
+      if (sessionType) {
+        tokenManager.clearTokens(sessionType);
+      } else {
+        tokenManager.clearTokens();
+      }
+      return false;
+    }
 
     try {
+      console.log('🔄 SECURITY: Attempting token refresh for session type:', sessionType);
       const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -452,25 +483,83 @@ class ApiClient {
 
       if (response.ok) {
         const data = await response.json();
-        if (sessionType) {
-          tokenManager.setTokens(data.tokens, sessionType);
+        if (data.success && data.tokens) {
+          // CRITICAL SECURITY FIX: Validate new tokens before storing
+          const { accessToken, refreshToken: newRefreshToken } = data.tokens;
+          
+          try {
+            // Validate access token
+            const accessPayload = JSON.parse(atob(accessToken.split('.')[1]));
+            const refreshPayload = JSON.parse(atob(newRefreshToken.split('.')[1]));
+            const currentTime = Date.now() / 1000;
+            
+            if (accessPayload.exp < currentTime) {
+              console.error('🚨 SECURITY: Server returned expired access token!');
+              if (sessionType) {
+                tokenManager.clearTokens(sessionType);
+              } else {
+                tokenManager.clearTokens();
+              }
+              return false;
+            }
+            
+            if (refreshPayload.exp < currentTime) {
+              console.error('🚨 SECURITY: Server returned expired refresh token!');
+              if (sessionType) {
+                tokenManager.clearTokens(sessionType);
+              } else {
+                tokenManager.clearTokens();
+              }
+              return false;
+            }
+            
+            // CRITICAL SECURITY FIX: Store tokens for correct session type
+            if (sessionType) {
+              tokenManager.setTokens(data.tokens, sessionType);
+            } else {
+              tokenManager.setTokens(data.tokens);
+            }
+            
+            requestCache.clear(); // Clear cache after token refresh
+            console.log('✅ SECURITY: Token refresh successful for session type:', sessionType);
+            return true;
+          } catch (tokenError) {
+            console.error('🚨 SECURITY: Error validating refreshed tokens:', tokenError);
+            if (sessionType) {
+              tokenManager.clearTokens(sessionType);
+            } else {
+              tokenManager.clearTokens();
+            }
+            return false;
+          }
         } else {
-          tokenManager.setTokens(data.tokens);
+          console.error('🚨 SECURITY: Token refresh failed - invalid response');
+          if (sessionType) {
+            tokenManager.clearTokens(sessionType);
+          } else {
+            tokenManager.clearTokens();
+          }
+          return false;
         }
-        requestCache.clear(); // Clear cache after token refresh
-        return true;
+      } else {
+        console.error('🚨 SECURITY: Token refresh failed - server error:', response.status);
+        if (sessionType) {
+          tokenManager.clearTokens(sessionType);
+        } else {
+          tokenManager.clearTokens();
+        }
+        return false;
       }
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error('🚨 SECURITY: Token refresh failed:', error);
+      // If refresh failed, clear tokens for current session
+      if (sessionType) {
+        tokenManager.clearTokens(sessionType);
+      } else {
+        tokenManager.clearTokens();
+      }
+      return false;
     }
-
-    // If refresh failed, clear tokens for current session
-    if (sessionType) {
-      tokenManager.clearTokens(sessionType);
-    } else {
-      tokenManager.clearTokens();
-    }
-    return false;
   }
 
   async get(endpoint: string): Promise<Response> {
@@ -808,27 +897,112 @@ export const authService = {
     requestCache.clearPattern(pattern);
   },
 
-  // Public refresh token method
+  // CRITICAL SECURITY FIX: Enhanced public refresh token method with multi-session support
   async refreshToken(): Promise<{ success: boolean; tokens?: AuthTokens; message?: string }> {
-    const refreshToken = tokenManager.getRefreshToken();
+    const sessionType = tokenManager.getCurrentSessionType();
+    const refreshToken = sessionType 
+      ? tokenManager.getRefreshToken(sessionType)
+      : tokenManager.getRefreshToken();
+      
     if (!refreshToken) {
+      console.warn('🚨 SECURITY: No refresh token available for session type:', sessionType);
       return { success: false, message: 'No refresh token available' };
     }
 
+    // CRITICAL SECURITY FIX: Check if refresh token is expired before attempting refresh
     try {
+      const payload = JSON.parse(atob(refreshToken.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      if (payload.exp < currentTime) {
+        console.error('🚨 SECURITY: Refresh token is expired in authService', {
+          sessionType,
+          expiredBy: Math.floor(currentTime - payload.exp) + ' seconds'
+        });
+        if (sessionType) {
+          tokenManager.clearTokens(sessionType);
+        } else {
+          tokenManager.clearTokens();
+        }
+        return { success: false, message: 'Refresh token expired' };
+      }
+    } catch (error) {
+      console.error('🚨 SECURITY: Error parsing refresh token in authService:', error);
+      if (sessionType) {
+        tokenManager.clearTokens(sessionType);
+      } else {
+        tokenManager.clearTokens();
+      }
+      return { success: false, message: 'Invalid refresh token' };
+    }
+
+    try {
+      console.log('🔄 SECURITY: AuthService attempting token refresh for session type:', sessionType);
       const response = await apiClient.post('/api/auth/refresh', { refreshToken });
       const data = await response.json();
       
       if (data.success && data.tokens) {
-        tokenManager.setTokens(data.tokens);
-        return { success: true, tokens: data.tokens };
+        // CRITICAL SECURITY FIX: Validate new tokens before storing
+        const { accessToken, refreshToken: newRefreshToken } = data.tokens;
+        
+        try {
+          const accessPayload = JSON.parse(atob(accessToken.split('.')[1]));
+          const refreshPayload = JSON.parse(atob(newRefreshToken.split('.')[1]));
+          const currentTime = Date.now() / 1000;
+          
+          if (accessPayload.exp < currentTime) {
+            console.error('🚨 SECURITY: AuthService received expired access token!');
+            if (sessionType) {
+              tokenManager.clearTokens(sessionType);
+            } else {
+              tokenManager.clearTokens();
+            }
+            return { success: false, message: 'Server returned expired access token' };
+          }
+          
+          if (refreshPayload.exp < currentTime) {
+            console.error('🚨 SECURITY: AuthService received expired refresh token!');
+            if (sessionType) {
+              tokenManager.clearTokens(sessionType);
+            } else {
+              tokenManager.clearTokens();
+            }
+            return { success: false, message: 'Server returned expired refresh token' };
+          }
+          
+          // CRITICAL SECURITY FIX: Store tokens for correct session type
+          if (sessionType) {
+            tokenManager.setTokens(data.tokens, sessionType);
+          } else {
+            tokenManager.setTokens(data.tokens);
+          }
+          
+          console.log('✅ SECURITY: AuthService token refresh successful for session type:', sessionType);
+          return { success: true, tokens: data.tokens };
+        } catch (tokenError) {
+          console.error('🚨 SECURITY: AuthService error validating refreshed tokens:', tokenError);
+          if (sessionType) {
+            tokenManager.clearTokens(sessionType);
+          } else {
+            tokenManager.clearTokens();
+          }
+          return { success: false, message: 'Invalid tokens received from server' };
+        }
       } else {
-        tokenManager.clearTokens();
+        console.error('🚨 SECURITY: AuthService token refresh failed - invalid response');
+        if (sessionType) {
+          tokenManager.clearTokens(sessionType);
+        } else {
+          tokenManager.clearTokens();
+        }
         return { success: false, message: data.message || 'Token refresh failed' };
       }
     } catch (error) {
-      console.error('Token refresh error:', error);
-      tokenManager.clearTokens();
+      console.error('🚨 SECURITY: AuthService token refresh error:', error);
+      if (sessionType) {
+        tokenManager.clearTokens(sessionType);
+      } else {
+        tokenManager.clearTokens();
+      }
       return { success: false, message: 'Token refresh failed' };
     }
   },

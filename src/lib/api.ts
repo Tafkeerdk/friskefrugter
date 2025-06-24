@@ -20,7 +20,7 @@ class ApiClient {
     console.log('📤 Request method:', options.method || 'GET');
     console.log('📦 Request body type:', options.body ? options.body.constructor.name : 'none');
     
-    // Get auth token from localStorage (correct key)
+    // CRITICAL SECURITY FIX: Enhanced token validation
     const token = localStorage.getItem('accessToken');
     
     // Only set default Content-Type if not explicitly overridden
@@ -32,22 +32,37 @@ class ApiClient {
     }
 
     if (token) {
-      // Validate token expiry before using it
+      // CRITICAL SECURITY FIX: Strict token validation before every request
       if (this.isTokenExpired(token)) {
-        console.log('🔄 Token expired, attempting refresh...');
+        console.warn('🚨 SECURITY: Token expired before request - attempting refresh...');
         const refreshed = await this.refreshToken();
         if (refreshed) {
           const newToken = localStorage.getItem('accessToken');
-          if (newToken) {
+          if (newToken && !this.isTokenExpired(newToken)) {
             defaultHeaders.Authorization = `Bearer ${newToken}`;
+            console.log('✅ SECURITY: Using refreshed token');
+          } else {
+            console.error('🚨 SECURITY: Refreshed token is also expired!');
+            this.clearTokens();
+            this.redirectToLogin();
+            throw new Error('Session expired. Please log in again.');
           }
         } else {
           // If refresh failed, clear tokens and redirect to login
+          console.error('🚨 SECURITY: Token refresh failed - forcing logout');
           this.clearTokens();
-          window.location.href = '/login';
+          this.redirectToLogin();
           throw new Error('Session expired. Please log in again.');
         }
       } else {
+        // CRITICAL SECURITY FIX: Check if token is expiring soon (within 2 minutes)
+        if (this.isTokenExpiringSoon(token, 2)) {
+          console.warn('⚠️ SECURITY: Token expiring soon - attempting proactive refresh...');
+          // Attempt refresh but don't block the request if it fails
+          this.refreshToken().catch(error => {
+            console.warn('⚠️ SECURITY: Proactive token refresh failed:', error);
+          });
+        }
         defaultHeaders.Authorization = `Bearer ${token}`;
       }
     }
@@ -91,40 +106,65 @@ class ApiClient {
         throw new Error(`Server returned non-JSON response: ${response.status}`);
       }
       
-      // Handle token expiry from server
+      // CRITICAL SECURITY FIX: Enhanced auth error handling
       if (response.status === 401 || response.status === 403) {
-        console.log('🔄 Server returned auth error, attempting token refresh...');
-        const refreshed = await this.refreshToken();
-        if (refreshed) {
-          // Retry the request with new token
-          const newToken = localStorage.getItem('accessToken');
-          if (newToken) {
-            const retryConfig = {
-              ...config,
-              headers: {
-                ...config.headers,
-                Authorization: `Bearer ${newToken}`,
-              },
-            };
-            console.log('🔄 Retrying request with new token...');
-            const retryResponse = await fetch(url, retryConfig);
-            const retryContentType = retryResponse.headers.get('content-type');
-            
-            if (retryContentType && retryContentType.includes('application/json')) {
-              data = await retryResponse.json();
+        console.warn('🚨 SECURITY: Server returned auth error - token may be expired');
+        
+        // Check if we have a token and if it's expired
+        const currentToken = localStorage.getItem('accessToken');
+        if (currentToken && this.isTokenExpired(currentToken)) {
+          console.warn('🚨 SECURITY: Confirmed token is expired - attempting refresh');
+          const refreshed = await this.refreshToken();
+          if (refreshed) {
+            // Retry the request with new token
+            const newToken = localStorage.getItem('accessToken');
+            if (newToken && !this.isTokenExpired(newToken)) {
+              const retryConfig = {
+                ...config,
+                headers: {
+                  ...config.headers,
+                  Authorization: `Bearer ${newToken}`,
+                },
+              };
+              console.log('🔄 Retrying request with new token...');
+              const retryResponse = await fetch(url, retryConfig);
+              const retryContentType = retryResponse.headers.get('content-type');
+              
+              if (retryContentType && retryContentType.includes('application/json')) {
+                data = await retryResponse.json();
+              } else {
+                throw new Error(`Server returned non-JSON response on retry: ${retryResponse.status}`);
+              }
+              
+              if (!retryResponse.ok) {
+                // If retry also fails with auth error, force logout
+                if (retryResponse.status === 401 || retryResponse.status === 403) {
+                  console.error('🚨 SECURITY: Retry also failed with auth error - forcing logout');
+                  this.clearTokens();
+                  this.redirectToLogin();
+                  throw new Error('Session expired. Please log in again.');
+                }
+                throw new Error(data.error || `HTTP error! status: ${retryResponse.status}`);
+              }
+              console.log('✅ Retry successful');
+              return data;
             } else {
-              throw new Error(`Server returned non-JSON response on retry: ${retryResponse.status}`);
+              console.error('🚨 SECURITY: New token is also expired!');
+              this.clearTokens();
+              this.redirectToLogin();
+              throw new Error('Session expired. Please log in again.');
             }
-            
-            if (!retryResponse.ok) {
-              throw new Error(data.error || `HTTP error! status: ${retryResponse.status}`);
-            }
-            console.log('✅ Retry successful');
-            return data;
+          } else {
+            console.error('🚨 SECURITY: Token refresh failed - forcing logout');
+            this.clearTokens();
+            this.redirectToLogin();
+            throw new Error('Session expired. Please log in again.');
           }
         } else {
+          // Token seems valid but server rejected it - force logout
+          console.error('🚨 SECURITY: Server rejected valid token - forcing logout');
           this.clearTokens();
-          window.location.href = '/login';
+          this.redirectToLogin();
           throw new Error('Session expired. Please log in again.');
         }
       }
@@ -142,22 +182,69 @@ class ApiClient {
     }
   }
 
+  // CRITICAL SECURITY FIX: Enhanced token expiration check
   private isTokenExpired(token: string): boolean {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const currentTime = Date.now() / 1000;
-      return payload.exp < currentTime;
+      const isExpired = payload.exp < currentTime;
+      
+      if (isExpired) {
+        console.warn('🚨 SECURITY: Token has expired!', {
+          tokenExp: new Date(payload.exp * 1000).toISOString(),
+          currentTime: new Date().toISOString(),
+          expiredBy: Math.floor(currentTime - payload.exp) + ' seconds'
+        });
+      }
+      
+      return isExpired;
     } catch (error) {
-      console.error('Error parsing token:', error);
+      console.error('🚨 SECURITY: Error parsing token - treating as expired:', error);
       return true; // Assume expired if we can't parse
     }
   }
 
+  // CRITICAL SECURITY FIX: Check if token is expiring soon
+  private isTokenExpiringSoon(token: string, minutesBeforeExpiry: number = 5): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      const currentTime = Date.now() / 1000;
+      const timeUntilExpiry = payload.exp - currentTime;
+      const minutesUntilExpiry = timeUntilExpiry / 60;
+      
+      const expiringSoon = minutesUntilExpiry <= minutesBeforeExpiry && minutesUntilExpiry > 0;
+      
+      if (expiringSoon) {
+        console.warn('⚠️ SECURITY: Token expiring soon!', {
+          minutesUntilExpiry: Math.floor(minutesUntilExpiry),
+          expiresAt: new Date(payload.exp * 1000).toISOString()
+        });
+      }
+      
+      return expiringSoon;
+    } catch (error) {
+      console.error('🚨 SECURITY: Error parsing token for expiry check:', error);
+      return true; // Assume expiring if we can't parse
+    }
+  }
+
+  // CRITICAL SECURITY FIX: Enhanced refresh token logic
   private async refreshToken(): Promise<boolean> {
     const refreshToken = localStorage.getItem('refreshToken');
-    if (!refreshToken) return false;
+    if (!refreshToken) {
+      console.warn('🚨 SECURITY: No refresh token available');
+      return false;
+    }
+
+    // CRITICAL SECURITY FIX: Check if refresh token is expired
+    if (this.isTokenExpired(refreshToken)) {
+      console.error('🚨 SECURITY: Refresh token is expired - cannot refresh');
+      this.clearTokens();
+      return false;
+    }
 
     try {
+      console.log('🔄 SECURITY: Attempting token refresh...');
       const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
@@ -169,22 +256,72 @@ class ApiClient {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.tokens) {
-          localStorage.setItem('accessToken', data.tokens.accessToken);
-          localStorage.setItem('refreshToken', data.tokens.refreshToken);
+          // CRITICAL SECURITY FIX: Validate new tokens before storing
+          const { accessToken, refreshToken: newRefreshToken } = data.tokens;
+          
+          if (this.isTokenExpired(accessToken)) {
+            console.error('🚨 SECURITY: Server returned expired access token!');
+            this.clearTokens();
+            return false;
+          }
+          
+          if (this.isTokenExpired(newRefreshToken)) {
+            console.error('🚨 SECURITY: Server returned expired refresh token!');
+            this.clearTokens();
+            return false;
+          }
+          
+          localStorage.setItem('accessToken', accessToken);
+          localStorage.setItem('refreshToken', newRefreshToken);
+          console.log('✅ SECURITY: Token refresh successful');
           return true;
+        } else {
+          console.error('🚨 SECURITY: Token refresh failed - invalid response');
+          this.clearTokens();
+          return false;
         }
+      } else {
+        console.error('🚨 SECURITY: Token refresh failed - server error:', response.status);
+        this.clearTokens();
+        return false;
       }
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      console.error('🚨 SECURITY: Token refresh failed:', error);
+      this.clearTokens();
+      return false;
     }
-
-    return false;
   }
 
+  // CRITICAL SECURITY FIX: Enhanced token cleanup
   private clearTokens(): void {
+    console.log('🧹 SECURITY: Clearing all tokens');
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('admin_accessToken');
+    localStorage.removeItem('admin_refreshToken');
+    localStorage.removeItem('admin_user');
+    localStorage.removeItem('customer_accessToken');
+    localStorage.removeItem('customer_refreshToken');
+    localStorage.removeItem('customer_user');
+  }
+
+  // CRITICAL SECURITY FIX: Smart redirect to login
+  private redirectToLogin(): void {
+    const currentPath = window.location.pathname;
+    console.log('🚪 SECURITY: Redirecting to login from:', currentPath);
+    
+    // Don't redirect if already on login page
+    if (currentPath === '/login' || currentPath === '/admin-login') {
+      return;
+    }
+    
+    // Redirect to appropriate login page
+    if (currentPath.includes('/admin') || currentPath.includes('/super')) {
+      window.location.href = '/admin-login';
+    } else {
+      window.location.href = '/login';
+    }
   }
 
   // Helper method to get correct endpoint based on environment
