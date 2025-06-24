@@ -149,10 +149,8 @@ const ProductImage: React.FC<{
         className={cn(
           "flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-dashed border-blue-200 rounded-lg transition-colors hover:from-blue-100 hover:to-indigo-200",
           sizeClasses[size],
-          className,
-          onClick && "cursor-pointer"
+          className
         )}
-        onClick={onClick}
       >
         <div className="flex flex-col items-center justify-center space-y-1">
           <div className="relative">
@@ -188,10 +186,8 @@ const ProductImage: React.FC<{
         className={cn(
           "object-cover transition-all duration-200",
           sizeClasses[size],
-          onClick && "cursor-pointer hover:scale-105",
           imageLoading && "opacity-0"
         )}
-        onClick={onClick}
         onError={handleImageError}
         onLoad={handleImageLoad}
       />
@@ -609,10 +605,25 @@ const DashboardProducts: React.FC = () => {
                   
                   return (
                     <Card key={product._id} className="overflow-hidden h-full hover:shadow-lg transition-shadow">
-                      <div className={cn(
-                        "relative overflow-hidden",
-                        isMobile ? "aspect-square" : "aspect-video"
-                      )}>
+                      <div 
+                        className={cn(
+                          "relative overflow-hidden cursor-pointer",
+                          isMobile ? "aspect-square" : "aspect-video"
+                        )}
+                        onClick={() => {
+                          if (product.billeder.length > 0) {
+                            openImageGallery(product, 0);
+                          } else {
+                            // Navigate to edit page to add images
+                            toast({
+                              title: 'Åbner redigeringsside',
+                              description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
+                              duration: 2000,
+                            });
+                            navigate(`/admin/products/edit/${product._id}`);
+                          }
+                        }}
+                      >
                         <ProductImage
                           src={primaryImage?.url}
                           alt={primaryImage?.altText || product.produktnavn}
@@ -620,19 +631,6 @@ const DashboardProducts: React.FC = () => {
                           className={cn(
                             isMobile ? "aspect-square" : "aspect-video"
                           )}
-                          onClick={() => {
-                            if (product.billeder.length > 0) {
-                              openImageGallery(product, 0);
-                            } else {
-                              // Navigate to edit page to add images
-                              toast({
-                                title: 'Åbner redigeringsside',
-                                description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
-                                duration: 2000,
-                              });
-                              navigate(`/admin/products/edit/${product._id}`);
-                            }
-                          }}
                         />
                         <div className={cn(
                           "absolute flex gap-1",
@@ -645,7 +643,10 @@ const DashboardProducts: React.FC = () => {
                               "rounded-full shadow-sm",
                               isMobile ? "h-8 w-8" : "h-8 w-8"
                             )}
-                            onClick={() => navigate(`/admin/products/edit/${product._id}`)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/admin/products/edit/${product._id}`);
+                            }}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -656,7 +657,10 @@ const DashboardProducts: React.FC = () => {
                               "rounded-full shadow-sm",
                               isMobile ? "h-8 w-8" : "h-8 w-8"
                             )}
-                            onClick={() => openDeleteDialog(product)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openDeleteDialog(product);
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
