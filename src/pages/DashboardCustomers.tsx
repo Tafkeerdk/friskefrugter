@@ -270,131 +270,140 @@ const DashboardCustomers: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Kunder</h2>
-          <p className="text-muted-foreground">
-            Administrer dine kunder og deres information.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input 
-            placeholder="Søg efter kunde..." 
-            className="w-64" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <Button 
-            className="flex items-center gap-1"
-            onClick={() => navigate('/admin/customers/new')}
-          >
-            <Plus className="h-4 w-4" />
-            <span>Tilføj kunde</span>
-          </Button>
-        </div>
-      </div>
-
-      {error && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="mt-6">
-        {customers.length === 0 ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <p className="text-lg font-medium text-muted-foreground">Ingen kunder fundet</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {searchTerm ? 'Prøv at ændre dine søgekriterier' : 'Der er ingen aktive kunder endnu'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-            {customers.map((customer) => (
-              <Card key={customer.id} className="overflow-hidden h-full">
-                <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-4">
-                  <div className="flex gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-primary/10 text-primary">
-                        {getInitials(customer.companyName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="font-medium">{customer.companyName}</h3>
-                      <Badge
-                        className={`mt-1 rounded-full px-2.5 ${getDiscountGroupColor(customer.discountGroup)}`}
-                      >
-                        {customer.discountGroup.name} ({customer.discountGroup.discountPercentage}%)
-                      </Badge>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Handlinger</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Se detaljer</DropdownMenuItem>
-                      <DropdownMenuItem>Rediger</DropdownMenuItem>
-                      <DropdownMenuItem>Se ordrer</DropdownMenuItem>
-                      <DropdownMenuItem>Send faktura</DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => openDiscountGroupDialog(customer)}
-                      >
-                        <Percent className="h-4 w-4 mr-2" />
-                        Ændre rabatgruppe
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem 
-                        className="text-destructive"
-                        onClick={() => {
-                          setSelectedCustomer(customer);
-                          setDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Slet kunde
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <div className="grid gap-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{customer.email}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{customer.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>CVR: {customer.cvrNumber}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm mt-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>
-                        {customer.lastLogin 
-                          ? `Sidst aktiv: ${formatDate(customer.lastLogin)}`
-                          : `Oprettet: ${formatDate(customer.createdAt)}`
-                        }
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      <div className="dashboard-page-container">
+        {/* Header Section with Responsive Layout */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6 mb-6">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">Kunder</h2>
+            <p className="text-sm md:text-base text-muted-foreground mt-1">
+              Administrer dine kunder og deres information.
+            </p>
           </div>
+          
+          {/* Search and Action Controls */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 lg:flex-shrink-0">
+            <div className="w-full sm:w-auto">
+              <Input 
+                placeholder="Søg efter kunde..." 
+                className="w-full sm:w-64 lg:w-72" 
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button 
+              className="flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+              onClick={() => navigate('/admin/customers/new')}
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Tilføj kunde</span>
+              <span className="sm:hidden">Tilføj</span>
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
+
+        {/* Customer Grid */}
+        <div className="content-width">
+          {customers.length === 0 ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <p className="text-lg font-medium text-muted-foreground">Ingen kunder fundet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {searchTerm ? 'Prøv at ændre dine søgekriterier' : 'Der er ingen aktive kunder endnu'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+              {customers.map((customer) => (
+                <Card key={customer.id} className="overflow-hidden h-full">
+                  <CardHeader className="p-4 pb-2 flex flex-row items-start justify-between gap-4">
+                    <div className="flex gap-3 min-w-0 flex-1">
+                      <Avatar className="h-12 w-12 flex-shrink-0">
+                        <AvatarFallback className="bg-primary/10 text-primary">
+                          {getInitials(customer.companyName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium truncate">{customer.companyName}</h3>
+                        <Badge
+                          className={`mt-1 rounded-full px-2.5 text-xs ${getDiscountGroupColor(customer.discountGroup)}`}
+                        >
+                          {customer.discountGroup.name} ({customer.discountGroup.discountPercentage}%)
+                        </Badge>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Handlinger</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>Se detaljer</DropdownMenuItem>
+                        <DropdownMenuItem>Rediger</DropdownMenuItem>
+                        <DropdownMenuItem>Se ordrer</DropdownMenuItem>
+                        <DropdownMenuItem>Send faktura</DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => openDiscountGroupDialog(customer)}
+                        >
+                          <Percent className="h-4 w-4 mr-2" />
+                          Ændre rabatgruppe
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem 
+                          className="text-destructive"
+                          onClick={() => {
+                            setSelectedCustomer(customer);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Slet kunde
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <div className="grid gap-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{customer.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">{customer.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span className="truncate">CVR: {customer.cvrNumber}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm mt-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate">
+                          {customer.lastLogin 
+                            ? `Sidst aktiv: ${formatDate(customer.lastLogin)}`
+                            : `Oprettet: ${formatDate(customer.createdAt)}`
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Delete Customer Dialog */}

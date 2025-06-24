@@ -103,9 +103,59 @@
   }
 }
 
-/* Mobile-specific fixes for sidebar and width overflow */
+/* Page Width Container System */
 @layer components {
-  /* Ensure mobile sidebar has proper background and contrast */
+  /* Standard page container that aligns with topbar width */
+  .page-container {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .page-container {
+      padding: 0 1.5rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .page-container {
+      padding: 0 2rem;
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .page-container {
+      padding: 0 2.5rem;
+    }
+  }
+
+  /* Full-width sections for heroes and special content */
+  .full-width-section {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    right: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+  }
+
+  /* Dashboard specific containers */
+  .dashboard-page-container {
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+
+  /* Content width that matches dashboard layout */
+  .content-width {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  /* Mobile-specific fixes for sidebar and width overflow */
   [data-mobile="true"] {
     background-color: white !important;
     color: #1f2937 !important;
@@ -129,6 +179,15 @@
       width: 100%;
       max-width: 100vw;
       overflow-x: hidden;
+    }
+
+    .page-container {
+      padding: 0 0.75rem;
+      max-width: 100vw;
+    }
+
+    .dashboard-page-container {
+      max-width: 100vw;
     }
 
     /* Ensure mobile sidebar menu items are readable */

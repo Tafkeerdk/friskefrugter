@@ -65,7 +65,7 @@ const Dashboard: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-grow bg-gray-50">
-        <div className="container mx-auto px-4 py-6 md:py-8 space-y-6 md:space-y-8">
+        <div className="page-container py-6 md:py-8 space-y-6 md:space-y-8">
           {/* Header */}
           <div className="text-center md:text-left">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -73,8 +73,8 @@ const Dashboard: React.FC = () => {
             </h1>
             <p className="text-gray-600 text-sm md:text-base">
               Her er dit dashboard med overblik over ordrer og aktivitet
-          </p>
-        </div>
+            </p>
+          </div>
 
           {/* Stats Cards - Mobile responsive grid */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">

@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, Mail, Lock, Loader2, CheckCircle, Key } from "lucide-react";
+import { ArrowLeft, Mail, Lock, Loader2, CheckCircle, Key, AlertTriangle } from "lucide-react";
 import { authService } from '../lib/auth';
 
 const passwordResetRequestSchema = z.object({
@@ -35,6 +35,10 @@ const PasswordReset = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [success, setSuccess] = useState<string | null>(null);
 
   const requestForm = useForm<PasswordResetRequestData>({
     resolver: zodResolver(passwordResetRequestSchema),
@@ -78,6 +82,7 @@ const PasswordReset = () => {
       
       if (response.success) {
         setStep('success');
+        setSuccess('Password opdateret!');
       } else {
         setError(response.message || 'Der opstod en fejl. Prøv igen.');
       }
@@ -86,6 +91,15 @@ const PasswordReset = () => {
       setError(errorMessage);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step === 'request') {
+      onRequestSubmit({ email });
+    } else if (step === 'verify') {
+      onVerifySubmit({ email, resetCode: code, newPassword, confirmPassword });
     }
   };
 
@@ -107,29 +121,105 @@ const PasswordReset = () => {
           </Alert>
         )}
 
-        <form onSubmit={requestForm.handleSubmit(onRequestSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="email">Email adresse</Label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="email"
-                type="email"
-                placeholder="din@email.dk"
-                className="pl-10"
-                {...requestForm.register('email')}
-                disabled={isLoading}
-              />
-            </div>
-            {requestForm.formState.errors.email && (
-              <p className="text-sm text-destructive">{requestForm.formState.errors.email.message}</p>
-            )}
-          </div>
+        {success && (
+          <Alert className="mb-4 border-green-200 bg-green-50">
+            <CheckCircle className="h-4 w-4 text-green-600" />
+            <AlertDescription className="text-green-800">
+              {success}
+            </AlertDescription>
+          </Alert>
+        )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send nulstillingskode
-          </Button>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {step === 'request' && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="email">Email adresse</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="din@email.dk"
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Sender...
+                  </>
+                ) : (
+                  'Send nulstillingskode'
+                )}
+              </Button>
+            </div>
+          )}
+
+          {step === 'verify' && (
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="code">6-cifret kode</Label>
+                <Input
+                  id="code"
+                  type="text"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  placeholder="123456"
+                  maxLength={6}
+                  required
+                  className="mt-1 text-center text-lg font-mono"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Indtast koden du modtog via email
+                </p>
+              </div>
+              <div>
+                <Label htmlFor="newPassword">Ny adgangskode</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mindst 8 tegn"
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword">Bekræft adgangskode</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Gentag din nye adgangskode"
+                  required
+                  className="mt-1"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Nulstiller...
+                  </>
+                ) : (
+                  'Nulstil adgangskode'
+                )}
+              </Button>
+            </div>
+          )}
         </form>
 
         <div className="mt-6 text-center space-y-3">
@@ -148,118 +238,6 @@ const PasswordReset = () => {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Tilbage til login
           </Link>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  const renderVerifyStep = () => (
-    <Card className="w-full">
-      <CardHeader className="text-center">
-        <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-          <Mail className="w-6 h-6 text-blue-600" />
-        </div>
-        <CardTitle>Indtast nulstillingskode</CardTitle>
-        <CardDescription>
-          Vi har sendt en 6-cifret kode til {email}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        <form onSubmit={verifyForm.handleSubmit(onVerifySubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="resetCode">Nulstillingskode</Label>
-            <Input
-              id="resetCode"
-              placeholder="123456"
-              maxLength={6}
-              className="text-center text-lg tracking-widest"
-              {...verifyForm.register('resetCode')}
-              disabled={isLoading}
-              autoComplete="off"
-              autoCorrect="off"
-              autoCapitalize="off"
-              spellCheck="false"
-            />
-            {verifyForm.formState.errors.resetCode && (
-              <p className="text-sm text-destructive">{verifyForm.formState.errors.resetCode.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">Nyt password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="newPassword"
-                type="password"
-                placeholder="Mindst 8 tegn"
-                className="pl-10"
-                {...verifyForm.register('newPassword')}
-                disabled={isLoading}
-              />
-            </div>
-            {verifyForm.formState.errors.newPassword && (
-              <p className="text-sm text-destructive">{verifyForm.formState.errors.newPassword.message}</p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Bekræft password</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Gentag password"
-                className="pl-10"
-                {...verifyForm.register('confirmPassword')}
-                disabled={isLoading}
-              />
-            </div>
-            {verifyForm.formState.errors.confirmPassword && (
-              <p className="text-sm text-destructive">{verifyForm.formState.errors.confirmPassword.message}</p>
-            )}
-          </div>
-
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Opdater password
-          </Button>
-        </form>
-
-        <div className="mt-6 text-center space-y-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setStep('request')}
-            disabled={isLoading}
-          >
-            Anmod om ny kode
-          </Button>
-          
-          <div className="text-sm text-muted-foreground">
-            Har du brug for hjælp?{' '}
-            <Link to="/faq#password-reset-guide" className="text-primary hover:underline">
-              Se vores FAQ
-            </Link>{' '}
-            for detaljeret guide til nulstilling af adgangskode
-          </div>
-          
-          <div>
-            <Link 
-              to="/login" 
-              className="inline-flex items-center text-sm text-muted-foreground hover:text-primary"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Tilbage til login
-            </Link>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -291,17 +269,148 @@ const PasswordReset = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
-      <main className="flex-grow container mx-auto px-4 py-16 flex items-center justify-center">
-        <div className="w-full max-w-md">
-          {step === 'request' && renderRequestStep()}
-          {step === 'verify' && renderVerifyStep()}
-          {step === 'success' && renderSuccessStep()}
+      <main className="flex-grow py-12">
+        <div className="page-container">
+          <div className="content-width">
+            <div className="max-w-md mx-auto">
+              <Card className="shadow-md border-0">
+                <CardContent className="pt-6 pb-8">
+                  <div className="text-center mb-6">
+                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Key className="h-8 w-8 text-green-600" />
+                    </div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                      Nulstil adgangskode
+                    </h1>
+                    <p className="text-gray-600 text-sm">
+                      Indtast din email for at modtage en nulstillingskode
+                    </p>
+                  </div>
+
+                  {error && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {success && (
+                    <Alert className="mb-4 border-green-200 bg-green-50">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-green-800">
+                        {success}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {step === 'request' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="email">Email adresse</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="din@email.dk"
+                            required
+                            className="mt-1"
+                          />
+                        </div>
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Sender...
+                            </>
+                          ) : (
+                            'Send nulstillingskode'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+
+                    {step === 'verify' && (
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="code">6-cifret kode</Label>
+                          <Input
+                            id="code"
+                            type="text"
+                            value={code}
+                            onChange={(e) => setCode(e.target.value)}
+                            placeholder="123456"
+                            maxLength={6}
+                            required
+                            className="mt-1 text-center text-lg font-mono"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Indtast koden du modtog via email
+                          </p>
+                        </div>
+                        <div>
+                          <Label htmlFor="newPassword">Ny adgangskode</Label>
+                          <Input
+                            id="newPassword"
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Mindst 8 tegn"
+                            required
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="confirmPassword">Bekræft adgangskode</Label>
+                          <Input
+                            id="confirmPassword"
+                            type="password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Gentag din nye adgangskode"
+                            required
+                            className="mt-1"
+                          />
+                        </div>
+                        <Button 
+                          type="submit" 
+                          className="w-full bg-green-600 hover:bg-green-700"
+                          disabled={isLoading}
+                        >
+                          {isLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Nulstiller...
+                            </>
+                          ) : (
+                            'Nulstil adgangskode'
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </form>
+
+                  <div className="mt-6 text-center">
+                    <Link 
+                      to="/login" 
+                      className="text-sm text-green-600 hover:text-green-700 font-medium"
+                    >
+                      ← Tilbage til login
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

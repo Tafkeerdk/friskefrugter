@@ -130,7 +130,7 @@ const Index = () => {
 
         {/* Features Bar with mobile optimization */}
         <section className="bg-white border-b py-4 md:py-6">
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className={cn(
               "grid gap-4",
               isMobile ? "grid-cols-1 space-y-2" : "grid-cols-1 md:grid-cols-3"
@@ -177,8 +177,8 @@ const Index = () => {
 
         {/* B2B Info Section with mobile improvements */}
         <section className="bg-gradient-to-b from-green-50 to-white py-12 md:py-16">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
+          <div className="page-container">
+            <div className="content-width">
               <div className={cn(
                 "bg-white border border-gray-200 rounded-xl shadow-sm transition-all duration-300 hover:shadow-md",
                 isMobile ? "p-6" : "p-8"
@@ -322,7 +322,7 @@ const Index = () => {
 
         {/* Featured Products with mobile optimization */}
         <section className="py-12 md:py-16 bg-gray-50">
-          <div className="container mx-auto px-4">
+          <div className="page-container">
             <div className={cn("text-center", isMobile ? "mb-8" : "mb-12")}>
               <h2 className={cn(
                 "font-bold text-gray-900 mb-4 relative inline-block",
@@ -376,10 +376,10 @@ const Index = () => {
             <div className="absolute inset-0 bg-green-900/80"></div>
           </div>
           <div className={cn(
-            "container mx-auto relative z-10",
-            isMobile ? "px-4 py-12" : "px-4 py-20"
+            "page-container relative z-10",
+            isMobile ? "py-12" : "py-20"
           )}>
-            <div className="max-w-3xl mx-auto text-center">
+            <div className="content-width text-center">
               <h2 className={cn(
                 "font-bold text-white mb-6",
                 isMobile ? "text-2xl" : "text-3xl md:text-4xl"

@@ -1,9 +1,13 @@
-
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductFilters } from "@/components/products/ProductFilters";
 import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { ChevronDown } from "lucide-react";
+import { Package } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 // Sample product data
 const productsList = [
@@ -106,9 +110,14 @@ const productsList = [
 ];
 
 const Products = () => {
+  const { user } = useAuth();
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState("name");
   const [search, setSearch] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [displayedProducts, setDisplayedProducts] = useState(productsList);
+  const [totalProducts, setTotalProducts] = useState(productsList.length);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   // Filter products based on category and search
   const filteredProducts = productsList.filter(product => {
@@ -133,34 +142,147 @@ const Products = () => {
     }
   });
 
+  const loadMoreProducts = async () => {
+    setIsLoadingMore(true);
+    try {
+      // Simulate loading more products
+      const newProducts = [
+        {
+          id: "13",
+          name: "Nytt produkt",
+          image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?auto=format&fit=crop&q=80&w=800",
+          category: "fruit",
+          price: 29.95,
+          isLoggedIn: false,
+        },
+        {
+          id: "14",
+          name: "Nytt produkt",
+          image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&q=80&w=800",
+          category: "vegetables",
+          price: 12.95,
+          isLoggedIn: false,
+        },
+      ];
+      setDisplayedProducts([...displayedProducts, ...newProducts]);
+      setTotalProducts(totalProducts + newProducts.length);
+    } catch (error) {
+      console.error("Error loading more products:", error);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
-      <main className="flex-grow">
-        <div className="container mx-auto px-4 py-8">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Produktkatalog</h1>
-            <p className="text-gray-600">
-              Udforsk vores brede udvalg af friske frugt, grønt og mejeriprodukter til din virksomhed.
+      <main className="flex-grow bg-gray-50">
+        <div className="page-container py-6 md:py-8">
+          {/* Header */}
+          <div className="text-center mb-8 md:mb-12">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Vores Produkter
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Friske råvarer af højeste kvalitet til din virksomhed
             </p>
           </div>
 
+          {/* Filters */}
           <ProductFilters 
             onFilterChange={setCategory}
             onSortChange={setSort}
             onSearchChange={setSearch}
           />
 
-          {sortedProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-              {sortedProducts.map((product) => (
-                <ProductCard key={product.id} {...product} />
-              ))}
+          {/* Results count */}
+          {sortedProducts.length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Viser {sortedProducts.length} af {totalProducts} produkter
+                {category !== "all" && ` i ${category}`}
+                {search && ` for "${search}"`}
+              </p>
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <h3 className="text-xl font-medium text-gray-900 mb-2">Ingen produkter fundet</h3>
-              <p className="text-gray-600">Prøv at ændre dine filtreringsvalg eller søgning.</p>
+          )}
+
+          {/* Products Grid */}
+          <div className="content-width">
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <div className="aspect-video bg-gray-200 animate-pulse" />
+                    <CardContent className="p-4">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : sortedProducts.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Ingen produkter fundet
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    {search || category !== "all"
+                      ? "Prøv at ændre dine søgekriterier eller filtrer" 
+                      : "Der er ingen produkter tilgængelige i øjeblikket"
+                    }
+                  </p>
+                  {(search || category !== "all") && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setSearch('');
+                        setCategory('all');
+                      }}
+                    >
+                      Ryd filtre
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {sortedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    id={product.id}
+                    name={product.name}
+                    image={product.image}
+                    category={product.category}
+                    price={product.price}
+                    isLoggedIn={!!user}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Load More Button */}
+          {!isLoading && sortedProducts.length > 0 && sortedProducts.length < totalProducts && (
+            <div className="text-center mt-8">
+              <Button 
+                onClick={loadMoreProducts}
+                disabled={isLoadingMore}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isLoadingMore ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Indlæser...
+                  </>
+                ) : (
+                  <>
+                    Indlæs flere produkter
+                    <ChevronDown className="ml-2 h-4 w-4" />
+                  </>
+                )}
+              </Button>
             </div>
           )}
         </div>

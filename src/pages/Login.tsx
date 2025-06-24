@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowRight, Mail, Lock, User, Users, Loader2 } from "lucide-react";
+import { ArrowRight, Mail, Lock, User, Users, Loader2, ShoppingCart, Package, CreditCard, Truck, Shield } from "lucide-react";
 import { ContactOverlay } from "@/components/layout/ContactOverlay";
 import { useAuth } from '../hooks/useAuth';
 import { isCustomer } from '../lib/auth';
@@ -71,7 +71,7 @@ const Login = () => {
       <Navbar />
       
       <main className="relative flex-grow flex items-center justify-center py-6 px-4 md:py-12">
-        <div className="container max-w-6xl mx-auto">
+        <div className="page-container">
           <div className="grid lg:grid-cols-2 gap-6 lg:gap-8 items-start">
             <div className="w-full max-w-md mx-auto order-2 lg:order-1">
               <Card className="border border-gray-100 shadow-sm rounded-xl overflow-hidden bg-white">
@@ -87,7 +87,7 @@ const Login = () => {
                       Indtast dine oplysninger for at få adgang til din B2B konto
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="pb-8">
                     {error && (
                       <Alert variant="destructive" className="mb-6">
                         <AlertDescription>{error}</AlertDescription>
@@ -177,60 +177,70 @@ const Login = () => {
               </Card>
             </div>
 
-            <div className="lg:block order-1 lg:order-2">
-              <div className="bg-white border border-gray-100 rounded-xl p-6 md:p-8 shadow-sm">
-                <h3 className="font-semibold text-gray-900 text-lg md:text-xl mb-6 flex items-center gap-3">
-                  <Users className="h-5 w-5 md:h-6 md:w-6 text-green-600" />
-                  <span className="text-gray-800">
-                    Kun for B2B-kunder
-                  </span>
-                </h3>
-                
-                <div className="space-y-4 md:space-y-6">
-                  <div className="group">
-                    <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-xl hover:bg-gray-50 transition-all duration-300">
-                      <div className="mt-1 h-7 w-7 md:h-8 md:w-8 rounded-lg bg-green-50 flex items-center justify-center">
-                        <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 text-sm md:text-base">Kundespecifikke priser</h4>
-                        <p className="text-gray-600 mt-1 text-sm">Se dine rabatter og specialpriser baseret på din rabatgruppe</p>
-                      </div>
+            {/* Benefits Section - Hidden on mobile, visible on larger screens */}
+            <div className="hidden lg:block order-1 lg:order-2">
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">
+                    Velkommen til Multi Grønt B2B
+                  </h2>
+                  <p className="text-gray-600 text-lg leading-relaxed">
+                    Din professionelle partner til friske råvarer. Log ind for at få adgang til:
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <ShoppingCart className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Kundespecifikke priser</h3>
+                      <p className="text-gray-600">Få adgang til dine personlige B2B priser og rabatter</p>
                     </div>
                   </div>
 
-                  <div className="group">
-                    <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-xl hover:bg-gray-50 transition-all duration-300">
-                      <div className="mt-1 h-7 w-7 md:h-8 md:w-8 rounded-lg bg-green-50 flex items-center justify-center">
-                        <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 text-sm md:text-base">Betaling via faktura</h4>
-                        <p className="text-gray-600 mt-1 text-sm">Ingen online betaling - bare betal via faktura</p>
-                      </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Package className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Ordrehistorik</h3>
+                      <p className="text-gray-600">Se dine tidligere ordrer og genbestil nemt</p>
                     </div>
                   </div>
 
-                  <div className="group">
-                    <div className="flex items-start gap-3 md:gap-4 p-3 md:p-4 rounded-xl hover:bg-gray-50 transition-all duration-300">
-                      <div className="mt-1 h-7 w-7 md:h-8 md:w-8 rounded-lg bg-green-50 flex items-center justify-center">
-                        <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 text-sm md:text-base">Orderhistorik og fakturaer</h4>
-                        <p className="text-gray-600 mt-1 text-sm">Hold styr på alle dine ordrer og fakturaer i ét system</p>
-                      </div>
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <CreditCard className="h-5 w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Fakturabetaling</h3>
+                      <p className="text-gray-600">Nem betaling via faktura med 30 dages kredit</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Truck className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1">Hurtig levering</h3>
+                      <p className="text-gray-600">Levering til hele Danmark - ofte samme dag</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-6 md:mt-8">
-                  <Link to="/apply">
-                    <Button variant="outline" className="w-full gap-2 border-green-200 hover:bg-green-50 text-gray-800 transition-all duration-300 py-5 md:py-6 rounded-xl text-sm md:text-base">
-                      <Mail className="h-4 w-4" />
-                      Ansøg om B2B adgang
-                    </Button>
-                  </Link>
+                <div className="bg-green-50 p-6 rounded-lg border border-green-200">
+                  <div className="flex items-start space-x-3">
+                    <Shield className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-green-900 mb-1">Sikker platform</h4>
+                      <p className="text-green-800 text-sm">
+                        Dine data er beskyttet med moderne sikkerhedsforanstaltninger
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

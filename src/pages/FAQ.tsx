@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { ChevronDown, ChevronUp, Smartphone, Download, Share, CheckCircle, AlertTriangle, HelpCircle, Globe, Lock, Mail, Key, Shield, Clock, RefreshCw } from 'lucide-react';
+import { ChevronDown, ChevronUp, Smartphone, Download, Share, CheckCircle, AlertTriangle, HelpCircle, Globe, Lock, Mail, Key, Shield, Clock, RefreshCw, Star, Phone } from 'lucide-react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePWA } from "@/hooks/usePWA";
 import { cn } from "@/lib/utils";
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
+import { Link } from "react-router-dom";
 
 interface FAQItem {
   id: string;
@@ -664,9 +666,9 @@ const FAQ = () => {
       <Navbar />
       
       <main className="flex-grow bg-gray-50">
-        {/* Header */}
-        <section className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-12">
-          <div className="container mx-auto px-4 text-center">
+        {/* Header - FULL WIDTH */}
+        <section className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-12 full-width-section">
+          <div className="page-container text-center">
             <h1 className={cn(
               "font-bold text-white mb-4",
               isMobile ? "text-2xl" : "text-4xl"
@@ -682,129 +684,155 @@ const FAQ = () => {
           </div>
         </section>
 
-        <div className="container mx-auto px-4 py-8">
-          {/* Featured FAQ */}
-          {featuredItem && (
-            <div className="mb-8" id={featuredItem.id}>
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-1">
-                <Card className="border-0 shadow-lg">
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="bg-blue-600 text-white px-3 py-1 rounded-full text-xs font-semibold">
-                        POPULÆRT SPØRGSMÅL
-                      </div>
-                    </div>
+        <div className="page-container py-8">
+          <div className="content-width">
+            {/* Featured FAQ */}
+            <div className="mb-8">
+              <Card className="border-green-200 bg-green-50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-green-800">Mest stillede spørgsmål</CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <Accordion type="single" collapsible>
+                    <AccordionItem value="featured-1">
+                      <AccordionTrigger className="text-left">
+                        Hvordan ansøger jeg om B2B adgang til Multi Grønt?
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-gray-700 leading-relaxed">
+                          Du kan ansøge om B2B adgang ved at udfylde vores ansøgningsformular på siden "Ansøg om adgang". 
+                          Du skal angive virksomhedsoplysninger, CVR-nummer og kontaktinformation. Vi behandler alle 
+                          ansøgninger inden for 24 timer og sender dig en bekræftelse via email.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Category Filter */}
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Kategorier</h2>
+              <div className={cn(
+                "grid gap-2",
+                isMobile ? "grid-cols-2" : "grid-cols-3 md:grid-cols-5"
+              )}>
+                {categories.map((category) => {
+                  const Icon = category.icon;
+                  return (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? "default" : "outline"}
+                      onClick={() => setSelectedCategory(category.id)}
+                      className={cn(
+                        "justify-start gap-2",
+                        isMobile ? "text-xs px-2 py-2" : "text-sm",
+                        selectedCategory === category.id 
+                          ? "bg-green-600 hover:bg-green-700 text-white" 
+                          : "border-gray-200 hover:bg-gray-50"
+                      )}
+                    >
+                      <Icon className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      {category.name}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* FAQ Items */}
+            <div className="space-y-4">
+              {filteredItems.filter(item => !item.featured).map((item) => (
+                <Card key={item.id} className="shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="p-0">
                     <button
-                      onClick={() => toggleItem(featuredItem.id)}
-                      className="w-full text-left group"
+                      onClick={() => toggleItem(item.id)}
+                      className="w-full text-left p-6 group"
                     >
                       <div className="flex items-center justify-between">
                         <h3 className={cn(
-                          "font-semibold text-gray-900 group-hover:text-blue-600 transition-colors",
-                          isMobile ? "text-lg" : "text-xl"
+                          "font-medium text-gray-900 group-hover:text-green-600 transition-colors",
+                          isMobile ? "text-sm pr-4" : "text-base"
                         )}>
-                          {featuredItem.question}
+                          {item.question}
                         </h3>
-                        {expandedItems.has(featuredItem.id) ? (
-                          <ChevronUp className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                        {expandedItems.has(item.id) ? (
+                          <ChevronUp className="h-5 w-5 text-green-600 flex-shrink-0" />
                         ) : (
                           <ChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
                         )}
                       </div>
                     </button>
                     
-                    {expandedItems.has(featuredItem.id) && (
-                      <div className="mt-4 pt-4 border-t border-gray-200">
-                        {featuredItem.answer}
+                    {expandedItems.has(item.id) && (
+                      <div className="px-6 pb-6 pt-0 border-t border-gray-100">
+                        <div className="mt-4">
+                          {item.answer}
+                        </div>
                       </div>
                     )}
                   </CardContent>
                 </Card>
-              </div>
+              ))}
             </div>
-          )}
 
-          {/* Category Filter */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Kategorier</h2>
-            <div className={cn(
-              "grid gap-2",
-              isMobile ? "grid-cols-2" : "grid-cols-3 md:grid-cols-5"
-            )}>
-              {categories.map((category) => {
-                const Icon = category.icon;
-                return (
-                  <Button
-                    key={category.id}
-                    variant={selectedCategory === category.id ? "default" : "outline"}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={cn(
-                      "justify-start gap-2",
-                      isMobile ? "text-xs px-2 py-2" : "text-sm",
-                      selectedCategory === category.id 
-                        ? "bg-green-600 hover:bg-green-700 text-white" 
-                        : "border-gray-200 hover:bg-gray-50"
-                    )}
-                  >
-                    <Icon className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-                    {category.name}
+            {/* Contact CTA */}
+            <Card className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+              <CardContent className={cn(
+                "text-center",
+                isMobile ? "p-6" : "p-8"
+              )}>
+                <div className={cn(
+                  "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4",
+                  isMobile ? "w-12 h-12" : "w-16 h-16"
+                )}>
+                  <HelpCircle className={cn(
+                    "text-green-600",
+                    isMobile ? "h-6 w-6" : "h-8 w-8"
+                  )} />
+                </div>
+                <h3 className={cn(
+                  "font-bold text-gray-900 mb-2",
+                  isMobile ? "text-lg" : "text-xl"
+                )}>
+                  Kunne du ikke finde svar på dit spørgsmål?
+                </h3>
+                <p className={cn(
+                  "text-gray-600 mb-6",
+                  isMobile ? "text-sm" : "text-base"
+                )}>
+                  Vores team er klar til at hjælpe dig. Kontakt os direkte for personlig assistance.
+                </p>
+                <div className={cn(
+                  "flex gap-3 justify-center",
+                  isMobile ? "flex-col" : "flex-row"
+                )}>
+                  <Link to="/contact">
+                    <Button className={cn(
+                      "bg-green-600 hover:bg-green-700",
+                      isMobile ? "w-full" : ""
+                    )}>
+                      <Mail className="h-4 w-4 mr-2" />
+                      Kontakt os
+                    </Button>
+                  </Link>
+                  <Button variant="outline" className={cn(
+                    "border-green-300 text-green-700 hover:bg-green-50",
+                    isMobile ? "w-full" : ""
+                  )}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Ring til os
                   </Button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* FAQ Items */}
-          <div className="space-y-4">
-            {filteredItems.filter(item => !item.featured).map((item) => (
-              <Card key={item.id} className="shadow-sm hover:shadow-md transition-shadow">
-                <CardContent className="p-0">
-                  <button
-                    onClick={() => toggleItem(item.id)}
-                    className="w-full text-left p-6 group"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className={cn(
-                        "font-medium text-gray-900 group-hover:text-green-600 transition-colors",
-                        isMobile ? "text-sm pr-4" : "text-base"
-                      )}>
-                        {item.question}
-                      </h3>
-                      {expandedItems.has(item.id) ? (
-                        <ChevronUp className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      ) : (
-                        <ChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                      )}
-                    </div>
-                  </button>
-                  
-                  {expandedItems.has(item.id) && (
-                    <div className="px-6 pb-6 pt-0 border-t border-gray-100">
-                      <div className="mt-4">
-                        {item.answer}
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Contact Section */}
-          <div className="mt-12 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-6 text-center">
-            <h3 className="text-lg font-semibold text-green-900 mb-2">
-              Kunne ikke finde svar på dit spørgsmål?
-            </h3>
-            <p className="text-green-700 mb-4 text-sm">
-              Kontakt vores support team, så hjælper vi dig gerne
-            </p>
-            <Button className="bg-green-600 hover:bg-green-700 text-white">
-              Kontakt Support
-            </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );
