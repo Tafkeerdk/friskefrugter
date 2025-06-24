@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Eye, Percent, Users, AlertCircle } from 'lucide-react';
+import { Eye, Percent, Users, AlertCircle, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { authService } from '@/lib/auth';
 import { DiscountGroup, PriceCalculationResult } from '@/types/product';
@@ -101,7 +101,9 @@ const applyRabatGruppeDiscount = (
 const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('da-DK', {
     style: 'currency',
-    currency: 'DKK'
+    currency: 'DKK',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(amount);
 };
 
@@ -258,38 +260,63 @@ export const RabatGruppePreview: React.FC<RabatGruppePreviewProps> = ({
         <div>
           <h4 className="font-medium mb-3 flex items-center gap-2">
             <Users className="h-4 w-4" />
-            Rabat gruppe priser
+            Rabatgrupper
+            {generalDiscountCalculation.type === 'general' && discount.beforePrice && (
+              <Badge variant="outline" className="text-orange-700 border-orange-300 bg-orange-100 text-xs ml-2">
+                Deaktiveret ved før-pris
+              </Badge>
+            )}
           </h4>
           
           {loadingGroups ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <Card key={i} className="h-32">
-                  <CardContent className="flex items-center justify-center h-full">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-900"></div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              </CardContent>
+            </Card>
           ) : discountGroups.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {discountGroups.map((group) => {
-                // Calculate the best price between general discount and rabat gruppe discount
-                const rabatGruppeCalculation = applyRabatGruppeDiscount(basispris, group.discountPercentage);
+                // NEW LOGIC: If før-pris is set, rabat grupper don't get additional discount
+                let finalCalculation;
                 
-                // Choose the best price for the customer (lowest final price)
-                const bestCalculation = generalDiscountCalculation.finalPrice < rabatGruppeCalculation.finalPrice 
-                  ? { ...generalDiscountCalculation, groupName: group.name }
-                  : { ...rabatGruppeCalculation, groupName: group.name };
+                if (discount.enabled && discount.beforePrice && discount.beforePrice > basispris) {
+                  // Før-pris is set - rabat grupper see current price as their discounted price
+                  finalCalculation = {
+                    type: 'general' as const,
+                    originalPrice: discount.beforePrice,
+                    finalPrice: basispris, // Current price becomes their "discounted" price
+                    discountAmount: discount.beforePrice - basispris,
+                    discountPercentage: Math.round(((discount.beforePrice - basispris) / discount.beforePrice) * 100 * 100) / 100,
+                    label: discount.discountLabel || 'Produkt tilbud',
+                    groupName: group.name,
+                    note: 'Før-pris rabat (ingen yderligere rabat)'
+                  };
+                } else {
+                  // No før-pris - calculate normal rabat gruppe discount
+                  const rabatGruppeCalculation = applyRabatGruppeDiscount(basispris, group.discountPercentage);
+                  
+                  // Choose the best price between general discount and rabat gruppe discount
+                  finalCalculation = generalDiscountCalculation.finalPrice < rabatGruppeCalculation.finalPrice 
+                    ? { ...generalDiscountCalculation, groupName: group.name, note: 'Bedste pris: Produktrabat' }
+                    : { ...rabatGruppeCalculation, groupName: group.name, note: `${group.discountPercentage}% rabatgruppe rabat` };
+                }
 
                 return (
                   <PricePreviewCard
                     key={group.id}
                     title={group.name}
-                    description={`${group.discountPercentage}% rabat gruppe (${group.customerCount} kunder)`}
-                    calculation={bestCalculation}
+                    description={
+                      finalCalculation.note || 
+                      `${group.discountPercentage}% rabat gruppe (${group.customerCount} kunder)`
+                    }
+                    calculation={finalCalculation}
                     showStrikethrough={discount.showStrikethrough || true}
-                    discountLabel={bestCalculation.type === 'general' ? (discount.discountLabel || 'Tilbud') : `${group.name} rabat`}
+                    discountLabel={
+                      finalCalculation.type === 'general' 
+                        ? (discount.discountLabel || 'Tilbud')
+                        : `${group.name} rabat`
+                    }
                     color={group.color}
                     icon={<Users className="h-4 w-4" style={{ color: group.color }} />}
                   />
@@ -303,6 +330,20 @@ export const RabatGruppePreview: React.FC<RabatGruppePreviewProps> = ({
                 <span>Ingen rabat grupper oprettet endnu</span>
               </CardContent>
             </Card>
+          )}
+          
+          {/* Explanation Note */}
+          {discount.enabled && discount.beforePrice && discount.beforePrice > basispris && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Info className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-800">Rabatgruppe forklaring</span>
+              </div>
+              <p className="text-xs text-blue-700">
+                Da du har angivet en før-pris ({formatCurrency(discount.beforePrice)}), får alle rabatgrupper den samme rabat som vist ovenfor. 
+                De får <strong>ikke</strong> yderligere rabat oveni, hvilket forhindrer dobbelt rabat og sikrer fair prisfastsættelse.
+              </p>
+            </div>
           )}
         </div>
 

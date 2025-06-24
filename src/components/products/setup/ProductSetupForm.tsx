@@ -28,7 +28,9 @@ import {
   Upload,
   Trash2,
   ImageIcon,
-  Star
+  Star,
+  Phone,
+  Calculator
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { 
@@ -159,6 +161,16 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const lagerstyringEnabled = watch('lagerstyring.enabled');
   const aktivStatus = watch('aktiv');
   const watchedKategori = watch('kategori');
+
+  // Helper function to format currency
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('da-DK', {
+      style: 'currency',
+      currency: 'DKK',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount);
+  };
 
   // Check if form has meaningful changes (not just category creation state changes)
   const hasMeaningfulChanges = React.useMemo(() => {
@@ -775,9 +787,10 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                   />
                 </div>
 
-                {/* Discount Section */}
+                {/* Enhanced Discount Section */}
                 <div className="border-t pt-6">
-                  <div className="space-y-4">
+                  <div className="space-y-6">
+                    {/* Discount Toggle */}
                     <FormField
                       control={form.control}
                       name="discount.enabled"
@@ -785,11 +798,11 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                           <div className="space-y-0.5">
                             <FormLabel className="text-base">
-                              Aktivér generel produktrabat
+                              Aktivér produktrabat
                             </FormLabel>
                             <FormDescription>
-                              Vis produktet med før/efter priser og rabat-badge. 
-                              <strong>Bemærk:</strong> Hvis du angiver en før-pris, vil rabat grupperne køre efter standard priser for at undgå dobbelt rabat.
+                              Vis produktet med rabatpris og før/efter priser. 
+                              <strong className="text-orange-600"> Bemærk:</strong> Hvis du angiver en før-pris, vil rabatgrupper ikke få yderligere rabat for at undgå dobbelt rabat.
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -803,126 +816,143 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                       )}
                     />
 
+                    {/* Discount Configuration */}
                     {form.watch('discount.enabled') && (
-                      <div className="space-y-4 pl-4 border-l-2 border-muted">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Before Price */}
-                          <FormField
-                            control={form.control}
-                            name="discount.beforePrice"
-                            render={({ field }) => (
-                              <CurrencyInput
-                                value={field.value || 0}
-                                onChange={field.onChange}
-                                error={errors.discount?.beforePrice?.message}
-                                disabled={isLoading}
-                                label="Før-pris (valgfrit)"
-                                description="Oprindelig pris før rabat"
-                                placeholder="0,00"
-                                min={0}
-                              />
-                            )}
-                          />
-
-                          {/* Discount Percentage */}
-                          <FormField
-                            control={form.control}
-                            name="discount.discountPercentage"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Rabat procent (valgfrit)</FormLabel>
-                                <FormControl>
-                                  <div className="relative">
-                                    <Input
-                                      type="number"
-                                      {...field}
-                                      onChange={(e) => field.onChange(parseFloat(e.target.value) || undefined)}
-                                      placeholder="0"
-                                      min="0"
-                                      max="100"
-                                      step="0.01"
-                                      disabled={isLoading}
-                                      className="pr-8"
-                                    />
-                                    <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
-                                  </div>
-                                </FormControl>
-                                <FormDescription>
-                                  Rabat i procent (0-100%)
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {/* Discount Amount */}
-                          <FormField
-                            control={form.control}
-                            name="discount.discountAmount"
-                            render={({ field }) => (
-                              <CurrencyInput
-                                value={field.value || 0}
-                                onChange={field.onChange}
-                                error={errors.discount?.discountAmount?.message}
-                                disabled={isLoading}
-                                label="Rabat beløb (valgfrit)"
-                                description="Fast rabat i kroner"
-                                placeholder="0,00"
-                                min={0}
-                              />
-                            )}
-                          />
-
-                          {/* Discount Label */}
-                          <FormField
-                            control={form.control}
-                            name="discount.discountLabel"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Rabat label</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    {...field}
-                                    placeholder="Tilbud"
-                                    disabled={isLoading}
-                                    maxLength={50}
-                                  />
-                                </FormControl>
-                                <FormDescription>
-                                  Tekst der vises på rabat-badge
-                                </FormDescription>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        {/* Show Strikethrough */}
-                        <FormField
-                          control={form.control}
-                          name="discount.showStrikethrough"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                              <div className="space-y-0.5">
-                                <FormLabel className="text-sm">
-                                  Vis gennemstregning
-                                </FormLabel>
-                                <FormDescription className="text-xs">
-                                  Vis før-prisen med gennemstregning
-                                </FormDescription>
+                      <div className="space-y-6 pl-4 border-l-2 border-brand-primary">
+                        {/* Price Configuration Section */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-brand-primary-dark flex items-center gap-2">
+                            <DollarSign className="h-4 w-4" />
+                            Priskonfiguration
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Current Price Display */}
+                            <div className="bg-brand-gray-50 border border-brand-gray-200 rounded-lg p-4">
+                              <FormLabel className="text-sm text-brand-primary-dark font-medium">
+                                Nuværende pris
+                              </FormLabel>
+                              <div className="mt-1">
+                                <span className="text-2xl font-bold text-brand-primary">
+                                  {formatCurrency(form.watch('basispris') || 0)}
+                                </span>
                               </div>
-                              <FormControl>
-                                <Switch
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
+                              <FormDescription className="text-xs mt-1">
+                                Dette er den pris kunden betaler
+                              </FormDescription>
+                            </div>
+
+                            {/* Before Price Input */}
+                            <FormField
+                              control={form.control}
+                              name="discount.beforePrice"
+                              render={({ field }) => (
+                                <CurrencyInput
+                                  value={field.value || 0}
+                                  onChange={field.onChange}
+                                  error={errors.discount?.beforePrice?.message}
                                   disabled={isLoading}
+                                  label="Før-pris (valgfrit)"
+                                  description="Oprindelig pris før rabat - skal være højere end nuværende pris"
+                                  placeholder="0,00"
+                                  min={0}
                                 />
-                              </FormControl>
-                            </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {/* Automatic Calculation Display */}
+                          {form.watch('discount.beforePrice') && form.watch('basispris') && 
+                           form.watch('discount.beforePrice') > form.watch('basispris') && (
+                            <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Calculator className="h-4 w-4 text-green-600" />
+                                <span className="text-sm font-medium text-green-800">Automatisk beregning</span>
+                              </div>
+                              <div className="text-xs text-green-700">
+                                <p>Rabat: {formatCurrency((form.watch('discount.beforePrice') || 0) - (form.watch('basispris') || 0))}</p>
+                                <p>Rabat procent: {Math.round(((form.watch('discount.beforePrice') || 0) - (form.watch('basispris') || 0)) / (form.watch('discount.beforePrice') || 1) * 100)}%</p>
+                              </div>
+                            </div>
                           )}
-                        />
+                        </div>
+
+                        {/* Display Options */}
+                        <div className="space-y-4">
+                          <h4 className="font-medium text-brand-primary-dark flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            Visningsindstillinger
+                          </h4>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Discount Label */}
+                            <FormField
+                              control={form.control}
+                              name="discount.discountLabel"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Rabat label</FormLabel>
+                                  <FormControl>
+                                    <Input
+                                      {...field}
+                                      placeholder="Tilbud"
+                                      disabled={isLoading}
+                                      maxLength={50}
+                                    />
+                                  </FormControl>
+                                  <FormDescription>
+                                    Tekst der vises på rabat-badge (maks 50 tegn)
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+
+                            {/* Show Strikethrough Toggle */}
+                            <FormField
+                              control={form.control}
+                              name="discount.showStrikethrough"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                  <div className="space-y-0.5">
+                                    <FormLabel className="text-sm font-medium">
+                                      Vis gennemstregning
+                                    </FormLabel>
+                                    <FormDescription className="text-xs">
+                                      Vis før-prisen med gennemstregning
+                                    </FormDescription>
+                                  </div>
+                                  <FormControl>
+                                    <Switch
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                      disabled={isLoading}
+                                    />
+                                  </FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Rabat Gruppe Conflict Warning */}
+                        {form.watch('discount.beforePrice') && form.watch('discount.beforePrice') > 0 && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <AlertTriangle className="h-4 w-4 text-orange-600" />
+                              <span className="text-sm font-medium text-orange-800">Rabatgruppe information</span>
+                            </div>
+                            <p className="text-xs text-orange-700 mb-2">
+                              Da du har angivet en før-pris, vil rabatgrupper <strong>ikke</strong> få yderligere rabat oveni denne produktrabat. 
+                              Dette forhindrer dobbelt rabat og sikrer korrekt prisfastsættelse.
+                            </p>
+                            <div className="text-xs text-orange-600">
+                              <p>✓ Rabatgrupper vil se den nuværende pris som deres rabatpris</p>
+                              <p>✓ Før-prisen vises med gennemstregning (hvis aktiveret)</p>
+                              <p>✓ Ingen yderligere rabat beregnes</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1074,7 +1104,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
               </CardContent>
             </Card>
 
-            {/* Inventory Management */}
+            {/* Inventory Management - Enhanced Add-on Section */}
             <Card>
               <CardHeader>
                 <div className="space-y-3">
@@ -1085,31 +1115,39 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         Lagerstyring
                       </CardTitle>
                       <CardDescription>
-                        Aktivér lagerstyring for at spore beholdning
+                        Professionel lagerstyring med automatiske advarsler og rapporter
                       </CardDescription>
                     </div>
                   </div>
                   
-                  {/* Lagerstyring Add-on Banner */}
+                  {/* Enhanced Lagerstyring Add-on Banner */}
                   <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-center gap-3">
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                          <Warehouse className="h-4 w-4 text-blue-600" />
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Warehouse className="h-5 w-5 text-blue-600" />
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-sm font-semibold text-blue-900">
-                          🎯 Tilkøbsvare: Avanceret Lagerstyring
+                        <h4 className="text-sm font-semibold text-blue-900 mb-1">
+                          🎯 Tilkøbsfunktion: Avanceret Lagerstyring
                         </h4>
-                        <p className="text-xs text-blue-700 mt-1">
-                          Professionel lagerstyring med automatiske advarsler, lagerrapporter og integration til dit økonomisystem. 
-                          <span className="font-medium"> Kontakt os for at tilkøbe denne funktion.</span>
+                        <p className="text-xs text-blue-700 mb-2">
+                          Denne funktion kræver tilkøb og er ikke aktiv som standard. Få automatiske advarsler ved lavt lager, 
+                          detaljerede lagerrapporter og integration til dit økonomisystem.
                         </p>
+                        <div className="flex items-center gap-4 text-xs text-blue-600">
+                          <span>✓ Automatiske lageradvarsler</span>
+                          <span>✓ Lagerrapporter og analytics</span>
+                          <span>✓ Økonomisystem integration</span>
+                        </div>
                       </div>
-                      <div className="flex-shrink-0">
+                      <div className="flex-shrink-0 flex flex-col gap-2">
                         <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-100">
                           Tilkøb
+                        </Badge>
+                        <Badge variant="outline" className="text-orange-700 border-orange-300 bg-orange-100 text-xs">
+                          Under udvikling
                         </Badge>
                       </div>
                     </div>
@@ -1117,85 +1155,83 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Disabled Lagerstyring Toggle */}
                 <FormField
                   control={form.control}
                   name="lagerstyring.enabled"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-gray-50">
+                      <div className="space-y-0.5 opacity-60">
                         <FormLabel className="text-base">
                           Aktivér lagerstyring
                         </FormLabel>
                         <FormDescription>
-                          Spor antal på lager og modtag advarsler ved lavt lager
+                          <strong>Denne funktion kræver tilkøb.</strong> Kontakt os for at aktivere professionel lagerstyring.
                         </FormDescription>
                       </div>
                       <FormControl>
                         <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={isLoading}
+                          checked={false}
+                          onCheckedChange={() => {}}
+                          disabled={true}
                         />
                       </FormControl>
                     </FormItem>
                   )}
                 />
 
-                {/* Inventory fields - only show when enabled */}
-                {lagerstyringEnabled && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pl-4 border-l-2 border-muted">
-                    <FormField
-                      control={form.control}
-                      name="lagerstyring.antalPaaLager"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center gap-2">
-                            Antal på lager
-                            <span className="text-red-500">*</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                              placeholder="0"
-                              min="0"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Nuværende antal på lager
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                {/* Disabled Inventory Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-60">
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                      Antal på lager
+                      <span className="text-red-500">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        disabled={true}
+                        className="bg-gray-100"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Nuværende antal på lager (kræver tilkøb)
+                    </FormDescription>
+                  </FormItem>
 
-                    <FormField
-                      control={form.control}
-                      name="lagerstyring.minimumslager"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Minimumslager (valgfrit)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value) || undefined)}
-                              placeholder="0"
-                              min="0"
-                              disabled={isLoading}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Advarsel når lageret kommer under dette niveau
-                          </FormDescription>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormItem>
+                    <FormLabel>Minimumslager (valgfrit)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="0"
+                        min="0"
+                        disabled={true}
+                        className="bg-gray-100"
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Advarsel når lageret er lavt (kræver tilkøb)
+                    </FormDescription>
+                  </FormItem>
+                </div>
+
+                {/* Contact Information */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Phone className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">Interesseret i lagerstyring?</span>
                   </div>
-                )}
+                  <p className="text-xs text-blue-700 mb-2">
+                    Kontakt os for at høre mere om vores avancerede lagerstyringsfunktioner og priser.
+                  </p>
+                  <div className="flex items-center gap-4 text-xs text-blue-600">
+                    <span>📧 support@multigrønt.dk</span>
+                    <span>📞 +45 12 34 56 78</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
 
