@@ -245,7 +245,7 @@ class ApiClient {
 
     try {
       console.log('🔄 SECURITY: Attempting token refresh...');
-      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
+      const response = await fetch(`${this.baseURL}${this.getEndpoint('/api/auth/refresh')}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -337,6 +337,9 @@ class ApiClient {
     }
     if (path.startsWith('/api/categories')) {
       return path.replace('/api/categories', '/.netlify/functions/categories');
+    }
+    if (path.startsWith('/api/auth/refresh')) {
+      return '/.netlify/functions/token-refresh';
     }
     
     // Default: use main API function

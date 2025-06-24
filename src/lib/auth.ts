@@ -14,20 +14,38 @@ const getEndpoint = (path: string): string => {
   }
   
   // In production, use Netlify function paths for specific endpoints
+  if (path.startsWith('/api/auth/admin/super')) {
+    return '/.netlify/functions/admin-login';
+  }
   if (path.startsWith('/api/auth/admin/profile')) {
     return '/.netlify/functions/admin-profile';
   }
   if (path.startsWith('/api/auth/admin/verification')) {
     return '/.netlify/functions/admin-verification';
   }
+  if (path.startsWith('/api/auth/admin/applications')) {
+    return '/.netlify/functions/admin-applications';
+  }
+  if (path.startsWith('/api/auth/refresh')) {
+    return '/.netlify/functions/token-refresh';
+  }
   if (path.startsWith('/api/auth/customer/profile')) {
     return '/.netlify/functions/customer-profile';
+  }
+  if (path.startsWith('/api/auth/customer/apply')) {
+    return '/.netlify/functions/customer-application-create';
   }
   if (path.startsWith('/api/auth/customer/login')) {
     return '/.netlify/functions/customer-login';
   }
   if (path.startsWith('/api/auth/customer/verification')) {
     return '/.netlify/functions/customer-verification';
+  }
+  if (path.startsWith('/api/auth/customer/password-reset-request')) {
+    return '/.netlify/functions/customer-password-reset-request';
+  }
+  if (path.startsWith('/api/auth/customer/password-reset-verify')) {
+    return '/.netlify/functions/customer-password-reset-verify';
   }
   
   // For other auth routes, use the main API function
@@ -567,7 +585,7 @@ class ApiClient {
 
     try {
       console.log('🔄 SECURITY: Attempting token refresh for session type:', sessionType);
-      const response = await fetch(`${this.baseURL}/api/auth/refresh`, {
+      const response = await fetch(`${this.baseURL}${getEndpoint('/api/auth/refresh')}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -721,7 +739,7 @@ export const authService = {
       const endpoint = '/api/auth/customer/apply';
       console.log('📡 Making request to endpoint:', endpoint);
       
-      const response = await apiClient.post(endpoint, applicationData);
+      const response = await apiClient.post(getEndpoint(endpoint), applicationData);
       console.log('📥 Raw response status:', response.status);
       console.log('📥 Raw response ok:', response.ok);
       
@@ -754,7 +772,7 @@ export const authService = {
 
   // Customer password reset request
   async requestPasswordReset(email: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post('/api/auth/customer/password-reset-request', {
+    const response = await apiClient.post(getEndpoint('/api/auth/customer/password-reset-request'), {
       email,
     });
     return response.json();
@@ -762,7 +780,7 @@ export const authService = {
 
   // Customer password reset verification
   async verifyPasswordReset(email: string, resetCode: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.post('/api/auth/customer/password-reset-verify', {
+    const response = await apiClient.post(getEndpoint('/api/auth/customer/password-reset-verify'), {
       email,
       resetCode,
       newPassword,
@@ -772,7 +790,7 @@ export const authService = {
 
   // Admin login with enhanced error handling
   async loginAdmin(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post('/api/auth/admin/super', {
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/super'), {
       email,
       password,
     });
@@ -859,7 +877,7 @@ export const authService = {
     const queryString = params.toString();
     const endpoint = `/api/auth/admin/applications${queryString ? `?${queryString}` : ''}`;
     
-    const response = await apiClient.get(endpoint);
+    const response = await apiClient.get(getEndpoint(endpoint));
     return response.json();
   },
 
@@ -1126,7 +1144,7 @@ export const authService = {
 
     try {
       console.log('🔄 SECURITY: AuthService attempting token refresh for session type:', sessionType);
-      const response = await apiClient.post('/api/auth/refresh', { refreshToken });
+      const response = await apiClient.post(getEndpoint('/api/auth/refresh'), { refreshToken });
       const data = await response.json();
       
       if (data.success && data.tokens) {
