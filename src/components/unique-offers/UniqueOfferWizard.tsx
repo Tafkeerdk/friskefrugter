@@ -144,12 +144,12 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     }
   }, [isOpen, preselectedProduct]);
 
-  // Load categories only when needed for product step
+  // Load categories when dialog opens
   useEffect(() => {
-    if (isOpen && currentStep === 'product' && categories.length === 0) {
+    if (isOpen && categories.length === 0) {
       loadCategories();
     }
-  }, [isOpen, currentStep, categories.length]);
+  }, [isOpen]);
 
   const loadProducts = async () => {
     try {
@@ -198,13 +198,20 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
 
   const loadCategories = async () => {
     try {
+      console.log('🔄 Loading categories...');
       const response = await authService.apiClient.get('/.netlify/functions/categories');
       const data = await response.json();
-      if (data.success) {
-        setCategories(data.data || []);
+      console.log('📋 Categories response:', data);
+      if (data.success && data.data) {
+        setCategories(Array.isArray(data.data) ? data.data : []);
+        console.log('✅ Categories loaded:', data.data.length);
+      } else {
+        console.warn('⚠️ Categories response not successful or no data');
+        setCategories([]);
       }
     } catch (error) {
-      console.error('Error loading categories:', error);
+      console.error('❌ Error loading categories:', error);
+      setCategories([]); // Set empty array on error to prevent crashes
     }
   };
 
@@ -409,11 +416,13 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle kategorier</SelectItem>
-            {categories.map(category => (
+            {categories && categories.length > 0 ? categories.map(category => (
               <SelectItem key={category._id} value={category._id}>
                 {category.navn}
               </SelectItem>
-            ))}
+            )) : (
+              <SelectItem value="loading" disabled>Indlæser kategorier...</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
