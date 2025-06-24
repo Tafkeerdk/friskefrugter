@@ -134,9 +134,15 @@ const DashboardUniqueOffers: React.FC = () => {
       
       const [offersResponse, productsResponse, customersResponse] = await Promise.all([
         authService.getUniqueOffers(params),
-        authService.apiClient.get('/.netlify/functions/products'),
+        authService.apiClient.get('/.netlify/functions/products?limit=1000&aktiv=true'),
         authService.getAllCustomers()
       ]);
+      
+      console.log('🔍 API Responses:', {
+        offers: offersResponse,
+        products: productsResponse,
+        customers: customersResponse
+      });
       
       if (offersResponse.success) {
         setOffers(offersResponse.offers || []);
@@ -146,8 +152,15 @@ const DashboardUniqueOffers: React.FC = () => {
       
       if (productsResponse.ok) {
         const productsData = await productsResponse.json();
-        if (productsData.success) {
-          setProducts(productsData.products?.filter((p: Product) => p.aktiv) || []);
+        console.log('📦 Products data:', productsData);
+        if (productsData.success && productsData.data) {
+          // Handle both paginated and direct array formats
+          const productsArray = Array.isArray(productsData.data) 
+            ? productsData.data 
+            : productsData.data.products || [];
+          const activeProducts = productsArray.filter((p: Product) => p.aktiv !== false);
+          setProducts(activeProducts);
+          console.log('✅ Set products:', activeProducts.length);
         }
       }
       
