@@ -360,6 +360,9 @@ const DashboardDiscountGroups: React.FC = () => {
       return;
     }
 
+    // Store original groups for potential rollback
+    const originalGroups = [...discountGroups];
+
     try {
       console.log(`🔄 Deleting discount group: ${group.name} (${group.id})`);
       
@@ -376,17 +379,16 @@ const DashboardDiscountGroups: React.FC = () => {
         
         console.log(`✅ Successfully deleted discount group: ${group.name}`);
         
-        // Refresh data to ensure consistency and get updated customer counts
-        await Promise.all([
-          fetchDiscountGroups(),
-          loadProductStatistics()
-        ]);
+        // Don't fetch discount groups again - optimistic update already removed it
+        // Only refresh product statistics to get updated counts
+        await loadProductStatistics();
         
         // Notify other components about the update
         notifyDiscountGroupUpdate();
       } else {
-        // Revert optimistic update on failure
-        await fetchDiscountGroups();
+        // Revert optimistic update on failure - restore original order
+        console.log(`❌ Failed to delete discount group: ${response.message}`);
+        setDiscountGroups(originalGroups);
         toast({
           title: 'Fejl',
           description: response.message || 'Kunne ikke slette rabatgruppe',
@@ -395,8 +397,8 @@ const DashboardDiscountGroups: React.FC = () => {
       }
     } catch (err) {
       console.error('❌ Error deleting discount group:', err);
-      // Revert optimistic update on error
-      await fetchDiscountGroups();
+      // Revert optimistic update on error - restore original order
+      setDiscountGroups(originalGroups);
       toast({
         title: 'Fejl',
         description: 'Der opstod en fejl ved sletning af rabatgruppe',
