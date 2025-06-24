@@ -465,6 +465,11 @@ const DashboardDiscountGroups: React.FC = () => {
     setIsCustomersDialogOpen(true);
     setLoadingCustomers(true);
     
+    // Reset add customer dialog state
+    setIsAddCustomerDialogOpen(false);
+    setAllCustomers([]);
+    setCustomerSearchTerm('');
+    
     try {
       console.log(`🔄 Loading customers for discount group: ${group.name} (${group.id})`);
       
@@ -504,22 +509,39 @@ const DashboardDiscountGroups: React.FC = () => {
       const response = await authService.removeCustomerFromDiscountGroup(customerId, selectedGroupForCustomers.id);
       
       if (response.success) {
-        // Update local state immediately
+        // 1. Update local customer list immediately
         setGroupCustomers(prev => prev.filter(customer => customer.id !== customerId));
         
-        // Update the discount group customer count
+        // 2. Update the discount group customer count immediately
         setDiscountGroups(prev => prev.map(group => 
           group.id === selectedGroupForCustomers.id 
             ? { ...group, customerCount: Math.max(0, group.customerCount - 1) }
             : group
         ));
         
+        // 3. Update the selected group for customers to reflect new count
+        setSelectedGroupForCustomers(prev => prev ? {
+          ...prev,
+          customerCount: Math.max(0, prev.customerCount - 1)
+        } : null);
+        
+        // 4. Show success message
         toast({
           title: 'Kunde flyttet',
           description: `${customerName} er flyttet til Standard rabatgruppen`,
         });
         
         console.log(`✅ Customer ${customerName} removed from group ${selectedGroupForCustomers.name}`);
+        
+        // 5. Refresh the data from server to ensure consistency (but UI is already updated)
+        setTimeout(async () => {
+          try {
+            await fetchDiscountGroups();
+          } catch (error) {
+            console.error('Background refresh failed:', error);
+          }
+        }, 500);
+        
       } else {
         toast({
           title: 'Fejl',
@@ -541,20 +563,21 @@ const DashboardDiscountGroups: React.FC = () => {
   const openAddCustomerDialog = async () => {
     setIsAddCustomerDialogOpen(true);
     setLoadingAllCustomers(true);
+    setCustomerSearchTerm(''); // Reset search
     
     try {
       console.log('🔄 Loading all customers for adding to discount group');
       const response = await authService.getAllCustomers();
       
       if (response.success && response.customers) {
-        // Filter out customers already in the current group
+        // Filter out customers already in the current group (use current state)
         const currentGroupCustomerIds = groupCustomers.map(c => c.id);
         const availableCustomers = response.customers.filter(customer => 
           !currentGroupCustomerIds.includes(customer.id)
         );
         
         setAllCustomers(availableCustomers);
-        console.log(`✅ Loaded ${availableCustomers.length} available customers`);
+        console.log(`✅ Loaded ${availableCustomers.length} available customers (${response.customers.length} total, ${currentGroupCustomerIds.length} already in group)`);
       } else {
         console.error('❌ Failed to load customers:', response.message);
         toast({
@@ -586,25 +609,52 @@ const DashboardDiscountGroups: React.FC = () => {
       const response = await authService.addCustomerToDiscountGroup(customerId, selectedGroupForCustomers.id);
       
       if (response.success) {
-        // Remove customer from available customers list
+        // 1. Remove customer from available customers list immediately
         setAllCustomers(prev => prev.filter(customer => customer.id !== customerId));
         
-        // Add customer to current group customers (we'll refresh from server to get full data)
-        await openCustomersDialog(selectedGroupForCustomers);
+        // 2. Find the customer data to add to the group
+        const addedCustomer = allCustomers.find(customer => customer.id === customerId);
+        if (addedCustomer) {
+          // Add customer to current group customers immediately
+          setGroupCustomers(prev => [...prev, addedCustomer]);
+        }
         
-        // Update the discount group customer count
+        // 3. Update the discount group customer count immediately
         setDiscountGroups(prev => prev.map(group => 
           group.id === selectedGroupForCustomers.id 
             ? { ...group, customerCount: group.customerCount + 1 }
             : group
         ));
         
+        // 4. Update the selected group for customers to reflect new count
+        setSelectedGroupForCustomers(prev => prev ? {
+          ...prev,
+          customerCount: prev.customerCount + 1
+        } : null);
+        
+        // 5. Show success message
         toast({
           title: 'Kunde tilføjet',
           description: `${customerName} er tilføjet til ${selectedGroupForCustomers.name}`,
         });
         
         console.log(`✅ Customer ${customerName} added to group ${selectedGroupForCustomers.name}`);
+        
+        // 6. Refresh the data from server to ensure consistency (but UI is already updated)
+        setTimeout(async () => {
+          try {
+            await fetchDiscountGroups();
+            if (selectedGroupForCustomers) {
+              const updatedResponse = await authService.getDiscountGroupCustomers(selectedGroupForCustomers.id);
+              if (updatedResponse.success) {
+                setGroupCustomers(updatedResponse.customers || []);
+              }
+            }
+          } catch (error) {
+            console.error('Background refresh failed:', error);
+          }
+        }, 500);
+        
       } else {
         console.error('❌ Failed to add customer:', response.message);
         toast({
