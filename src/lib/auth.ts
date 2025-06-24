@@ -1318,11 +1318,27 @@ export const authService = {
   },
 
   async removeCustomerFromDiscountGroup(customerId: string, discountGroupId: string): Promise<{ success: boolean; message: string; customer?: any }> {
-    const response = await apiClient.put('/.netlify/functions/admin-discount-groups', { 
-      action: 'removeCustomer',
+    const response = await apiClient.delete('/.netlify/functions/admin-discount-groups', { 
+      action: 'remove-customer',
       customerId,
       discountGroupId
     });
+    return response.json();
+  },
+
+  // Add customer to discount group
+  async addCustomerToDiscountGroup(customerId: string, discountGroupId: string): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.put('/.netlify/functions/admin-discount-groups', {
+      action: 'add-customer',
+      customerId,
+      discountGroupId
+    });
+    return response.json();
+  },
+
+  // Get all customers (for adding to discount groups)
+  async getAllCustomers(): Promise<{ success: boolean; customers?: any[]; message?: string }> {
+    const response = await apiClient.get('/.netlify/functions/admin-customers');
     return response.json();
   },
 

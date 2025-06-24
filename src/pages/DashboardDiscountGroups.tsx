@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Users, Palette, Percent, Package, Eye, Info, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Palette, Percent, Package, Eye, Info, AlertTriangle, CheckCircle2, Search } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -111,6 +111,12 @@ const DashboardDiscountGroups: React.FC = () => {
   const [selectedGroupForCustomers, setSelectedGroupForCustomers] = useState<DiscountGroup | null>(null);
   const [groupCustomers, setGroupCustomers] = useState<any[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  
+  // Add customer to group state
+  const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
+  const [allCustomers, setAllCustomers] = useState<any[]>([]);
+  const [loadingAllCustomers, setLoadingAllCustomers] = useState(false);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState('');
   
   // UI feedback states for better UX
   const [previewFormData, setPreviewFormData] = useState({
@@ -530,6 +536,100 @@ const DashboardDiscountGroups: React.FC = () => {
       });
     }
   };
+
+  // Add customer to discount group functions
+  const openAddCustomerDialog = async () => {
+    setIsAddCustomerDialogOpen(true);
+    setLoadingAllCustomers(true);
+    
+    try {
+      console.log('🔄 Loading all customers for adding to discount group');
+      const response = await authService.getAllCustomers();
+      
+      if (response.success && response.customers) {
+        // Filter out customers already in the current group
+        const currentGroupCustomerIds = groupCustomers.map(c => c.id);
+        const availableCustomers = response.customers.filter(customer => 
+          !currentGroupCustomerIds.includes(customer.id)
+        );
+        
+        setAllCustomers(availableCustomers);
+        console.log(`✅ Loaded ${availableCustomers.length} available customers`);
+      } else {
+        console.error('❌ Failed to load customers:', response.message);
+        toast({
+          title: 'Fejl',
+          description: response.message || 'Kunne ikke hente kunder',
+          variant: 'destructive',
+        });
+        setAllCustomers([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading customers:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl ved hentning af kunder',
+        variant: 'destructive',
+      });
+      setAllCustomers([]);
+    } finally {
+      setLoadingAllCustomers(false);
+    }
+  };
+
+  const handleAddCustomerToGroup = async (customerId: string, customerName: string) => {
+    if (!selectedGroupForCustomers) return;
+    
+    try {
+      console.log(`🔄 Adding customer ${customerName} to group ${selectedGroupForCustomers.name}`);
+      
+      const response = await authService.addCustomerToDiscountGroup(customerId, selectedGroupForCustomers.id);
+      
+      if (response.success) {
+        // Remove customer from available customers list
+        setAllCustomers(prev => prev.filter(customer => customer.id !== customerId));
+        
+        // Add customer to current group customers (we'll refresh from server to get full data)
+        await openCustomersDialog(selectedGroupForCustomers);
+        
+        // Update the discount group customer count
+        setDiscountGroups(prev => prev.map(group => 
+          group.id === selectedGroupForCustomers.id 
+            ? { ...group, customerCount: group.customerCount + 1 }
+            : group
+        ));
+        
+        toast({
+          title: 'Kunde tilføjet',
+          description: `${customerName} er tilføjet til ${selectedGroupForCustomers.name}`,
+        });
+        
+        console.log(`✅ Customer ${customerName} added to group ${selectedGroupForCustomers.name}`);
+      } else {
+        console.error('❌ Failed to add customer:', response.message);
+        toast({
+          title: 'Fejl',
+          description: response.message || 'Kunne ikke tilføje kunde til rabatgruppe',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error adding customer to group:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl ved tilføjelse af kunde',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Filter customers based on search term
+  const filteredCustomers = allCustomers.filter(customer =>
+    customer.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.contactPersonName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.cvrNumber?.includes(customerSearchTerm)
+  );
 
   if (isLoading) {
     return (
@@ -1185,16 +1285,28 @@ const DashboardDiscountGroups: React.FC = () => {
       <Dialog open={isCustomersDialogOpen} onOpenChange={setIsCustomersDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="flex items-center gap-2 text-lg">
-              <div
-                className="w-4 h-4 rounded-full flex-shrink-0"
-                style={{ backgroundColor: selectedGroupForCustomers?.color }}
-              />
-              <span>Kunder i "{selectedGroupForCustomers?.name}"</span>
-            </DialogTitle>
-            <DialogDescription className="text-sm">
-              Administrer kunder i denne rabatgruppe. Kunder får {selectedGroupForCustomers?.discountPercentage}% rabat.
-            </DialogDescription>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <DialogTitle className="flex items-center gap-2 text-lg">
+                  <div
+                    className="w-4 h-4 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: selectedGroupForCustomers?.color }}
+                  />
+                  <span>Kunder i "{selectedGroupForCustomers?.name}"</span>
+                </DialogTitle>
+                <DialogDescription className="text-sm mt-1">
+                  Administrer kunder i denne rabatgruppe. Kunder får {selectedGroupForCustomers?.discountPercentage}% rabat.
+                </DialogDescription>
+              </div>
+              <Button
+                onClick={openAddCustomerDialog}
+                className="btn-brand-primary ml-4 min-h-[40px]"
+                size="sm"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tilføj kunde
+              </Button>
+            </div>
           </DialogHeader>
           
           <div className="flex-1 overflow-y-auto min-h-0">
@@ -1315,6 +1427,129 @@ const DashboardDiscountGroups: React.FC = () => {
             <Button
               variant="outline"
               onClick={() => setIsCustomersDialogOpen(false)}
+              className="px-6"
+            >
+              Luk
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Customer to Group Dialog */}
+      <Dialog open={isAddCustomerDialogOpen} onOpenChange={setIsAddCustomerDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Plus className="h-5 w-5 text-brand-primary" />
+              <span>Tilføj kunde til "{selectedGroupForCustomers?.name}"</span>
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Vælg en kunde at tilføje til denne rabatgruppe. Kunden vil få {selectedGroupForCustomers?.discountPercentage}% rabat.
+            </DialogDescription>
+            
+            {/* Search Box */}
+            <div className="pt-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Søg efter virksomhed, kontaktperson, email eller CVR..."
+                  value={customerSearchTerm}
+                  onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {loadingAllCustomers ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+                  <p className="mt-2 text-brand-gray-600">Henter kunder...</p>
+                </div>
+              </div>
+            ) : filteredCustomers.length > 0 ? (
+              <div className="space-y-3 p-1">
+                {filteredCustomers.map((customer) => (
+                  <div key={customer.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <h4 className="font-semibold text-gray-900 text-sm">
+                          {customer.companyName}
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
+                          <div className="flex items-center gap-1">
+                            <Users className="h-3 w-3" />
+                            <span>{customer.contactPersonName}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>📧</span>
+                            <span className="truncate">{customer.email}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>📞</span>
+                            <span>{customer.phone}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>🏢</span>
+                            <span>CVR: {customer.cvrNumber}</span>
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          Tilmeldt: {new Date(customer.createdAt).toLocaleDateString('da-DK')}
+                        </div>
+                      </div>
+                      
+                      {/* Add Customer Button */}
+                      <div className="flex-shrink-0 ml-3">
+                        <Button
+                          onClick={() => handleAddCustomerToGroup(customer.id, customer.companyName)}
+                          className="btn-brand-primary min-h-[36px]"
+                          size="sm"
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          Tilføj
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : !loadingAllCustomers && customerSearchTerm ? (
+              <div className="text-center py-8">
+                <Search className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
+                  Ingen kunder fundet
+                </h3>
+                <p className="text-brand-gray-500 text-sm">
+                  Ingen kunder matcher din søgning "{customerSearchTerm}".
+                </p>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
+                  Ingen tilgængelige kunder
+                </h3>
+                <p className="text-brand-gray-500 text-sm">
+                  Alle kunder er enten allerede i denne rabatgruppe eller der er ingen kunder at tilføje.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t bg-white">
+            <div className="text-sm text-gray-600">
+              {filteredCustomers.length} tilgængelige kunder
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddCustomerDialogOpen(false);
+                setCustomerSearchTerm('');
+                setAllCustomers([]);
+              }}
               className="px-6"
             >
               Luk
