@@ -321,13 +321,23 @@ const DashboardDiscountGroups: React.FC = () => {
   };
 
   const handleDelete = async (group: DiscountGroup) => {
+    // Prevent deletion of Standard group (0% discount group)
+    if (group.discountPercentage === 0 || group.name.toLowerCase() === 'standard') {
+      toast({
+        title: 'Kan ikke slette Standard gruppe',
+        description: 'Standard rabatgruppen (0%) kan ikke slettes da den bruges som fallback for alle kunder.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
       const response = await authService.deleteDiscountGroup(group.id);
 
       if (response.success) {
         toast({
           title: 'Rabatgruppe slettet',
-          description: `${group.name} er blevet slettet`,
+          description: `${group.name} er blevet slettet. ${group.customerCount > 0 ? 'Kunder er flyttet til Standard gruppen.' : ''}`,
         });
         
         await fetchDiscountGroups();
@@ -381,7 +391,7 @@ const DashboardDiscountGroups: React.FC = () => {
   // Nielsen's Heuristic #1: Visibility of System Status
   const loadProductStatistics = async () => {
     try {
-      // Get all products to calculate statistics
+      // Get all active products and discount eligible products separately
       const [allProductsResponse, eligibleProductsResponse] = await Promise.all([
         api.getProducts({ limit: 1000, aktiv: true }),
         api.getDiscountEligibleProducts({ limit: 1000, activeOnly: true })
@@ -399,15 +409,9 @@ const DashboardDiscountGroups: React.FC = () => {
       }
 
       if (eligibleProductsResponse.success && eligibleProductsResponse.data) {
-        // These should be products WITHOUT førpris - products that CAN be affected by discount groups
+        // These are products that CAN be affected by discount groups (no førpris)
         const eligibleProducts = (eligibleProductsResponse.data as any).products || [];
-        
-        // Double-check filtering: only products without førpris should be eligible
-        const filteredEligibleProducts = eligibleProducts.filter((product: Product) => 
-          !product.førpris || product.førpris === 0
-        );
-        
-        setDiscountEligibleProducts(filteredEligibleProducts);
+        setDiscountEligibleProducts(eligibleProducts);
       }
     } catch (error) {
       console.error('Error loading product statistics:', error);
@@ -720,7 +724,7 @@ const DashboardDiscountGroups: React.FC = () => {
                                 variant="outline"
                                 size="sm"
                                 className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300 min-h-[44px] touch-manipulation"
-                                disabled={group.customerCount > 0}
+                                disabled={group.discountPercentage === 0 || group.name.toLowerCase() === 'standard'}
                               >
                                 <Trash2 className="h-4 w-4 mr-1" />
                                 <span className="hidden sm:inline">Slet</span>
@@ -733,8 +737,13 @@ const DashboardDiscountGroups: React.FC = () => {
                                 <AlertDialogDescription>
                                   Denne handling kan ikke fortrydes. Rabatgruppen "{group.name}" vil blive slettet permanent.
                                   {group.customerCount > 0 && (
+                                    <span className="block mt-2 text-blue-600 font-medium">
+                                      Alle kunder i denne gruppe vil blive flyttet til Standard rabatgruppen.
+                                    </span>
+                                  )}
+                                  {(group.discountPercentage === 0 || group.name.toLowerCase() === 'standard') && (
                                     <span className="block mt-2 text-red-600 font-medium">
-                                      Du kan ikke slette en rabatgruppe med kunder.
+                                      Standard rabatgruppen kan ikke slettes da den bruges som fallback.
                                     </span>
                                   )}
                                 </AlertDialogDescription>
@@ -746,7 +755,7 @@ const DashboardDiscountGroups: React.FC = () => {
                                 <AlertDialogAction
                                   onClick={() => handleDelete(group)}
                                   className="w-full sm:w-auto min-h-[44px] bg-red-600 hover:bg-red-700"
-                                  disabled={group.customerCount > 0}
+                                  disabled={group.discountPercentage === 0 || group.name.toLowerCase() === 'standard'}
                                 >
                                   Slet rabatgruppe
                                 </AlertDialogAction>
