@@ -620,7 +620,19 @@ const DashboardProducts: React.FC = () => {
                           className={cn(
                             isMobile ? "aspect-square" : "aspect-video"
                           )}
-                          onClick={() => product.billeder.length > 0 && openImageGallery(product, 0)}
+                          onClick={() => {
+                            if (product.billeder.length > 0) {
+                              openImageGallery(product, 0);
+                            } else {
+                              // Navigate to edit page to add images
+                              toast({
+                                title: 'Åbner redigeringsside',
+                                description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
+                                duration: 2000,
+                              });
+                              navigate(`/admin/products/edit/${product._id}`);
+                            }
+                          }}
                         />
                         <div className={cn(
                           "absolute flex gap-1",
@@ -749,7 +761,19 @@ const DashboardProducts: React.FC = () => {
                                   alt={primaryImage?.altText || product.produktnavn}
                                   size="medium"
                                   className="rounded"
-                                  onClick={() => product.billeder.length > 0 && openImageGallery(product, 0)}
+                                  onClick={() => {
+                                    if (product.billeder.length > 0) {
+                                      openImageGallery(product, 0);
+                                    } else {
+                                      // Navigate to edit page to add images
+                                      toast({
+                                        title: 'Åbner redigeringsside',
+                                        description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
+                                        duration: 2000,
+                                      });
+                                      navigate(`/admin/products/edit/${product._id}`);
+                                    }
+                                  }}
                                 />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -831,7 +855,19 @@ const DashboardProducts: React.FC = () => {
                                       alt={primaryImage?.altText || product.produktnavn}
                                       size="small"
                                       className="rounded flex-shrink-0"
-                                      onClick={() => product.billeder.length > 0 && openImageGallery(product, 0)}
+                                      onClick={() => {
+                                        if (product.billeder.length > 0) {
+                                          openImageGallery(product, 0);
+                                        } else {
+                                          // Navigate to edit page to add images
+                                          toast({
+                                            title: 'Åbner redigeringsside',
+                                            description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
+                                            duration: 2000,
+                                          });
+                                          navigate(`/admin/products/edit/${product._id}`);
+                                        }
+                                      }}
                                     />
                                     <div className="min-w-0">
                                       <div className="font-medium truncate">{product.produktnavn}</div>
