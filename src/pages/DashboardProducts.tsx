@@ -281,7 +281,7 @@ const DashboardProducts: React.FC = () => {
 
   const getStockStatus = (product: Product) => {
     if (!product.lagerstyring.enabled) {
-      return { status: 'not-managed', text: 'Ikke styret', variant: 'outline' as const };
+      return { status: 'available', text: 'På lager', variant: 'default' as const };
     }
     
     const stock = product.lagerstyring.antalPaaLager || 0;
