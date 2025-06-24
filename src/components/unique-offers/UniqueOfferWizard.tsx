@@ -27,12 +27,22 @@ import {
   Infinity
 } from 'lucide-react';
 
+interface ProductImage {
+  _id?: string;
+  url: string;
+  filename?: string;
+  originalname?: string;
+  size?: number;
+  uploadedAt?: string;
+  isPrimary?: boolean;
+}
+
 interface Product {
   _id: string;
   produktnavn: string;
   varenummer: string;
   basispris: number;
-  billeder?: string[];
+  billeder?: ProductImage[];
   aktiv: boolean;
   kategori?: {
     _id: string;
@@ -181,7 +191,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       const response = await authService.apiClient.get('/.netlify/functions/categories');
       const data = await response.json();
       if (data.success) {
-        setCategories(data.categories || []);
+        setCategories(data.data || []);
       }
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -419,12 +429,40 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 )}
               >
                 <div className="flex items-center gap-4">
-                  <div className={cn(
-                    "p-3 rounded-lg",
-                    offerData.productId === product._id ? "bg-brand-primary text-white" : "bg-brand-gray-100 text-brand-gray-600"
-                  )}>
-                    <Package className="h-5 w-5" />
+                  {/* Product Image with Fallback */}
+                  <div className="w-16 h-16 flex-shrink-0 rounded-lg border border-brand-gray-200 overflow-hidden bg-brand-gray-100 relative">
+                    {product.billeder && product.billeder.length > 0 ? (
+                      <>
+                        <img
+                          src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
+                          alt={product.produktnavn}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Replace broken image with placeholder
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
+                            if (placeholder) {
+                              placeholder.style.display = 'flex';
+                            }
+                          }}
+                        />
+                        {/* Fallback placeholder for broken images */}
+                        <div 
+                          className="image-placeholder absolute inset-0 w-full h-full flex items-center justify-center bg-brand-gray-100 text-brand-gray-400"
+                          style={{ display: 'none' }}
+                        >
+                          <Package className="w-6 h-6" />
+                        </div>
+                      </>
+                    ) : (
+                      /* Default placeholder for products without images */
+                      <div className="w-full h-full flex items-center justify-center bg-brand-gray-100 text-brand-gray-400">
+                        <Package className="w-6 h-6" />
+                      </div>
+                    )}
                   </div>
+                  
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-brand-gray-900 truncate">
                       {product.produktnavn}
