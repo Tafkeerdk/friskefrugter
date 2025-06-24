@@ -29,6 +29,7 @@ import ProductSetup from "./pages/ProductSetup";
 import PasswordReset from "./pages/PasswordReset";
 import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
+import Profile from "./pages/Profile";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -205,6 +206,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireCustomer={true}>
                   <Cart />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/profile" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <Profile />
                 </ProtectedRoute>
               } 
             />

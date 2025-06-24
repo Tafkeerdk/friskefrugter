@@ -7,6 +7,7 @@ import { SearchResults } from "../search/SearchResults";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
+import { UserProfile } from "@/components/auth/UserProfile";
 
 const sampleProducts = [
   {
@@ -41,7 +42,7 @@ export function Navbar() {
   const [showResults, setShowResults] = useState(false);
   const isMobile = useIsMobile();
   const { isInstalled } = usePWA();
-  const { isCustomerAuthenticated } = useAuth();
+  const { isCustomerAuthenticated, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -199,16 +200,22 @@ export function Navbar() {
             </Button>
           </Link>
 
-          {/* Login Button - Hidden on mobile */}
-          <Link to="/login" className="hidden sm:block">
-            <Button 
-              variant="outline" 
-              className="gap-2 hover:bg-brand-gray-100 hover:text-brand-primary-dark transition-all border-brand-gray-200"
-            >
-              <User className="h-4 w-4" />
-              <span>Log ind</span>
-            </Button>
-          </Link>
+          {/* User Profile or Login Button - Hidden on mobile */}
+          <div className="hidden sm:block">
+            {isAuthenticated && user ? (
+              <UserProfile variant="dropdown" />
+            ) : (
+              <Link to="/login">
+                <Button 
+                  variant="outline" 
+                  className="gap-2 hover:bg-brand-gray-100 hover:text-brand-primary-dark transition-all border-brand-gray-200"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Log ind</span>
+                </Button>
+              </Link>
+            )}
+          </div>
 
           {/* Mobile Menu Button */}
           <Button 
@@ -272,14 +279,22 @@ export function Navbar() {
           >
             Kontakt
           </Link>
-          <Link 
-            to="/login" 
-            className="text-gray-700 py-3 border-b border-gray-100 flex items-center gap-2 font-medium hover:pl-2 hover:text-brand-primary transition-all duration-200"
-            onClick={() => setIsMenuOpen(false)}
-          >
-            <User className="h-4 w-4" />
-            Log ind som kunde
-          </Link>
+          
+          {/* User Profile or Login - Mobile */}
+          {isAuthenticated && user ? (
+            <div className="py-3 border-b border-gray-100">
+              <UserProfile variant="card" />
+            </div>
+          ) : (
+            <Link 
+              to="/login" 
+              className="text-gray-700 py-3 border-b border-gray-100 flex items-center gap-2 font-medium hover:pl-2 hover:text-brand-primary transition-all duration-200"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <User className="h-4 w-4" />
+              Log ind som kunde
+            </Link>
+          )}
           
           {/* Mobile Admin Access - Only show when PWA is installed */}
           {isInstalled && (

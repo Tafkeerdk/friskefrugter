@@ -20,6 +20,9 @@ const getEndpoint = (path: string): string => {
   if (path.startsWith('/api/auth/admin/verification')) {
     return '/.netlify/functions/admin-verification';
   }
+  if (path.startsWith('/api/auth/customer/profile')) {
+    return '/.netlify/functions/customer-profile';
+  }
   
   // For other auth routes, use the main API function
   return path;
@@ -39,6 +42,23 @@ export interface User {
   lastLogin?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Customer-specific fields
+  cvrNumber?: string;
+  phone?: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  deliveryAddress?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  useRegisteredAddressForDelivery?: boolean;
+  discountGroupId?: string;
 }
 
 export interface AuthTokens {
@@ -949,6 +969,82 @@ export const authService = {
       
       reader.onerror = () => {
         console.error('❌ File read failed');
+        reject(new Error('Kunne ikke læse billedfilen'));
+      };
+      
+      reader.readAsDataURL(imageFile);
+    });
+  },
+
+  // Customer profile management
+  async getCustomerProfile(): Promise<{ success: boolean; customer?: User }> {
+    const response = await apiClient.get(getEndpoint('/api/auth/customer/profile'));
+    const data = await response.json();
+    
+    if (data.success && data.customer) {
+      // Update stored user data
+      tokenManager.setUser(data.customer, 'customer');
+    }
+    
+    return data;
+  },
+
+  async updateCustomerProfile(profileData: { 
+    contactPersonName: string; 
+    email?: string; 
+    phone?: string;
+    address?: any;
+    deliveryAddress?: any;
+    useRegisteredAddressForDelivery?: boolean;
+    currentPassword?: string; 
+    newPassword?: string;
+  }): Promise<{ success: boolean; message: string; customer?: User }> {
+    const response = await apiClient.put(getEndpoint('/api/auth/customer/profile'), profileData);
+    const data = await response.json();
+    
+    if (data.success && data.customer) {
+      // Update stored user data
+      tokenManager.setUser(data.customer, 'customer');
+    }
+    
+    return data;
+  },
+
+  async uploadCustomerProfilePicture(imageFile: File): Promise<{ success: boolean; message: string; profilePictureUrl: string; customer: User }> {
+    return new Promise((resolve, reject) => {
+      console.log('🔄 Starting customer profile picture upload...');
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const imageData = reader.result as string;
+          console.log('📊 Customer image data size:', imageData.length);
+          console.log('📁 File name:', imageFile.name);
+          console.log('📄 Content type:', imageFile.type);
+          
+          const response = await apiClient.put(getEndpoint('/api/auth/customer/profile'), {
+            imageData,
+            fileName: imageFile.name,
+            contentType: imageFile.type
+          });
+          
+          console.log('📡 Customer upload response status:', response.status);
+          const data = await response.json();
+          console.log('📥 Customer upload response data:', data);
+          
+          if (data.success) {
+            // Update stored user data
+            tokenManager.setUser(data.customer, 'customer');
+          }
+          
+          resolve(data);
+        } catch (error) {
+          console.error('❌ Customer upload request failed:', error);
+          reject(error);
+        }
+      };
+      
+      reader.onerror = () => {
+        console.error('❌ Customer file read failed');
         reject(new Error('Kunne ikke læse billedfilen'));
       };
       

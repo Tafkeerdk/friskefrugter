@@ -4,7 +4,7 @@ import { isAdmin, isCustomer, getDiscountPercentage } from '../../lib/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
 import { LogOut, User, Settings, Shield } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
   variant?: 'card' | 'dropdown';
@@ -21,12 +22,27 @@ interface UserProfileProps {
 
 export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   if (!user) return null;
 
   const handleLogout = () => {
-    logout();
-    window.location.href = '/';
+    if (isCustomer(user)) {
+      logout('customer');
+    } else if (isAdmin(user)) {
+      logout('admin');
+    } else {
+      logout();
+    }
+    navigate('/');
+  };
+
+  const handleProfileClick = () => {
+    if (isCustomer(user)) {
+      navigate('/profile');
+    } else if (isAdmin(user)) {
+      navigate('/admin/profile');
+    }
   };
 
   const getUserInitials = () => {
@@ -53,6 +69,11 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
+              <AvatarImage 
+                src={user.profilePictureUrl} 
+                alt={getUserDisplayName()}
+                enableCacheBusting={true}
+              />
               <AvatarFallback>{getUserInitials()}</AvatarFallback>
             </Avatar>
           </Button>
@@ -71,7 +92,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
           
           {isCustomer(user) && (
             <>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleProfileClick}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profil</span>
               </DropdownMenuItem>
