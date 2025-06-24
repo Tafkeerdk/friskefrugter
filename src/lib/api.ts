@@ -10,6 +10,60 @@ class ApiClient {
     this.baseURL = baseURL;
   }
 
+  // Get the correct session token based on current user type
+  private getSessionToken(): string | null {
+    // Check for admin token first (since we're in admin context)
+    const adminToken = localStorage.getItem('admin_accessToken');
+    if (adminToken) {
+      return adminToken;
+    }
+    
+    // Check for customer token
+    const customerToken = localStorage.getItem('customer_accessToken');
+    if (customerToken) {
+      return customerToken;
+    }
+    
+    // Fallback to legacy token format
+    const legacyToken = localStorage.getItem('accessToken');
+    return legacyToken;
+  }
+
+  // Get the correct refresh token based on current user type
+  private getSessionRefreshToken(): string | null {
+    // Check for admin refresh token first
+    const adminRefreshToken = localStorage.getItem('admin_refreshToken');
+    if (adminRefreshToken) {
+      return adminRefreshToken;
+    }
+    
+    // Check for customer refresh token
+    const customerRefreshToken = localStorage.getItem('customer_refreshToken');
+    if (customerRefreshToken) {
+      return customerRefreshToken;
+    }
+    
+    // Fallback to legacy refresh token format
+    const legacyRefreshToken = localStorage.getItem('refreshToken');
+    return legacyRefreshToken;
+  }
+
+  // Update tokens in the correct session storage
+  private updateSessionTokens(accessToken: string, refreshToken: string): void {
+    // Determine which session type to update based on existing tokens
+    if (localStorage.getItem('admin_accessToken')) {
+      localStorage.setItem('admin_accessToken', accessToken);
+      localStorage.setItem('admin_refreshToken', refreshToken);
+    } else if (localStorage.getItem('customer_accessToken')) {
+      localStorage.setItem('customer_accessToken', accessToken);
+      localStorage.setItem('customer_refreshToken', refreshToken);
+    } else {
+      // Fallback to legacy format
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+    }
+  }
+
   private async request<T>(
     endpoint: string, 
     options: RequestInit = {}
@@ -20,8 +74,8 @@ class ApiClient {
     console.log('📤 Request method:', options.method || 'GET');
     console.log('📦 Request body type:', options.body ? options.body.constructor.name : 'none');
     
-    // CRITICAL SECURITY FIX: Enhanced token validation
-    const token = localStorage.getItem('accessToken');
+    // CRITICAL SECURITY FIX: Enhanced token validation with multi-session support
+    const token = this.getSessionToken();
     
     // Only set default Content-Type if not explicitly overridden
     const defaultHeaders: HeadersInit = {};
@@ -37,7 +91,7 @@ class ApiClient {
         console.warn('🚨 SECURITY: Token expired before request - attempting refresh...');
         const refreshed = await this.refreshToken();
         if (refreshed) {
-          const newToken = localStorage.getItem('accessToken');
+          const newToken = this.getSessionToken();
           if (newToken && !this.isTokenExpired(newToken)) {
             defaultHeaders.Authorization = `Bearer ${newToken}`;
             console.log('✅ SECURITY: Using refreshed token');
@@ -111,13 +165,13 @@ class ApiClient {
         console.warn('🚨 SECURITY: Server returned auth error - token may be expired');
         
         // Check if we have a token and if it's expired
-        const currentToken = localStorage.getItem('accessToken');
+        const currentToken = this.getSessionToken();
         if (currentToken && this.isTokenExpired(currentToken)) {
           console.warn('🚨 SECURITY: Confirmed token is expired - attempting refresh');
           const refreshed = await this.refreshToken();
           if (refreshed) {
             // Retry the request with new token
-            const newToken = localStorage.getItem('accessToken');
+            const newToken = this.getSessionToken();
             if (newToken && !this.isTokenExpired(newToken)) {
               const retryConfig = {
                 ...config,
@@ -230,7 +284,7 @@ class ApiClient {
 
   // CRITICAL SECURITY FIX: Enhanced refresh token logic
   private async refreshToken(): Promise<boolean> {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = this.getSessionRefreshToken();
     if (!refreshToken) {
       console.warn('🚨 SECURITY: No refresh token available');
       return false;
@@ -271,8 +325,7 @@ class ApiClient {
             return false;
           }
           
-          localStorage.setItem('accessToken', accessToken);
-          localStorage.setItem('refreshToken', newRefreshToken);
+          this.updateSessionTokens(accessToken, newRefreshToken);
           console.log('✅ SECURITY: Token refresh successful');
           return true;
         } else {
@@ -295,6 +348,7 @@ class ApiClient {
   // CRITICAL SECURITY FIX: Enhanced token cleanup
   private clearTokens(): void {
     console.log('🧹 SECURITY: Clearing all tokens');
+    // Clear all possible token formats
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
