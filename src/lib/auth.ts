@@ -734,7 +734,7 @@ export const authService = {
 
   // Customer login
   async loginCustomer(email: string, password: string): Promise<LoginResponse> {
-    const response = await apiClient.post('/api/auth/customer/login', {
+    const response = await apiClient.post(getEndpoint('/api/auth/customer/login'), {
       email,
       password,
     });
