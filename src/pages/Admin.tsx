@@ -9,6 +9,8 @@ import PopularProductsCard from "@/components/dashboard/cards/PopularProductsCar
 import OrderStatusCard from "@/components/dashboard/cards/OrderStatusCard";
 import RecentActivitiesCard from "@/components/dashboard/cards/RecentActivitiesCard";
 import { AdminDashboard } from '../components/auth/AdminDashboard';
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import {
   dashboardStats,
   salesChartData,
@@ -19,6 +21,7 @@ import {
 
 const Admin: React.FC = () => {
   const { adminUser, isAdminAuthenticated } = useAuth();
+  const isMobile = useIsMobile();
 
   // Enhanced security check - redirect if not authenticated or not admin
   if (!isAdminAuthenticated || !adminUser || !isAdmin(adminUser)) {
@@ -27,25 +30,57 @@ const Admin: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
-        {/* Admin Header with Security Notice */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-lg shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">Administrator Dashboard</h2>
-              <p className="text-blue-100 mt-1">
-                Velkommen {adminUser.name || adminUser.email} - Sikker admin adgang til B2B systemet
+      <div className={cn(
+        "space-y-6",
+        isMobile ? "space-y-4" : "space-y-8"
+      )}>
+        {/* Mobile-Optimized Admin Header */}
+        <div className={cn(
+          "bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg shadow-lg",
+          isMobile ? "p-4" : "p-6"
+        )}>
+          <div className={cn(
+            "flex items-center justify-between",
+            isMobile ? "flex-col space-y-3 text-center" : "flex-row"
+          )}>
+            <div className={cn(isMobile ? "w-full" : "")}>
+              <h2 className={cn(
+                "font-bold tracking-tight",
+                isMobile ? "text-xl" : "text-3xl"
+              )}>
+                Administrator Dashboard
+              </h2>
+              <p className={cn(
+                "text-blue-100 mt-1",
+                isMobile ? "text-sm" : "text-base"
+              )}>
+                Velkommen {adminUser.name || adminUser.email}
               </p>
+              {isMobile && (
+                <p className="text-xs text-blue-200 mt-1">
+                  Sikker admin adgang til B2B systemet
+                </p>
+              )}
             </div>
-            <div className="text-right text-sm text-blue-100">
-              <p>Rolle: {adminUser.role}</p>
-              <p>Sikkerhedsniveau: Høj</p>
+            <div className={cn(
+              "text-sm text-blue-100",
+              isMobile ? "w-full flex justify-between text-xs" : "text-right"
+            )}>
+              <div>
+                <p>Rolle: {adminUser.role}</p>
+                <p>Sikkerhedsniveau: Høj</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Admin Statistics */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {/* Mobile-First Statistics Grid */}
+        <div className={cn(
+          "grid gap-4",
+          isMobile 
+            ? "grid-cols-1 sm:grid-cols-2" 
+            : "grid-cols-2 lg:grid-cols-4"
+        )}>
           {dashboardStats.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
@@ -54,47 +89,83 @@ const Admin: React.FC = () => {
                 title={stat.title}
                 value={stat.value}
                 description={stat.description}
-                icon={<IconComponent className="h-5 w-5" />}
+                icon={<IconComponent className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />}
                 trend={stat.trend}
-                className="h-full border-l-4 border-l-blue-500"
+                className={cn(
+                  "h-full border-l-4 border-l-blue-500 hover:shadow-md transition-shadow",
+                  isMobile ? "min-h-[120px]" : ""
+                )}
               />
             );
           })}
         </div>
 
-        {/* B2B Application Management */}
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <h3 className="text-xl font-semibold mb-4 text-gray-900">B2B Ansøgningshåndtering</h3>
+        {/* Mobile-Optimized B2B Application Management */}
+        <div className={cn(
+          "bg-white rounded-lg shadow-sm border",
+          isMobile ? "p-4" : "p-6"
+        )}>
+          <h3 className={cn(
+            "font-semibold mb-4 text-gray-900",
+            isMobile ? "text-lg" : "text-xl"
+          )}>
+            {isMobile ? "B2B Ansøgninger" : "B2B Ansøgningshåndtering"}
+          </h3>
           <AdminDashboard />
         </div>
 
-        {/* Analytics and Charts */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        {/* Mobile-First Analytics Layout */}
+        <div className={cn(
+          "grid gap-6",
+          isMobile 
+            ? "grid-cols-1" 
+            : "md:grid-cols-2 lg:grid-cols-7"
+        )}>
           <ChartCard
-            title="B2B Omsætning denne uge"
-            description="Daglig B2B omsætning fordelt på ugedage"
+            title={isMobile ? "B2B Omsætning" : "B2B Omsætning denne uge"}
+            description={isMobile ? "Daglig omsætning" : "Daglig B2B omsætning fordelt på ugedage"}
             data={salesChartData}
             type="line"
             dataKey="sales"
-            className="lg:col-span-4"
+            className={cn(isMobile ? "" : "lg:col-span-4")}
           />
           <PopularProductsCard
             products={popularProducts}
-            className="lg:col-span-3"
+            className={cn(isMobile ? "mt-0" : "lg:col-span-3")}
           />
         </div>
 
-        {/* Order Management and Activities */}
-        <div className="grid gap-6 md:grid-cols-2">
+        {/* Mobile-Stacked Order Management */}
+        <div className={cn(
+          "grid gap-6",
+          isMobile ? "grid-cols-1" : "md:grid-cols-2"
+        )}>
           <OrderStatusCard statuses={orderStatuses} />
           <RecentActivitiesCard activities={recentActivities} />
         </div>
 
-        {/* Security Footer */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>🔒 Sikret admin session - Alle handlinger logges</span>
-            <span>Netlify Compatible • Enterprise Grade Security</span>
+        {/* Mobile-Friendly Security Footer */}
+        <div className={cn(
+          "bg-gray-50 rounded-lg border border-gray-200",
+          isMobile ? "p-3" : "p-4"
+        )}>
+          <div className={cn(
+            "text-gray-600",
+            isMobile 
+              ? "text-xs space-y-1 text-center" 
+              : "flex items-center justify-between text-sm"
+          )}>
+            <span className="flex items-center justify-center">
+              🔒 {isMobile ? "Sikret session" : "Sikret admin session - Alle handlinger logges"}
+            </span>
+            {!isMobile && (
+              <span>Netlify Compatible • Enterprise Grade Security</span>
+            )}
+            {isMobile && (
+              <span className="text-xs text-gray-500">
+                Netlify Compatible • Enterprise Security
+              </span>
+            )}
           </div>
         </div>
       </div>
