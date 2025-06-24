@@ -1,8 +1,18 @@
+export interface Unit {
+  _id: string;
+  value: string;
+  label: string;
+  description?: string;
+  isActive: boolean;
+  sortOrder: number;
+}
+
 export interface ProductFormData {
   produktnavn: string;
+  varenummer: string;
   beskrivelse?: string;
   eanNummer?: string;
-  enhed: 'kg' | 'stk' | 'bakke' | 'kasse';
+  enhed: string; // Unit ID instead of hardcoded values
   basispris: number;
   // General Product Discount System
   discount: {

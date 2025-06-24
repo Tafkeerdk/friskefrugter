@@ -70,11 +70,16 @@ const eanNummerSchema = z.string()
     return validateEAN13(val);
   }, 'EAN-nummer skal være 13 cifre');
 
-// Unit enum with Danish labels
-const enhedSchema = z.enum(['kg', 'stk', 'bakke', 'kasse'], {
-  required_error: 'Vælg en enhed',
-  invalid_type_error: 'Ugyldig enhed valgt'
-});
+// Varenummer validation
+const varenummerSchema = z.string()
+  .min(1, 'Varenummer er påkrævet')
+  .max(50, 'Varenummer må maksimalt være 50 tegn')
+  .regex(/^[A-Za-z0-9\-_]+$/, 'Varenummer må kun indeholde bogstaver, tal, bindestreg og underscore');
+
+// Unit validation (now using ObjectId)
+const enhedSchema = z.string()
+  .min(1, 'Vælg en enhed')
+  .regex(/^[0-9a-fA-F]{24}$/, 'Ugyldig enhed valgt');
 
 // Category validation
 const kategoriSchema = z.object({
@@ -199,6 +204,7 @@ const billedeSchema = z.object({
 // Main product setup schema
 export const productSetupSchema = z.object({
   produktnavn: produktnavnSchema,
+  varenummer: varenummerSchema,
   beskrivelse: beskrivelseSchema,
   eanNummer: eanNummerSchema,
   enhed: enhedSchema,
@@ -226,6 +232,7 @@ export type ProductSetupData = z.infer<typeof productSetupSchema>;
 // Partial schema for draft validation (less strict)
 export const productDraftSchema = z.object({
   produktnavn: produktnavnSchema.optional(),
+  varenummer: varenummerSchema.optional(),
   beskrivelse: beskrivelseSchema,
   eanNummer: eanNummerSchema,
   enhed: enhedSchema.optional(),
@@ -242,6 +249,7 @@ export type ProductDraftData = z.infer<typeof productDraftSchema>;
 // Schema for individual field validation
 export const fieldValidationSchemas = {
   produktnavn: produktnavnSchema,
+  varenummer: varenummerSchema,
   beskrivelse: beskrivelseSchema,
   eanNummer: eanNummerSchema,
   enhed: enhedSchema,

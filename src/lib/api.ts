@@ -338,6 +338,9 @@ class ApiClient {
     if (path.startsWith('/api/categories')) {
       return path.replace('/api/categories', '/.netlify/functions/categories');
     }
+    if (path.startsWith('/api/units')) {
+      return path.replace('/api/units', '/.netlify/functions/units');
+    }
     if (path.startsWith('/api/auth/refresh')) {
       return '/.netlify/functions/token-refresh';
     }
@@ -421,6 +424,12 @@ class ApiClient {
   // EAN lookup for visual feedback (non-blocking)
   async lookupEAN(ean: string) {
     const endpoint = this.getEndpoint(`/api/products?ean=${encodeURIComponent(ean)}`);
+    return this.request(endpoint);
+  }
+
+  // Varenummer lookup for visual feedback (non-blocking)
+  async lookupVarenummer(varenummer: string) {
+    const endpoint = this.getEndpoint(`/api/products?varenummer=${encodeURIComponent(varenummer)}`);
     return this.request(endpoint);
   }
 
@@ -544,6 +553,46 @@ class ApiClient {
       method: 'POST',
     });
   }
+
+  // Units API methods
+  async getUnits() {
+    const endpoint = this.getEndpoint('/api/units');
+    return this.request(endpoint);
+  }
+
+  async createUnit(unitData: {
+    value: string;
+    label: string;
+    description?: string;
+    sortOrder?: number;
+  }) {
+    const endpoint = this.getEndpoint('/api/units');
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(unitData),
+    });
+  }
+
+  async updateUnit(id: string, unitData: {
+    value?: string;
+    label?: string;
+    description?: string;
+    sortOrder?: number;
+    isActive?: boolean;
+  }) {
+    const endpoint = this.getEndpoint('/api/units');
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify({ id, ...unitData }),
+    });
+  }
+
+  async deleteUnit(id: string) {
+    const endpoint = this.getEndpoint(`/api/units?id=${id}`);
+    return this.request(endpoint, {
+      method: 'DELETE',
+    });
+  }
 }
 
 // Create and export API client instance
@@ -555,6 +604,7 @@ export const productFormDataToFormData = (productData: any, images?: File[], exi
   
   // Add individual form fields (not as JSON string)
   formData.append('produktnavn', productData.produktnavn || '');
+  formData.append('varenummer', productData.varenummer || '');
   formData.append('beskrivelse', productData.beskrivelse || '');
   formData.append('eanNummer', productData.eanNummer || '');
   formData.append('enhed', productData.enhed || '');

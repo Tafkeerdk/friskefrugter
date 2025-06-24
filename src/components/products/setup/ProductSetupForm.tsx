@@ -41,20 +41,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 
-import { ProductFormData, ProductSetupFormProps, ProductImage } from '@/types/product';
+import { ProductFormData, ProductSetupFormProps, ProductImage, Unit } from '@/types/product';
 import { productSetupSchema } from './validation/productSchema';
 import { EANInput } from './components/EANInput';
+import { VarenummerInput } from './components/VarenummerInput';
 import { CurrencyInput } from './components/CurrencyInput';
 import { RabatGruppePreview } from './components/RabatGruppePreview';
 import { api, productFormDataToFormData, handleApiError } from '@/lib/api';
 
-// Unit options with Danish labels
-const unitOptions = [
-  { value: 'kg', label: 'Kilogram (kg)' },
-  { value: 'stk', label: 'Stykker (stk)' },
-  { value: 'bakke', label: 'Bakke' },
-  { value: 'kasse', label: 'Kasse' }
-] as const;
+// Units will be loaded dynamically from the API
 
 // Category interface for API responses
 interface Category {
@@ -117,9 +112,11 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
 }) => {
   const { toast } = useToast();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [loadingUnits, setLoadingUnits] = useState(true);
   const [uploadingImages, setUploadingImages] = useState<Set<string>>(new Set());
   const [imageToPreview, setImageToPreview] = useState<ProductImage | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false); // Prevent multiple submissions
@@ -129,9 +126,10 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     resolver: zodResolver(productSetupSchema),
     defaultValues: {
       produktnavn: initialData?.produktnavn || '',
+      varenummer: initialData?.varenummer || '',
       beskrivelse: initialData?.beskrivelse || '',
       eanNummer: initialData?.eanNummer || '',
-      enhed: initialData?.enhed || 'kg',
+      enhed: initialData?.enhed || '',
       basispris: initialData?.basispris || 0,
       discount: {
         enabled: initialData?.discount?.enabled || false,
@@ -183,29 +181,41 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     return hasProductChanges;
   }, [isDirty, isCreatingCategory, newCategoryName, form]);
 
-  // Load categories on component mount
+  // Load categories and units on component mount
   React.useEffect(() => {
-    const loadCategories = async () => {
+    const loadData = async () => {
       try {
         setLoadingCategories(true);
-        const response = await api.getCategories({ activeOnly: true });
-        if (response.success && response.data) {
-          setCategories(response.data as Category[]);
+        setLoadingUnits(true);
+
+        // Load categories and units in parallel
+        const [categoriesResponse, unitsResponse] = await Promise.all([
+          api.getCategories({ activeOnly: true }),
+          api.getUnits()
+        ]);
+
+        if (categoriesResponse.success && categoriesResponse.data) {
+          setCategories(categoriesResponse.data as Category[]);
+        }
+
+        if (unitsResponse.success && unitsResponse.data) {
+          setUnits(unitsResponse.data as Unit[]);
         }
       } catch (error) {
-        console.error('Failed to load categories:', error);
+        console.error('Failed to load data:', error);
         toast({
           title: 'Fejl',
-          description: 'Kunne ikke indlæse kategorier',
+          description: 'Kunne ikke indlæse data',
           variant: 'destructive',
           duration: 3000,
         });
       } finally {
         setLoadingCategories(false);
+        setLoadingUnits(false);
       }
     };
 
-    loadCategories();
+    loadData();
   }, [toast]);
 
   // Enhanced image upload handlers with better validation and feedback
@@ -642,6 +652,21 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                   )}
                 />
 
+                {/* Varenummer */}
+                <FormField
+                  control={form.control}
+                  name="varenummer"
+                  render={({ field }) => (
+                    <VarenummerInput
+                      value={field.value}
+                      onChange={field.onChange}
+                      error={errors.varenummer?.message}
+                      disabled={isLoading}
+                      productId={productId}
+                    />
+                  )}
+                />
+
                 {/* Description */}
                 <FormField
                   control={form.control}
@@ -734,8 +759,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {unitOptions.map((unit) => (
-                              <SelectItem key={unit.value} value={unit.value}>
+                            {units.map((unit) => (
+                              <SelectItem key={unit._id} value={unit._id}>
                                 {unit.label}
                               </SelectItem>
                             ))}
@@ -763,7 +788,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                               Aktivér generel produktrabat
                             </FormLabel>
                             <FormDescription>
-                              Vis produktet med før/efter priser og rabat-badge
+                              Vis produktet med før/efter priser og rabat-badge. 
+                              <strong>Bemærk:</strong> Hvis du angiver en før-pris, vil rabat grupperne køre efter standard priser for at undgå dobbelt rabat.
                             </FormDescription>
                           </div>
                           <FormControl>
@@ -1051,13 +1077,44 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
             {/* Inventory Management */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Warehouse className="h-5 w-5" />
-                  Lagerstyring
-                </CardTitle>
-                <CardDescription>
-                  Aktivér lagerstyring for at spore beholdning
-                </CardDescription>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Warehouse className="h-5 w-5" />
+                        Lagerstyring
+                      </CardTitle>
+                      <CardDescription>
+                        Aktivér lagerstyring for at spore beholdning
+                      </CardDescription>
+                    </div>
+                  </div>
+                  
+                  {/* Lagerstyring Add-on Banner */}
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Warehouse className="h-4 w-4 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-semibold text-blue-900">
+                          🎯 Tilkøbsvare: Avanceret Lagerstyring
+                        </h4>
+                        <p className="text-xs text-blue-700 mt-1">
+                          Professionel lagerstyring med automatiske advarsler, lagerrapporter og integration til dit økonomisystem. 
+                          <span className="font-medium"> Kontakt os for at tilkøbe denne funktion.</span>
+                        </p>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <Badge variant="outline" className="text-blue-700 border-blue-300 bg-blue-100">
+                          Tilkøb
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <FormField
