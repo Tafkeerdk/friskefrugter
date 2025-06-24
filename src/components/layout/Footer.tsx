@@ -40,9 +40,9 @@ export function Footer() {
               <a 
                 href="#" 
                 className={cn(
-                  "text-green-600 hover:text-green-800 transition-all duration-200",
+                  "text-brand-primary hover:text-brand-primary-dark transition-all duration-200",
                   isMobile ? "p-2" : "p-1",
-                  "rounded-lg hover:bg-green-50 active:scale-95"
+                  "rounded-lg hover:bg-brand-gray-100 active:scale-95"
                 )}
                 aria-label="Facebook"
               >
@@ -53,9 +53,9 @@ export function Footer() {
               <a 
                 href="#" 
                 className={cn(
-                  "text-green-600 hover:text-green-800 transition-all duration-200",
+                  "text-brand-primary hover:text-brand-primary-dark transition-all duration-200",
                   isMobile ? "p-2" : "p-1",
-                  "rounded-lg hover:bg-green-50 active:scale-95"
+                  "rounded-lg hover:bg-brand-gray-100 active:scale-95"
                 )}
                 aria-label="Instagram"
               >
@@ -83,7 +83,7 @@ export function Footer() {
                 isMobile && "justify-center"
               )}>
                 <MapPin className={cn(
-                  "text-green-600 flex-shrink-0 mt-0.5",
+                  "text-brand-primary flex-shrink-0 mt-0.5",
                   isMobile ? "h-4 w-4 mr-2" : "h-5 w-5 mr-2"
                 )} />
                 <span className="leading-relaxed">Grøntvej 123, 2300 København S</span>
@@ -93,12 +93,12 @@ export function Footer() {
                 isMobile && "justify-center"
               )}>
                 <Phone className={cn(
-                  "text-green-600 flex-shrink-0",
+                  "text-brand-primary flex-shrink-0",
                   isMobile ? "h-4 w-4 mr-2" : "h-5 w-5 mr-2"
                 )} />
                 <a 
                   href="tel:+4512345678" 
-                  className="hover:text-green-600 transition-colors active:scale-95"
+                  className="hover:text-brand-primary transition-colors active:scale-95"
                 >
                   +45 12 34 56 78
                 </a>
@@ -108,12 +108,12 @@ export function Footer() {
                 isMobile && "justify-center"
               )}>
                 <Mail className={cn(
-                  "text-green-600 flex-shrink-0",
+                  "text-brand-primary flex-shrink-0",
                   isMobile ? "h-4 w-4 mr-2" : "h-5 w-5 mr-2"
                 )} />
                 <a 
                   href="mailto:info@multigroent.dk" 
-                  className="hover:text-green-600 transition-colors active:scale-95"
+                  className="hover:text-brand-primary transition-colors active:scale-95"
                 >
                   info@multigroent.dk
                 </a>
@@ -137,8 +137,8 @@ export function Footer() {
                 <Link 
                   to="/about" 
                   className={cn(
-                    "hover:text-green-600 transition-colors inline-block",
-                    isMobile ? "py-2 px-4 rounded-lg hover:bg-green-50 active:scale-95" : "py-1"
+                    "hover:text-brand-primary transition-colors inline-block",
+                    isMobile ? "py-2 px-4 rounded-lg hover:bg-brand-gray-100 active:scale-95" : "py-1"
                   )}
                 >
                   Om os
@@ -148,8 +148,8 @@ export function Footer() {
                 <Link 
                   to="/terms" 
                   className={cn(
-                    "hover:text-green-600 transition-colors inline-block",
-                    isMobile ? "py-2 px-4 rounded-lg hover:bg-green-50 active:scale-95" : "py-1"
+                    "hover:text-brand-primary transition-colors inline-block",
+                    isMobile ? "py-2 px-4 rounded-lg hover:bg-brand-gray-100 active:scale-95" : "py-1"
                   )}
                 >
                   Vilkår og betingelser
@@ -159,8 +159,8 @@ export function Footer() {
                 <Link 
                   to="/privacy" 
                   className={cn(
-                    "hover:text-green-600 transition-colors inline-block",
-                    isMobile ? "py-2 px-4 rounded-lg hover:bg-green-50 active:scale-95" : "py-1"
+                    "hover:text-brand-primary transition-colors inline-block",
+                    isMobile ? "py-2 px-4 rounded-lg hover:bg-brand-gray-100 active:scale-95" : "py-1"
                   )}
                 >
                   Privatlivspolitik
@@ -170,8 +170,8 @@ export function Footer() {
                 <Link 
                   to="/contact" 
                   className={cn(
-                    "hover:text-green-600 transition-colors inline-block",
-                    isMobile ? "py-2 px-4 rounded-lg hover:bg-green-50 active:scale-95" : "py-1"
+                    "hover:text-brand-primary transition-colors inline-block",
+                    isMobile ? "py-2 px-4 rounded-lg hover:bg-brand-gray-100 active:scale-95" : "py-1"
                   )}
                 >
                   Kontakt os

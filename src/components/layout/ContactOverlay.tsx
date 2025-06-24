@@ -17,8 +17,8 @@ export function ContactOverlay() {
         className={cn(
           "fixed shadow-lg animate-fade-in hover:scale-105 transition-all duration-300",
           isMobile 
-            ? "bottom-4 right-4 h-14 w-14 rounded-full bg-green-600 hover:bg-green-700" 
-            : "bottom-8 right-8 h-16 w-16 rounded-full bg-green-600 hover:bg-green-700"
+            ? "bottom-4 right-4 h-14 w-14 rounded-full bg-brand-primary hover:bg-brand-primary-hover" 
+            : "bottom-8 right-8 h-16 w-16 rounded-full bg-brand-primary hover:bg-brand-primary-hover"
         )}
         aria-label="Kontakt os"
       >
@@ -39,7 +39,7 @@ export function ContactOverlay() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setIsOpen(false)}
-                className="hover:bg-green-50 hover:text-green-600"
+                className="hover:bg-brand-gray-100 hover:text-brand-primary"
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -49,13 +49,13 @@ export function ContactOverlay() {
               <div className="group">
                 <a 
                   href="tel:+4512345678" 
-                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-green-50 transition-all duration-300"
+                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-brand-gray-100 transition-all duration-300"
                 >
-                  <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                    <Phone className="h-6 w-6 text-green-600" />
+                  <div className="h-12 w-12 bg-brand-gray-100 rounded-full flex items-center justify-center group-hover:bg-brand-gray-200 transition-colors">
+                    <Phone className="h-6 w-6 text-brand-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">Ring til os</p>
+                    <p className="font-medium text-gray-900 group-hover:text-brand-primary transition-colors">Ring til os</p>
                     <p className="text-gray-500">+45 12 34 56 78</p>
                   </div>
                 </a>
@@ -64,13 +64,13 @@ export function ContactOverlay() {
               <div className="group">
                 <a 
                   href="mailto:info@firma.dk" 
-                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-green-50 transition-all duration-300"
+                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-brand-gray-100 transition-all duration-300"
                 >
-                  <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                    <Mail className="h-6 w-6 text-green-600" />
+                  <div className="h-12 w-12 bg-brand-gray-100 rounded-full flex items-center justify-center group-hover:bg-brand-gray-200 transition-colors">
+                    <Mail className="h-6 w-6 text-brand-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">Send en mail</p>
+                    <p className="font-medium text-gray-900 group-hover:text-brand-primary transition-colors">Send en mail</p>
                     <p className="text-gray-500">info@firma.dk</p>
                   </div>
                 </a>

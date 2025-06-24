@@ -24,8 +24,8 @@ const RecentActivitiesCard: React.FC<RecentActivitiesCardProps> = ({
     switch (type) {
       case "order":
         return (
-          <div className="rounded-full bg-green-100 p-2">
-            <ShoppingCart className="h-4 w-4 text-green-600" />
+          <div className="rounded-full bg-brand-gray-100 p-2">
+            <ShoppingCart className="h-4 w-4 text-brand-primary" />
           </div>
         );
       case "payment":

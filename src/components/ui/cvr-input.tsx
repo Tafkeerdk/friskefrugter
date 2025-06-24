@@ -154,7 +154,7 @@ export const CVRInput: React.FC<CVRInputProps> = ({
     }
     
     if (validationState.valid) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className="h-4 w-4 text-brand-primary" />;
     }
     
     if (validationState.error || externalError) {
@@ -189,7 +189,7 @@ export const CVRInput: React.FC<CVRInputProps> = ({
 
   const getInputBorderColor = () => {
     if (externalError) return 'border-red-500';
-    if (validationState.valid && companyData) return 'border-green-500';
+    if (validationState.valid && companyData) return 'border-brand-primary';
     if (isValidating) return 'border-blue-500';
     
     const cleanCVR = value.replace(/\s/g, '');
@@ -220,7 +220,7 @@ export const CVRInput: React.FC<CVRInputProps> = ({
           )}
           
           {canSubmit && companyData && (
-            <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+            <Badge variant="default" className="text-xs bg-brand-gray-100 text-brand-primary-dark">
               ✓ Data hentet
             </Badge>
           )}

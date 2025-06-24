@@ -82,7 +82,7 @@ export function Navbar() {
         <div className="flex items-center gap-4 md:gap-8">
           <Link to="/" className="flex items-center group">
             <span className={cn(
-              "font-bold text-green-600 transition-all duration-300 group-hover:text-green-700",
+              "font-bold text-brand-primary transition-all duration-300 group-hover:text-brand-primary-dark",
               isMobile ? "text-xl" : "text-2xl"
             )}>
               Multi Grønt
@@ -92,25 +92,25 @@ export function Navbar() {
           <nav className="hidden md:flex items-center space-x-1">
             <Link 
               to="/products" 
-              className="px-4 py-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all duration-200 font-medium"
+              className="px-4 py-2 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all duration-200 font-medium"
             >
               Produkter
             </Link>
             <Link 
               to="/about" 
-              className="px-4 py-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all duration-200 font-medium"
+              className="px-4 py-2 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all duration-200 font-medium"
             >
               Om os
             </Link>
             <Link 
               to="/faq" 
-              className="px-4 py-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all duration-200 font-medium"
+              className="px-4 py-2 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all duration-200 font-medium"
             >
               FAQ
             </Link>
             <Link 
               to="/contact" 
-              className="px-4 py-2 rounded-md text-gray-700 hover:text-green-600 hover:bg-green-50 transition-all duration-200 font-medium"
+              className="px-4 py-2 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all duration-200 font-medium"
             >
               Kontakt
             </Link>
@@ -126,7 +126,7 @@ export function Navbar() {
             <input 
               type="text" 
               placeholder="Søg efter produkter..." 
-              className="border border-gray-200 px-4 py-2 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-all"
+              className="border border-gray-200 px-4 py-2 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-brand-primary transition-all"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               onFocus={() => {
@@ -151,7 +151,7 @@ export function Navbar() {
               <input 
                 type="text" 
                 placeholder="Søg..." 
-                className="border border-gray-200 px-3 py-2 pr-10 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-green-500 transition-all text-sm"
+                className="border border-gray-200 px-3 py-2 pr-10 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-brand-primary transition-all text-sm"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
                 onFocus={() => setShowResults(true)}
@@ -175,13 +175,13 @@ export function Navbar() {
               variant="ghost" 
               size="icon" 
               className={cn(
-                "hover:bg-green-50 hover:text-green-600 transition-all",
+                "hover:bg-brand-gray-100 hover:text-brand-primary transition-all",
                 isMobile ? "h-9 w-9" : "h-10 w-10"
               )}
               aria-label="Shopping cart"
             >
               <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
-              <span className="absolute -top-1 -right-1 bg-green-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 bg-brand-gray-1000 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
                 0
               </span>
             </Button>
@@ -191,7 +191,7 @@ export function Navbar() {
           <Link to="/login" className="hidden sm:block">
             <Button 
               variant="outline" 
-              className="gap-2 hover:bg-green-50 hover:text-green-700 transition-all border-green-100"
+              className="gap-2 hover:bg-brand-gray-100 hover:text-brand-primary-dark transition-all border-brand-gray-200"
             >
               <User className="h-4 w-4" />
               <span>Log ind</span>
@@ -203,7 +203,7 @@ export function Navbar() {
             variant="default" 
             size="icon" 
             className={cn(
-              "md:hidden hover:bg-green-700 transition-all",
+              "md:hidden hover:bg-brand-primary-hover transition-all",
               isMobile ? "h-9 w-9" : "h-10 w-10"
             )}
             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -222,35 +222,35 @@ export function Navbar() {
         <div className="page-container flex flex-col space-y-2 py-4">
           <Link 
             to="/products" 
-            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
             onClick={() => setIsMenuOpen(false)}
           >
             Produkter
           </Link>
           <Link 
             to="/about" 
-            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
             onClick={() => setIsMenuOpen(false)}
           >
             Om os
           </Link>
           <Link 
             to="/faq" 
-            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
             onClick={() => setIsMenuOpen(false)}
           >
             FAQ
           </Link>
           <Link 
             to="/contact" 
-            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-green-600 transition-all duration-200"
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
             onClick={() => setIsMenuOpen(false)}
           >
             Kontakt
           </Link>
           <Link 
             to="/login" 
-            className="text-gray-700 py-3 border-b border-gray-100 flex items-center gap-2 font-medium hover:pl-2 hover:text-green-600 transition-all duration-200"
+            className="text-gray-700 py-3 border-b border-gray-100 flex items-center gap-2 font-medium hover:pl-2 hover:text-brand-primary transition-all duration-200"
             onClick={() => setIsMenuOpen(false)}
           >
             <User className="h-4 w-4" />
@@ -263,10 +263,10 @@ export function Navbar() {
               <div className="text-xs text-gray-500 mb-2 px-2">Admin adgang</div>
               <Link 
                 to="/super/admin" 
-                className="text-gray-700 py-3 flex items-center gap-2 font-medium hover:pl-2 hover:text-green-600 transition-all duration-200 bg-green-50/50 rounded-md px-2"
+                className="text-gray-700 py-3 flex items-center gap-2 font-medium hover:pl-2 hover:text-brand-primary transition-all duration-200 bg-brand-gray-100/50 rounded-md px-2"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <Shield className="h-4 w-4 text-green-600" />
+                <Shield className="h-4 w-4 text-brand-primary" />
                 <div className="flex flex-col">
                   <span className="text-sm">Admin Login</span>
                   <span className="text-xs text-gray-500">System administration</span>

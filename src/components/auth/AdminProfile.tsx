@@ -544,8 +544,8 @@ export const AdminProfile: React.FC = () => {
 
           {/* Success/Error Messages */}
           {success && (
-            <Alert className="border-green-200 bg-green-50">
-              <AlertDescription className="text-green-800">{success}</AlertDescription>
+            <Alert className="border-brand-gray-200 bg-brand-gray-100">
+              <AlertDescription className="text-brand-primary-dark">{success}</AlertDescription>
             </Alert>
           )}
           
@@ -628,7 +628,7 @@ export const AdminProfile: React.FC = () => {
                   </Button>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-green-700">
+                    <div className="flex items-center gap-2 text-brand-primary-dark">
                       <CheckCircle className="h-4 w-4" />
                       <span className="text-sm">Verifikationskode sendt til din email</span>
                     </div>
@@ -711,8 +711,8 @@ export const AdminProfile: React.FC = () => {
                   )}
                   
                   {passwordDialogState.success && (
-                    <Alert className="border-green-200 bg-green-50">
-                      <AlertDescription className="text-green-800">{passwordDialogState.success}</AlertDescription>
+                    <Alert className="border-brand-gray-200 bg-brand-gray-100">
+                      <AlertDescription className="text-brand-primary-dark">{passwordDialogState.success}</AlertDescription>
                     </Alert>
                   )}
 
@@ -759,7 +759,7 @@ export const AdminProfile: React.FC = () => {
                   {/* Step 2: Verification Code Input */}
                   {passwordDialogState.step === 'verification' && (
                     <div className="space-y-4">
-                      <div className="flex items-center gap-2 text-green-700 mb-4">
+                      <div className="flex items-center gap-2 text-brand-primary-dark mb-4">
                         <CheckCircle className="h-4 w-4" />
                         <span className="text-sm">Verifikationskode sendt til din email</span>
                       </div>
@@ -967,7 +967,7 @@ export const AdminProfile: React.FC = () => {
               <Label className="text-sm font-medium text-muted-foreground">Status</Label>
               <p className="text-sm">
                 {user.isActive ? (
-                  <span className="text-green-600 font-medium">Aktiv</span>
+                  <span className="text-brand-primary font-medium">Aktiv</span>
                 ) : (
                   <span className="text-red-600 font-medium">Inaktiv</span>
                 )}

@@ -72,9 +72,9 @@ const FAQ = () => {
       </div>
 
       {/* Step 1 */}
-      <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+      <div className="bg-white border-2 border-brand-gray-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+          <div className="bg-brand-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
             1
           </div>
           <div className="flex-1">
@@ -93,9 +93,9 @@ const FAQ = () => {
       </div>
 
       {/* Step 2 */}
-      <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+      <div className="bg-white border-2 border-brand-gray-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+          <div className="bg-brand-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
             2
           </div>
           <div className="flex-1">
@@ -117,19 +117,19 @@ const FAQ = () => {
       </div>
 
       {/* Step 3 */}
-      <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+      <div className="bg-white border-2 border-brand-gray-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+          <div className="bg-brand-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
             3
           </div>
           <div className="flex-1">
             <h5 className="font-semibold text-gray-900 mb-2">Find "Føj til hjemmeskærm"</h5>
-            <div className="bg-green-50 rounded-lg p-4 mb-2">
+            <div className="bg-brand-gray-100 rounded-lg p-4 mb-2">
               <div className="text-center">
                 <div className="bg-gray-100 rounded-lg p-3 mb-2">
                   <p className="text-sm font-medium text-gray-800">⬇ Scroll ned ⬇</p>
                 </div>
-                <div className="bg-green-600 text-white rounded-lg p-3 inline-flex items-center gap-2">
+                <div className="bg-brand-primary text-white rounded-lg p-3 inline-flex items-center gap-2">
                   <Smartphone className="h-5 w-5" />
                   <span className="text-sm font-medium">Føj til hjemmeskærm</span>
                 </div>
@@ -143,20 +143,20 @@ const FAQ = () => {
       </div>
 
       {/* Step 4 */}
-      <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+      <div className="bg-white border-2 border-brand-gray-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+          <div className="bg-brand-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
             4
           </div>
           <div className="flex-1">
             <h5 className="font-semibold text-gray-900 mb-2">Bekræft installationen</h5>
-            <div className="bg-green-50 rounded-lg p-4 mb-2">
+            <div className="bg-brand-gray-100 rounded-lg p-4 mb-2">
               <div className="text-center space-y-2">
-                <div className="bg-white border-2 border-green-300 rounded-lg p-3">
-                  <p className="text-sm font-semibold text-green-800">Multi Grønt</p>
+                <div className="bg-white border-2 border-brand-gray-300 rounded-lg p-3">
+                  <p className="text-sm font-semibold text-brand-primary-dark">Multi Grønt</p>
                   <p className="text-xs text-gray-600">Vil blive tilføjet til hjemmeskærmen</p>
                 </div>
-                <Button className="bg-green-600 hover:bg-green-700 text-white text-sm">
+                <Button className="bg-brand-primary hover:bg-brand-primary-hover text-white text-sm">
                   Tilføj
                 </Button>
               </div>
@@ -169,12 +169,12 @@ const FAQ = () => {
       </div>
 
       {/* Success Message */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-brand-gray-200 rounded-lg p-4">
         <div className="flex items-center gap-3">
-          <CheckCircle className="h-6 w-6 text-green-600" />
+          <CheckCircle className="h-6 w-6 text-brand-primary" />
           <div>
-            <h4 className="font-semibold text-green-800">Tillykke! 🎉</h4>
-            <p className="text-sm text-green-700">Multi Grønt er nu installeret som app og åbner uden browser-interface</p>
+            <h4 className="font-semibold text-brand-primary-dark">Tillykke! 🎉</h4>
+            <p className="text-sm text-brand-primary-dark">Multi Grønt er nu installeret som app og åbner uden browser-interface</p>
           </div>
         </div>
       </div>
@@ -193,9 +193,9 @@ const FAQ = () => {
         </p>
       </div>
 
-      <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+      <div className="bg-white border-2 border-brand-gray-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+          <div className="bg-brand-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
             1
           </div>
           <div className="flex-1">
@@ -203,8 +203,8 @@ const FAQ = () => {
             <div className="bg-blue-50 rounded-lg p-4 mb-2">
               <p className="text-sm text-blue-700">Chrome vil ofte automatisk vise en "Installér app" besked</p>
             </div>
-            <div className="bg-green-50 rounded-lg p-3">
-              <Button className="bg-green-600 hover:bg-green-700 text-white text-sm">
+            <div className="bg-brand-gray-100 rounded-lg p-3">
+              <Button className="bg-brand-primary hover:bg-brand-primary-hover text-white text-sm">
                 <Download className="h-4 w-4 mr-2" />
                 Installér
               </Button>
@@ -213,9 +213,9 @@ const FAQ = () => {
         </div>
       </div>
 
-      <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+      <div className="bg-white border-2 border-brand-gray-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+          <div className="bg-brand-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
             2
           </div>
           <div className="flex-1">
@@ -254,19 +254,19 @@ const FAQ = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className={cn(
               "border-2 rounded-lg p-4",
-              isIOSInstallable ? "border-green-300 bg-green-50" : "border-gray-200 bg-gray-50"
+              isIOSInstallable ? "border-brand-gray-300 bg-brand-gray-100" : "border-gray-200 bg-gray-50"
             )}>
               <div className="flex items-center gap-2 mb-2">
                 <Smartphone className="h-5 w-5 text-blue-600" />
                 <span className="font-medium">iOS (iPhone/iPad)</span>
-                {isIOSInstallable && <CheckCircle className="h-4 w-4 text-green-600" />}
+                {isIOSInstallable && <CheckCircle className="h-4 w-4 text-brand-primary" />}
               </div>
               <p className="text-sm text-gray-700">Safari browser påkrævet</p>
             </div>
             
             <div className="border-2 border-gray-200 bg-gray-50 rounded-lg p-4">
               <div className="flex items-center gap-2 mb-2">
-                <Smartphone className="h-5 w-5 text-green-600" />
+                <Smartphone className="h-5 w-5 text-brand-primary" />
                 <span className="font-medium">Android</span>
               </div>
               <p className="text-sm text-gray-700">Chrome browser anbefalet</p>
@@ -278,7 +278,7 @@ const FAQ = () => {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                 📱 iOS Installation Guide
-                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">Din enhed</span>
+                <span className="bg-brand-gray-100 text-brand-primary-dark text-xs px-2 py-1 rounded-full">Din enhed</span>
               </h3>
               {renderIOSInstallationSteps()}
             </div>
@@ -293,20 +293,20 @@ const FAQ = () => {
           </div>
 
           {/* Benefits */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
-            <h4 className="font-semibold text-green-800 mb-3">Fordele ved app-installation:</h4>
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-brand-gray-200 rounded-lg p-4">
+            <h4 className="font-semibold text-brand-primary-dark mb-3">Fordele ved app-installation:</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-700">Hurtigere adgang</span>
+                <CheckCircle className="h-4 w-4 text-brand-primary" />
+                <span className="text-sm text-brand-primary-dark">Hurtigere adgang</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-700">Offline funktionalitet</span>
+                <CheckCircle className="h-4 w-4 text-brand-primary" />
+                <span className="text-sm text-brand-primary-dark">Offline funktionalitet</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-700">Ingen browser-interface</span>
+                <CheckCircle className="h-4 w-4 text-brand-primary" />
+                <span className="text-sm text-brand-primary-dark">Ingen browser-interface</span>
               </div>
             </div>
           </div>
@@ -352,11 +352,11 @@ const FAQ = () => {
                   Anmod om nulstilling
                 </h5>
                 <div className="space-y-3">
-                  <div className="bg-green-50 rounded-lg p-3">
-                    <p className="text-sm text-green-800 mb-2">
+                  <div className="bg-brand-gray-100 rounded-lg p-3">
+                    <p className="text-sm text-brand-primary-dark mb-2">
                       <strong>Gå til nulstillingssiden:</strong>
                     </p>
-                    <ul className="text-sm text-green-700 space-y-1">
+                    <ul className="text-sm text-brand-primary-dark space-y-1">
                       <li>• Gå til <strong>multigroent.dk/password-reset</strong></li>
                       <li>• Eller klik "Glemt password?" på login-siden</li>
                     </ul>
@@ -431,11 +431,11 @@ const FAQ = () => {
                       <li>• Koden er case-sensitive</li>
                     </ul>
                   </div>
-                  <div className="bg-green-50 rounded-lg p-3">
-                    <p className="text-sm text-green-800 mb-2">
+                  <div className="bg-brand-gray-100 rounded-lg p-3">
+                    <p className="text-sm text-brand-primary-dark mb-2">
                       <strong>Opret nyt password:</strong>
                     </p>
-                    <ul className="text-sm text-green-700 space-y-1">
+                    <ul className="text-sm text-brand-primary-dark space-y-1">
                       <li>• Mindst 8 tegn langt</li>
                       <li>• Kombination af bogstaver og tal anbefalet</li>
                       <li>• Undgå almindelige passwords</li>
@@ -532,12 +532,12 @@ const FAQ = () => {
           </div>
 
           {/* Success Message */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-brand-gray-200 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="h-6 w-6 text-green-600" />
+              <CheckCircle className="h-6 w-6 text-brand-primary" />
               <div>
-                <h4 className="font-semibold text-green-800">Success! 🎉</h4>
-                <p className="text-sm text-green-700">Efter succesfuld nulstilling kan du logge ind med dit nye password på <strong>multigroent.dk/login</strong></p>
+                <h4 className="font-semibold text-brand-primary-dark">Success! 🎉</h4>
+                <p className="text-sm text-brand-primary-dark">Efter succesfuld nulstilling kan du logge ind med dit nye password på <strong>multigroent.dk/login</strong></p>
               </div>
             </div>
           </div>
@@ -569,19 +569,19 @@ const FAQ = () => {
           <p>Multi Grønt er kun for erhvervskunder. For at oprette en konto:</p>
           <ol className="space-y-2 text-sm">
             <li className="flex items-start gap-2">
-              <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">1</span>
+              <span className="bg-brand-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">1</span>
               <span>Gå til "B2B Ansøgning" siden</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">2</span>
+              <span className="bg-brand-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">2</span>
               <span>Udfyld ansøgningsformularen med virksomhedsoplysninger</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">3</span>
+              <span className="bg-brand-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">3</span>
               <span>Vent på godkendelse fra vores team</span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">4</span>
+              <span className="bg-brand-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">4</span>
               <span>Modtag login-oplysninger via email</span>
             </li>
           </ol>
@@ -596,9 +596,9 @@ const FAQ = () => {
         <div className="space-y-4">
           <p>Vi tilbyder følgende betalingsmuligheder for erhvervskunder:</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h4 className="font-semibold text-green-800 mb-2">Faktura</h4>
-              <p className="text-sm text-green-700">Betaling via faktura med 30 dages betalingsfrist</p>
+            <div className="bg-brand-gray-100 border border-brand-gray-200 rounded-lg p-4">
+              <h4 className="font-semibold text-brand-primary-dark mb-2">Faktura</h4>
+              <p className="text-sm text-brand-primary-dark">Betaling via faktura med 30 dages betalingsfrist</p>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <h4 className="font-semibold text-blue-800 mb-2">e-conomic Integration</h4>
@@ -645,8 +645,8 @@ const FAQ = () => {
               <span>Appen opdaterer automatisk - vent et øjeblik</span>
             </li>
           </ol>
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <p className="text-sm text-green-700">
+          <div className="bg-brand-gray-100 border border-brand-gray-200 rounded-lg p-3">
+            <p className="text-sm text-brand-primary-dark">
               💡 <strong>Tip:</strong> Billeder gemmes i cache efter første load for hurtigere visning næste gang.
             </p>
           </div>
@@ -732,7 +732,7 @@ const FAQ = () => {
                         "justify-start gap-2",
                         isMobile ? "text-xs px-2 py-2" : "text-sm",
                         selectedCategory === category.id 
-                          ? "bg-green-600 hover:bg-green-700 text-white" 
+                          ? "bg-brand-primary hover:bg-brand-primary-hover text-white" 
                           : "border-gray-200 hover:bg-gray-50"
                       )}
                     >
@@ -755,13 +755,13 @@ const FAQ = () => {
                     >
                       <div className="flex items-center justify-between">
                         <h3 className={cn(
-                          "font-medium text-gray-900 group-hover:text-green-600 transition-colors",
+                          "font-medium text-gray-900 group-hover:text-brand-primary transition-colors",
                           isMobile ? "text-sm pr-4" : "text-base"
                         )}>
                           {item.question}
                         </h3>
                         {expandedItems.has(item.id) ? (
-                          <ChevronUp className="h-5 w-5 text-green-600 flex-shrink-0" />
+                          <ChevronUp className="h-5 w-5 text-brand-primary flex-shrink-0" />
                         ) : (
                           <ChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
                         )}
@@ -781,17 +781,17 @@ const FAQ = () => {
             </div>
 
             {/* Contact CTA */}
-            <Card className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+            <Card className="mt-8 bg-gradient-to-r from-green-50 to-emerald-50 border-brand-gray-200">
               <CardContent className={cn(
                 "text-center",
                 isMobile ? "p-6" : "p-8"
               )}>
                 <div className={cn(
-                  "w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4",
+                  "w-16 h-16 bg-brand-gray-100 rounded-full flex items-center justify-center mx-auto mb-4",
                   isMobile ? "w-12 h-12" : "w-16 h-16"
                 )}>
                   <HelpCircle className={cn(
-                    "text-green-600",
+                    "text-brand-primary",
                     isMobile ? "h-6 w-6" : "h-8 w-8"
                   )} />
                 </div>
@@ -813,7 +813,7 @@ const FAQ = () => {
                 )}>
                   <Link to="/contact">
                     <Button className={cn(
-                      "bg-green-600 hover:bg-green-700",
+                      "bg-brand-primary hover:bg-brand-primary-hover",
                       isMobile ? "w-full" : ""
                     )}>
                       <Mail className="h-4 w-4 mr-2" />
@@ -821,7 +821,7 @@ const FAQ = () => {
                     </Button>
                   </Link>
                   <Button variant="outline" className={cn(
-                    "border-green-300 text-green-700 hover:bg-green-50",
+                    "border-brand-gray-300 text-brand-primary-dark hover:bg-brand-gray-100",
                     isMobile ? "w-full" : ""
                   )}>
                     <Phone className="h-4 w-4 mr-2" />

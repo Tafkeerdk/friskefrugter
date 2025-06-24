@@ -349,7 +349,7 @@ const DashboardSidebar: React.FC = () => {
           isMobile ? "px-2 text-xs" : "px-2 text-xs"
         )}>
           <div className="flex items-center gap-1 mb-1">
-            <Shield className="h-3 w-3 text-green-600 flex-shrink-0" />
+            <Shield className="h-3 w-3 text-brand-primary flex-shrink-0" />
             <span className="truncate">Admin Session Aktiv</span>
           </div>
           <div className="text-xs text-muted-foreground truncate">

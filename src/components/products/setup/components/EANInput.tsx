@@ -187,7 +187,7 @@ export const EANInput: React.FC<EANInputProps> = ({
     }
     
     if (isValid === true) {
-      return <CheckCircle className="h-4 w-4 text-green-500" />;
+      return <CheckCircle className="h-4 w-4 text-brand-primary" />;
     } else if (isValid === false && value.length > 0) {
       if (value.length === 13) {
         return <AlertCircle className="h-4 w-4 text-amber-500" />;
@@ -233,7 +233,7 @@ export const EANInput: React.FC<EANInputProps> = ({
     if (error) return 'text-red-600';
     if (lookupResult?.found) return 'text-blue-600';
     if (lookupResult && !lookupResult.found) return 'text-amber-600';
-    if (isValid === true) return 'text-green-600';
+    if (isValid === true) return 'text-brand-primary';
     if (isValid === false && value.length === 13) return 'text-amber-600'; // Warning, not error
     if (isValid === false) return 'text-red-600';
     return 'text-muted-foreground';
@@ -265,7 +265,7 @@ export const EANInput: React.FC<EANInputProps> = ({
             className={cn(
               'pr-10 font-mono tracking-wider',
               lookupResult?.found && 'border-blue-500 focus:border-blue-500 bg-blue-50',
-              isValid === true && !lookupResult?.found && 'border-green-500 focus:border-green-500',
+              isValid === true && !lookupResult?.found && 'border-brand-primary focus:border-brand-primary',
               isValid === false && value.length === 13 && 'border-amber-500 focus:border-amber-500 bg-amber-50',
               isValid === false && value.length < 13 && value.length > 0 && 'border-red-500 focus:border-red-500',
               error && 'border-red-500 focus:border-red-500'

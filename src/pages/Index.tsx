@@ -69,7 +69,7 @@ const Index = () => {
         {/* Hero Section with enhanced mobile design */}
         <section className="relative">
           <div className={cn(
-            "bg-green-500/10 w-full overflow-hidden relative",
+            "bg-brand-primary/10 w-full overflow-hidden relative",
             isMobile ? "h-[400px]" : "h-[500px] md:h-[700px]"
           )}>
             <img 
@@ -105,7 +105,7 @@ const Index = () => {
                 )}>
                   <Link to="/products">
                     <Button className={cn(
-                      "bg-green-600 hover:bg-green-700 shadow-lg transition-all duration-200 active:scale-95",
+                      "btn-brand-hero shadow-lg transition-all duration-200 active:scale-95",
                       isMobile ? "w-full py-3 px-6 text-base" : "text-lg py-6 px-8"
                     )}>
                       Se produkter <ChevronRight className={cn(isMobile ? "ml-1 h-4 w-4" : "ml-1 h-5 w-5")} />
@@ -115,7 +115,7 @@ const Index = () => {
                     <Button 
                       variant="outline" 
                       className={cn(
-                        "bg-white text-green-700 hover:bg-green-50 hover:text-green-800 border-green-200 shadow-lg transition-all duration-200 active:scale-95",
+                        "bg-white text-brand-primary hover:bg-brand-gray-100 hover:text-brand-primary-dark border-white shadow-lg transition-all duration-200 active:scale-95",
                         isMobile ? "w-full py-3 px-6 text-base" : "text-lg py-6 px-8"
                       )}
                     >
@@ -326,7 +326,7 @@ const Index = () => {
                 isMobile ? "text-2xl" : "text-3xl md:text-4xl"
               )}>
                 Udvalgte produkter
-                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-green-500 rounded-full"></div>
+                <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-brand-primary rounded-full"></div>
               </h2>
               <p className={cn(
                 "text-gray-600 max-w-2xl mx-auto",
@@ -350,7 +350,7 @@ const Index = () => {
             <div className={cn("text-center flex justify-center", isMobile ? "mt-8" : "mt-12")}>
               <Link to="/products">
                 <Button className={cn(
-                  "bg-green-600 hover:bg-green-700 shadow-md flex items-center transition-all duration-200 active:scale-95",
+                  "btn-brand-hero shadow-md flex items-center transition-all duration-200 active:scale-95",
                   isMobile ? "w-full py-3 px-6" : "px-8 py-6 text-lg"
                 )}>
                   <span>Se alle produkter</span>
@@ -370,7 +370,7 @@ const Index = () => {
               className="w-full h-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-green-900/80"></div>
+            <div className="absolute inset-0 bg-brand-primary-dark/80"></div>
           </div>
           <div className={cn(
             "hero-container relative z-10",

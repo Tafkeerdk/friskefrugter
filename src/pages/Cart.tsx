@@ -79,8 +79,8 @@ const Cart = () => {
         <main className="flex-grow py-12 bg-gray-50">
           <div className="container mx-auto px-4">
             <div className="max-w-md mx-auto text-center">
-              <div className="bg-green-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                <Check className="h-10 w-10 text-green-600" />
+              <div className="bg-brand-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
+                <Check className="h-10 w-10 text-brand-primary" />
               </div>
               <h1 className="text-2xl font-bold text-gray-900 mb-4">Tak for din ordre!</h1>
               <p className="text-gray-600 mb-6">
@@ -150,7 +150,7 @@ const Cart = () => {
                               </TableCell>
                               <TableCell>
                                 <div>
-                                  <Link to={`/products/${item.id}`} className="font-medium text-gray-900 hover:text-green-600">
+                                  <Link to={`/products/${item.id}`} className="font-medium text-gray-900 hover:text-brand-primary">
                                     {item.name}
                                   </Link>
                                   <p className="text-sm text-gray-500">{item.packaging}</p>
@@ -283,7 +283,7 @@ const Cart = () => {
                       <div className="space-y-4">
                         <div className="space-y-2">
                           <Label htmlFor="delivery-date" className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-green-600" /> 
+                            <Calendar className="h-4 w-4 text-brand-primary" /> 
                             Leveringsdato
                           </Label>
                           <Input 

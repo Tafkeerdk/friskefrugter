@@ -32,7 +32,7 @@ export const SearchResults = ({ results, isVisible }: SearchResultsProps) => {
               <h4 className="font-medium text-sm text-gray-900 truncate">{product.name}</h4>
               <p className="text-xs text-gray-500">{product.category}</p>
             </div>
-            <span className="text-sm font-medium text-green-600">{product.price.toFixed(2)} kr</span>
+            <span className="text-sm font-medium text-brand-primary">{product.price.toFixed(2)} kr</span>
           </Card>
         </Link>
       ))}

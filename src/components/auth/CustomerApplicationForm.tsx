@@ -160,11 +160,11 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
         <CardContent className={cn(isMobile ? "pt-4 px-4" : "pt-6")}>
           <div className="text-center space-y-4">
             <CheckCircle className={cn(
-              "text-green-500 mx-auto",
+              "text-brand-primary mx-auto",
               isMobile ? "h-12 w-12" : "h-16 w-16"
             )} />
             <h2 className={cn(
-              "font-bold text-green-700",
+              "font-bold text-brand-primary-dark",
               isMobile ? "text-xl" : "text-2xl"
             )}>
               Ansøgning modtaget
@@ -278,7 +278,7 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
                 <Label htmlFor="companyName" className={cn(isMobile ? "text-sm" : "")}>
                   Virksomhedsnavn *
                   {companyData && (
-                    <span className="text-xs text-green-600 ml-2">
+                    <span className="text-xs text-brand-primary ml-2">
                       (hentet fra CVR)
                     </span>
                   )}
@@ -289,7 +289,7 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
                   {...register('companyName')}
                   disabled={isLoading}
                   className={cn(
-                    companyData ? 'bg-green-50 border-green-200' : '',
+                    companyData ? 'bg-brand-gray-100 border-brand-gray-200' : '',
                     isMobile ? "h-12 text-base" : "" // Larger touch target
                   )}
                 />
@@ -317,7 +317,7 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
                       type="button"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        <div className="w-6 h-6 bg-brand-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
                           2
                         </div>
                         <span className="text-sm font-medium">Leveringsadresse</span>
@@ -332,7 +332,7 @@ export const CustomerApplicationForm: React.FC<CustomerApplicationFormProps> = (
               ) : (
                 <>
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                    <div className="w-6 h-6 bg-brand-primary text-white rounded-full flex items-center justify-center text-xs font-bold">
                       2
                     </div>
                     <Truck className="h-5 w-5 text-gray-600" />

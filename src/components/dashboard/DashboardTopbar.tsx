@@ -169,7 +169,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
               variant="outline"
               size="sm"
               onClick={handleGoToHomepage}
-              className="h-8 px-2 flex-shrink-0 text-xs font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors"
+              className="h-8 px-2 flex-shrink-0 text-xs font-medium border-brand-gray-200 hover:bg-brand-gray-100 hover:text-brand-primary-dark hover:border-brand-gray-300 transition-colors"
               title="Gå til forsiden"
             >
               <ExternalLink className="h-3 w-3 mr-1" />
@@ -337,7 +337,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
               variant="outline"
               size="sm"
               onClick={handleGoToHomepage}
-              className="h-9 lg:h-10 px-3 lg:px-4 font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors whitespace-nowrap flex-shrink-0"
+              className="h-9 lg:h-10 px-3 lg:px-4 font-medium border-brand-gray-200 hover:bg-brand-gray-100 hover:text-brand-primary-dark hover:border-brand-gray-300 transition-colors whitespace-nowrap flex-shrink-0"
               title="Gå til forsiden"
             >
               <ExternalLink className="h-4 w-4 mr-2" />

@@ -311,7 +311,7 @@ export const AdminDashboard: React.FC = () => {
       case 'Afventer godkendelse':
         return <Badge variant="secondary"><Clock className="w-3 h-3 mr-1" />Afventer</Badge>;
       case 'Godkendt':
-        return <Badge variant="default" className="bg-green-500"><CheckCircle className="w-3 h-3 mr-1" />Godkendt</Badge>;
+        return <Badge variant="default" className="bg-brand-gray-1000"><CheckCircle className="w-3 h-3 mr-1" />Godkendt</Badge>;
       case 'Afvist':
         return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Afvist</Badge>;
       default:
@@ -361,7 +361,7 @@ export const AdminDashboard: React.FC = () => {
             <CardTitle className="text-sm font-medium">Godkendt</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{statistics.approved}</div>
+            <div className="text-2xl font-bold text-brand-primary">{statistics.approved}</div>
           </CardContent>
         </Card>
         <Card>
@@ -455,7 +455,7 @@ export const AdminDashboard: React.FC = () => {
                 <Button
                   onClick={handleBulkApprove}
                   disabled={bulkActionLoading}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-brand-primary hover:bg-brand-primary-hover"
                   size="sm"
                 >
                   {bulkActionLoading ? (
@@ -675,7 +675,7 @@ export const AdminDashboard: React.FC = () => {
                                         <Button
                                           onClick={() => handleApprove(selectedApplication.id)}
                                           disabled={actionLoading === selectedApplication.id}
-                                          className="bg-green-600 hover:bg-green-700"
+                                          className="bg-brand-primary hover:bg-brand-primary-hover"
                                         >
                                           {actionLoading === selectedApplication.id ? (
                                             <Loader2 className="w-4 h-4 animate-spin mr-2" />

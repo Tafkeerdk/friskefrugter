@@ -144,12 +144,12 @@ const PricePreviewCard: React.FC<{
                     {formatCurrency(calculation.originalPrice)}
                   </span>
                 )}
-                <span className="text-lg font-bold text-green-600">
+                <span className="text-lg font-bold text-brand-primary">
                   {formatCurrency(calculation.finalPrice)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                <Badge variant="secondary" className="text-xs bg-brand-gray-100 text-brand-primary-dark">
                   {discountLabel} -{calculation.discountPercentage.toFixed(0)}%
                 </Badge>
                 <span className="text-xs text-gray-500">

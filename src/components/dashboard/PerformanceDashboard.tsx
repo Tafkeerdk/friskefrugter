@@ -99,7 +99,7 @@ export const PerformanceDashboard: React.FC = () => {
   };
 
   const getScoreColor = (score: number): string => {
-    if (score >= 90) return 'text-green-600';
+    if (score >= 90) return 'text-brand-primary';
     if (score >= 70) return 'text-yellow-600';
     return 'text-red-600';
   };
@@ -112,7 +112,7 @@ export const PerformanceDashboard: React.FC = () => {
 
   const getWebVitalColor = (rating: string): string => {
     switch (rating) {
-      case 'good': return 'text-green-600';
+      case 'good': return 'text-brand-primary';
       case 'needs-improvement': return 'text-yellow-600';
       case 'poor': return 'text-red-600';
       default: return 'text-gray-600';
@@ -121,7 +121,7 @@ export const PerformanceDashboard: React.FC = () => {
 
   const getTrendIcon = (trend: string) => {
     switch (trend) {
-      case 'improving': return <TrendingUp className="w-4 h-4 text-green-600" />;
+      case 'improving': return <TrendingUp className="w-4 h-4 text-brand-primary" />;
       case 'degrading': return <TrendingDown className="w-4 h-4 text-red-600" />;
       default: return <Minus className="w-4 h-4 text-gray-600" />;
     }
@@ -131,7 +131,7 @@ export const PerformanceDashboard: React.FC = () => {
     switch (priority) {
       case 'high': return <AlertTriangle className="w-4 h-4 text-red-600" />;
       case 'medium': return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
-      default: return <CheckCircle className="w-4 h-4 text-green-600" />;
+      default: return <CheckCircle className="w-4 h-4 text-brand-primary" />;
     }
   };
 

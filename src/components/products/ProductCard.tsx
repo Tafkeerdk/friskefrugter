@@ -133,7 +133,7 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
           )}>
             <span className={cn(
               "text-xs font-medium uppercase px-2 py-1 rounded-full backdrop-blur-sm",
-              isMobile ? "bg-white/90 text-gray-800" : "bg-green-600 text-white"
+              isMobile ? "bg-white/90 text-gray-800" : "bg-brand-primary text-white"
             )}>
               {category}
             </span>
@@ -154,7 +154,7 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
       )}>
         <Link to={`/products/${id}`}>
           <h3 className={cn(
-            "font-medium text-gray-900 hover:text-green-600 transition-colors line-clamp-2",
+            "font-medium text-gray-900 hover:text-brand-primary transition-colors line-clamp-2",
             isMobile ? "text-sm leading-tight" : "text-base"
           )}>
             {name}
@@ -191,7 +191,7 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
                 isMobile ? "h-8 w-8" : "h-9 w-9",
                 quantity === 0 
                   ? "opacity-50" 
-                  : "hover:bg-green-50 hover:text-green-700 hover:border-green-300 active:scale-95"
+                  : "hover:bg-brand-gray-100 hover:text-brand-primary-dark hover:border-brand-gray-300 active:scale-95"
               )}
               onClick={decreaseQuantity}
               disabled={quantity === 0}
@@ -208,7 +208,7 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
               variant="outline" 
               size="icon" 
               className={cn(
-                "rounded-full transition-all duration-200 border-gray-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 active:scale-95",
+                "rounded-full transition-all duration-200 border-gray-200 hover:bg-brand-gray-100 hover:text-brand-primary-dark hover:border-brand-gray-300 active:scale-95",
                 isMobile ? "h-8 w-8" : "h-9 w-9"
               )}
               onClick={increaseQuantity}
@@ -228,7 +228,7 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
               isMobile ? "h-8 px-3 text-xs" : "h-9 px-4 text-sm",
               quantity === 0 
                 ? "opacity-50 cursor-not-allowed" 
-                : "bg-green-600 hover:bg-green-700 active:scale-95 hover:shadow-md"
+                : "bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md"
             )}
             disabled={quantity === 0}
           >
@@ -244,7 +244,7 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
             <Button 
               size={isMobile ? "sm" : "default"}
               className={cn(
-                "rounded-full transition-all duration-200 shadow-sm bg-green-600 hover:bg-green-700 active:scale-95 hover:shadow-md",
+                "rounded-full transition-all duration-200 shadow-sm bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md",
                 isMobile ? "h-8 px-4 text-xs" : "h-9 px-6 text-sm"
               )}
             >

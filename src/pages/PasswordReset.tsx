@@ -147,7 +147,7 @@ const PasswordReset = () => {
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-brand-primary hover:bg-brand-primary-hover"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -206,7 +206,7 @@ const PasswordReset = () => {
               </div>
               <Button 
                 type="submit" 
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-brand-primary hover:bg-brand-primary-hover"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -246,8 +246,8 @@ const PasswordReset = () => {
   const renderSuccessStep = () => (
     <Card className="w-full">
       <CardHeader className="text-center">
-        <div className="mx-auto w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <CheckCircle className="w-6 h-6 text-green-600" />
+        <div className="mx-auto w-12 h-12 bg-brand-gray-100 rounded-full flex items-center justify-center mb-4">
+          <CheckCircle className="w-6 h-6 text-brand-primary" />
         </div>
         <CardTitle>Password opdateret!</CardTitle>
         <CardDescription>
@@ -322,7 +322,7 @@ const PasswordReset = () => {
                         </div>
                         <Button 
                           type="submit" 
-                          className="w-full bg-green-600 hover:bg-green-700"
+                          className="w-full bg-brand-primary hover:bg-brand-primary-hover"
                           disabled={isLoading}
                         >
                           {isLoading ? (
@@ -381,7 +381,7 @@ const PasswordReset = () => {
                         </div>
                         <Button 
                           type="submit" 
-                          className="w-full bg-green-600 hover:bg-green-700"
+                          className="w-full bg-brand-primary hover:bg-brand-primary-hover"
                           disabled={isLoading}
                         >
                           {isLoading ? (
@@ -400,7 +400,7 @@ const PasswordReset = () => {
                   <div className="mt-6 text-center">
                     <Link 
                       to="/login" 
-                      className="text-sm text-green-600 hover:text-green-700 font-medium"
+                      className="text-sm text-brand-primary hover:text-brand-primary-dark font-medium"
                     >
                       ← Tilbage til login
                     </Link>

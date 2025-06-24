@@ -295,12 +295,12 @@ export const DAWAAddressInput: React.FC<DAWAAddressInputProps> = ({
       </div>
 
       {selectedAddress && (
-        <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-md">
+        <div className="mt-2 p-3 bg-brand-gray-100 border border-brand-gray-200 rounded-md">
           <div className="flex items-start gap-2">
-            <MapPin className="h-4 w-4 text-green-600 mt-0.5" />
+            <MapPin className="h-4 w-4 text-brand-primary mt-0.5" />
             <div className="text-sm">
-              <p className="font-medium text-green-900">{selectedAddress.street}</p>
-              <p className="text-green-700">
+              <p className="font-medium text-brand-primary-dark">{selectedAddress.street}</p>
+              <p className="text-brand-primary-dark">
                 {selectedAddress.postalCode} {selectedAddress.city}, {selectedAddress.country}
               </p>
             </div>
