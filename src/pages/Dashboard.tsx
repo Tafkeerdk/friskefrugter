@@ -22,10 +22,22 @@ import {
 import { Link } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
 
-  if (!user) {
-    return null;
+  // Show loading while user data is being fetched
+  if (isLoading || !user) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto mb-4"></div>
+            <p className="text-brand-gray-600">Indlæser dashboard...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   // Add safety checks for user properties
@@ -38,6 +50,22 @@ const Dashboard: React.FC = () => {
     discountGroup: user.discountGroup || null,
     discountGroups: (user as any).discountGroups || null
   };
+
+  // Additional validation to ensure core user data is available
+  if (!user.contactPersonName || !user.email || !user.companyName) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <Navbar />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto mb-4"></div>
+            <p className="text-brand-gray-600">Indlæser brugerdata...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   // Mock data for customer dashboard
   const customerStats = {

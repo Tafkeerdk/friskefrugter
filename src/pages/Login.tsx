@@ -40,7 +40,8 @@ const Login = () => {
 
   // Redirect if already logged in as customer
   useEffect(() => {
-    if (isAuthenticated && user && isCustomer(user)) {
+    if (isAuthenticated && user && isCustomer(user) && 
+        user.contactPersonName && user.email && user.companyName) {
       console.log('🔄 User authenticated and data loaded - navigating to dashboard');
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
       setIsLoading(false); // Stop loading since we're navigating
