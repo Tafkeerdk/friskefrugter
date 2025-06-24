@@ -41,7 +41,9 @@ const Login = () => {
   // Redirect if already logged in as customer
   useEffect(() => {
     if (isAuthenticated && user && isCustomer(user)) {
+      console.log('🔄 User authenticated and data loaded - navigating to dashboard');
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+      setIsLoading(false); // Stop loading since we're navigating
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, user, navigate, location]);
@@ -55,13 +57,11 @@ const Login = () => {
       
       if (response.success) {
         reset();
-        const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
+        console.log('✅ Login successful - waiting for auth context to process user data');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Login fejlede. Kontroller dine oplysninger og prøv igen.';
       setError(errorMessage);
-    } finally {
       setIsLoading(false);
     }
   };
