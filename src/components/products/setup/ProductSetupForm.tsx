@@ -36,15 +36,7 @@ import {
   Search
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { UniqueOfferWizard } from '@/components/unique-offers';
 
 import { ProductFormData, ProductSetupFormProps, ProductImage, Unit } from '@/types/product';
 import { productSetupSchema, productEditSchema } from './validation/productSchema';
@@ -146,23 +138,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
   const [unitCreationError, setUnitCreationError] = useState<string | null>(null);
 
   // Unique Offers Integration States
-  const [showUniqueOfferDialog, setShowUniqueOfferDialog] = useState(false);
+  const [showUniqueOfferWizard, setShowUniqueOfferWizard] = useState(false);
   const [createdProduct, setCreatedProduct] = useState<any>(null);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [products, setProducts] = useState<any[]>([]);
-  const [loadingCustomers, setLoadingCustomers] = useState(false);
-  const [loadingProducts, setLoadingProducts] = useState(false);
-  const [productSearchTerm, setProductSearchTerm] = useState('');
-  const [uniqueOfferForm, setUniqueOfferForm] = useState({
-    customerId: '',
-    productId: '',
-    fixedPrice: '',
-    description: '',
-    validFrom: new Date().toISOString().split('T')[0],
-    validTo: '',
-    isUnlimited: false
-  });
-  const [isCreatingUniqueOffer, setIsCreatingUniqueOffer] = useState(false);
 
   const form = useForm<ProductFormData>({
     resolver: zodResolver(mode === 'edit' ? productEditSchema : productSetupSchema),
@@ -587,14 +564,10 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
           duration: 5000,
         });
         
-        // Show unique offer dialog only for new products (create mode)
+        // Show unique offer wizard only for new products (create mode)
         if (mode === 'create' && response.data) {
           setCreatedProduct(response.data);
-          setShowUniqueOfferDialog(true);
-          await Promise.all([
-            loadCustomersForUniqueOffer(),
-            loadProductsForUniqueOffer()
-          ]);
+          setShowUniqueOfferWizard(true);
         }
         
         onSubmit(data); // Call the parent callback
@@ -754,23 +727,10 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
     </div>
   );
 
-  // Load customers for unique offer creation
-  const loadCustomersForUniqueOffer = async () => {
-    try {
-      setLoadingCustomers(true);
-      const response = await authService.getAllCustomers();
-      
-      if (response.success) {
-        const activeCustomers = response.customers?.filter((c: Customer) => c.isActive) || [];
-        setCustomers(activeCustomers);
-      } else {
-        console.error('Failed to load customers:', response.message);
-      }
-    } catch (error) {
-      console.error('Error loading customers:', error);
-    } finally {
-      setLoadingCustomers(false);
-    }
+  // Handle unique offer wizard success
+  const handleUniqueOfferSuccess = () => {
+    setShowUniqueOfferWizard(false);
+    setCreatedProduct(null);
   };
 
   // Load products for unique offer creation

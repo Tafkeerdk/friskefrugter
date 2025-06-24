@@ -8,12 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UniqueOfferWizard } from '@/components/unique-offers';
 import { cn } from '@/lib/utils';
 import {
   Star,
@@ -100,22 +97,11 @@ const DashboardUniqueOffers: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   
   // Dialog states
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<UniqueOffer | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Form data
-  const [formData, setFormData] = useState<CreateOfferFormData>({
-    productId: '',
-    customerId: '',
-    fixedPrice: '',
-    description: '',
-    validFrom: new Date().toISOString().split('T')[0],
-    validTo: ''
-  });
 
   // Load data
   useEffect(() => {
@@ -180,78 +166,8 @@ const DashboardUniqueOffers: React.FC = () => {
     }
   };
 
-  const handleCreateOffer = async () => {
-    if (!formData.productId || !formData.customerId || !formData.fixedPrice) {
-      toast({
-        title: 'Manglende felter',
-        description: 'Produkt, kunde og pris er påkrævet.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    const price = parseFloat(formData.fixedPrice);
-    if (isNaN(price) || price <= 0) {
-      toast({
-        title: 'Ugyldig pris',
-        description: 'Prisen skal være et positivt tal.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      
-      const offerData = {
-        productId: formData.productId,
-        customerId: formData.customerId,
-        fixedPrice: price,
-        ...(formData.description && { description: formData.description }),
-        ...(formData.validFrom && { validFrom: formData.validFrom }),
-        ...(formData.validTo && { validTo: formData.validTo })
-      };
-      
-      const response = await authService.createUniqueOffer(offerData);
-      
-      if (response.success) {
-        toast({
-          title: 'Succes',
-          description: 'Unikt tilbud oprettet succesfuldt.',
-          variant: 'default'
-        });
-        
-        setIsCreateDialogOpen(false);
-        resetForm();
-        await loadData();
-      } else {
-        toast({
-          title: 'Fejl',
-          description: response.message || 'Kunne ikke oprette tilbud.',
-          variant: 'destructive'
-        });
-      }
-    } catch (error) {
-      console.error('Error creating offer:', error);
-      toast({
-        title: 'Fejl',
-        description: 'Der opstod en fejl. Prøv igen.',
-        variant: 'destructive'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      productId: '',
-      customerId: '',
-      fixedPrice: '',
-      description: '',
-      validFrom: new Date().toISOString().split('T')[0],
-      validTo: ''
-    });
+  const handleWizardSuccess = () => {
+    loadData();
   };
 
   const formatPrice = (price: number) => {
@@ -328,136 +244,13 @@ const DashboardUniqueOffers: React.FC = () => {
                 </p>
               </div>
               
-              <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="btn-brand-primary">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Opret Tilbud
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Opret Unikt Tilbud</DialogTitle>
-                    <DialogDescription>
-                      Opret et specialtilbud for en specifik kunde på et specifikt produkt.
-                    </DialogDescription>
-                  </DialogHeader>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="product">Produkt *</Label>
-                      <Select value={formData.productId} onValueChange={(value) => setFormData(prev => ({ ...prev, productId: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Vælg produkt" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {products.map(product => (
-                            <SelectItem key={product._id} value={product._id}>
-                              <div className="flex items-center gap-2">
-                                <Package className="h-4 w-4" />
-                                <div>
-                                  <div className="font-medium">{product.produktnavn}</div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {product.varenummer} • {formatPrice(product.basispris)}
-                                  </div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="customer">Kunde *</Label>
-                      <Select value={formData.customerId} onValueChange={(value) => setFormData(prev => ({ ...prev, customerId: value }))}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Vælg kunde" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {customers.map(customer => (
-                            <SelectItem key={customer._id} value={customer._id}>
-                              <div className="flex items-center gap-2">
-                                <Building2 className="h-4 w-4" />
-                                <div>
-                                  <div className="font-medium">{customer.companyName}</div>
-                                  <div className="text-xs text-muted-foreground">{customer.contactPersonName}</div>
-                                </div>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="fixedPrice">Fast Pris (DKK) *</Label>
-                      <Input
-                        id="fixedPrice"
-                        type="number"
-                        step="0.01"
-                        min="0.01"
-                        placeholder="0.00"
-                        value={formData.fixedPrice}
-                        onChange={(e) => setFormData(prev => ({ ...prev, fixedPrice: e.target.value }))}
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="description">Beskrivelse</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Valgfri beskrivelse af tilbuddet"
-                        value={formData.description}
-                        onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                        rows={3}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="validFrom">Gyldig fra</Label>
-                        <Input
-                          id="validFrom"
-                          type="date"
-                          value={formData.validFrom}
-                          onChange={(e) => setFormData(prev => ({ ...prev, validFrom: e.target.value }))}
-                        />
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="validTo">Gyldig til</Label>
-                        <Input
-                          id="validTo"
-                          type="date"
-                          value={formData.validTo}
-                          onChange={(e) => setFormData(prev => ({ ...prev, validTo: e.target.value }))}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end gap-2 mt-6">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsCreateDialogOpen(false);
-                        resetForm();
-                      }}
-                      disabled={isSubmitting}
-                    >
-                      Annuller
-                    </Button>
-                    <Button
-                      onClick={handleCreateOffer}
-                      disabled={isSubmitting}
-                      className="btn-brand-primary"
-                    >
-                      {isSubmitting ? 'Opretter...' : 'Opret Tilbud'}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button 
+                className="btn-brand-primary"
+                onClick={() => setIsCreateWizardOpen(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Opret Tilbud
+              </Button>
             </div>
 
             {/* Search */}
@@ -491,7 +284,7 @@ const DashboardUniqueOffers: React.FC = () => {
                   </p>
                   {!searchTerm && (
                     <Button 
-                      onClick={() => setIsCreateDialogOpen(true)}
+                      onClick={() => setIsCreateWizardOpen(true)}
                       className="btn-brand-primary"
                     >
                       <Plus className="h-4 w-4 mr-2" />
@@ -578,6 +371,13 @@ const DashboardUniqueOffers: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Unique Offer Wizard */}
+      <UniqueOfferWizard
+        isOpen={isCreateWizardOpen}
+        onClose={() => setIsCreateWizardOpen(false)}
+        onSuccess={handleWizardSuccess}
+      />
     </DashboardLayout>
   );
 };
