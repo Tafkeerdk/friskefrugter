@@ -73,7 +73,7 @@ interface Product {
   produktnavn: string;
   varenummer: string;
   basispris: number;
-  førpris?: number; // Sale price - if set, discount groups don't apply
+  førpris?: number; // Legacy sale price field
   aktiv: boolean;
   kategori: {
     _id: string;
@@ -87,6 +87,15 @@ interface Product {
     url: string;
     isPrimary: boolean;
   }>;
+  // General Product Discount System
+  discount?: {
+    enabled: boolean;
+    beforePrice?: number;
+    discountPercentage?: number;
+    discountAmount?: number;
+    showStrikethrough?: boolean;
+    discountLabel?: string;
+  };
 }
 
 const DashboardDiscountGroups: React.FC = () => {
@@ -343,10 +352,13 @@ const DashboardDiscountGroups: React.FC = () => {
         const allProducts = (allProductsResponse.data as any).products || [];
         setTotalProducts(allProducts.length);
         
-        // Count products with sale price (førpris)
-        const withSalePrice = allProducts.filter((product: Product) => 
-          product.førpris && product.førpris > 0
-        ).length;
+        // Count products with sale price (either førpris OR discount.beforePrice)
+        const withSalePrice = allProducts.filter((product: any) => {
+          // Check both førpris and discount.beforePrice for comprehensive coverage
+          const hasForpris = product.førpris && product.førpris > 0;
+          const hasBeforePrice = product.discount?.enabled && product.discount?.beforePrice && product.discount.beforePrice > product.basispris;
+          return hasForpris || hasBeforePrice;
+        }).length;
         setProductsWithSalePrice(withSalePrice);
       }
 
@@ -391,306 +403,320 @@ const DashboardDiscountGroups: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-brand-gray-900">Rabatgrupper</h2>
-          <p className="text-brand-gray-600">
-            Administrer op til 5 rabatgrupper med forskellige rabatsatser.
-          </p>
-          {/* Nielsen's Heuristic #1: Visibility of System Status */}
-          {totalProducts > 0 && (
-            <div className="mt-2 flex items-center gap-4 text-sm">
-              <span className="flex items-center gap-1 text-brand-success">
-                <CheckCircle2 className="h-3 w-3" />
-                {discountEligibleProducts.length} varer påvirkes af rabatgrupper
-              </span>
-              <span className="flex items-center gap-1 text-brand-warning">
-                <AlertTriangle className="h-3 w-3" />
-                {productsWithSalePrice} varer har fast udsalgspris
-              </span>
-            </div>
-          )}
-        </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="btn-brand-primary flex items-center gap-2"
-              disabled={discountGroups.length >= 5}
-            >
-              <Plus className="h-4 w-4" />
-              <span>Opret rabatgruppe</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Opret ny rabatgruppe</DialogTitle>
-              <DialogDescription>
-                Opret en ny rabatgruppe med tilpasset navn og rabatsats.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Navn *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="f.eks. Premium Kunder"
-                  maxLength={50}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Beskrivelse</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Valgfri beskrivelse af rabatgruppen"
-                  maxLength={200}
-                />
-              </div>
-              <div>
-                <Label htmlFor="discountPercentage">Rabat procent * (%)</Label>
-                <Input
-                  id="discountPercentage"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  value={formData.discountPercentage}
-                  onChange={(e) => setFormData({...formData, discountPercentage: e.target.value})}
-                  placeholder="f.eks. 15.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="color">Farve</Label>
-                <div className="grid grid-cols-4 gap-3 mt-2">
-                  {colorOptions.map((colorOption) => (
-                    <button
-                      key={colorOption.value}
-                      type="button"
-                      onClick={() => setFormData({...formData, color: colorOption.value})}
-                      className={`
-                        relative h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
-                        shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200
-                        ${formData.color === colorOption.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
-                      `}
-                      title={colorOption.name}
-                    >
-                      {formData.color === colorOption.value && (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-6 h-6 bg-white rounded-full shadow-sm flex items-center justify-center">
-                            <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                          </div>
-                        </div>
-                      )}
-                      <span className="absolute bottom-1 left-1 right-1 text-xs text-white font-medium text-center bg-black bg-opacity-30 rounded px-1 py-0.5">
-                        {colorOption.name}
-                      </span>
-                    </button>
-                  ))}
+      <div className="dashboard-page-container">
+        <div className="content-width">
+          {/* Mobile-friendly header section */}
+          <div className="space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
+            <div className="space-y-2">
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-brand-gray-900">Rabatgrupper</h2>
+              <p className="text-sm md:text-base text-brand-gray-600">
+                Administrer op til 5 rabatgrupper med forskellige rabatsatser.
+              </p>
+              {/* Nielsen's Heuristic #1: Visibility of System Status - Mobile optimized */}
+              {totalProducts > 0 && (
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-xs sm:text-sm">
+                  <span className="flex items-center gap-1 text-brand-success">
+                    <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{discountEligibleProducts.length} varer påvirkes af rabatgrupper</span>
+                  </span>
+                  <span className="flex items-center gap-1 text-brand-warning">
+                    <AlertTriangle className="h-3 w-3 flex-shrink-0" />
+                    <span className="truncate">{productsWithSalePrice} varer har fast udsalgspris</span>
+                  </span>
                 </div>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsCreateDialogOpen(false);
-                  resetForm();
-                }}
-              >
-                Annuller
-              </Button>
-              <Button onClick={handleCreate} disabled={isSubmitting}>
-                {isSubmitting ? 'Opretter...' : 'Opret rabatgruppe'}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {error && (
-        <Alert variant="destructive" className="mt-6">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {discountGroups.length >= 5 && (
-        <Alert className="mt-6">
-          <AlertDescription>
-            Du har nået maksimum antal rabatgrupper (5). Slet en eksisterende gruppe for at oprette en ny.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      <div className="mt-6 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-        {discountGroups.map((group) => (
-          <Card key={group.id} className="overflow-hidden">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-4 h-4 rounded-full"
-                    style={{ backgroundColor: group.color }}
-                  />
-                  <CardTitle className="text-lg">{group.name}</CardTitle>
-                </div>
-                <Badge 
-                  variant="secondary"
-                  className="text-lg font-bold"
-                  style={{ backgroundColor: `${group.color}20`, color: group.color }}
-                >
-                  {group.formattedDiscount}
-                </Badge>
-              </div>
-              {group.description && (
-                <CardDescription>{group.description}</CardDescription>
               )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span>{group.customerCount} kunde(r)</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Palette className="h-4 w-4" />
-                  <span>{getColorName(group.color)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Percent className="h-4 w-4" />
-                  <span>{group.discountPercentage}% rabat</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Package className="h-4 w-4" />
-                  <span>{discountEligibleProducts.length} påvirkede varer</span>
-                </div>
-              </div>
-              
-              <div className="flex justify-between mt-4 pt-4 border-t">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openProductsDialog(group)}
-                  className="text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary"
+            </div>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="btn-brand-primary flex items-center gap-2 w-full sm:w-auto"
+                  disabled={discountGroups.length >= 5}
                 >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Se varer
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Opret rabatgruppe</span>
+                  <span className="sm:hidden">Opret</span>
                 </Button>
-                <div className="flex space-x-2">
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Opret ny rabatgruppe</DialogTitle>
+                  <DialogDescription>
+                    Opret en ny rabatgruppe med tilpasset navn og rabatsats.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Navn *</Label>
+                    <Input
+                      id="name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      placeholder="f.eks. Premium Kunder"
+                      maxLength={50}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="description">Beskrivelse</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      placeholder="Valgfri beskrivelse af rabatgruppen"
+                      maxLength={200}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="discountPercentage">Rabat procent * (%)</Label>
+                    <Input
+                      id="discountPercentage"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={formData.discountPercentage}
+                      onChange={(e) => setFormData({...formData, discountPercentage: e.target.value})}
+                      placeholder="f.eks. 15.5"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="color">Farve</Label>
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 mt-2">
+                      {colorOptions.map((colorOption) => (
+                        <button
+                          key={colorOption.value}
+                          type="button"
+                          onClick={() => setFormData({...formData, color: colorOption.value})}
+                          className={`
+                            relative h-10 sm:h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
+                            shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200
+                            ${formData.color === colorOption.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
+                          `}
+                          title={colorOption.name}
+                        >
+                          {formData.color === colorOption.value && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white rounded-full shadow-sm flex items-center justify-center">
+                                <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
+                              </div>
+                            </div>
+                          )}
+                          <span className="absolute bottom-0.5 left-0.5 right-0.5 text-xs text-white font-medium text-center bg-black bg-opacity-30 rounded px-1 py-0.5">
+                            {colorOption.name}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-0 sm:space-x-2 mt-6">
                   <Button
                     variant="outline"
-                    size="sm"
-                    onClick={() => openEditDialog(group)}
+                    onClick={() => {
+                      setIsCreateDialogOpen(false);
+                      resetForm();
+                    }}
+                    className="w-full sm:w-auto"
                   >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Rediger
+                    Annuller
                   </Button>
-                  <AlertDialog>
-                  <AlertDialogTrigger asChild>
+                  <Button 
+                    onClick={handleCreate} 
+                    disabled={isSubmitting}
+                    className="w-full sm:w-auto"
+                  >
+                    {isSubmitting ? 'Opretter...' : 'Opret rabatgruppe'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {error && (
+            <Alert variant="destructive" className="mt-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          {discountGroups.length >= 5 && (
+            <Alert className="mt-6">
+              <AlertDescription>
+                Du har nået maksimum antal rabatgrupper (5). Slet en eksisterende gruppe for at oprette en ny.
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Mobile-optimized grid layout */}
+          <div className="mt-6 grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+            {discountGroups.map((group) => (
+              <Card key={group.id} className="overflow-hidden">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-4 h-4 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: group.color }}
+                      />
+                      <CardTitle className="text-base sm:text-lg truncate">{group.name}</CardTitle>
+                    </div>
+                    <Badge 
+                      variant="secondary"
+                      className="text-sm sm:text-lg font-bold flex-shrink-0"
+                      style={{ backgroundColor: `${group.color}20`, color: group.color }}
+                    >
+                      {group.formattedDiscount}
+                    </Badge>
+                  </div>
+                  {group.description && (
+                    <CardDescription className="text-sm">{group.description}</CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 sm:space-y-3">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Users className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span>{group.customerCount} kunde(r)</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Palette className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span className="truncate">{getColorName(group.color)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Percent className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span>{group.discountPercentage}% rabat</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                      <Package className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
+                      <span>{discountEligibleProducts.length} påvirkede varer</span>
+                    </div>
+                  </div>
+                  
+                  {/* Mobile-friendly button layout */}
+                  <div className="flex flex-col sm:flex-row justify-between gap-2 mt-4 pt-4 border-t">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-red-600 hover:text-red-700"
-                      disabled={group.customerCount > 0}
+                      onClick={() => openProductsDialog(group)}
+                      className="text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary w-full sm:w-auto"
                     >
-                      <Trash2 className="h-4 w-4 mr-1" />
-                      Slet
+                      <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="text-xs sm:text-sm">Se varer</span>
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Slet rabatgruppe</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Er du sikker på, at du vil slette rabatgruppen "{group.name}"? 
-                        Denne handling kan ikke fortrydes.
-                        {group.customerCount > 0 && (
-                          <span className="block mt-2 text-red-600 font-medium">
-                            Denne gruppe kan ikke slettes, da {group.customerCount} kunde(r) bruger den.
-                          </span>
-                        )}
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuller</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => handleDelete(group)}
-                        className="bg-red-600 hover:bg-red-700"
-                        disabled={group.customerCount > 0}
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditDialog(group)}
+                        className="flex-1 sm:flex-none"
                       >
-                        Slet rabatgruppe
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                        <Edit className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span className="text-xs sm:text-sm">Rediger</span>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-red-600 hover:text-red-700 flex-1 sm:flex-none"
+                            disabled={group.customerCount > 0}
+                          >
+                            <Trash2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                            <span className="text-xs sm:text-sm">Slet</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Slet rabatgruppe</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Er du sikker på, at du vil slette rabatgruppen "{group.name}"? 
+                              Denne handling kan ikke fortrydes.
+                              {group.customerCount > 0 && (
+                                <span className="block mt-2 text-red-600 font-medium">
+                                  Denne gruppe kan ikke slettes, da {group.customerCount} kunde(r) bruger den.
+                                </span>
+                              )}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuller</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDelete(group)}
+                              className="bg-red-600 hover:bg-red-700"
+                              disabled={group.customerCount > 0}
+                            >
+                              Slet rabatgruppe
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {discountGroups.length === 0 && (
+            <Card className="card-brand mt-6">
+              <CardContent className="text-center py-8">
+                <Percent className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-brand-gray-900 mb-2">Ingen rabatgrupper endnu</h3>
+                <p className="text-brand-gray-600 mb-4">
+                  Opret din første rabatgruppe for at begynde at tildele forskellige rabatsatser til dine kunder.
+                </p>
+                <Button 
+                  className="btn-brand-primary w-full sm:w-auto"
+                  onClick={() => setIsCreateDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Opret din første rabatgruppe
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Mobile-optimized status alert */}
+          {totalProducts > 0 && (
+            <Alert className="mt-6 border-brand-primary/30 bg-brand-primary/5">
+              <Info className="h-4 w-4 text-brand-primary" />
+              <AlertDescription className="text-brand-gray-700">
+                <div className="space-y-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <span className="font-medium">Produktoversigt:</span>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm">
+                      <span className="flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3 text-brand-success" />
+                        {discountEligibleProducts.length} påvirket af rabatgrupper
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <AlertTriangle className="h-3 w-3 text-brand-warning" />
+                        {productsWithSalePrice} med fast udsalgspris
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-brand-gray-500">
+                    💡 Rabatgrupper påvirker kun produkter uden fast udsalgspris. Produkter med før-pris eller aktive produktrabatter får ikke yderligere rabatgruppe-rabat.
+                  </p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       </div>
 
-      {discountGroups.length === 0 && (
-        <Card className="card-brand mt-6">
-          <CardContent className="text-center py-8">
-            <Percent className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-brand-gray-900 mb-2">Ingen rabatgrupper endnu</h3>
-            <p className="text-brand-gray-600 mb-4">
-              Opret din første rabatgruppe for at begynde at tildele forskellige rabatsatser til dine kunder.
-            </p>
-            <Button 
-              className="btn-brand-primary"
-              onClick={() => setIsCreateDialogOpen(true)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Opret din første rabatgruppe
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Nielsen's Heuristic #1: Visibility of System Status */}
-      {totalProducts > 0 && (
-        <Alert className="mt-6 border-brand-primary/30 bg-brand-primary/5">
-          <Info className="h-4 w-4 text-brand-primary" />
-          <AlertDescription className="text-brand-gray-700">
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Produktoversigt:</span>
-                <div className="flex gap-4 text-sm">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle2 className="h-3 w-3 text-brand-success" />
-                    {discountEligibleProducts.length} påvirket af rabatgrupper
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3 text-brand-warning" />
-                    {productsWithSalePrice} med fast udsalgspris
-                  </span>
-                </div>
-              </div>
-              <p className="text-xs text-brand-gray-500">
-                💡 Rabatgrupper påvirker kun produkter uden fast udsalgspris (førpris). Når et produkt har en udsalgspris, slås rabatgruppen fra.
-              </p>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Products Dialog - Nielsen's Heuristic #6: Recognition Rather Than Recall */}
+      {/* Enhanced Products Dialog with Category Sorting - Mobile Optimized */}
       <Dialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
               <div
                 className="w-4 h-4 rounded-full"
                 style={{ backgroundColor: selectedGroup?.color }}
               />
-              Varer påvirket af "{selectedGroup?.name}"
+              <span className="truncate">Varer påvirket af "{selectedGroup?.name}"</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="text-sm">
               Disse varer får {selectedGroup?.discountPercentage}% rabat for kunder i denne rabatgruppe.
-              Varer med fast udsalgspris (førpris) påvirkes ikke af rabatgrupper.
+              Produkter med før-pris eller aktive produktrabatter påvirkes ikke af rabatgrupper.
             </DialogDescription>
           </DialogHeader>
           
@@ -703,42 +729,59 @@ const DashboardDiscountGroups: React.FC = () => {
                 </div>
               </div>
             ) : discountEligibleProducts.length > 0 ? (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                  {discountEligibleProducts.map((product) => (
-                    <Card key={product._id} className="p-4">
-                      <div className="flex items-start gap-3">
-                        {product.billeder && product.billeder.length > 0 && (
-                          <img
-                            src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
-                            alt={product.produktnavn}
-                            className="w-12 h-12 object-cover rounded-md"
-                          />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-brand-gray-900 truncate">
-                            {product.produktnavn}
-                          </h4>
-                          <p className="text-sm text-brand-gray-500">
-                            {product.varenummer} • {product.kategori.navn}
-                          </p>
-                          <div className="mt-2 space-y-1">
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-brand-gray-600">Basispris:</span>
-                              <span className="font-medium">{formatPrice(product.basispris)}</span>
-                            </div>
-                            <div className="flex items-center justify-between text-sm">
-                              <span className="text-brand-primary">Med {selectedGroup?.discountPercentage}% rabat:</span>
-                              <span className="font-bold text-brand-primary">
-                                {formatPrice(calculateDiscountedPrice(product.basispris, selectedGroup?.discountPercentage || 0))}
-                              </span>
+              <div className="space-y-6">
+                {/* Group products by category */}
+                {Object.entries(
+                  discountEligibleProducts.reduce((acc, product) => {
+                    const categoryName = product.kategori.navn;
+                    if (!acc[categoryName]) {
+                      acc[categoryName] = [];
+                    }
+                    acc[categoryName].push(product);
+                    return acc;
+                  }, {} as Record<string, typeof discountEligibleProducts>)
+                ).map(([categoryName, products]) => (
+                  <div key={categoryName} className="space-y-3">
+                    <h3 className="text-lg font-semibold text-brand-gray-900 border-b border-brand-gray-200 pb-2">
+                      {categoryName} ({products.length} varer)
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                      {products.map((product) => (
+                        <Card key={product._id} className="p-3 sm:p-4">
+                          <div className="flex items-start gap-3">
+                            {product.billeder && product.billeder.length > 0 && (
+                              <img
+                                src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
+                                alt={product.produktnavn}
+                                className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded-md flex-shrink-0"
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-brand-gray-900 text-sm sm:text-base truncate">
+                                {product.produktnavn}
+                              </h4>
+                              <p className="text-xs sm:text-sm text-brand-gray-500 truncate">
+                                {product.varenummer}
+                              </p>
+                              <div className="mt-2 space-y-1">
+                                <div className="flex items-center justify-between text-xs sm:text-sm">
+                                  <span className="text-brand-gray-600">Basispris:</span>
+                                  <span className="font-medium">{formatPrice(product.basispris)}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs sm:text-sm">
+                                  <span className="text-brand-primary">Med {selectedGroup?.discountPercentage}% rabat:</span>
+                                  <span className="font-bold text-brand-primary">
+                                    {formatPrice(calculateDiscountedPrice(product.basispris, selectedGroup?.discountPercentage || 0))}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                ))}
                 
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between text-sm text-brand-gray-600">
@@ -748,15 +791,15 @@ const DashboardDiscountGroups: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
-                  Ingen påvirkede varer
-                </h3>
-                <p className="text-brand-gray-500">
-                  Alle produkter har enten fast udsalgspris eller er ikke aktive.
-                </p>
-              </div>
+                              <div className="text-center py-8">
+                  <Package className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
+                    Ingen påvirkede varer
+                  </h3>
+                  <p className="text-brand-gray-500 text-sm">
+                    Alle produkter har enten før-pris, aktive produktrabatter eller er ikke aktive.
+                  </p>
+                </div>
             )}
           </div>
           
@@ -764,6 +807,7 @@ const DashboardDiscountGroups: React.FC = () => {
             <Button
               variant="outline"
               onClick={() => setIsProductsDialogOpen(false)}
+              className="w-full sm:w-auto"
             >
               Luk
             </Button>
@@ -771,9 +815,9 @@ const DashboardDiscountGroups: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      {/* Edit Dialog - Mobile Optimized */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Rediger rabatgruppe</DialogTitle>
             <DialogDescription>
@@ -816,14 +860,14 @@ const DashboardDiscountGroups: React.FC = () => {
             </div>
             <div>
               <Label htmlFor="edit-color">Farve</Label>
-              <div className="grid grid-cols-4 gap-3 mt-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3 mt-2">
                 {colorOptions.map((colorOption) => (
                   <button
                     key={colorOption.value}
                     type="button"
                     onClick={() => setFormData({...formData, color: colorOption.value})}
                     className={`
-                      relative h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
+                      relative h-10 sm:h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
                       shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200
                       ${formData.color === colorOption.value ? 'ring-2 ring-offset-2 ring-blue-500' : ''}
                     `}
@@ -831,12 +875,12 @@ const DashboardDiscountGroups: React.FC = () => {
                   >
                     {formData.color === colorOption.value && (
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="w-6 h-6 bg-white rounded-full shadow-sm flex items-center justify-center">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                        <div className="w-4 h-4 sm:w-6 sm:h-6 bg-white rounded-full shadow-sm flex items-center justify-center">
+                          <div className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></div>
                         </div>
                       </div>
                     )}
-                    <span className="absolute bottom-1 left-1 right-1 text-xs text-white font-medium text-center bg-black bg-opacity-30 rounded px-1 py-0.5">
+                    <span className="absolute bottom-0.5 left-0.5 right-0.5 text-xs text-white font-medium text-center bg-black bg-opacity-30 rounded px-1 py-0.5">
                       {colorOption.name}
                     </span>
                   </button>
@@ -844,7 +888,7 @@ const DashboardDiscountGroups: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex justify-end space-x-2 mt-6">
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-0 sm:space-x-2 mt-6">
             <Button
               variant="outline"
               onClick={() => {
@@ -852,10 +896,15 @@ const DashboardDiscountGroups: React.FC = () => {
                 setEditingGroup(null);
                 resetForm();
               }}
+              className="w-full sm:w-auto"
             >
               Annuller
             </Button>
-            <Button onClick={handleEdit} disabled={isSubmitting}>
+            <Button 
+              onClick={handleEdit} 
+              disabled={isSubmitting}
+              className="w-full sm:w-auto"
+            >
               {isSubmitting ? 'Opdaterer...' : 'Gem ændringer'}
             </Button>
           </div>
