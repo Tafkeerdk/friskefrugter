@@ -667,7 +667,7 @@ const FAQ = () => {
       
       <main className="flex-grow bg-gray-50">
         {/* Header - FULL WIDTH */}
-        <section className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white py-12 full-width-section">
+        <section className="bg-brand-primary text-white py-12 full-width-section" style={{background: 'linear-gradient(135deg, hsl(var(--brand-primary)) 0%, hsl(var(--brand-secondary)) 100%)'}}>
           <div className="page-container text-center">
             <h1 className={cn(
               "font-bold text-white mb-4",
