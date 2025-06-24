@@ -24,20 +24,31 @@ const FAQ = () => {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['pwa-installation']));
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
-  // Handle anchor links (e.g., #pwa-installation)
+  // Handle both anchor links (e.g., #pwa-installation) and query parameters (e.g., ?section=pwa-installation)
   React.useEffect(() => {
     const hash = window.location.hash.replace('#', '');
-    if (hash) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const section = urlParams.get('section');
+    
+    // Determine which section to expand
+    const targetSection = section || hash;
+    
+    if (targetSection) {
       // Expand the item if it exists
-      setExpandedItems(prev => new Set(prev).add(hash));
+      setExpandedItems(prev => new Set(prev).add(targetSection));
+      
+      // Set the category filter if it's a PWA installation request
+      if (targetSection === 'pwa-installation') {
+        setSelectedCategory('pwa');
+      }
       
       // Scroll to the element after a brief delay to ensure it's rendered
       setTimeout(() => {
-        const element = document.getElementById(hash);
+        const element = document.getElementById(targetSection);
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      }, 100);
+      }, 200);
     }
   }, []);
 

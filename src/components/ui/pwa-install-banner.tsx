@@ -5,6 +5,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface PWAInstallBannerProps {
   className?: string;
@@ -29,14 +30,15 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
     browserSupported
   } = usePWA();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
 
   const handleInstall = async () => {
     if (needsManualInstall) {
       // For iOS Safari and other browsers that require manual installation
-      // Redirect to FAQ page with PWA installation guide
-      window.location.href = '/faq#pwa-installation';
+      // Navigate to FAQ page with PWA installation guide using React Router
+      navigate('/faq?section=pwa-installation');
     } else if (isInstallable) {
       // For browsers that support automatic install prompts
       await promptInstall();
