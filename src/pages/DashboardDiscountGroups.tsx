@@ -106,6 +106,20 @@ const DashboardDiscountGroups: React.FC = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [productsWithSalePrice, setProductsWithSalePrice] = useState(0);
   
+  // Customer management states
+  const [isCustomersDialogOpen, setIsCustomersDialogOpen] = useState(false);
+  const [selectedGroupForCustomers, setSelectedGroupForCustomers] = useState<DiscountGroup | null>(null);
+  const [groupCustomers, setGroupCustomers] = useState<any[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  
+  // UI feedback states for better UX
+  const [previewFormData, setPreviewFormData] = useState({
+    name: '',
+    description: '',
+    discountPercentage: '',
+    color: '#6B7280'
+  });
+  
   const { toast } = useToast();
 
   // Form state
@@ -244,6 +258,23 @@ const DashboardDiscountGroups: React.FC = () => {
     try {
       setIsSubmitting(true);
       
+      // Optimistic update for immediate UI feedback
+      const updatedGroup = {
+        ...editingGroup,
+        name: formData.name.trim(),
+        description: formData.description.trim() || undefined,
+        discountPercentage: percentage,
+        color: formData.color,
+        formattedDiscount: `${percentage}%`
+      };
+      
+      // Update UI immediately
+      setDiscountGroups(prev => 
+        prev.map(group => 
+          group.id === editingGroup.id ? updatedGroup : group
+        )
+      );
+      
       const response = await authService.updateDiscountGroup(editingGroup.id, {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
@@ -261,8 +292,11 @@ const DashboardDiscountGroups: React.FC = () => {
         setIsEditDialogOpen(false);
         setEditingGroup(null);
         resetForm();
+        // Refresh data to ensure consistency
         await fetchDiscountGroups();
       } else {
+        // Revert optimistic update on failure
+        await fetchDiscountGroups();
         toast({
           title: 'Fejl',
           description: response.message || 'Kunne ikke opdatere rabatgruppe',
@@ -270,6 +304,8 @@ const DashboardDiscountGroups: React.FC = () => {
         });
       }
     } catch (err) {
+      // Revert optimistic update on error
+      await fetchDiscountGroups();
       toast({
         title: 'Fejl',
         description: 'Der opstod en fejl ved opdatering af rabatgruppe',
@@ -311,13 +347,22 @@ const DashboardDiscountGroups: React.FC = () => {
 
   const openEditDialog = (group: DiscountGroup) => {
     setEditingGroup(group);
-    setFormData({
+    const initialFormData = {
       name: group.name,
       description: group.description || '',
       discountPercentage: group.discountPercentage.toString(),
       color: group.color
-    });
+    };
+    setFormData(initialFormData);
+    setPreviewFormData(initialFormData); // Initialize preview data
     setIsEditDialogOpen(true);
+  };
+
+  // Handle form changes with immediate preview updates
+  const handleFormChange = (field: string, value: string) => {
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+    setPreviewFormData(newFormData); // Update preview immediately
   };
 
   const getColorName = (colorValue: string) => {
@@ -374,6 +419,43 @@ const DashboardDiscountGroups: React.FC = () => {
       style: 'currency',
       currency: 'DKK'
     }).format(price);
+  };
+
+  // Customer management functions
+  const openCustomersDialog = async (group: DiscountGroup) => {
+    setSelectedGroupForCustomers(group);
+    setIsCustomersDialogOpen(true);
+    setLoadingCustomers(true);
+    
+    try {
+      // For now, we'll show a placeholder since the backend endpoint was removed
+      // You can implement this when the customer management API is ready
+      setGroupCustomers([
+        {
+          id: '1',
+          companyName: 'Eksempel Firma A/S',
+          contactPersonName: 'John Doe',
+          email: 'john@eksempel.dk',
+          phone: '+45 12 34 56 78',
+          cvrNumber: '12345678',
+          createdAt: new Date().toISOString()
+        }
+      ]);
+      
+      toast({
+        title: 'Kunde funktionalitet',
+        description: 'Kunde management kommer snart tilbage',
+      });
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl ved hentning af kunder',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingCustomers(false);
+    }
   };
 
   if (isLoading) {
@@ -438,7 +520,7 @@ const DashboardDiscountGroups: React.FC = () => {
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => handleFormChange('name', e.target.value)}
                       placeholder="f.eks. Premium, Guldkunde..."
                       className="mt-1"
                     />
@@ -448,23 +530,23 @@ const DashboardDiscountGroups: React.FC = () => {
                     <Input
                       id="description"
                       value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
+                      onChange={(e) => handleFormChange('description', e.target.value)}
                       placeholder="Kort beskrivelse af rabatgruppen..."
                       className="mt-1"
                     />
                   </div>
                   <div>
                     <Label htmlFor="discountPercentage">Rabatprocent</Label>
-                                         <Input
-                       id="discountPercentage"
-                       type="number"
-                       min="0"
-                       max="50"
-                       value={formData.discountPercentage}
-                       onChange={(e) => setFormData({...formData, discountPercentage: e.target.value})}
-                       placeholder="f.eks. 15"
-                       className="mt-1"
-                     />
+                    <Input
+                      id="discountPercentage"
+                      type="number"
+                      min="0"
+                      max="50"
+                      value={formData.discountPercentage}
+                      onChange={(e) => handleFormChange('discountPercentage', e.target.value)}
+                      placeholder="f.eks. 15"
+                      className="mt-1"
+                    />
                   </div>
                   <div>
                     <Label htmlFor="color">Farve</Label>
@@ -473,7 +555,7 @@ const DashboardDiscountGroups: React.FC = () => {
                         <button
                           key={colorOption.value}
                           type="button"
-                          onClick={() => setFormData({...formData, color: colorOption.value})}
+                          onClick={() => handleFormChange('color', colorOption.value)}
                           className={`
                             relative h-16 sm:h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
                             shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200
@@ -589,15 +671,25 @@ const DashboardDiscountGroups: React.FC = () => {
                       
                       {/* Mobile-friendly button layout with proper spacing */}
                       <div className="pt-4 border-t space-y-3">
-                        {/* Primary action button - full width on mobile */}
-                        <Button
-                          variant="outline"
-                          onClick={() => openProductsDialog(group)}
-                          className="w-full text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary min-h-[44px] touch-manipulation"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          Se varer ({discountEligibleProducts.length})
-                        </Button>
+                        {/* Primary action buttons - stacked on mobile */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <Button
+                            variant="outline"
+                            onClick={() => openCustomersDialog(group)}
+                            className="text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary min-h-[44px] touch-manipulation"
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Se kunder ({group.customerCount})
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => openProductsDialog(group)}
+                            className="text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary min-h-[44px] touch-manipulation"
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Se varer ({discountEligibleProducts.length})
+                          </Button>
+                        </div>
                         
                         {/* Secondary actions - grid layout for better spacing */}
                         <div className="grid grid-cols-2 gap-3">
@@ -803,22 +895,55 @@ const DashboardDiscountGroups: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog - Mobile Optimized */}
+      {/* Edit Dialog - Mobile Optimized with Live Preview */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] mx-4">
+        <DialogContent className="sm:max-w-[600px] mx-4">
           <DialogHeader>
             <DialogTitle>Rediger rabatgruppe</DialogTitle>
             <DialogDescription>
-              Rediger rabatgruppens indstillinger.
+              Rediger rabatgruppens indstillinger. Se live preview til højre.
             </DialogDescription>
           </DialogHeader>
+          
+          {/* Live Preview Card */}
+          <div className="mb-4 p-4 bg-gray-50 rounded-lg border">
+            <div className="text-sm font-medium text-gray-700 mb-2">👁️ Live Preview:</div>
+            <div className="bg-white rounded-lg border p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full transition-all duration-200"
+                    style={{ backgroundColor: previewFormData.color }}
+                  />
+                  <span className="font-medium text-sm">
+                    {previewFormData.name || 'Navn...'}
+                  </span>
+                </div>
+                <span 
+                  className="text-sm font-bold px-2 py-1 rounded transition-all duration-200"
+                  style={{ 
+                    backgroundColor: `${previewFormData.color}20`, 
+                    color: previewFormData.color 
+                  }}
+                >
+                  {previewFormData.discountPercentage || '0'}%
+                </span>
+              </div>
+              {previewFormData.description && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {previewFormData.description}
+                </div>
+              )}
+            </div>
+          </div>
+          
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-name">Navn</Label>
               <Input
                 id="edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => handleFormChange('name', e.target.value)}
                 placeholder="f.eks. Premium, Guldkunde..."
                 className="mt-1"
               />
@@ -828,7 +953,7 @@ const DashboardDiscountGroups: React.FC = () => {
               <Input
                 id="edit-description"
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => handleFormChange('description', e.target.value)}
                 placeholder="Kort beskrivelse af rabatgruppen..."
                 className="mt-1"
               />
@@ -841,7 +966,7 @@ const DashboardDiscountGroups: React.FC = () => {
                 min="0"
                 max="50"
                 value={formData.discountPercentage}
-                onChange={(e) => setFormData({...formData, discountPercentage: e.target.value})}
+                onChange={(e) => handleFormChange('discountPercentage', e.target.value)}
                 placeholder="f.eks. 15"
                 className="mt-1"
               />
@@ -853,7 +978,7 @@ const DashboardDiscountGroups: React.FC = () => {
                   <button
                     key={colorOption.value}
                     type="button"
-                    onClick={() => setFormData({...formData, color: colorOption.value})}
+                    onClick={() => handleFormChange('color', colorOption.value)}
                     className={`
                       relative h-16 sm:h-12 rounded-lg bg-gradient-to-br ${colorOption.gradient} 
                       shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200
@@ -894,6 +1019,120 @@ const DashboardDiscountGroups: React.FC = () => {
               className="w-full sm:w-auto min-h-[44px]"
             >
               {isSubmitting ? 'Opdaterer...' : 'Gem ændringer'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Management Dialog */}
+      <Dialog open={isCustomersDialogOpen} onOpenChange={setIsCustomersDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <div
+                className="w-4 h-4 rounded-full flex-shrink-0"
+                style={{ backgroundColor: selectedGroupForCustomers?.color }}
+              />
+              <span>Kunder i "{selectedGroupForCustomers?.name}"</span>
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Administrer kunder i denne rabatgruppe. Kunder får {selectedGroupForCustomers?.discountPercentage}% rabat.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {loadingCustomers ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+                  <p className="mt-2 text-brand-gray-600">Henter kunder...</p>
+                </div>
+              </div>
+            ) : groupCustomers.length > 0 ? (
+              <div className="space-y-4 p-1">
+                {/* Customer List */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-brand-primary/20">
+                    <h3 className="text-lg font-bold text-brand-primary">
+                      👥 Kunder i gruppen
+                    </h3>
+                    <span className="bg-brand-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+                      {groupCustomers.length} kunder
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {groupCustomers.map((customer) => (
+                      <div key={customer.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <h4 className="font-semibold text-gray-900 text-sm">
+                              {customer.companyName}
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                <span>{customer.contactPersonName}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>📧</span>
+                                <span className="truncate">{customer.email}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>📞</span>
+                                <span>{customer.phone}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>🏢</span>
+                                <span>CVR: {customer.cvrNumber}</span>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Tilmeldt: {new Date(customer.createdAt).toLocaleDateString('da-DK')}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Summary */}
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-800 font-medium">📊 Total kunder i gruppen:</span>
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
+                      {groupCustomers.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-2">
+                    💡 Kunde management funktionalitet kommer snart tilbage med fuld funktionalitet.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
+                  Ingen kunder i denne gruppe
+                </h3>
+                <p className="text-brand-gray-500 text-sm mb-4">
+                  Denne rabatgruppe har ingen kunder endnu.
+                </p>
+                <p className="text-xs text-gray-500">
+                  💡 Gå til Kunder-siden for at tildele kunder til denne rabatgruppe.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-shrink-0 flex justify-end pt-4 border-t bg-white">
+            <Button
+              variant="outline"
+              onClick={() => setIsCustomersDialogOpen(false)}
+              className="px-6"
+            >
+              Luk
             </Button>
           </div>
         </DialogContent>
