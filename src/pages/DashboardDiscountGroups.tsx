@@ -115,6 +115,13 @@ const DashboardDiscountGroups: React.FC = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [productsWithSalePrice, setProductsWithSalePrice] = useState(0);
   
+  // Customer management states
+  const [isCustomersDialogOpen, setIsCustomersDialogOpen] = useState(false);
+  const [selectedGroupForCustomers, setSelectedGroupForCustomers] = useState<DiscountGroup | null>(null);
+  const [groupCustomers, setGroupCustomers] = useState<any[]>([]);
+  const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  
   const { toast } = useToast();
 
   // Form state
@@ -136,8 +143,6 @@ const DashboardDiscountGroups: React.FC = () => {
     { name: 'Ametyst', value: '#8B5CF6', gradient: 'from-violet-400 to-violet-600' },
     { name: 'Diamant', value: '#EC4899', gradient: 'from-pink-400 to-pink-600' },
   ];
-
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
 
   useEffect(() => {
     fetchDiscountGroups();
@@ -373,6 +378,68 @@ const DashboardDiscountGroups: React.FC = () => {
     }
   };
 
+  // Customer management functions
+  const openCustomersDialog = async (group: DiscountGroup) => {
+    setSelectedGroupForCustomers(group);
+    setIsCustomersDialogOpen(true);
+    setLoadingCustomers(true);
+    
+    try {
+      const response = await authService.getDiscountGroupCustomers(group.id);
+      if (response.success) {
+        setGroupCustomers(response.customers || []);
+      } else {
+        toast({
+          title: 'Fejl',
+          description: 'Kunne ikke hente kunder for rabatgruppen',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error loading customers:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl ved hentning af kunder',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingCustomers(false);
+    }
+  };
+
+  const handleRemoveCustomer = async (customerId: string, customerName: string) => {
+    try {
+      const response = await authService.removeCustomerFromDiscountGroup(customerId);
+      if (response.success) {
+        toast({
+          title: 'Kunde flyttet',
+          description: `${customerName} er flyttet til Standard rabatgruppen`,
+        });
+        
+        // Refresh customer list
+        if (selectedGroupForCustomers) {
+          await openCustomersDialog(selectedGroupForCustomers);
+        }
+        
+        // Refresh discount groups to update counts
+        await fetchDiscountGroups();
+      } else {
+        toast({
+          title: 'Fejl',
+          description: response.message || 'Kunne ikke fjerne kunde fra rabatgruppen',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error removing customer:', error);
+      toast({
+        title: 'Fejl',
+        description: 'Der opstod en fejl ved fjernelse af kunde',
+        variant: 'destructive',
+      });
+    }
+  };
+
   // Nielsen's Heuristic #6: Recognition Rather Than Recall
   const openProductsDialog = (group: DiscountGroup) => {
     setSelectedGroup(group);
@@ -598,13 +665,22 @@ const DashboardDiscountGroups: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openProductsDialog(group)}
+                      onClick={() => openCustomersDialog(group)}
                       className="text-brand-primary hover:text-brand-primary-hover border-brand-primary/30 hover:border-brand-primary w-full sm:w-auto"
                     >
-                      <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                      <span className="text-xs sm:text-sm">Se varer</span>
+                      <Users className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                      <span className="text-xs sm:text-sm">Se kunder</span>
                     </Button>
                     <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openProductsDialog(group)}
+                        className="flex-1 sm:flex-none text-xs sm:text-sm"
+                      >
+                        <Package className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                        <span>Varer</span>
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
@@ -970,6 +1046,154 @@ const DashboardDiscountGroups: React.FC = () => {
               className="w-full sm:w-auto"
             >
               {isSubmitting ? 'Opdaterer...' : 'Gem ændringer'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Management Dialog */}
+      <Dialog open={isCustomersDialogOpen} onOpenChange={setIsCustomersDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <div
+                className="w-4 h-4 rounded-full flex-shrink-0"
+                style={{ backgroundColor: selectedGroupForCustomers?.color }}
+              />
+              <span>Kunder i "{selectedGroupForCustomers?.name}"</span>
+            </DialogTitle>
+            <DialogDescription className="text-sm">
+              Administrer kunder i denne rabatgruppe. Kunder får {selectedGroupForCustomers?.discountPercentage}% rabat.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto min-h-0">
+            {loadingCustomers ? (
+              <div className="flex items-center justify-center p-8">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+                  <p className="mt-2 text-brand-gray-600">Henter kunder...</p>
+                </div>
+              </div>
+            ) : groupCustomers.length > 0 ? (
+              <div className="space-y-4 p-1">
+                {/* Customer List */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4 pb-2 border-b-2 border-brand-primary/20">
+                    <h3 className="text-lg font-bold text-brand-primary">
+                      👥 Kunder i gruppen
+                    </h3>
+                    <span className="bg-brand-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+                      {groupCustomers.length} kunder
+                    </span>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    {groupCustomers.map((customer) => (
+                      <div key={customer.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0 space-y-2">
+                            <h4 className="font-semibold text-gray-900 text-sm">
+                              {customer.companyName}
+                            </h4>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
+                              <div className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                <span>{customer.contactPersonName}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>📧</span>
+                                <span className="truncate">{customer.email}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>📞</span>
+                                <span>{customer.phone}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span>🏢</span>
+                                <span>CVR: {customer.cvrNumber}</span>
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              Tilmeldt: {new Date(customer.createdAt).toLocaleDateString('da-DK')}
+                            </div>
+                          </div>
+                          
+                          <div className="flex flex-col gap-2 ml-4">
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-orange-600 hover:text-orange-700 border-orange-300 hover:border-orange-400"
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  <span className="text-xs">Fjern</span>
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Fjern kunde fra rabatgruppe</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Er du sikker på, at du vil fjerne <strong>{customer.companyName}</strong> fra rabatgruppen "{selectedGroupForCustomers?.name}"?
+                                    <br /><br />
+                                    Kunden vil blive flyttet til Standard rabatgruppen (0% rabat).
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuller</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleRemoveCustomer(customer.id, customer.companyName)}
+                                    className="bg-orange-600 hover:bg-orange-700"
+                                  >
+                                    Flyt til Standard
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Summary */}
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-blue-800 font-medium">📊 Total kunder i gruppen:</span>
+                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
+                      {groupCustomers.length}
+                    </span>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-2">
+                    💡 For at tilføje nye kunder til denne rabatgruppe, gå til Kunder-siden og rediger den ønskede kunde.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-brand-gray-700 mb-2">
+                  Ingen kunder i denne gruppe
+                </h3>
+                <p className="text-brand-gray-500 text-sm mb-4">
+                  Denne rabatgruppe har ingen kunder endnu.
+                </p>
+                <p className="text-xs text-gray-500">
+                  💡 Gå til Kunder-siden for at tildele kunder til denne rabatgruppe.
+                </p>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-shrink-0 flex justify-end pt-4 border-t bg-white">
+            <Button
+              variant="outline"
+              onClick={() => setIsCustomersDialogOpen(false)}
+              className="px-6"
+            >
+              Luk
             </Button>
           </div>
         </DialogContent>
