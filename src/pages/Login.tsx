@@ -25,7 +25,7 @@ type CustomerLoginFormData = z.infer<typeof customerLoginSchema>;
 const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { login, user, isAuthenticated } = useAuth();
+  const { login, user, isAuthenticated, profileLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -40,14 +40,14 @@ const Login = () => {
 
   // Redirect if already logged in as customer
   useEffect(() => {
-    if (isAuthenticated && user && isCustomer(user) && 
+    if (isAuthenticated && user && isCustomer(user) && !profileLoading &&
         user.contactPersonName && user.email && user.companyName) {
-      console.log('🔄 User authenticated and data loaded - navigating to dashboard');
+      console.log('🔄 User authenticated and profile loaded - navigating to dashboard');
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
       setIsLoading(false); // Stop loading since we're navigating
       navigate(from, { replace: true });
     }
-  }, [isAuthenticated, user, navigate, location]);
+  }, [isAuthenticated, user, profileLoading, navigate, location]);
 
   const onSubmit = async (data: CustomerLoginFormData) => {
     setIsLoading(true);

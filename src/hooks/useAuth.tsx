@@ -6,6 +6,7 @@ interface AuthContextType {
   adminUser: User | null;
   customerUser: User | null;
   isLoading: boolean;
+  profileLoading: boolean;
   isAuthenticated: boolean;
   isAdminAuthenticated: boolean;
   isCustomerAuthenticated: boolean;
@@ -25,6 +26,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [adminUser, setAdminUser] = useState<User | null>(null);
   const [customerUser, setCustomerUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   // CRITICAL SECURITY FIX: Enhanced token expiration check
   const isTokenExpired = (token: string): boolean => {
@@ -175,6 +177,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (!hasValidSession) {
         console.log('❌ SECURITY: No valid sessions found during initialization');
         setIsLoading(false);
+        setProfileLoading(false);
         return;
       }
       
@@ -276,6 +279,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       
       setIsLoading(false);
+      setProfileLoading(false);
       console.log('✅ SECURITY: Auth initialization complete with strict validation');
     };
 
@@ -320,6 +324,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } else {
           setCustomerUser(response.user);
+          setProfileLoading(true); // Start profile loading
           
           // Fetch fresh customer profile data
           try {
@@ -336,21 +341,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                   tokenManager.setUser(customer, 'customer');
                   setCustomerUser(customer);
                   setUser(customer); // Set as primary user
+                  setProfileLoading(false); // Profile loading complete
                 } catch (stateError) {
                   console.error('❌ Error updating customer state after profile fetch:', stateError);
                   setUser(response.user); // Fallback to login response
+                  setProfileLoading(false); // Profile loading complete (with fallback)
                 }
               } else {
                 console.warn('⚠️ Customer profile data incomplete, using login response');
                 setUser(response.user); // Fallback to login response
+                setProfileLoading(false); // Profile loading complete (with fallback)
               }
             } else {
               console.warn('⚠️ Customer profile fetch failed, using login response');
               setUser(response.user); // Fallback to login response
+              setProfileLoading(false); // Profile loading complete (with fallback)
             }
           } catch (error) {
             console.warn('⚠️ Could not fetch fresh customer profile data after login:', error);
             setUser(response.user); // Fallback to login response
+            setProfileLoading(false); // Profile loading complete (with fallback)
           }
         }
         
@@ -490,6 +500,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     adminUser,
     customerUser,
     isLoading,
+    profileLoading,
     isAuthenticated: !!user,
     isAdminAuthenticated: !!adminUser,
     isCustomerAuthenticated: !!customerUser,
