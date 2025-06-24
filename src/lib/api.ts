@@ -161,11 +161,11 @@ class ApiClient {
             throw new Error('Session expired. Please log in again.');
           }
         } else {
-          // Token seems valid but server rejected it - force logout
-          console.error('🚨 SECURITY: Server rejected valid token - forcing logout');
+          // Token seems valid but server rejected it - log error but don't force redirect
+          console.error('🚨 SECURITY: Server rejected valid token - clearing tokens');
           this.clearTokens();
-          this.redirectToLogin();
-          throw new Error('Session expired. Please log in again.');
+          // Don't redirect immediately - let the calling code handle the error
+          throw new Error('Access token påkrævet');
         }
       }
       
@@ -306,7 +306,7 @@ class ApiClient {
     localStorage.removeItem('customer_user');
   }
 
-  // CRITICAL SECURITY FIX: Smart redirect to login
+  // CRITICAL SECURITY FIX: Smart redirect to login - but only for critical auth failures
   private redirectToLogin(): void {
     const currentPath = window.location.pathname;
     console.log('🚪 SECURITY: Redirecting to login from:', currentPath);
@@ -316,9 +316,9 @@ class ApiClient {
       return;
     }
     
-    // Redirect to appropriate login page
+    // For admin paths, redirect to admin (not admin-login since we now redirect to /admin)
     if (currentPath.includes('/admin') || currentPath.includes('/super')) {
-      window.location.href = '/admin-login';
+      window.location.href = '/admin';
     } else {
       window.location.href = '/login';
     }

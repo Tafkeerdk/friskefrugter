@@ -89,7 +89,7 @@ const App = () => (
             {/* Admin login redirect */}
             <Route 
               path="/admin-login" 
-              element={<Navigate to="/admin" replace />} 
+              element={<Navigate to="/super/admin" replace />} 
             />
             
             {/* Admin routes - Enhanced security for Netlify */}
