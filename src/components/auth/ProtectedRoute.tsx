@@ -19,11 +19,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireCustomer = false,
   redirectTo = '/login'
 }) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { 
+    user, 
+    adminUser, 
+    customerUser, 
+    isLoading, 
+    profileLoading, 
+    isAuthenticated, 
+    isAdminAuthenticated, 
+    isCustomerAuthenticated 
+  } = useAuth();
   const currentPath = window.location.pathname;
 
-  // Show loading spinner while checking authentication
-  if (isLoading) {
+  // Show loading spinner while checking authentication OR while profile is loading
+  if (isLoading || profileLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -35,12 +44,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   // Determine required session type based on route
   const isAdminRoute = currentPath.includes('/admin') || currentPath.includes('/super');
   const isCustomerRoute = currentPath.includes('/dashboard') && !currentPath.includes('/admin');
-
-  // Check specific session authentication
-  const adminUser = authService.getUser('admin');
-  const customerUser = authService.getUser('customer');
-  const isAdminAuthenticated = authService.isAuthenticated('admin');
-  const isCustomerAuthenticated = authService.isAuthenticated('customer');
 
   // If admin route is required
   if (requireAdmin || isAdminRoute) {
