@@ -26,6 +26,9 @@ const getEndpoint = (path: string): string => {
   if (path.startsWith('/api/auth/customer/login')) {
     return '/.netlify/functions/customer-login';
   }
+  if (path.startsWith('/api/auth/customer/verification')) {
+    return '/.netlify/functions/customer-verification';
+  }
   
   // For other auth routes, use the main API function
   return path;
@@ -1001,7 +1004,8 @@ export const authService = {
     useRegisteredAddressForDelivery?: boolean;
     currentPassword?: string; 
     newPassword?: string;
-  }): Promise<{ success: boolean; message: string; customer?: User }> {
+    verificationCode?: string;
+  }): Promise<{ success: boolean; message: string; customer?: User; requiresVerification?: boolean }> {
     const response = await apiClient.put(getEndpoint('/api/auth/customer/profile'), profileData);
     const data = await response.json();
     
@@ -1011,6 +1015,24 @@ export const authService = {
     }
     
     return data;
+  },
+
+  // Customer verification functions
+  async generateCustomerVerificationCode(verificationType: 'email_change' | 'password_change' | 'profile_security', newEmail?: string): Promise<{ success: boolean; message: string; expiresIn?: number }> {
+    const response = await apiClient.post(getEndpoint('/api/auth/customer/verification'), {
+      action: 'generate',
+      verificationType,
+      newEmail
+    });
+    return response.json();
+  },
+
+  async verifyCustomerCode(verificationCode: string): Promise<{ success: boolean; message: string; verificationType?: string; pendingEmailChange?: string }> {
+    const response = await apiClient.post(getEndpoint('/api/auth/customer/verification'), {
+      action: 'verify',
+      verificationCode
+    });
+    return response.json();
   },
 
   async uploadCustomerProfilePicture(imageFile: File): Promise<{ success: boolean; message: string; profilePictureUrl: string; customer: User }> {
