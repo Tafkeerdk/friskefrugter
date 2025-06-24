@@ -165,6 +165,7 @@ const DashboardDiscountGroups: React.FC = () => {
       
       if (response.success) {
         setDiscountGroups(response.discountGroups as DiscountGroup[] || []);
+        console.log('🔄 DashboardDiscountGroups: Fetched', response.discountGroups?.length || 0, 'discount groups');
       } else {
         setError(response.message || 'Kunne ikke hente rabatgrupper');
       }
@@ -174,6 +175,22 @@ const DashboardDiscountGroups: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper function to notify other components about discount group changes
+  const notifyDiscountGroupUpdate = () => {
+    console.log('📢 Broadcasting discount group update event');
+    
+    // Dispatch custom event
+    window.dispatchEvent(new CustomEvent('discountGroupsUpdated'));
+    
+    // Also set localStorage as fallback for cross-tab communication
+    localStorage.setItem('discountGroupsUpdated', Date.now().toString());
+    
+    // Remove the localStorage item after a short delay to avoid constant triggers
+    setTimeout(() => {
+      localStorage.removeItem('discountGroupsUpdated');
+    }, 100);
   };
 
   const resetForm = () => {
@@ -225,6 +242,9 @@ const DashboardDiscountGroups: React.FC = () => {
         setIsCreateDialogOpen(false);
         resetForm();
         await fetchDiscountGroups();
+        
+        // Notify other components about the update
+        notifyDiscountGroupUpdate();
       } else {
         toast({
           title: 'Fejl',
@@ -303,6 +323,9 @@ const DashboardDiscountGroups: React.FC = () => {
         resetForm();
         // Refresh data to ensure consistency
         await fetchDiscountGroups();
+        
+        // Notify other components about the update
+        notifyDiscountGroupUpdate();
       } else {
         // Revert optimistic update on failure
         await fetchDiscountGroups();
@@ -358,6 +381,9 @@ const DashboardDiscountGroups: React.FC = () => {
           fetchDiscountGroups(),
           loadProductStatistics()
         ]);
+        
+        // Notify other components about the update
+        notifyDiscountGroupUpdate();
       } else {
         // Revert optimistic update on failure
         await fetchDiscountGroups();

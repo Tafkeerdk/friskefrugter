@@ -182,23 +182,50 @@ export const RabatGruppePreview: React.FC<RabatGruppePreviewProps> = ({
   const [discountGroups, setDiscountGroups] = useState<DiscountGroup[]>([]);
   const [loadingGroups, setLoadingGroups] = useState(true);
 
-  // Load discount groups on component mount
+  // Load discount groups function
+  const loadDiscountGroups = async () => {
+    try {
+      setLoadingGroups(true);
+      const response = await authService.getDiscountGroups();
+      if (response.success && response.discountGroups) {
+        setDiscountGroups(response.discountGroups as DiscountGroup[]);
+        console.log('🔄 RabatGruppePreview: Loaded', response.discountGroups.length, 'discount groups');
+      }
+    } catch (error) {
+      console.error('Failed to load discount groups:', error);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  // Load discount groups on component mount and listen for updates
   useEffect(() => {
-    const loadDiscountGroups = async () => {
-      try {
-        setLoadingGroups(true);
-        const response = await authService.getDiscountGroups();
-        if (response.success && response.discountGroups) {
-          setDiscountGroups(response.discountGroups as DiscountGroup[]);
-        }
-      } catch (error) {
-        console.error('Failed to load discount groups:', error);
-      } finally {
-        setLoadingGroups(false);
+    loadDiscountGroups();
+
+    // Listen for custom events when discount groups are updated
+    const handleDiscountGroupUpdate = () => {
+      console.log('🔄 RabatGruppePreview: Received discount group update event');
+      loadDiscountGroups();
+    };
+
+    // Listen for the custom event
+    window.addEventListener('discountGroupsUpdated', handleDiscountGroupUpdate);
+
+    // Also listen for storage changes as a fallback
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'discountGroupsUpdated') {
+        console.log('🔄 RabatGruppePreview: Received storage update event');
+        loadDiscountGroups();
       }
     };
 
-    loadDiscountGroups();
+    window.addEventListener('storage', handleStorageChange);
+
+    // Cleanup
+    return () => {
+      window.removeEventListener('discountGroupsUpdated', handleDiscountGroupUpdate);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   // Don't show preview if no product name or price
