@@ -21,15 +21,18 @@ interface UserProfileProps {
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) => {
-  const { user, logout } = useAuth();
+  const { user, customerUser, logout } = useAuth();
   const navigate = useNavigate();
 
-  if (!user) return null;
+  // Use customerUser for navbar display, fallback to user for admin contexts
+  const displayUser = customerUser || user;
+
+  if (!displayUser) return null;
 
   const handleLogout = () => {
-    if (isCustomer(user)) {
+    if (isCustomer(displayUser)) {
       logout('customer');
-    } else if (isAdmin(user)) {
+    } else if (isAdmin(displayUser)) {
       logout('admin');
     } else {
       logout();
@@ -38,27 +41,27 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
   };
 
   const handleProfileClick = () => {
-    if (isCustomer(user)) {
+    if (isCustomer(displayUser)) {
       navigate('/profile');
-    } else if (isAdmin(user)) {
+    } else if (isAdmin(displayUser)) {
       navigate('/admin/profile');
     }
   };
 
   const getUserInitials = () => {
-    if (isCustomer(user)) {
-      return user.contactPersonName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CU';
-    } else if (isAdmin(user)) {
-      return user.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD';
+    if (isCustomer(displayUser)) {
+      return displayUser.contactPersonName?.split(' ').map(n => n[0]).join('').toUpperCase() || 'CU';
+    } else if (isAdmin(displayUser)) {
+      return displayUser.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'AD';
     }
     return 'U';
   };
 
   const getUserDisplayName = () => {
-    if (isCustomer(user)) {
-      return user.contactPersonName || 'Kunde';
-    } else if (isAdmin(user)) {
-      return user.name || 'Administrator';
+    if (isCustomer(displayUser)) {
+      return displayUser.contactPersonName || 'Kunde';
+    } else if (isAdmin(displayUser)) {
+      return displayUser.name || 'Administrator';
     }
     return 'Bruger';
   };
@@ -70,7 +73,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
               <AvatarImage 
-                src={user.profilePictureUrl} 
+                src={displayUser.profilePictureUrl} 
                 alt={getUserDisplayName()}
                 enableCacheBusting={true}
               />
@@ -82,15 +85,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
-              <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
-              {isCustomer(user) && user.companyName && (
-                <p className="text-xs leading-none text-muted-foreground">{user.companyName}</p>
+              <p className="text-xs leading-none text-muted-foreground">{displayUser.email}</p>
+              {isCustomer(displayUser) && displayUser.companyName && (
+                <p className="text-xs leading-none text-muted-foreground">{displayUser.companyName}</p>
               )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           
-          {isCustomer(user) && (
+          {isCustomer(displayUser) && (
             <>
               <DropdownMenuItem onClick={handleProfileClick}>
                 <User className="mr-2 h-4 w-4" />
@@ -104,7 +107,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
             </>
           )}
           
-          {isAdmin(user) && (
+          {isAdmin(displayUser) && (
             <>
               <DropdownMenuItem>
                 <Shield className="mr-2 h-4 w-4" />

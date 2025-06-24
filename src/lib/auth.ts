@@ -23,6 +23,9 @@ const getEndpoint = (path: string): string => {
   if (path.startsWith('/api/auth/customer/profile')) {
     return '/.netlify/functions/customer-profile';
   }
+  if (path.startsWith('/api/auth/customer/login')) {
+    return '/.netlify/functions/customer-login';
+  }
   
   // For other auth routes, use the main API function
   return path;

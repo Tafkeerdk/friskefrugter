@@ -42,7 +42,7 @@ export function Navbar() {
   const [showResults, setShowResults] = useState(false);
   const isMobile = useIsMobile();
   const { isInstalled } = usePWA();
-  const { isCustomerAuthenticated, isAuthenticated, user } = useAuth();
+  const { isCustomerAuthenticated, customerUser } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -200,9 +200,9 @@ export function Navbar() {
             </Button>
           </Link>
 
-          {/* User Profile or Login Button - Hidden on mobile */}
+          {/* Customer Profile or Login Button - Hidden on mobile */}
           <div className="hidden sm:block">
-            {isAuthenticated && user ? (
+            {isCustomerAuthenticated && customerUser ? (
               <UserProfile variant="dropdown" />
             ) : (
               <Link to="/login">
@@ -280,8 +280,8 @@ export function Navbar() {
             Kontakt
           </Link>
           
-          {/* User Profile or Login - Mobile */}
-          {isAuthenticated && user ? (
+          {/* Customer Profile or Login - Mobile */}
+          {isCustomerAuthenticated && customerUser ? (
             <div className="py-3 border-b border-gray-100">
               <UserProfile variant="card" />
             </div>
