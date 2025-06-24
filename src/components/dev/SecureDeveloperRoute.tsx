@@ -560,20 +560,20 @@ export const SecureDeveloperRoute: React.FC = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-6">
         {/* Developer Header */}
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-brand-gray-200 bg-brand-gray-100">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
-                  <Shield className="h-5 w-5 text-green-600" />
+                <div className="h-10 w-10 rounded-full bg-brand-gray-200 flex items-center justify-center">
+                  <Shield className="h-5 w-5 text-brand-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-green-800">Developer Performance Dashboard</CardTitle>
-                  <p className="text-green-600 text-sm">Secure access granted • Internal use only</p>
+                  <CardTitle className="text-brand-primary-dark">Developer Performance Dashboard</CardTitle>
+                  <p className="text-brand-primary text-sm">Secure access granted • Internal use only</p>
                   {isRealTimeMonitoring && (
                     <div className="flex items-center gap-2 mt-1">
-                      <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-green-700">Real-time monitoring active</span>
+                      <div className="h-2 w-2 bg-brand-success rounded-full animate-pulse"></div>
+                      <span className="text-xs text-brand-primary">Real-time monitoring active</span>
                     </div>
                   )}
                 </div>
@@ -607,7 +607,7 @@ export const SecureDeveloperRoute: React.FC = () => {
                     setAttemptCount(0);
                     stopRealTimeMonitoring();
                   }}
-                  className="border-green-300 text-green-700 hover:bg-green-100"
+                  className="border-brand-gray-300 text-brand-primary hover:bg-brand-gray-100"
                 >
                   Logout
                 </Button>
@@ -623,7 +623,7 @@ export const SecureDeveloperRoute: React.FC = () => {
               <CardTitle className="flex items-center gap-2">
                 <Activity className="w-5 h-5" />
                 Real-Time Server Logs
-                <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse ml-2"></div>
+                <div className="h-2 w-2 bg-brand-success rounded-full animate-pulse ml-2"></div>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -666,7 +666,7 @@ export const SecureDeveloperRoute: React.FC = () => {
         {(serverMetrics || realTimeMetrics) && (
           <Card>
             <CardHeader>
-              <CardTitle>Server Metrics {isRealTimeMonitoring && <span className="text-sm text-green-600">(Live)</span>}</CardTitle>
+              <CardTitle>Server Metrics {isRealTimeMonitoring && <span className="text-sm text-brand-primary">(Live)</span>}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

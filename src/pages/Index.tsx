@@ -137,9 +137,9 @@ const Index = () => {
             )}>
               <div className={cn(
                 "flex items-center gap-3",
-                isMobile ? "justify-start bg-green-50 p-3 rounded-lg" : "justify-center"
+                isMobile ? "justify-start bg-brand-gray-100 p-3 rounded-lg" : "justify-center"
               )}>
-                <Truck className={cn("text-green-600", isMobile ? "h-5 w-5" : "h-6 w-6")} />
+                <Truck className={cn("text-brand-primary", isMobile ? "h-5 w-5" : "h-6 w-6")} />
                 <span className={cn(
                   "text-gray-700 font-medium",
                   isMobile ? "text-sm" : "text-base"
@@ -149,9 +149,9 @@ const Index = () => {
               </div>
               <div className={cn(
                 "flex items-center gap-3",
-                isMobile ? "justify-start bg-green-50 p-3 rounded-lg" : "justify-center"
+                isMobile ? "justify-start bg-brand-gray-100 p-3 rounded-lg" : "justify-center"
               )}>
-                <CreditCard className={cn("text-green-600", isMobile ? "h-5 w-5" : "h-6 w-6")} />
+                <CreditCard className={cn("text-brand-primary", isMobile ? "h-5 w-5" : "h-6 w-6")} />
                 <span className={cn(
                   "text-gray-700 font-medium",
                   isMobile ? "text-sm" : "text-base"
@@ -161,9 +161,9 @@ const Index = () => {
               </div>
               <div className={cn(
                 "flex items-center gap-3",
-                isMobile ? "justify-start bg-green-50 p-3 rounded-lg" : "justify-center"
+                isMobile ? "justify-start bg-brand-gray-100 p-3 rounded-lg" : "justify-center"
               )}>
-                <Clock className={cn("text-green-600", isMobile ? "h-5 w-5" : "h-6 w-6")} />
+                <Clock className={cn("text-brand-primary", isMobile ? "h-5 w-5" : "h-6 w-6")} />
                 <span className={cn(
                   "text-gray-700 font-medium",
                   isMobile ? "text-sm" : "text-base"
@@ -176,7 +176,7 @@ const Index = () => {
         </section>
 
         {/* B2B Info Section with mobile improvements */}
-        <section className="bg-gradient-to-b from-green-50 to-white py-12 md:py-16">
+        <section className="bg-gradient-to-b from-brand-gray-100 to-white py-12 md:py-16">
           <div className="page-container">
             <div className="content-width">
               <div className={cn(
@@ -188,9 +188,9 @@ const Index = () => {
                   isMobile ? "text-lg" : "text-xl md:text-2xl mb-8"
                 )}>
                   <span className="relative">
-                    Velkommen til <span className="text-green-600">Multi Grønt</span> 
+                    Velkommen til <span className="text-brand-primary">Multi Grønt</span> 
                     {!isMobile && " - Professionel frugt- og grøntleverandør"}
-                    <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-green-500 rounded-full"></div>
+                    <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-brand-primary rounded-full"></div>
                   </span>
                 </h2>
                 <div className={cn(
@@ -200,17 +200,17 @@ const Index = () => {
                   <div className="flex flex-col gap-4">
                     <div className="flex items-start gap-3 group">
                       <div className={cn(
-                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        "mt-0.5 bg-brand-gray-100 rounded-lg group-hover:bg-brand-gray-200 transition-colors",
                         isMobile ? "p-1.5" : "p-2"
                       )}>
                         <CheckCircle className={cn(
-                          "text-green-600 flex-shrink-0",
+                          "text-brand-primary flex-shrink-0",
                           isMobile ? "h-5 w-5" : "h-6 w-6"
                         )} />
                       </div>
                       <div>
                         <h3 className={cn(
-                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          "font-medium text-gray-900 group-hover:text-brand-primary-dark transition-colors",
                           isMobile ? "text-sm" : "text-base"
                         )}>
                           Kun for erhvervskunder
@@ -225,17 +225,17 @@ const Index = () => {
                     </div>
                     <div className="flex items-start gap-3 group">
                       <div className={cn(
-                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        "mt-0.5 bg-brand-gray-100 rounded-lg group-hover:bg-brand-gray-200 transition-colors",
                         isMobile ? "p-1.5" : "p-2"
                       )}>
                         <CheckCircle className={cn(
-                          "text-green-600 flex-shrink-0",
+                          "text-brand-primary flex-shrink-0",
                           isMobile ? "h-5 w-5" : "h-6 w-6"
                         )} />
                       </div>
                       <div>
                         <h3 className={cn(
-                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          "font-medium text-gray-900 group-hover:text-brand-primary-dark transition-colors",
                           isMobile ? "text-sm" : "text-base"
                         )}>
                           Betaling via faktura
@@ -252,17 +252,17 @@ const Index = () => {
                   <div className="flex flex-col gap-4">
                     <div className="flex items-start gap-3 group">
                       <div className={cn(
-                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        "mt-0.5 bg-brand-gray-100 rounded-lg group-hover:bg-brand-gray-200 transition-colors",
                         isMobile ? "p-1.5" : "p-2"
                       )}>
                         <CheckCircle className={cn(
-                          "text-green-600 flex-shrink-0",
+                          "text-brand-primary flex-shrink-0",
                           isMobile ? "h-5 w-5" : "h-6 w-6"
                         )} />
                       </div>
                       <div>
                         <h3 className={cn(
-                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          "font-medium text-gray-900 group-hover:text-brand-primary-dark transition-colors",
                           isMobile ? "text-sm" : "text-base"
                         )}>
                           Friske kvalitetsvarer
@@ -277,17 +277,17 @@ const Index = () => {
                     </div>
                     <div className="flex items-start gap-3 group">
                       <div className={cn(
-                        "mt-0.5 bg-green-100 rounded-lg group-hover:bg-green-200 transition-colors",
+                        "mt-0.5 bg-brand-gray-100 rounded-lg group-hover:bg-brand-gray-200 transition-colors",
                         isMobile ? "p-1.5" : "p-2"
                       )}>
                         <CheckCircle className={cn(
-                          "text-green-600 flex-shrink-0",
+                          "text-brand-primary flex-shrink-0",
                           isMobile ? "h-5 w-5" : "h-6 w-6"
                         )} />
                       </div>
                       <div>
                         <h3 className={cn(
-                          "font-medium text-gray-900 group-hover:text-green-700 transition-colors",
+                          "font-medium text-gray-900 group-hover:text-brand-primary-dark transition-colors",
                           isMobile ? "text-sm" : "text-base"
                         )}>
                           Hurtig og pålidelig levering
@@ -306,10 +306,7 @@ const Index = () => {
                   <Link to="/about">
                     <Button 
                       variant="outline" 
-                      className={cn(
-                        "border-green-200 text-green-700 hover:bg-green-50 active:scale-95",
-                        isMobile ? "w-full py-3" : ""
-                      )}
+                      className="btn-brand-outline"
                     >
                       Læs mere om os <ArrowRight className="ml-1 h-4 w-4" />
                     </Button>
@@ -398,7 +395,7 @@ const Index = () => {
               )}>
                 <Link to="/contact">
                   <Button className={cn(
-                    "bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 shadow-lg transition-all duration-200 active:scale-95",
+                    "btn-brand-primary shadow-lg",
                     isMobile ? "w-full py-3 px-6" : "text-lg py-6 px-8"
                   )}>
                     Kontakt os

@@ -72,14 +72,14 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
     <div className={cn(
       "flex items-center justify-between border rounded-lg p-3",
       browserSupported 
-        ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" 
+        ? "bg-gradient-to-r from-brand-gray-100 to-brand-gray-50 border-brand-gray-200" 
         : "bg-gradient-to-r from-orange-50 to-red-50 border-orange-200",
       className
     )}>
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <div className={cn(
           "rounded-lg p-1.5 flex-shrink-0",
-          browserSupported ? "bg-green-600" : "bg-orange-500"
+          browserSupported ? "bg-brand-primary" : "bg-orange-500"
         )}>
           {browserSupported ? (
             <Smartphone className="h-4 w-4 text-white" />
@@ -90,13 +90,13 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
         <div className="min-w-0 flex-1">
           <p className={cn(
             "text-sm font-medium truncate",
-            browserSupported ? "text-green-800" : "text-orange-800"
+            browserSupported ? "text-brand-primary-dark" : "text-orange-800"
           )}>
             {browserSupported ? "Installér Multi Grønt app" : "Browser ikke understøttet"}
           </p>
           <p className={cn(
             "text-xs truncate",
-            browserSupported ? "text-green-600" : "text-orange-600"
+            browserSupported ? "text-brand-primary" : "text-orange-600"
           )}>
             {browserSupported 
               ? (needsManualInstall ? "Manuel installation påkrævet" : "Hurtigere adgang og bedre oplevelse")
@@ -112,7 +112,7 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
           className={cn(
             "h-8 px-3 text-xs",
             browserSupported 
-              ? "bg-green-600 hover:bg-green-700 text-white" 
+              ? "bg-brand-primary hover:bg-brand-primary-dark text-white" 
               : "bg-orange-500 hover:bg-orange-600 text-white"
           )}
         >
@@ -127,7 +127,7 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
             className={cn(
               "h-8 w-8 p-0",
               browserSupported 
-                ? "text-green-600 hover:bg-green-100" 
+                ? "text-brand-primary hover:bg-brand-primary-light" 
                 : "text-orange-600 hover:bg-orange-100"
             )}
           >
@@ -142,7 +142,7 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
     <Card className={cn(
       "border",
       browserSupported 
-        ? "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200" 
+        ? "bg-gradient-to-br from-brand-gray-100 to-brand-gray-50 border-brand-gray-200" 
         : "bg-gradient-to-br from-orange-50 to-red-50 border-orange-200",
       className
     )}>
@@ -151,7 +151,7 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
           <div className="flex items-center gap-3">
             <div className={cn(
               "rounded-xl p-3",
-              browserSupported ? "bg-green-600" : "bg-orange-500"
+              browserSupported ? "bg-brand-primary" : "bg-orange-500"
             )}>
               {browserSupported ? (
                 <Smartphone className="h-6 w-6 text-white" />
@@ -162,13 +162,13 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
             <div>
               <h3 className={cn(
                 "font-semibold text-lg",
-                browserSupported ? "text-green-800" : "text-orange-800"
+                browserSupported ? "text-brand-primary-dark" : "text-orange-800"
               )}>
                 {browserSupported ? "Installér Multi Grønt App" : "Browser Begrænsning"}
               </h3>
               <p className={cn(
                 "text-sm",
-                browserSupported ? "text-green-600" : "text-orange-600"
+                browserSupported ? "text-brand-primary" : "text-orange-600"
               )}>
                 {browserSupported 
                   ? (needsManualInstall 
@@ -186,7 +186,7 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
               onClick={handleDismiss}
               className={cn(
                 browserSupported 
-                  ? "text-green-600 hover:bg-green-100" 
+                  ? "text-brand-primary hover:bg-brand-primary-light" 
                   : "text-orange-600 hover:bg-orange-100"
               )}
             >
@@ -200,21 +200,21 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
             <div className="flex flex-wrap gap-2">
               <div className={cn(
                 "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
-                browserSupported ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                browserSupported ? "bg-brand-primary text-brand-primary-dark" : "bg-orange-100 text-orange-700"
               )}>
                 <Download className="h-3 w-3 mr-1" />
                 Offline adgang
               </div>
               <div className={cn(
                 "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
-                browserSupported ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                browserSupported ? "bg-brand-primary text-brand-primary-dark" : "bg-orange-100 text-orange-700"
               )}>
                 <Plus className="h-3 w-3 mr-1" />
                 Hjemmeskærm genvej
               </div>
               <div className={cn(
                 "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium",
-                browserSupported ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"
+                browserSupported ? "bg-brand-primary text-brand-primary-dark" : "bg-orange-100 text-orange-700"
               )}>
                 <Share className="h-3 w-3 mr-1" />
                 App-lignende oplevelse
@@ -229,8 +229,8 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
                 className={cn(
                   "flex-1 sm:flex-none",
                   needsManualInstall 
-                    ? "bg-blue-600 hover:bg-blue-700 text-white" 
-                    : "bg-green-600 hover:bg-green-700 text-white"
+                    ? "bg-brand-primary hover:bg-brand-primary-dark text-white" 
+                    : "bg-brand-primary hover:bg-brand-primary-dark text-white"
                 )}
               >
                 <ButtonIcon className="h-4 w-4 mr-2" />
@@ -240,7 +240,7 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
               <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   onClick={() => window.open('https://www.google.com/chrome/', '_blank')}
-                  className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 text-white"
+                  className="flex-1 sm:flex-none bg-brand-primary hover:bg-brand-primary-dark text-white"
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download Chrome
@@ -268,7 +268,7 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
                   browserSupported 
-                    ? "border-green-200 text-green-700 hover:bg-green-50" 
+                    ? "border-brand-gray-200 text-brand-primary hover:bg-brand-gray-50" 
                     : "border-orange-200 text-orange-700 hover:bg-orange-50"
                 )}
               >
@@ -278,17 +278,17 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
           </div>
 
           {(isExpanded || needsManualInstall) && browserSupported && (
-            <div className="bg-white rounded-lg p-4 border border-green-200">
-              <h4 className="font-medium text-green-800 mb-2">
+            <div className="bg-white rounded-lg p-4 border border-brand-gray-200">
+              <h4 className="font-medium text-brand-primary-dark mb-2">
                 Sådan installerer du på {platformInstructions.platform}:
               </h4>
-              <ol className="space-y-2 text-sm text-green-700">
+              <ol className="space-y-2 text-sm text-brand-primary">
                 {platformInstructions.steps.map((step, index) => (
                   <li key={index} className="flex items-start gap-2">
                     {step.startsWith('⚠️') ? (
                       <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
                     ) : (
-                      <span className="bg-green-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
+                      <span className="bg-brand-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium flex-shrink-0 mt-0.5">
                         {step.match(/^\d+/) ? step.match(/^\d+/)[0] : index + 1}
                       </span>
                     )}
@@ -298,8 +298,8 @@ export const PWAInstallBanner: React.FC<PWAInstallBannerProps> = ({
               </ol>
               
               {needsManualInstall && (
-                <div className="mt-3 p-2 bg-blue-50 rounded border border-blue-200">
-                  <p className="text-xs text-blue-700">
+                <div className="mt-3 p-2 bg-brand-gray-50 rounded border border-brand-gray-200">
+                  <p className="text-xs text-brand-primary">
                     💡 <strong>Tip:</strong> Efter installation vil appen åbne som en selvstændig app uden browser-interface.
                   </p>
                 </div>

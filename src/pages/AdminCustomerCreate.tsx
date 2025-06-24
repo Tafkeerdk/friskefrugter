@@ -219,8 +219,8 @@ const AdminCustomerCreate: React.FC = () => {
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-                <CardTitle className="text-green-600">Kunde oprettet succesfuldt</CardTitle>
+                <CheckCircle className="h-6 w-6 text-brand-success" />
+                <CardTitle className="text-brand-success">Kunde oprettet succesfuldt</CardTitle>
               </div>
               <CardDescription>
                 Kunden er blevet oprettet og tildelt en adgangskode
@@ -263,7 +263,7 @@ const AdminCustomerCreate: React.FC = () => {
                           variant="outline"
                           size="sm"
                           onClick={copyPassword}
-                          className={passwordCopied ? 'bg-green-50 border-green-200' : ''}
+                          className={passwordCopied ? 'bg-brand-gray-100 border-brand-gray-200' : ''}
                         >
                           <Copy className="h-4 w-4 mr-1" />
                           {passwordCopied ? 'Kopieret!' : 'Kopier'}
@@ -377,7 +377,7 @@ const AdminCustomerCreate: React.FC = () => {
                   <Label htmlFor="companyName">
                     Virksomhedsnavn *
                     {companyData && (
-                      <span className="text-xs text-green-600 ml-2">
+                      <span className="text-xs text-brand-success ml-2">
                         (hentet fra CVR)
                       </span>
                     )}
@@ -387,7 +387,7 @@ const AdminCustomerCreate: React.FC = () => {
                     placeholder="Kunde virksomhed ApS"
                     {...register('companyName')}
                     disabled={isLoading}
-                    className={companyData ? 'bg-green-50 border-green-200' : ''}
+                    className={companyData ? 'bg-brand-gray-100 border-brand-gray-200' : ''}
                   />
                   {errors.companyName && (
                     <p className="text-sm text-destructive">{errors.companyName.message}</p>
@@ -601,7 +601,7 @@ const AdminCustomerCreate: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={copyPassword}
-                        className={passwordCopied ? 'bg-green-50 border-green-200' : ''}
+                        className={passwordCopied ? 'bg-brand-gray-100 border-brand-gray-200' : ''}
                       >
                         <Copy className="h-4 w-4" />
                       </Button>

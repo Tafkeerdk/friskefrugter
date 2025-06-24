@@ -122,9 +122,9 @@ const PasswordReset = () => {
         )}
 
         {success && (
-          <Alert className="mb-4 border-green-200 bg-green-50">
-            <CheckCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-800">
+          <Alert className="mb-4 border-brand-success bg-brand-success/10">
+            <CheckCircle className="h-4 w-4 text-brand-success" />
+            <AlertDescription className="text-brand-success">
               {success}
             </AlertDescription>
           </Alert>
@@ -278,8 +278,8 @@ const PasswordReset = () => {
               <Card className="shadow-md border-0">
                 <CardContent className="pt-6 pb-8">
                   <div className="text-center mb-6">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Key className="h-8 w-8 text-green-600" />
+                    <div className="w-16 h-16 bg-brand-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Key className="h-8 w-8 text-brand-primary" />
                     </div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">
                       Nulstil adgangskode
@@ -297,9 +297,9 @@ const PasswordReset = () => {
                   )}
 
                   {success && (
-                    <Alert className="mb-4 border-green-200 bg-green-50">
-                      <CheckCircle className="h-4 w-4 text-green-600" />
-                      <AlertDescription className="text-green-800">
+                    <Alert className="mb-4 border-brand-success bg-brand-success/10">
+                      <CheckCircle className="h-4 w-4 text-brand-success" />
+                      <AlertDescription className="text-brand-success">
                         {success}
                       </AlertDescription>
                     </Alert>

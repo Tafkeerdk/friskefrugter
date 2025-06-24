@@ -1,4 +1,3 @@
-
 import { Phone, Mail, MapPin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -78,12 +77,12 @@ export function ContactOverlay() {
               </div>
 
               <div className="group">
-                <div className="flex items-center gap-4 p-4 rounded-lg hover:bg-green-50 transition-all duration-300">
-                  <div className="h-12 w-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-200 transition-colors">
-                    <MapPin className="h-6 w-6 text-green-600" />
+                <div className="flex items-center gap-4 p-4 rounded-lg hover:bg-brand-gray-100 transition-all duration-300">
+                  <div className="h-12 w-12 bg-brand-gray-100 rounded-full flex items-center justify-center group-hover:bg-brand-gray-200 transition-colors">
+                    <MapPin className="h-6 w-6 text-brand-primary" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 group-hover:text-green-600 transition-colors">Besøg os</p>
+                    <p className="font-medium text-gray-900 group-hover:text-brand-primary transition-colors">Besøg os</p>
                     <p className="text-gray-500">Grøntvej 123, 2300 København</p>
                   </div>
                 </div>

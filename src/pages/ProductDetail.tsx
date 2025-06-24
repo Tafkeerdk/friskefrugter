@@ -1,4 +1,3 @@
-
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -66,7 +65,7 @@ const ProductDetail = () => {
         <div className="container mx-auto px-4 py-8">
           {/* Back Button */}
           <div className="mb-6">
-            <Link to="/products" className="text-green-600 hover:text-green-800 flex items-center">
+            <Link to="/products" className="text-brand-primary hover:text-brand-primary-hover flex items-center">
               <ArrowLeft className="h-4 w-4 mr-1" />
               <span>Tilbage til produkter</span>
             </Link>
@@ -85,7 +84,7 @@ const ProductDetail = () => {
 
             {/* Product Info */}
             <div className="flex flex-col">
-              <span className="text-sm font-medium text-green-600 uppercase">{product.category}</span>
+              <span className="text-sm font-medium text-brand-primary uppercase">{product.category}</span>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
               
               {product.isLoggedIn ? (
@@ -106,14 +105,14 @@ const ProductDetail = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-md">
-                  <Truck className="h-5 w-5 text-green-600" />
+                  <Truck className="h-5 w-5 text-brand-primary" />
                   <div>
                     <p className="font-medium text-gray-900">Oprindelse</p>
                     <p className="text-gray-500 text-sm">{product.origin}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-md">
-                  <CalendarCheck className="h-5 w-5 text-green-600" />
+                  <CalendarCheck className="h-5 w-5 text-brand-primary" />
                   <div>
                     <p className="font-medium text-gray-900">Leveringstid</p>
                     <p className="text-gray-500 text-sm">1-2 arbejdsdage</p>
@@ -166,7 +165,7 @@ const ProductDetail = () => {
               {/* Product Status */}
               <div className="mt-6">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  <span className="w-3 h-3 rounded-full bg-brand-success"></span>
                   <span className="text-gray-700 text-sm">På lager: {product.stock} enheder</span>
                 </div>
               </div>

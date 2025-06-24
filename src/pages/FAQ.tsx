@@ -341,14 +341,14 @@ const FAQ = () => {
           </div>
 
           {/* Step 1: Request Reset */}
-          <div className="bg-white border-2 border-green-200 rounded-lg p-4">
+          <div className="bg-white border-2 border-brand-gray-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <div className="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
+              <div className="bg-brand-primary text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold flex-shrink-0">
                 1
               </div>
               <div className="flex-1">
                 <h5 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-green-600" />
+                  <Mail className="h-4 w-4 text-brand-primary" />
                   Anmod om nulstilling
                 </h5>
                 <div className="space-y-3">
@@ -667,7 +667,7 @@ const FAQ = () => {
       
       <main className="flex-grow bg-gray-50">
         {/* Header - FULL WIDTH */}
-        <section className="bg-gradient-to-r from-green-600 to-emerald-600 text-white py-12 full-width-section">
+        <section className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white py-12 full-width-section">
           <div className="page-container text-center">
             <h1 className={cn(
               "font-bold text-white mb-4",
@@ -676,7 +676,7 @@ const FAQ = () => {
               Ofte Stillede Spørgsmål
             </h1>
             <p className={cn(
-              "text-green-100 max-w-2xl mx-auto",
+              "text-white/90 max-w-2xl mx-auto",
               isMobile ? "text-sm" : "text-lg"
             )}>
               Find svar på de mest almindelige spørgsmål om Multi Grønt
@@ -688,11 +688,11 @@ const FAQ = () => {
           <div className="content-width">
             {/* Featured FAQ */}
             <div className="mb-8">
-              <Card className="border-green-200 bg-green-50">
+              <Card className="border-brand-gray-200 bg-brand-gray-100">
                 <CardHeader>
                   <div className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-green-600" />
-                    <CardTitle className="text-green-800">Mest stillede spørgsmål</CardTitle>
+                    <Star className="h-5 w-5 text-brand-primary" />
+                    <CardTitle className="text-brand-primary-dark">Mest stillede spørgsmål</CardTitle>
                   </div>
                 </CardHeader>
                 <CardContent>

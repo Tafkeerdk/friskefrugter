@@ -214,7 +214,7 @@ const Contact = () => {
             )}
 
             {/* B2B Info */}
-            <div className="mt-12 bg-green-50 rounded-lg p-8">
+            <div className="mt-12 bg-brand-gray-100 rounded-lg p-8">
               <div className="text-center mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-3">Bliv B2B-kunde hos Multi Grønt</h2>
                 <p className="text-gray-600 max-w-2xl mx-auto">
@@ -224,42 +224,42 @@ const Contact = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="text-green-600 mb-4">
+                  <div className="text-brand-primary mb-4">
                     <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Kvalitet og friskhed</h3>
                   <p className="text-gray-600 mb-4">Vi samarbejder med lokale producenter for at sikre dig de bedste og friskeste råvarer.</p>
-                  <div className="flex items-center text-green-600 text-sm">
+                  <div className="flex items-center text-brand-primary text-sm">
                     <span>Læs mere</span>
                     <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </div>
                 </div>
                 
                 <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="text-green-600 mb-4">
+                  <div className="text-brand-primary mb-4">
                     <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Nem bestilling</h3>
                   <p className="text-gray-600 mb-4">Bestil nemt og hurtigt gennem vores webshop. Lagerstatus opdateres i realtid.</p>
-                  <div className="flex items-center text-green-600 text-sm">
+                  <div className="flex items-center text-brand-primary text-sm">
                     <span>Læs mere</span>
                     <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </div>
                 </div>
                 
                 <div className="bg-white p-6 rounded-lg shadow-sm">
-                  <div className="text-green-600 mb-4">
+                  <div className="text-brand-primary mb-4">
                     <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2z" />
                     </svg>
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 mb-2">Fakturabetaling</h3>
                   <p className="text-gray-600 mb-4">Betal nemt via faktura. Vi tilbyder integration med din virksomheds økonomisystem.</p>
-                  <div className="flex items-center text-green-600 text-sm">
+                  <div className="flex items-center text-brand-primary text-sm">
                     <span>Læs mere</span>
                     <ArrowRight className="h-3.5 w-3.5 ml-1" />
                   </div>

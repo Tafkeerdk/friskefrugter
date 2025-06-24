@@ -265,7 +265,7 @@ export const CVRInput: React.FC<CVRInputProps> = ({
         {/* Validation message */}
         {getValidationMessage() && (
           <p className={`text-xs ${
-            validationState.valid ? 'text-green-600' : 
+            validationState.valid ? 'text-brand-success' : 
             validationState.error || externalError ? 'text-red-600' : 
             isValidating ? 'text-blue-600' : 'text-yellow-600'
           }`}>
@@ -276,38 +276,38 @@ export const CVRInput: React.FC<CVRInputProps> = ({
 
       {/* Company information display */}
       {showCompanyInfo && companyData && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-brand-gray-200 bg-brand-gray-100">
           <CardContent className="pt-4">
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-green-600" />
-                <span className="font-medium text-green-900">Virksomhedsoplysninger hentet fra CVR</span>
+                <Building2 className="h-4 w-4 text-brand-primary" />
+                <span className="font-medium text-brand-primary-dark">Virksomhedsoplysninger hentet fra CVR</span>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                 <div>
-                  <p className="font-medium text-green-900">{companyData.companyName}</p>
+                  <p className="font-medium text-brand-primary-dark">{companyData.companyName}</p>
                   {companyData.companyType && (
-                    <p className="text-green-700">{companyData.companyType}</p>
+                    <p className="text-brand-secondary">{companyData.companyType}</p>
                   )}
                 </div>
                 
                 <div className="space-y-1">
                   {companyData.industry && (
-                    <div className="text-green-700">
+                    <div className="text-brand-secondary">
                       <span className="text-xs">Branche: {companyData.industry}</span>
                     </div>
                   )}
                   
                   {companyData.employees !== undefined && companyData.employees > 0 && (
-                    <div className="flex items-center gap-1 text-green-700">
+                    <div className="flex items-center gap-1 text-brand-secondary">
                       <Users className="h-3 w-3" />
                       <span className="text-xs">{companyData.employees} medarbejdere</span>
                     </div>
                   )}
                   
                   {companyData.foundedYear && !isNaN(companyData.foundedYear) && companyData.foundedYear > 1800 && (
-                    <div className="flex items-center gap-1 text-green-700">
+                    <div className="flex items-center gap-1 text-brand-secondary">
                       <Calendar className="h-3 w-3" />
                       <span className="text-xs">Stiftet {companyData.foundedYear}</span>
                     </div>
@@ -316,13 +316,13 @@ export const CVRInput: React.FC<CVRInputProps> = ({
               </div>
               
               {companyData.address && (
-                <div className="pt-3 border-t border-green-200">
+                <div className="pt-3 border-t border-brand-gray-200">
                   <div className="flex items-center gap-2 mb-2">
-                    <MapPin className="h-4 w-4 text-green-600" />
-                    <span className="font-medium text-green-900">Registreret adresse</span>
+                    <MapPin className="h-4 w-4 text-brand-primary" />
+                    <span className="font-medium text-brand-primary-dark">Registreret adresse</span>
                   </div>
-                  <div className="bg-white p-3 rounded border border-green-200">
-                    <div className="text-sm text-green-900">
+                  <div className="bg-white p-3 rounded border border-brand-gray-200">
+                    <div className="text-sm text-brand-primary-dark">
                       <p className="font-medium">{companyData.address.street}</p>
                       <p>{companyData.address.postalCode} {companyData.address.city}</p>
                     </div>
@@ -330,7 +330,7 @@ export const CVRInput: React.FC<CVRInputProps> = ({
                 </div>
               )}
               
-              <p className="text-xs text-green-600 pt-2 border-t border-green-200">
+              <p className="text-xs text-brand-secondary pt-2 border-t border-brand-gray-200">
                 Data automatisk hentet fra det officielle CVR-register
               </p>
             </div>
