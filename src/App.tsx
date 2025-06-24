@@ -29,6 +29,7 @@ import FAQ from "./pages/FAQ";
 import ProductSetup from "./pages/ProductSetup";
 import PasswordReset from "./pages/PasswordReset";
 import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
+import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 
@@ -187,6 +188,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardDiscountGroups />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/unique-offers" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardUniqueOffers />
                 </ProtectedRoute>
               } 
             />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Users, Palette, Percent, Package, Eye, Info, AlertTriangle, CheckCircle2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Users, Palette, Percent, Package, Eye, Info, AlertTriangle, CheckCircle2, Search, Star, ExternalLink } from 'lucide-react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import {
@@ -111,6 +111,7 @@ const DashboardDiscountGroups: React.FC = () => {
   const [selectedGroupForCustomers, setSelectedGroupForCustomers] = useState<DiscountGroup | null>(null);
   const [groupCustomers, setGroupCustomers] = useState<any[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [customersWithOffers, setCustomersWithOffers] = useState<Set<string>>(new Set());
   
   // Add customer to group state
   const [isAddCustomerDialogOpen, setIsAddCustomerDialogOpen] = useState(false);
@@ -524,6 +525,31 @@ const DashboardDiscountGroups: React.FC = () => {
     }).format(price);
   };
 
+  // Load customers with unique offers
+  const loadCustomersWithOffers = async (customerIds: string[]) => {
+    try {
+      // Get unique offer counts for each customer
+      const offerCounts = await Promise.all(
+        customerIds.map(async (customerId) => {
+          try {
+            const response = await authService.getCustomerOffersCount(customerId);
+            return response.success && response.count > 0 ? customerId : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      
+      const customersWithOffersSet = new Set(
+        offerCounts.filter(id => id !== null) as string[]
+      );
+      
+      setCustomersWithOffers(customersWithOffersSet);
+    } catch (error) {
+      console.error('Error loading customers with offers:', error);
+    }
+  };
+
   // Customer management functions
   const openCustomersDialog = async (group: DiscountGroup) => {
     setSelectedGroupForCustomers(group);
@@ -541,8 +567,15 @@ const DashboardDiscountGroups: React.FC = () => {
       const response = await authService.getDiscountGroupCustomers(group.id);
       
       if (response.success) {
-        setGroupCustomers(response.customers || []);
-        console.log(`✅ Loaded ${response.customers?.length || 0} customers for group ${group.name}`);
+        const customers = response.customers || [];
+        setGroupCustomers(customers);
+        console.log(`✅ Loaded ${customers.length} customers for group ${group.name}`);
+        
+        // Load unique offers data for these customers
+        if (customers.length > 0) {
+          const customerIds = customers.map((c: any) => c.id);
+          await loadCustomersWithOffers(customerIds);
+        }
       } else {
         console.error('❌ Failed to load customers:', response.message);
         toast({
@@ -781,6 +814,17 @@ const DashboardDiscountGroups: React.FC = () => {
                     <AlertTriangle className="h-3 w-3 flex-shrink-0" />
                     <span className="truncate">{productsWithSalePrice} varer har fast udsalgspris</span>
                   </span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open('/admin/unique-offers', '_blank')}
+                    className="text-yellow-600 hover:text-yellow-700 h-6 px-2 text-xs self-start"
+                  >
+                    <Star className="h-3 w-3 mr-1" />
+                    <span className="hidden sm:inline">Administrer unikke tilbud</span>
+                    <span className="sm:hidden">Unikke tilbud</span>
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </Button>
                 </div>
               )}
             </div>
@@ -1450,9 +1494,19 @@ const DashboardDiscountGroups: React.FC = () => {
                       <div key={customer.id} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0 space-y-2">
-                            <h4 className="font-semibold text-gray-900 text-sm">
-                              {customer.companyName}
-                            </h4>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold text-gray-900 text-sm">
+                                {customer.companyName}
+                              </h4>
+                              {customersWithOffers.has(customer.id) && (
+                                <div className="flex items-center gap-1">
+                                  <Star className="h-3 w-3 text-yellow-500" />
+                                  <span className="text-xs text-yellow-600 font-medium">
+                                    Unikke tilbud
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
                               <div className="flex items-center gap-1">
                                 <Users className="h-3 w-3" />
@@ -1471,8 +1525,21 @@ const DashboardDiscountGroups: React.FC = () => {
                                 <span>CVR: {customer.cvrNumber}</span>
                               </div>
                             </div>
-                            <div className="text-xs text-gray-500">
-                              Tilmeldt: {new Date(customer.createdAt).toLocaleDateString('da-DK')}
+                            <div className="flex items-center justify-between">
+                              <div className="text-xs text-gray-500">
+                                Tilmeldt: {new Date(customer.createdAt).toLocaleDateString('da-DK')}
+                              </div>
+                              {customersWithOffers.has(customer.id) && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => window.open(`/admin/unique-offers?customerId=${customer.id}`, '_blank')}
+                                  className="text-yellow-600 hover:text-yellow-700 h-6 px-2 text-xs"
+                                >
+                                  <ExternalLink className="h-3 w-3 mr-1" />
+                                  Se tilbud
+                                </Button>
+                              )}
                             </div>
                           </div>
                           

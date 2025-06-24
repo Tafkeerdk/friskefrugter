@@ -1398,6 +1398,113 @@ export const authService = {
     return response.json();
   },
 
+  // Unique Offers Management
+  async getUniqueOffers(params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+    customerId?: string; 
+    productId?: string; 
+  }): Promise<{ success: boolean; offers: any[]; pagination?: any; message?: string }> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.customerId) queryParams.append('customerId', params.customerId);
+    if (params?.productId) queryParams.append('productId', params.productId);
+    
+    const queryString = queryParams.toString();
+    const endpoint = `/.netlify/functions/admin-unique-offers${queryString ? `?${queryString}` : ''}`;
+    
+    const response = await apiClient.get(endpoint);
+    return response.json();
+  },
+
+  async getCustomerOffers(customerId: string): Promise<{ success: boolean; offers: any[]; message?: string }> {
+    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=customer-offers&customerId=${customerId}`);
+    return response.json();
+  },
+
+  async getProductOffers(productId: string): Promise<{ success: boolean; offers: any[]; message?: string }> {
+    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=product-offers&productId=${productId}`);
+    return response.json();
+  },
+
+  async getCustomerOffersCount(customerId: string): Promise<{ success: boolean; count: number; message?: string }> {
+    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=customer-count&customerId=${customerId}`);
+    return response.json();
+  },
+
+  async getUniqueOffer(offerId: string): Promise<{ success: boolean; offer: any; message?: string }> {
+    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=single&offerId=${offerId}`);
+    return response.json();
+  },
+
+  async createUniqueOffer(offerData: {
+    productId: string;
+    customerId: string;
+    fixedPrice: number;
+    description?: string;
+    validFrom?: string;
+    validTo?: string;
+  }): Promise<{ success: boolean; message: string; offer?: any }> {
+    const response = await apiClient.post('/.netlify/functions/admin-unique-offers', offerData);
+    const result = await response.json();
+    
+    // Clear cache on successful creation
+    if (result.success) {
+      requestCache.clearPattern('.*unique-offers.*');
+      requestCache.clearPattern('.*customers.*');
+      requestCache.clearPattern('.*products.*');
+    }
+    
+    return result;
+  },
+
+  async updateUniqueOffer(offerId: string, offerData: {
+    fixedPrice?: number;
+    description?: string;
+    validFrom?: string;
+    validTo?: string;
+    isActive?: boolean;
+  }): Promise<{ success: boolean; message: string; offer?: any }> {
+    const response = await apiClient.put('/.netlify/functions/admin-unique-offers', {
+      offerId,
+      ...offerData
+    });
+    const result = await response.json();
+    
+    // Clear cache on successful update
+    if (result.success) {
+      requestCache.clearPattern('.*unique-offers.*');
+      requestCache.clearPattern('.*customers.*');
+      requestCache.clearPattern('.*products.*');
+    }
+    
+    return result;
+  },
+
+  async deleteUniqueOffer(offerId: string, permanent: boolean = false): Promise<{ success: boolean; message: string }> {
+    const response = await apiClient.delete('/.netlify/functions/admin-unique-offers', {
+      offerId,
+      permanent
+    });
+    const result = await response.json();
+    
+    // Clear cache on successful deletion
+    if (result.success) {
+      requestCache.clearPattern('.*unique-offers.*');
+      requestCache.clearPattern('.*customers.*');
+      requestCache.clearPattern('.*products.*');
+    }
+    
+    return result;
+  },
+
+  async clearUniqueOffersCache(): Promise<void> {
+    requestCache.clearPattern('.*unique-offers.*');
+  },
+
   // Expose apiClient for direct use when needed
   apiClient
 };

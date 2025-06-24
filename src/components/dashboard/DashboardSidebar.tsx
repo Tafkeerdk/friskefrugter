@@ -31,6 +31,7 @@ import {
   Bell,
   ExternalLink,
   Scale,
+  Star,
 } from "lucide-react";
 
 const DashboardSidebar: React.FC = () => {
@@ -281,6 +282,26 @@ const DashboardSidebar: React.FC = () => {
                   )} />
                   <span className="truncate">
                     {isMobile ? "Rabat" : "Rabatgrupper"}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={handleNavigation("/admin/unique-offers")}
+                  isActive={isActive("/admin/unique-offers")}
+                  className={cn(
+                    "transition-all duration-200",
+                    isMobile ? "h-10 text-sm" : "h-11",
+                    isActive("/admin/unique-offers") && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <Star className={cn(
+                    "transition-all flex-shrink-0",
+                    isMobile ? "h-4 w-4" : "h-5 w-5"
+                  )} />
+                  <span className="truncate">
+                    {isMobile ? "Unikke" : "Unikke Tilbud"}
                   </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
