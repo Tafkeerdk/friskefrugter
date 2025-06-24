@@ -280,20 +280,9 @@ const DashboardProducts: React.FC = () => {
   };
 
   const getStockStatus = (product: Product) => {
-    if (!product.lagerstyring.enabled) {
-      return { status: 'available', text: 'På lager', variant: 'default' as const };
-    }
-    
-    const stock = product.lagerstyring.antalPaaLager || 0;
-    const minimum = product.lagerstyring.minimumslager || 0;
-    
-    if (stock === 0) {
-      return { status: 'out-of-stock', text: 'Udsolgt', variant: 'destructive' as const };
-    } else if (stock <= minimum) {
-      return { status: 'low-stock', text: `Lav (${stock})`, variant: 'secondary' as const };
-    } else {
-      return { status: 'in-stock', text: `${stock} stk`, variant: 'default' as const };
-    }
+    // Since inventory management is not implemented, all products show "På lager"
+    // This is because they are wholesale products and availability is managed externally
+    return { status: 'available', text: 'På lager', variant: 'default' as const };
   };
 
   const filteredProducts = products.filter(product => {
@@ -717,7 +706,14 @@ const DashboardProducts: React.FC = () => {
                                   </div>
                                 </div>
                                 <div className="flex items-center justify-between text-xs text-muted-foreground mt-1">
-                                  <span>EAN: {product.eanNummer}</span>
+                                  <div className="flex flex-col gap-0.5">
+                                    {product.varenummer && (
+                                      <span className="font-mono">Vare: {product.varenummer}</span>
+                                    )}
+                                    {product.eanNummer && (
+                                      <span className="font-mono">EAN: {product.eanNummer}</span>
+                                    )}
+                                  </div>
                                   <span>{product.enhed.label}</span>
                                 </div>
                               </div>
@@ -734,7 +730,7 @@ const DashboardProducts: React.FC = () => {
                           <TableRow>
                             <TableHead>Produkt</TableHead>
                             <TableHead>Kategori</TableHead>
-                            <TableHead>EAN</TableHead>
+                            <TableHead>Varenr/EAN</TableHead>
                             <TableHead>Pris</TableHead>
                             <TableHead>Lager</TableHead>
                             <TableHead>Status</TableHead>
@@ -773,7 +769,20 @@ const DashboardProducts: React.FC = () => {
                                   </div>
                                 </TableCell>
                                 <TableCell>{product.kategori.navn}</TableCell>
-                                <TableCell className="font-mono text-sm">{product.eanNummer}</TableCell>
+                                <TableCell className="font-mono text-sm">
+                                  <div className="flex flex-col gap-1">
+                                    {product.varenummer && (
+                                      <span className="text-brand-primary font-semibold">
+                                        {product.varenummer}
+                                      </span>
+                                    )}
+                                    {product.eanNummer && (
+                                      <span className="text-muted-foreground text-xs">
+                                        {product.eanNummer}
+                                      </span>
+                                    )}
+                                  </div>
+                                </TableCell>
                                 <TableCell className="font-medium">{formatPrice(product.basispris)}</TableCell>
                                 <TableCell>
                                   <Badge variant={stockInfo.variant}>

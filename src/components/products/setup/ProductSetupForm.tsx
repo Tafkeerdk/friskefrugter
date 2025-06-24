@@ -1489,32 +1489,32 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         </Badge>
                       </FormLabel>
                       
-                      {/* Enhanced Dropzone */}
+                      {/* Professional Dropzone */}
                       <div
                         {...getRootProps()}
                         className={cn(
-                          "border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all duration-200",
+                          "border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all duration-300",
                           isDragActive 
-                            ? "border-blue-500 bg-blue-50 scale-105 shadow-lg" 
-                            : "border-gray-300 hover:border-blue-400 hover:bg-gray-50",
+                            ? "border-brand-primary bg-brand-primary/10 scale-[1.02] shadow-xl shadow-brand-primary/20" 
+                            : "border-gray-300 hover:border-brand-primary/60 hover:bg-brand-primary/5",
                           field.value?.length >= 3 && "opacity-50 cursor-not-allowed border-gray-200"
                         )}
                       >
                         <input {...getInputProps()} disabled={field.value?.length >= 3} />
                         <div className="flex flex-col items-center gap-3">
                           <div className={cn(
-                            "p-3 rounded-full transition-colors",
-                            isDragActive ? "bg-blue-100" : "bg-gray-100"
+                            "p-4 rounded-full transition-all duration-300",
+                            isDragActive ? "bg-brand-primary/20 scale-110" : "bg-gray-100"
                           )}>
                             <Upload className={cn(
-                              "h-8 w-8 transition-colors",
-                              isDragActive ? "text-blue-600" : "text-gray-400"
+                              "h-8 w-8 transition-all duration-300",
+                              isDragActive ? "text-brand-primary scale-110" : "text-gray-400"
                             )} />
                           </div>
                           {isDragActive ? (
-                            <div className="space-y-1">
-                              <p className="text-blue-600 font-medium">Slip billederne her nu!</p>
-                              <p className="text-sm text-blue-500">Billederne vil blive tilføjet til produktet</p>
+                            <div className="space-y-2">
+                              <p className="text-brand-primary font-semibold text-lg">Slip billederne her nu!</p>
+                              <p className="text-sm text-brand-primary/80">Billederne vil blive tilføjet til produktet</p>
                             </div>
                           ) : field.value?.length >= 3 ? (
                             <div className="space-y-1">
@@ -1540,17 +1540,17 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         </div>
                       </div>
 
-                      {/* Image Preview Grid */}
+                      {/* Professional Image Preview Grid */}
                       {field.value && field.value.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                           {field.value.map((image, index) => (
                             <div key={index} className="relative group">
-                              {/* Image Container with improved aspect ratio */}
+                              {/* Professional Image Container */}
                               <div className={cn(
-                                "aspect-[4/3] rounded-lg overflow-hidden border-2 bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200",
+                                "aspect-[4/3] rounded-xl overflow-hidden border-2 bg-gradient-to-br from-gray-50 to-gray-100 shadow-md hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]",
                                 image.isPrimary 
-                                  ? "border-blue-500 ring-2 ring-blue-200 shadow-lg" 
-                                  : "border-gray-200 hover:border-blue-300"
+                                  ? "border-brand-primary ring-4 ring-brand-primary/20 shadow-xl shadow-brand-primary/20" 
+                                  : "border-gray-200 hover:border-brand-primary/50"
                               )}>
                                 <ImagePreview
                                   image={image}
@@ -1558,8 +1558,8 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                 />
                               </div>
                               
-                              {/* Enhanced Image Actions Overlay */}
-                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 rounded-lg flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                              {/* Professional Image Actions Overlay */}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-xl flex items-center justify-center gap-3">
                                 <DialogTrigger asChild>
                                   <Button
                                     type="button"
@@ -1569,7 +1569,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                       // Preview image in modal
                                       setImageToPreview(image);
                                     }}
-                                    className="bg-white/90 text-gray-900 hover:bg-white shadow-lg backdrop-blur-sm"
+                                    className="bg-white/95 text-gray-900 hover:bg-white shadow-xl backdrop-blur-md border border-white/20 hover:scale-105 transition-transform"
                                     title="Forhåndsvis billede"
                                   >
                                     <Eye className="h-4 w-4" />
@@ -1581,7 +1581,7 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                     size="sm"
                                     variant="default"
                                     onClick={() => setPrimaryImage(index)}
-                                    className="bg-blue-500/90 hover:bg-blue-600 shadow-lg backdrop-blur-sm text-white"
+                                    className="bg-brand-primary/95 hover:bg-brand-primary shadow-xl backdrop-blur-md text-white border border-white/20 hover:scale-105 transition-transform"
                                     title="Sæt som primært billede"
                                   >
                                     <Star className="h-4 w-4" />
@@ -1592,26 +1592,26 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => removeImage(index)}
-                                  className="bg-red-500/90 hover:bg-red-600 shadow-lg backdrop-blur-sm"
+                                  className="bg-red-500/95 hover:bg-red-600 shadow-xl backdrop-blur-md border border-white/20 hover:scale-105 transition-transform"
                                   title="Fjern billede"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
                               
-                              {/* Enhanced Primary Badge */}
+                              {/* Professional Primary Badge */}
                               {image.isPrimary && (
                                 <Badge 
                                   variant="default" 
-                                  className="absolute top-2 left-2 text-xs bg-blue-600 hover:bg-blue-700 shadow-md flex items-center gap-1"
+                                  className="absolute top-3 left-3 text-xs bg-brand-primary hover:bg-brand-primary-hover shadow-lg flex items-center gap-1 border border-white/20 backdrop-blur-sm"
                                 >
                                   <Star className="h-3 w-3 fill-current" />
                                   Primær
                                 </Badge>
                               )}
                               
-                              {/* Image Info Badge */}
-                              <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded backdrop-blur-sm">
+                              {/* Professional Image Info Badge */}
+                              <div className="absolute bottom-3 right-3 bg-black/80 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-md border border-white/20 font-medium">
                                 {index + 1}/{field.value.length}
                               </div>
                               
@@ -1629,9 +1629,14 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
                         </div>
                       )}
 
-                      <FormDescription>
-                        Klik på stjerne-ikonet for at ændre hvilket billede der er primært. 
-                        Det primære billede vises først i produktkataloget. Du kan uploade op til 3 billeder.
+                      <FormDescription className="text-sm">
+                        <div className="flex items-start gap-2">
+                          <Star className="h-4 w-4 text-brand-primary mt-0.5 flex-shrink-0" />
+                          <div>
+                            <strong>Billede tips:</strong> Klik på stjerne-ikonet for at ændre hvilket billede der er primært. 
+                            Det primære billede vises først i produktkataloget og får en blå ramme. Du kan uploade op til 3 billeder i høj kvalitet (JPEG, PNG, WebP).
+                          </div>
+                        </div>
                       </FormDescription>
                       <FormMessage />
                     </FormItem>

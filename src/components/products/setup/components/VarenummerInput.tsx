@@ -118,23 +118,23 @@ export const VarenummerInput: React.FC<VarenummerInputProps> = ({
     switch (lookupResult.status) {
       case 'available':
         return (
-          <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50">
+          <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 font-semibold">
             <CheckCircle className="h-3 w-3 mr-1" />
-            Tilgængeligt
+            ✅ Tilgængeligt
           </Badge>
         );
       case 'exists':
         return (
-          <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50">
+          <Badge variant="outline" className="text-red-700 border-red-300 bg-red-50 font-semibold">
             <AlertTriangle className="h-3 w-3 mr-1" />
-            Allerede i brug
+            ❌ Allerede i brug
           </Badge>
         );
       case 'invalid':
         return (
-          <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50">
+          <Badge variant="outline" className="text-yellow-700 border-yellow-300 bg-yellow-50 font-semibold">
             <AlertTriangle className="h-3 w-3 mr-1" />
-            Ugyldigt format
+            ⚠️ Ugyldigt format
           </Badge>
         );
       default:
