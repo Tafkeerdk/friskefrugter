@@ -121,7 +121,7 @@ export function Navbar() {
             {!isCustomerAuthenticated && (
               <Link 
                 to="/apply" 
-                className="ml-2 px-4 py-2 rounded-md bg-gradient-to-r from-brand-primary to-brand-secondary text-white hover:from-brand-primary-hover hover:to-brand-secondary-hover transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
+                className="ml-2 px-4 py-2 rounded-md bg-brand-primary hover:bg-brand-primary-hover text-white transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:scale-105"
               >
                 Bliv kunde
               </Link>
@@ -236,7 +236,7 @@ export function Navbar() {
           {!isCustomerAuthenticated && (
             <Link 
               to="/apply" 
-              className="bg-gradient-to-r from-brand-primary to-brand-secondary text-white py-3 px-4 rounded-lg font-semibold flex items-center gap-2 hover:from-brand-primary-hover hover:to-brand-secondary-hover transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] mb-2"
+              className="bg-brand-primary hover:bg-brand-primary-hover text-white py-3 px-4 rounded-lg font-semibold flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] mb-2"
               onClick={() => setIsMenuOpen(false)}
             >
               <UserPlus className="h-5 w-5" />
