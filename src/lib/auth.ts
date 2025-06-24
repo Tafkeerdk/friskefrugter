@@ -48,7 +48,18 @@ const getEndpoint = (path: string): string => {
     return '/.netlify/functions/customer-password-reset-verify';
   }
   
-  // For other auth routes, use the main API function
+  // Product and Unit endpoints - route to specific functions for better auth handling
+  if (path.startsWith('/api/products')) {
+    return '/.netlify/functions/products';
+  }
+  if (path.startsWith('/api/units')) {
+    return '/.netlify/functions/units';
+  }
+  if (path.startsWith('/api/categories')) {
+    return '/.netlify/functions/categories';
+  }
+  
+  // For other routes, use the main API function
   return path;
 };
 
