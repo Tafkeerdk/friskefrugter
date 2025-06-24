@@ -147,11 +147,14 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-14 lg:h-16 items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 lg:px-6 w-full">
+    <header className={cn(
+      "sticky top-0 z-30 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 w-full min-w-0",
+      isMobile ? "h-14 px-3 dashboard-topbar" : "h-14 lg:h-16 px-4 lg:px-6"
+    )}>
       {/* Mobile: Collapsed state */}
       {isMobile && !isSearchExpanded && (
         <>
-          <div className="flex items-center gap-2 min-w-0 flex-1">
+          <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
             <SidebarTrigger className="h-8 w-8 flex-shrink-0" />
             <Button
               variant="ghost"
@@ -166,34 +169,34 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
               variant="outline"
               size="sm"
               onClick={handleGoToHomepage}
-              className="h-8 px-3 flex-shrink-0 text-xs font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors"
+              className="h-8 px-2 flex-shrink-0 text-xs font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors"
               title="Gå til forsiden"
             >
               <ExternalLink className="h-3 w-3 mr-1" />
-              Forside
+              <span className="hidden xs:inline">Forside</span>
             </Button>
-            <div className="font-semibold text-sm truncate">{getPageTitle()}</div>
+            <div className="font-semibold text-sm truncate min-w-0 flex-1">{getPageTitle()}</div>
           </div>
           
-          {showSearch && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleSearchFocus}
-              className="h-8 w-8 flex-shrink-0"
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-          )}
-          
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+            {showSearch && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSearchFocus}
+                className="h-8 w-8 flex-shrink-0"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
+            
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 relative">
                   <Bell className="h-4 w-4" />
                   {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs bg-destructive text-destructive-foreground rounded-full">
+                    <span className="absolute -top-1 -right-1 h-4 w-4 flex items-center justify-center text-xs bg-destructive text-destructive-foreground rounded-full">
                       {unreadCount}
                     </span>
                   )}
@@ -239,7 +242,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
             {/* User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 px-2 flex items-center gap-2 min-w-0">
+                <Button variant="ghost" className="h-8 px-1 flex items-center gap-1 min-w-0">
                   <Avatar className="h-6 w-6 flex-shrink-0">
                     <AvatarImage 
                       src={user?.profilePictureUrl} 
@@ -321,20 +324,20 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
         </div>
       )}
 
-      {/* Desktop Layout - Full width utilization */}
+      {/* Desktop Layout - Improved width management */}
       {!isMobile && (
         <>
           {/* Left side - Sidebar trigger, title, and homepage button */}
-          <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0">
-            <SidebarTrigger className="h-9 w-9 lg:h-10 lg:w-10" />
-            <div className="font-semibold text-lg lg:text-xl tracking-tight whitespace-nowrap">
+          <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0 min-w-0">
+            <SidebarTrigger className="h-9 w-9 lg:h-10 lg:w-10 flex-shrink-0" />
+            <div className="font-semibold text-lg lg:text-xl tracking-tight whitespace-nowrap truncate min-w-0">
               {getPageTitle()}
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handleGoToHomepage}
-              className="h-9 lg:h-10 px-3 lg:px-4 font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors whitespace-nowrap"
+              className="h-9 lg:h-10 px-3 lg:px-4 font-medium border-green-200 hover:bg-green-50 hover:text-green-700 hover:border-green-300 transition-colors whitespace-nowrap flex-shrink-0"
               title="Gå til forsiden"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
@@ -342,12 +345,12 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
             </Button>
           </div>
 
-          {/* Spacer to push content apart */}
-          <div className="flex-1" />
+          {/* Spacer */}
+          <div className="flex-1 min-w-4" />
 
-          {/* Search Bar - Centered with good width */}
+          {/* Search Bar - Centered with controlled width */}
           {showSearch && (
-            <div className="relative w-full max-w-sm lg:max-w-md xl:max-w-lg 2xl:max-w-xl">
+            <div className="relative w-full max-w-sm lg:max-w-md xl:max-w-lg 2xl:max-w-xl min-w-0">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type="search"
@@ -370,7 +373,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
           )}
 
           {/* Another spacer */}
-          <div className="flex-1" />
+          <div className="flex-1 min-w-4" />
 
           {/* Action Buttons - Right side */}
           <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0">

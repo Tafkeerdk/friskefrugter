@@ -14,23 +14,26 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100/50">
+      <div className={cn(
+        "flex min-h-screen w-full bg-gradient-to-br from-gray-50 to-gray-100/50 overflow-hidden",
+        isMobile ? "dashboard-layout" : ""
+      )}>
         <DashboardSidebar />
-        <SidebarInset className="flex-1">
-          <div className="flex flex-col h-full">
+        <SidebarInset className="flex-1 min-w-0">
+          <div className="flex flex-col h-full w-full">
             <DashboardTopbar />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto w-full">
               <div className={cn(
-                "w-full max-w-full transition-all duration-200",
+                "w-full transition-all duration-200",
                 isMobile 
-                  ? "px-2 py-3 space-y-3" 
-                  : "px-4 md:px-6 py-4 md:py-6 space-y-6"
+                  ? "px-3 py-4 space-y-4 max-w-full dashboard-content" 
+                  : "px-4 md:px-6 py-4 md:py-6 space-y-6 max-w-full"
               )}>
                 <div className={cn(
-                  "w-full max-w-full",
+                  "w-full",
                   isMobile 
-                    ? "max-w-[calc(100vw-1rem)]" 
-                    : "container mx-auto"
+                    ? "max-w-full min-w-0" 
+                    : "container mx-auto max-w-full"
                 )}>
                   {children}
                 </div>

@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -14,26 +13,39 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 142 76% 36%;
-    --primary-foreground: 355.7 100% 97.3%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
 
-    --muted: 210 40% 96.1%;
+    --muted: 210 40% 96%;
     --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 142 76% 94%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 40% 96%;
+    --accent-foreground: 222.2 84% 4.9%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 142 76% 36%;
+    --ring: 222.2 84% 4.9%;
 
-    --radius: 1.5rem;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
   }
 
   .dark {
@@ -46,7 +58,7 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 142 70% 40%;
+    --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
     --secondary: 217.2 32.6% 17.5%;
@@ -63,7 +75,20 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 142 76% 36%;
+    --ring: 212.7 26.8% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 94.1%;
+    --sidebar-primary-foreground: 240 5.9% 10%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
@@ -75,6 +100,102 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Mobile-specific fixes for sidebar and width overflow */
+@layer components {
+  /* Ensure mobile sidebar has proper background and contrast */
+  [data-mobile="true"] {
+    background-color: white !important;
+    color: #1f2937 !important;
+  }
+
+  /* Fix width overflow on mobile */
+  @media (max-width: 768px) {
+    .dashboard-layout {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
+    }
+    
+    .dashboard-content {
+      width: 100%;
+      max-width: calc(100vw - 1rem);
+      overflow-x: hidden;
+    }
+
+    .dashboard-topbar {
+      width: 100%;
+      max-width: 100vw;
+      overflow-x: hidden;
+    }
+
+    /* Ensure mobile sidebar menu items are readable */
+    [data-sidebar="sidebar"][data-mobile="true"] * {
+      color: #1f2937 !important;
+    }
+
+    [data-sidebar="sidebar"][data-mobile="true"] .text-muted-foreground {
+      color: #6b7280 !important;
+    }
+
+    [data-sidebar="sidebar"][data-mobile="true"] .text-sidebar-foreground {
+      color: #1f2937 !important;
+    }
+
+    /* Fix any remaining transparent elements in mobile sidebar */
+    [data-sidebar="sidebar"][data-mobile="true"] button,
+    [data-sidebar="sidebar"][data-mobile="true"] a {
+      background-color: transparent;
+      color: #1f2937 !important;
+    }
+
+    [data-sidebar="sidebar"][data-mobile="true"] button:hover,
+    [data-sidebar="sidebar"][data-mobile="true"] a:hover {
+      background-color: #f3f4f6 !important;
+      color: #1f2937 !important;
+    }
+  }
+
+  /* Ensure proper text contrast in mobile sidebar */
+  [data-sidebar="sidebar"][data-mobile="true"] {
+    --sidebar-foreground: #1f2937;
+    --sidebar-background: #ffffff;
+    --muted-foreground: #6b7280;
+  }
+}
+
+/* Additional mobile width fixes */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  #root {
+    overflow-x: hidden;
+    width: 100%;
+    max-width: 100vw;
+  }
+
+  /* Prevent any element from causing horizontal scroll */
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Fix for cards and containers */
+  .w-full {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Ensure tables and wide content are scrollable */
+  .overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
