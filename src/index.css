@@ -175,6 +175,16 @@
   .border-brand-primary { border-color: hsl(var(--brand-primary)); }
   .border-brand-primary-light { border-color: hsl(var(--brand-primary-light)); }
   
+  /* Brand border colors */
+  .border-brand-gray-50 { border-color: hsl(var(--brand-gray-50)); }
+  .border-brand-gray-100 { border-color: hsl(var(--brand-gray-100)); }
+  .border-brand-gray-200 { border-color: hsl(var(--brand-gray-200)); }
+  .border-brand-gray-300 { border-color: hsl(var(--brand-gray-300)); }
+  .border-brand-gray-500 { border-color: hsl(var(--brand-gray-500)); }
+  .border-brand-success { border-color: hsl(var(--brand-success)); }
+  .border-brand-warning { border-color: hsl(var(--brand-warning)); }
+  .border-brand-error { border-color: hsl(var(--brand-error)); }
+  
   /* SECONDARY BRAND COLORS */
   .bg-brand-secondary { background-color: hsl(var(--brand-secondary)); }
   .bg-brand-secondary-hover { background-color: hsl(var(--brand-secondary-hover)); }
@@ -234,7 +244,8 @@
 
   /* BRAND INPUT STYLES */
   .input-brand {
-    @apply border border-brand-gray-200 focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 rounded-md px-3 py-2 transition-all duration-200;
+    @apply border border-brand-gray-200 focus:border-brand-primary focus:ring-2 focus:ring-opacity-20 rounded-md px-3 py-2 transition-all duration-200;
+    --tw-ring-color: hsl(var(--brand-primary));
   }
 }
 
