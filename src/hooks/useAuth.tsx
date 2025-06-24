@@ -230,6 +230,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('⚠️ SECURITY: Customer token expiring soon - attempting refresh');
           await attemptTokenRefresh();
         }
+        
+        // Fetch fresh customer profile data (but don't block initialization)
+        authService.getCustomerProfile()
+          .then(profileResponse => {
+            if (profileResponse.success && profileResponse.customer) {
+              console.log('✅ Fresh customer profile data fetched');
+              tokenManager.setUser(profileResponse.customer, 'customer');
+              setCustomerUser(profileResponse.customer);
+            }
+          })
+          .catch(error => {
+            console.warn('⚠️ Could not fetch fresh customer profile data on init:', error);
+          });
       } else if (savedCustomerUser || customerToken) {
         console.warn('🚨 SECURITY: Customer session invalid - clearing');
         tokenManager.clearTokens('customer');
@@ -299,7 +312,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           }
         } else {
           setCustomerUser(response.user);
-          setUser(response.user); // Set as primary user
+          
+          // Fetch fresh customer profile data
+          try {
+            console.log('🔄 Fetching fresh customer profile data after login...');
+            const profileResponse = await authService.getCustomerProfile();
+            if (profileResponse.success && profileResponse.customer) {
+              console.log('✅ Fresh customer profile data fetched after login');
+              tokenManager.setUser(profileResponse.customer, 'customer');
+              setCustomerUser(profileResponse.customer);
+              setUser(profileResponse.customer); // Set as primary user
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not fetch fresh customer profile data after login:', error);
+            setUser(response.user); // Fallback to login response
+          }
         }
         
         console.log('✅ SECURITY: Login successful with valid tokens');
@@ -396,6 +423,34 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (error.message?.includes('expired') || error.message?.includes('unauthorized')) {
           console.warn('🚨 SECURITY: Token expired during profile refresh - forcing logout');
           logout('admin');
+          return;
+        }
+      }
+    }
+    
+    // If it's a customer user, fetch fresh profile data from server
+    if (savedUser.userType === 'customer') {
+      try {
+        console.log('🔄 Refreshing customer profile data from server...');
+        const profileResponse = await authService.getCustomerProfile();
+        if (profileResponse.success && profileResponse.customer) {
+          console.log('✅ Customer profile refreshed:', {
+            hasProfilePicture: !!profileResponse.customer.profilePictureUrl,
+            profilePictureUrl: profileResponse.customer.profilePictureUrl,
+            companyName: profileResponse.customer.companyName,
+            cvrNumber: profileResponse.customer.cvrNumber
+          });
+          tokenManager.setUser(profileResponse.customer, 'customer');
+          setUser(profileResponse.customer);
+          setCustomerUser(profileResponse.customer);
+          return;
+        }
+      } catch (error) {
+        console.warn('⚠️ Could not refresh customer profile data from server:', error);
+        // Check if error is due to token expiration
+        if (error.message?.includes('expired') || error.message?.includes('unauthorized')) {
+          console.warn('🚨 SECURITY: Token expired during customer profile refresh - forcing logout');
+          logout('customer');
           return;
         }
       }
