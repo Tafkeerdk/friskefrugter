@@ -214,8 +214,9 @@ export const productSetupSchema = z.object({
   kategori: kategoriSchema,
   lagerstyring: lagerstyringSchema,
   billeder: z.array(billedeSchema)
-    .min(1, 'Mindst ét billede er påkrævet')
-    .max(3, 'Maksimalt 3 billeder er tilladt'),
+    .max(3, 'Maksimalt 3 billeder er tilladt')
+    .optional()
+    .default([]),
   aktiv: z.boolean().default(true)
 }).refine((data) => {
   // If discount is enabled with beforePrice, beforePrice must be higher than basispris

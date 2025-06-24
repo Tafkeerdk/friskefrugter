@@ -61,9 +61,10 @@ export const ProductSetupInterface: React.FC<ProductSetupInterfaceProps> = ({
             
             setInitialData({
               produktnavn: product.produktnavn,
+              varenummer: product.varenummer,
               beskrivelse: product.beskrivelse,
               eanNummer: product.eanNummer,
-              enhed: product.enhed,
+              enhed: product.enhed._id, // Use the ID, not the object
               basispris: product.basispris,
               kategori: { 
                 id: product.kategori._id, 
