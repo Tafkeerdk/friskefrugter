@@ -603,6 +603,17 @@ const DashboardProducts: React.FC = () => {
                   const stockInfo = getStockStatus(product);
                   const primaryImage = product.billeder.find(img => img.isPrimary) || product.billeder[0];
                   
+                  // Debug logging
+                  if (product.produktnavn.includes('Champignon') || product.produktnavn.includes('Artiskokker')) {
+                    console.log('Product debug:', {
+                      name: product.produktnavn,
+                      imagesCount: product.billeder.length,
+                      images: product.billeder,
+                      primaryImage: primaryImage,
+                      hasUrl: primaryImage?.url ? 'YES' : 'NO'
+                    });
+                  }
+                  
                   return (
                     <Card key={product._id} className="overflow-hidden h-full hover:shadow-lg transition-shadow">
                       <div 
@@ -611,6 +622,7 @@ const DashboardProducts: React.FC = () => {
                           isMobile ? "aspect-square" : "aspect-video"
                         )}
                         onClick={() => {
+                          console.log('Card image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Primary image:', primaryImage);
                           if (product.billeder.length > 0) {
                             openImageGallery(product, 0);
                           } else {
@@ -759,25 +771,28 @@ const DashboardProducts: React.FC = () => {
                         return (
                           <div key={product._id} className="border rounded-lg p-3 bg-white">
                             <div className="flex items-start gap-3">
-                              <div className="flex-shrink-0">
+                              <div 
+                                className="flex-shrink-0 cursor-pointer"
+                                onClick={() => {
+                                  console.log('Mobile list image clicked:', product.produktnavn, 'Images:', product.billeder.length);
+                                  if (product.billeder.length > 0) {
+                                    openImageGallery(product, 0);
+                                  } else {
+                                    // Navigate to edit page to add images
+                                    toast({
+                                      title: 'Åbner redigeringsside',
+                                      description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
+                                      duration: 2000,
+                                    });
+                                    navigate(`/admin/products/edit/${product._id}`);
+                                  }
+                                }}
+                              >
                                 <ProductImage
                                   src={primaryImage?.url}
                                   alt={primaryImage?.altText || product.produktnavn}
                                   size="medium"
                                   className="rounded"
-                                  onClick={() => {
-                                    if (product.billeder.length > 0) {
-                                      openImageGallery(product, 0);
-                                    } else {
-                                      // Navigate to edit page to add images
-                                      toast({
-                                        title: 'Åbner redigeringsside',
-                                        description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
-                                        duration: 2000,
-                                      });
-                                      navigate(`/admin/products/edit/${product._id}`);
-                                    }
-                                  }}
                                 />
                               </div>
                               <div className="flex-1 min-w-0">
@@ -854,12 +869,10 @@ const DashboardProducts: React.FC = () => {
                               <TableRow key={product._id}>
                                 <TableCell>
                                   <div className="flex items-center gap-3">
-                                    <ProductImage
-                                      src={primaryImage?.url}
-                                      alt={primaryImage?.altText || product.produktnavn}
-                                      size="small"
-                                      className="rounded flex-shrink-0"
+                                    <div 
+                                      className="cursor-pointer"
                                       onClick={() => {
+                                        console.log('Desktop table image clicked:', product.produktnavn, 'Images:', product.billeder.length);
                                         if (product.billeder.length > 0) {
                                           openImageGallery(product, 0);
                                         } else {
@@ -872,7 +885,14 @@ const DashboardProducts: React.FC = () => {
                                           navigate(`/admin/products/edit/${product._id}`);
                                         }
                                       }}
-                                    />
+                                    >
+                                      <ProductImage
+                                        src={primaryImage?.url}
+                                        alt={primaryImage?.altText || product.produktnavn}
+                                        size="small"
+                                        className="rounded flex-shrink-0"
+                                      />
+                                    </div>
                                     <div className="min-w-0">
                                       <div className="font-medium truncate">{product.produktnavn}</div>
                                       <div className="text-sm text-muted-foreground truncate">
