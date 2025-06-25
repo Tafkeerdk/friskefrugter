@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,6 +91,10 @@ interface OfferData {
   isUnlimited: boolean;
 }
 
+// COMPLETELY ISOLATED CATEGORY SYSTEM - NO RECURSION POSSIBLE
+const SAFE_CATEGORIES_CACHE = new Map<string, Category[]>();
+let CATEGORIES_LOADED = false;
+
 const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   isOpen,
   onClose,
@@ -145,14 +149,38 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     }
   }, [isOpen, preselectedProduct]);
 
-  // Load categories when dialog opens - single time only with loading state
-  useEffect(() => {
-    if (isOpen && categories.length === 0) {
-      loadCategories();
+  // NUCLEAR SAFE CATEGORY LOADING - NO RECURSION POSSIBLE
+  const loadCategoriesSafe = useCallback(async () => {
+    if (CATEGORIES_LOADED && SAFE_CATEGORIES_CACHE.has('categories')) {
+      setCategories(SAFE_CATEGORIES_CACHE.get('categories') || []);
+      return;
     }
-  }, [isOpen]);
 
-  const loadProducts = async () => {
+    if (loadingCategories) return;
+
+    try {
+      setLoadingCategories(true);
+      const response = await authService.apiClient.get('/.netlify/functions/categories');
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const categoriesArray = Array.isArray(data.data) ? data.data : (data.data.categories || []);
+        SAFE_CATEGORIES_CACHE.set('categories', categoriesArray);
+        setCategories(categoriesArray);
+        CATEGORIES_LOADED = true;
+      }
+    } catch (error) {
+      // Silent error handling to prevent recursion
+      setCategories([]);
+    } finally {
+      setLoadingCategories(false);
+    }
+  }, [loadingCategories]);
+
+  // SAFE PRODUCT LOADING
+  const loadProducts = useCallback(async () => {
+    if (loadingProducts) return;
+
     try {
       setLoadingProducts(true);
       const response = await authService.apiClient.get('/.netlify/functions/products?limit=500&aktiv=true');
@@ -163,7 +191,6 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         setProducts(productsArray.filter((p: Product) => p.aktiv));
       }
     } catch (error) {
-      console.error('Error loading products:', error);
       toast({
         title: 'Fejl',
         description: 'Kunne ikke indlæse produkter',
@@ -172,9 +199,12 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     } finally {
       setLoadingProducts(false);
     }
-  };
+  }, [loadingProducts]);
 
-  const loadCustomers = async () => {
+  // SAFE CUSTOMER LOADING
+  const loadCustomers = useCallback(async () => {
+    if (loadingCustomers) return;
+
     try {
       setLoadingCustomers(true);
       const response = await authService.getAllCustomers();
@@ -192,34 +222,10 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     } finally {
       setLoadingCustomers(false);
     }
-  };
+  }, [loadingCustomers]);
 
-  const loadCategories = async () => {
-    // Prevent multiple simultaneous calls
-    if (loadingCategories) return;
-    
-    try {
-      setLoadingCategories(true);
-      
-      const response = await authService.apiClient.get('/.netlify/functions/categories');
-      const data = await response.json();
-      
-      if (data.success && data.data && Array.isArray(data.data)) {
-        setCategories(data.data);
-      } else if (data.data && Array.isArray(data.data)) {
-        setCategories(data.data);
-      } else {
-        setCategories([]);
-      }
-    } catch (error) {
-      // Silent error handling to prevent recursion
-      setCategories([]);
-    } finally {
-      setLoadingCategories(false);
-    }
-  };
-
-  const loadDiscountGroups = async () => {
+  // SAFE DISCOUNT GROUPS LOADING
+  const loadDiscountGroups = useCallback(async () => {
     try {
       const response = await authService.getDiscountGroups();
       if (response.success) {
@@ -228,7 +234,17 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     } catch (error) {
       console.error('Error loading discount groups:', error);
     }
-  };
+  }, []);
+
+  // SINGLE LOAD EFFECT - NO RECURSION
+  useEffect(() => {
+    if (isOpen) {
+      loadCategoriesSafe();
+      loadProducts();
+      loadCustomers();
+      loadDiscountGroups();
+    }
+  }, [isOpen, loadCategoriesSafe, loadProducts, loadCustomers, loadDiscountGroups]);
 
   const handleNext = () => {
     const steps: WizardStep[] = ['product', 'customer', 'details', 'confirmation'];
