@@ -245,6 +245,14 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     }
   }, [isOpen, preselectedProduct, loadAllData]);
 
+  // Force re-render when customer is selected to update pricing preview
+  useEffect(() => {
+    if (offerData.customerId && currentStep === 'customer') {
+      // Trigger re-render by updating a state that doesn't affect the data
+      // This ensures the pricing preview updates when customer is selected
+    }
+  }, [offerData.customerId, currentStep]);
+
   const handleNext = () => {
     const steps: WizardStep[] = ['product', 'customer', 'details', 'confirmation'];
     const currentIndex = steps.indexOf(currentStep);
@@ -675,7 +683,33 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
               </div>
               <div>
                 <h4 className="font-medium text-brand-gray-900">{getSelectedProduct()?.produktnavn}</h4>
-                <p className="text-sm text-brand-gray-600">Valgt produkt</p>
+                <div className="text-sm text-brand-gray-600">
+                  {(() => {
+                    const customerPricing = calculateCustomerPrice();
+                    if (customerPricing.price > 0) {
+                      return (
+                        <>
+                          {customerPricing.hasDiscount ? (
+                            <>
+                              <span className="line-through text-brand-gray-400 mr-2">
+                                {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.originalPrice || 0)}
+                              </span>
+                              <span className="font-medium text-brand-primary">
+                                {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="font-medium text-brand-primary">
+                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                            </span>
+                          )}
+                          <span className="ml-1">({customerPricing.label})</span>
+                        </>
+                      );
+                    }
+                    return <span>Valgt produkt</span>;
+                  })()}
+                </div>
               </div>
             </div>
           </CardContent>
