@@ -360,42 +360,96 @@ const DashboardUniqueOffers: React.FC = () => {
     return <Badge variant="secondary" className="text-xs">Udløbet</Badge>;
   };
 
-  const calculateCustomerPrice = (offer: UniqueOffer) => {
-    const basePrice = offer.product.basispris;
-    const customer = offer.customer;
+  // Enhanced pricing calculation using backend API
+  const [customerPricingCache, setCustomerPricingCache] = useState<Map<string, any>>(new Map());
+
+  const calculateCustomerPrice = async (offer: UniqueOffer) => {
+    const cacheKey = `${offer.customer._id}-${offer.product._id}`;
     
-    if (!customer.discountGroup) {
-      return {
-        price: basePrice,
-        label: 'Standard pris',
-        hasDiscount: false
-      };
+    // Check cache first
+    if (customerPricingCache.has(cacheKey)) {
+      return customerPricingCache.get(cacheKey);
     }
-    
-    const discountPercentage = customer.discountGroup.discountPercentage;
-    const discountedPrice = basePrice * (1 - discountPercentage / 100);
-    
-    return {
-      price: discountedPrice,
-      label: `${customer.discountGroup.name} pris`,
-      hasDiscount: true
+
+    try {
+      // Use backend API to get accurate customer pricing
+      const response = await authService.getCustomerPricing({
+        customerId: offer.customer._id,
+        productIds: [offer.product._id]
+      });
+
+      if (response.success && response.data && response.data.products.length > 0) {
+        const productWithPricing = response.data.products[0];
+        const pricing = productWithPricing.customerPricing;
+        
+        const result = {
+          price: pricing.customerPrice,
+          label: pricing.priceLabel,
+          hasDiscount: pricing.hasDiscount,
+          originalPrice: pricing.originalPrice,
+          discountPercentage: pricing.discountPercentage
+        };
+        
+        // Cache the result
+        setCustomerPricingCache(prev => new Map(prev.set(cacheKey, result)));
+        return result;
+      }
+    } catch (error) {
+      console.error('Error calculating customer price for offer:', error);
+    }
+
+    // Fallback to base price
+    const fallback = {
+      price: offer.product.basispris,
+      label: 'Standard pris',
+      hasDiscount: false
     };
+    
+    setCustomerPricingCache(prev => new Map(prev.set(cacheKey, fallback)));
+    return fallback;
   };
 
+  // Enhanced pricing info with cached results
+  const [pricingInfoCache, setPricingInfoCache] = useState<Map<string, any>>(new Map());
+
   const getPricingInfo = (offer: UniqueOffer) => {
-    const customerPricing = calculateCustomerPrice(offer);
-    const savings = customerPricing.price - offer.fixedPrice;
-    const savingsPercentage = Math.round((savings / customerPricing.price) * 100);
+    const cacheKey = `${offer.customer._id}-${offer.product._id}`;
     
-    return {
-      customerPrice: customerPricing.price,
-      customerLabel: customerPricing.label,
-      hasCustomerDiscount: customerPricing.hasDiscount,
+    // Return cached pricing info if available
+    if (pricingInfoCache.has(cacheKey)) {
+      return pricingInfoCache.get(cacheKey);
+    }
+
+    // Calculate pricing asynchronously and cache result
+    calculateCustomerPrice(offer).then(customerPricing => {
+      const savings = customerPricing.price - offer.fixedPrice;
+      const savingsPercentage = Math.round((savings / customerPricing.price) * 100);
+      
+      const pricingInfo = {
+        customerPrice: customerPricing.price,
+        customerLabel: customerPricing.label,
+        hasCustomerDiscount: customerPricing.hasDiscount,
+        offerPrice: offer.fixedPrice,
+        savings,
+        savingsPercentage,
+        basePrice: offer.product.basispris
+      };
+      
+      setPricingInfoCache(prev => new Map(prev.set(cacheKey, pricingInfo)));
+    });
+
+    // Return fallback pricing info while loading
+    const fallbackPricing = {
+      customerPrice: offer.product.basispris,
+      customerLabel: 'Standard pris',
+      hasCustomerDiscount: false,
       offerPrice: offer.fixedPrice,
-      savings,
-      savingsPercentage,
+      savings: offer.product.basispris - offer.fixedPrice,
+      savingsPercentage: Math.round(((offer.product.basispris - offer.fixedPrice) / offer.product.basispris) * 100),
       basePrice: offer.product.basispris
     };
+
+    return fallbackPricing;
   };
 
   if (loading) {
