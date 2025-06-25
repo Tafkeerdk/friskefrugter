@@ -321,6 +321,24 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             description: 'Der er for mange tilbud for denne kombination. Slet nogle inaktive tilbud først.',
             variant: 'destructive'
           });
+        } else if (response.error?.includes('Startdato kan ikke være i fortiden') || response.message?.includes('past')) {
+          toast({
+            title: 'Ugyldig startdato',
+            description: 'Startdato kan ikke være i fortiden. Vælg i dag eller en fremtidig dato.',
+            variant: 'destructive'
+          });
+        } else if (response.error?.includes('Slutdato skal være efter startdato') || response.message?.includes('after')) {
+          toast({
+            title: 'Ugyldig slutdato',
+            description: 'Slutdato skal være efter startdato.',
+            variant: 'destructive'
+          });
+        } else if (response.error?.includes('mindst i morgen') || response.message?.includes('tomorrow')) {
+          toast({
+            title: 'Ugyldig slutdato',
+            description: 'Hvis tilbuddet starter i dag, skal slutdato være mindst i morgen.',
+            variant: 'destructive'
+          });
         } else {
           toast({
             title: 'Fejl',
@@ -1060,7 +1078,21 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
               id="validFrom"
               type="date"
               value={offerData.validFrom}
-              onChange={(e) => setOfferData(prev => ({ ...prev, validFrom: e.target.value }))}
+              min={new Date().toISOString().split('T')[0]} // Prevent past dates
+              onChange={(e) => {
+                const newValidFrom = e.target.value;
+                setOfferData(prev => {
+                  // If validTo is set and is before or equal to new validFrom, clear it
+                  const validToDate = prev.validTo ? new Date(prev.validTo) : null;
+                  const validFromDate = new Date(newValidFrom);
+                  
+                  if (validToDate && validToDate <= validFromDate) {
+                    return { ...prev, validFrom: newValidFrom, validTo: '' };
+                  }
+                  
+                  return { ...prev, validFrom: newValidFrom };
+                });
+              }}
               className="h-12 text-base border-2 focus:border-brand-primary"
             />
           </div>
@@ -1072,9 +1104,44 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 id="validTo"
                 type="date"
                 value={offerData.validTo}
+                min={(() => {
+                  if (!offerData.validFrom) return new Date().toISOString().split('T')[0];
+                  
+                  const validFromDate = new Date(offerData.validFrom);
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  validFromDate.setHours(0, 0, 0, 0);
+                  
+                  // If validFrom is today, minimum validTo is tomorrow
+                  if (validFromDate.getTime() === today.getTime()) {
+                    const tomorrow = new Date(today);
+                    tomorrow.setDate(tomorrow.getDate() + 1);
+                    return tomorrow.toISOString().split('T')[0];
+                  }
+                  
+                  // Otherwise, minimum validTo is the day after validFrom
+                  const dayAfterValidFrom = new Date(validFromDate);
+                  dayAfterValidFrom.setDate(dayAfterValidFrom.getDate() + 1);
+                  return dayAfterValidFrom.toISOString().split('T')[0];
+                })()}
                 onChange={(e) => setOfferData(prev => ({ ...prev, validTo: e.target.value }))}
                 className="h-12 text-base border-2 focus:border-brand-primary"
               />
+              {offerData.validFrom && (
+                <p className="text-xs text-brand-gray-500">
+                  {(() => {
+                    const validFromDate = new Date(offerData.validFrom);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    validFromDate.setHours(0, 0, 0, 0);
+                    
+                    if (validFromDate.getTime() === today.getTime()) {
+                      return "Da tilbuddet starter i dag, skal slutdato være mindst i morgen";
+                    }
+                    return "Slutdato skal være efter startdato";
+                  })()}
+                </p>
+              )}
             </div>
           )}
         </div>

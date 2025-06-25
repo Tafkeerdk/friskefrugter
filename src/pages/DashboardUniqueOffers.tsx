@@ -165,6 +165,7 @@ const DashboardUniqueOffers: React.FC = () => {
       const params = {
         page: currentPage,
         limit: 20,
+        showActiveOnly: showActiveOnly,
         ...(searchTerm && { search: searchTerm })
       };
       
@@ -179,7 +180,7 @@ const DashboardUniqueOffers: React.FC = () => {
       if (offersResponse.success) {
         let filteredOffers = offersResponse.offers || [];
         
-        // Apply client-side filters
+        // Apply client-side filters for category and discount group (backend doesn't handle these yet)
         if (selectedCategory) {
           filteredOffers = filteredOffers.filter(offer => 
             offer.product.kategori?._id === selectedCategory
@@ -198,10 +199,7 @@ const DashboardUniqueOffers: React.FC = () => {
           }
         }
         
-        if (showActiveOnly) {
-          filteredOffers = filteredOffers.filter(offer => offer.isActive);
-        }
-        
+        // Backend now handles active/inactive filtering, so we don't need to filter here
         setOffers(filteredOffers);
         setTotalPages(offersResponse.pagination?.totalPages || 1);
         setTotalCount(filteredOffers.length);
@@ -809,10 +807,21 @@ const DashboardUniqueOffers: React.FC = () => {
                   id="edit-valid-from"
                   type="date"
                   value={editFormData.validFrom}
-                  onChange={(e) => setEditFormData(prev => ({
-                    ...prev,
-                    validFrom: e.target.value
-                  }))}
+                  min={new Date().toISOString().split('T')[0]} // Prevent past dates
+                  onChange={(e) => {
+                    const newValidFrom = e.target.value;
+                    setEditFormData(prev => {
+                      // If validTo is set and is before or equal to new validFrom, clear it
+                      const validToDate = prev.validTo ? new Date(prev.validTo) : null;
+                      const validFromDate = new Date(newValidFrom);
+                      
+                      if (validToDate && validToDate <= validFromDate) {
+                        return { ...prev, validFrom: newValidFrom, validTo: '' };
+                      }
+                      
+                      return { ...prev, validFrom: newValidFrom };
+                    });
+                  }}
                 />
               </div>
               
@@ -822,12 +831,47 @@ const DashboardUniqueOffers: React.FC = () => {
                   id="edit-valid-to"
                   type="date"
                   value={editFormData.validTo}
+                  min={(() => {
+                    if (!editFormData.validFrom) return new Date().toISOString().split('T')[0];
+                    
+                    const validFromDate = new Date(editFormData.validFrom);
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    validFromDate.setHours(0, 0, 0, 0);
+                    
+                    // If validFrom is today, minimum validTo is tomorrow
+                    if (validFromDate.getTime() === today.getTime()) {
+                      const tomorrow = new Date(today);
+                      tomorrow.setDate(tomorrow.getDate() + 1);
+                      return tomorrow.toISOString().split('T')[0];
+                    }
+                    
+                    // Otherwise, minimum validTo is the day after validFrom
+                    const dayAfterValidFrom = new Date(validFromDate);
+                    dayAfterValidFrom.setDate(dayAfterValidFrom.getDate() + 1);
+                    return dayAfterValidFrom.toISOString().split('T')[0];
+                  })()}
                   onChange={(e) => setEditFormData(prev => ({
                     ...prev,
                     validTo: e.target.value
                   }))}
                   disabled={editFormData.isUnlimited}
                 />
+                {editFormData.validFrom && !editFormData.isUnlimited && (
+                  <p className="text-xs text-brand-gray-500">
+                    {(() => {
+                      const validFromDate = new Date(editFormData.validFrom);
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      validFromDate.setHours(0, 0, 0, 0);
+                      
+                      if (validFromDate.getTime() === today.getTime()) {
+                        return "Da tilbuddet starter i dag, skal slutdato være mindst i morgen";
+                      }
+                      return "Slutdato skal være efter startdato";
+                    })()}
+                  </p>
+                )}
               </div>
             </div>
             

@@ -1427,6 +1427,7 @@ export const authService = {
     search?: string; 
     customerId?: string; 
     productId?: string; 
+    showActiveOnly?: boolean;
   }): Promise<{ success: boolean; offers: any[]; pagination?: any; message?: string }> {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -1434,6 +1435,7 @@ export const authService = {
     if (params?.search) queryParams.append('search', params.search);
     if (params?.customerId) queryParams.append('customerId', params.customerId);
     if (params?.productId) queryParams.append('productId', params.productId);
+    if (params?.showActiveOnly !== undefined) queryParams.append('showActiveOnly', params.showActiveOnly.toString());
     
     const queryString = queryParams.toString();
     const endpoint = `/.netlify/functions/admin-unique-offers${queryString ? `?${queryString}` : ''}`;
