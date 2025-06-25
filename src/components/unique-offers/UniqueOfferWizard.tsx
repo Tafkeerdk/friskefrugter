@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -112,6 +112,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   // Loading states
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
+  const [loadingCategories, setLoadingCategories] = useState(false);
   
   // Filter states
   const [productSearch, setProductSearch] = useState('');
@@ -144,9 +145,9 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     }
   }, [isOpen, preselectedProduct]);
 
-  // Load categories when dialog opens - single time only
+  // Load categories when dialog opens - single time only with loading state
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && categories.length === 0) {
       loadCategories();
     }
   }, [isOpen]);
@@ -194,16 +195,27 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   };
 
   const loadCategories = async () => {
+    // Prevent multiple simultaneous calls
+    if (loadingCategories) return;
+    
     try {
+      setLoadingCategories(true);
+      
       const response = await authService.apiClient.get('/.netlify/functions/categories');
       const data = await response.json();
+      
       if (data.success && data.data && Array.isArray(data.data)) {
+        setCategories(data.data);
+      } else if (data.data && Array.isArray(data.data)) {
         setCategories(data.data);
       } else {
         setCategories([]);
       }
     } catch (error) {
+      // Silent error handling to prevent recursion
       setCategories([]);
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
@@ -304,19 +316,24 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     return customers.find(c => (c._id || (c as any).id) === offerData.customerId);
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = product.produktnavn.toLowerCase().includes(productSearch.toLowerCase()) ||
-                         product.varenummer?.toLowerCase().includes(productSearch.toLowerCase());
-    const matchesCategory = !selectedCategory || selectedCategory === 'all' || product.kategori?._id === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Memoized filtered arrays to prevent infinite re-renders
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.produktnavn.toLowerCase().includes(productSearch.toLowerCase()) ||
+                           product.varenummer?.toLowerCase().includes(productSearch.toLowerCase());
+      const matchesCategory = !selectedCategory || selectedCategory === 'all' || product.kategori?._id === selectedCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, productSearch, selectedCategory]);
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
-                         customer.contactPersonName.toLowerCase().includes(customerSearch.toLowerCase());
-    const matchesGroup = !selectedDiscountGroup || selectedDiscountGroup === 'all' || customer.discountGroup?._id === selectedDiscountGroup;
-    return matchesSearch && matchesGroup;
-  });
+  const filteredCustomers = useMemo(() => {
+    return customers.filter(customer => {
+      const matchesSearch = customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
+                           customer.contactPersonName.toLowerCase().includes(customerSearch.toLowerCase());
+      const matchesGroup = !selectedDiscountGroup || selectedDiscountGroup === 'all' || customer.discountGroup?._id === selectedDiscountGroup;
+      return matchesSearch && matchesGroup;
+    });
+  }, [customers, customerSearch, selectedDiscountGroup]);
 
   const canProceedFromStep = (step: WizardStep): boolean => {
     switch (step) {
@@ -397,18 +414,32 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             className="pl-10"
           />
         </div>
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+        <Select 
+          value={selectedCategory || "all"} 
+          onValueChange={(value) => {
+            setSelectedCategory(value === "all" ? "" : value);
+          }}
+        >
           <SelectTrigger>
-            <SelectValue placeholder="Alle kategorier" />
+            <SelectValue placeholder="Vælg kategori">
+              {selectedCategory ? 
+                categories.find(c => c._id === selectedCategory)?.navn || "Alle kategorier" : 
+                "Alle kategorier"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle kategorier</SelectItem>
-            {categories && categories.length > 0 ? categories.map(category => (
-              <SelectItem key={category._id} value={category._id}>
-                {category.navn}
-              </SelectItem>
-            )) : (
+            {loadingCategories ? (
               <SelectItem value="loading" disabled>Indlæser kategorier...</SelectItem>
+            ) : categories && categories.length > 0 ? (
+              categories.map(category => (
+                <SelectItem key={category._id} value={category._id}>
+                  {category.navn}
+                </SelectItem>
+              ))
+            ) : (
+              <SelectItem value="no-categories" disabled>Ingen kategorier tilgængelige</SelectItem>
             )}
           </SelectContent>
         </Select>
