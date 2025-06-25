@@ -688,17 +688,17 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   );
 
   const renderDetailsStep = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="text-center">
         <div className="h-12 w-12 text-brand-primary mx-auto mb-4 flex items-center justify-center bg-brand-primary/10 rounded-full">
-          <span className="text-xl font-bold">kr</span>
+          <Calendar className="h-6 w-6" />
         </div>
         <h3 className="text-lg font-semibold text-brand-gray-900 mb-2">Tilbudsdetaljer</h3>
         <p className="text-brand-gray-600">Angiv pris og gyldighedsperiode for tilbuddet</p>
       </div>
 
       {/* Selected Items Display */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="bg-brand-gray-50 border-brand-gray-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -761,7 +761,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       </div>
 
       {/* Price Input */}
-      <div className="space-y-2">
+      <div className="space-y-4">
         <Label className="text-base font-semibold text-brand-gray-900">Unikt Tilbudspris *</Label>
         <div className="relative">
           <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-gray-400 text-sm font-medium">kr</span>
@@ -788,7 +788,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       </div>
 
       {/* Description */}
-      <div className="space-y-2">
+      <div className="space-y-4">
         <Label className="text-base font-semibold text-brand-gray-900">Beskrivelse (valgfri)</Label>
         <Textarea
           placeholder="Beskrivelse af tilbuddet..."
