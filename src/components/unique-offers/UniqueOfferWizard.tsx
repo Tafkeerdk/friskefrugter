@@ -569,17 +569,29 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             className="pl-10"
           />
         </div>
-        <Select value={selectedDiscountGroup} onValueChange={setSelectedDiscountGroup}>
+        <Select 
+          value={selectedDiscountGroup || "all"} 
+          onValueChange={(value) => {
+            setSelectedDiscountGroup(value === "all" ? "" : value);
+          }}
+        >
           <SelectTrigger>
-            <SelectValue placeholder="Alle rabatgrupper" />
+            <SelectValue placeholder="Vælg rabatgruppe">
+              {selectedDiscountGroup ? 
+                discountGroups.find(g => g._id === selectedDiscountGroup)?.name || "Alle rabatgrupper" : 
+                "Alle rabatgrupper"
+              }
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle rabatgrupper</SelectItem>
-            {discountGroups.map(group => (
+            {discountGroups && discountGroups.length > 0 ? discountGroups.map(group => (
               <SelectItem key={group._id} value={group._id}>
                 {group.name}
               </SelectItem>
-            ))}
+            )) : (
+              <SelectItem value="loading" disabled>Indlæser rabatgrupper...</SelectItem>
+            )}
           </SelectContent>
         </Select>
       </div>
