@@ -659,7 +659,9 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   const renderDetailsStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <DollarSign className="h-12 w-12 text-brand-primary mx-auto mb-4" />
+        <div className="h-12 w-12 text-brand-primary mx-auto mb-4 flex items-center justify-center bg-brand-primary/10 rounded-full">
+          <span className="text-xl font-bold">kr</span>
+        </div>
         <h3 className="text-lg font-semibold text-brand-gray-900 mb-2">Tilbudsdetaljer</h3>
         <p className="text-brand-gray-600">Angiv pris og gyldighedsperiode for tilbuddet</p>
       </div>
@@ -669,14 +671,44 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         <Card className="bg-brand-gray-50 border-brand-gray-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-brand-primary text-white rounded-lg">
-                <Package className="h-4 w-4" />
+              {/* Product Image */}
+              <div className="w-12 h-12 flex-shrink-0 rounded-lg border border-brand-gray-200 overflow-hidden bg-brand-gray-100 relative">
+                {getSelectedProduct()?.billeder && getSelectedProduct()!.billeder!.length > 0 ? (
+                  <>
+                    <img
+                      src={getSelectedProduct()!.billeder!.find(img => img.isPrimary)?.url || getSelectedProduct()!.billeder![0]?.url}
+                      alt={getSelectedProduct()?.produktnavn}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
+                        if (placeholder) placeholder.style.display = 'flex';
+                      }}
+                    />
+                    <div 
+                      className="image-placeholder absolute inset-0 w-full h-full flex items-center justify-center bg-brand-primary text-white"
+                      style={{ display: 'none' }}
+                    >
+                      <Package className="w-4 h-4" />
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-brand-primary text-white">
+                    <Package className="w-4 h-4" />
+                  </div>
+                )}
               </div>
               <div>
                 <h4 className="font-medium text-brand-gray-900">{getSelectedProduct()?.produktnavn}</h4>
-                <p className="text-sm text-brand-gray-600">
-                  {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(getSelectedProduct()?.basispris || 0)} (normal pris)
-                </p>
+                <div className="text-sm text-brand-gray-600">
+                  {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(getSelectedProduct()?.basispris || 0)}
+                  {getSelectedCustomer()?.discountGroup ? (
+                    <span className="ml-1">({getSelectedCustomer()!.discountGroup!.name} pris)</span>
+                  ) : (
+                    <span className="ml-1">(standard pris)</span>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -701,7 +733,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       <div className="space-y-2">
         <Label className="text-base font-semibold text-brand-gray-900">Unikt Tilbudspris *</Label>
         <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-brand-gray-400" />
+          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-gray-400 text-sm font-medium">kr</span>
           <Input
             type="number"
             step="0.01"
@@ -709,7 +741,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             placeholder="0,00"
             value={offerData.fixedPrice}
             onChange={(e) => setOfferData(prev => ({ ...prev, fixedPrice: e.target.value }))}
-            className="pl-10 h-12 text-lg"
+            className="pl-8 h-12 text-lg"
           />
           <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-brand-gray-500 text-sm">
             DKK
@@ -880,7 +912,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-7xl max-h-[95vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Star className="h-5 w-5 text-brand-primary" />
