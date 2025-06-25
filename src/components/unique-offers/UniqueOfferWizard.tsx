@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+// Removed Select components - using native HTML select to prevent recursion
 import { useToast } from '@/hooks/use-toast';
 import { authService } from '@/lib/auth';
 import { cn } from '@/lib/utils';
@@ -442,30 +442,35 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             className="pl-10"
           />
         </div>
-        <Select 
-          value={selectedCategory || "all"} 
-          onValueChange={(value) => {
-            setSelectedCategory(value === "all" ? "" : value);
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Vælg kategori" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alle kategorier</SelectItem>
+        <div className="relative">
+          <select
+            value={selectedCategory || "all"}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedCategory(value === "all" ? "" : value);
+            }}
+            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+            disabled={loadingCategories}
+          >
+            <option value="all">Alle kategorier</option>
             {loadingCategories ? (
-              <SelectItem value="loading" disabled>Indlæser kategorier...</SelectItem>
+              <option value="loading" disabled>Indlæser kategorier...</option>
             ) : categories.length > 0 ? (
               categories.map(category => (
-                <SelectItem key={category._id} value={category._id}>
+                <option key={category._id} value={category._id}>
                   {category.navn}
-                </SelectItem>
+                </option>
               ))
             ) : (
-              <SelectItem value="no-categories" disabled>Ingen kategorier tilgængelige</SelectItem>
+              <option value="no-categories" disabled>Ingen kategorier tilgængelige</option>
             )}
-          </SelectContent>
-        </Select>
+          </select>
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* Products Grid */}
@@ -623,26 +628,30 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             className="pl-10"
           />
         </div>
-        <Select 
-          value={selectedDiscountGroup || "all"} 
-          onValueChange={(value) => {
-            setSelectedDiscountGroup(value === "all" ? "" : value);
-          }}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Vælg rabatgruppe" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Alle rabatgrupper</SelectItem>
+        <div className="relative">
+          <select
+            value={selectedDiscountGroup || "all"}
+            onChange={(e) => {
+              const value = e.target.value;
+              setSelectedDiscountGroup(value === "all" ? "" : value);
+            }}
+            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
+          >
+            <option value="all">Alle rabatgrupper</option>
             {discountGroups.length > 0 ? discountGroups.map(group => (
-              <SelectItem key={group._id} value={group._id}>
+              <option key={group._id} value={group._id}>
                 {group.name}
-              </SelectItem>
+              </option>
             )) : (
-              <SelectItem value="loading" disabled>Indlæser rabatgrupper...</SelectItem>
+              <option value="loading" disabled>Indlæser rabatgrupper...</option>
             )}
-          </SelectContent>
-        </Select>
+          </select>
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            <svg className="h-4 w-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* Customers List */}
