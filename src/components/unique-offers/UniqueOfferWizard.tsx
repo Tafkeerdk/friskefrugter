@@ -70,6 +70,7 @@ interface Category {
 interface DiscountGroup {
   _id: string;
   name: string;
+  discountPercentage: number;
 }
 
 interface UniqueOfferWizardProps {
@@ -328,6 +329,48 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
 
   const getSelectedCustomer = () => {
     return customers.find(c => (c._id || (c as any).id) === offerData.customerId);
+  };
+
+  // Calculate customer's actual price based on their discount group
+  const calculateCustomerPrice = () => {
+    const product = getSelectedProduct();
+    const customer = getSelectedCustomer();
+    
+    if (!product || !customer) {
+      return {
+        price: 0,
+        label: 'standard pris',
+        hasDiscount: false
+      };
+    }
+
+    const basePrice = product.basispris;
+    
+    // If customer has a discount group, calculate their discounted price
+    if (customer.discountGroup && customer.discountGroup.name) {
+      // Find the discount group details to get the percentage
+      const discountGroup = discountGroups.find(g => g._id === customer.discountGroup._id);
+      
+      if (discountGroup && discountGroup.discountPercentage > 0) {
+        const discountAmount = (basePrice * discountGroup.discountPercentage) / 100;
+        const discountedPrice = basePrice - discountAmount;
+        
+        return {
+          price: discountedPrice,
+          label: `${customer.discountGroup.name} pris`,
+          hasDiscount: true,
+          originalPrice: basePrice,
+          discountPercentage: discountGroup.discountPercentage
+        };
+      }
+    }
+
+    // No discount group or 0% discount
+    return {
+      price: basePrice,
+      label: 'standard pris',
+      hasDiscount: false
+    };
   };
 
   // SAFE MEMOIZED FILTERING - STABLE DEPENDENCIES
@@ -760,12 +803,28 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
               <div>
                 <h4 className="font-medium text-brand-gray-900">{getSelectedProduct()?.produktnavn}</h4>
                 <div className="text-sm text-brand-gray-600">
-                  {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(getSelectedProduct()?.basispris || 0)}
-                  {getSelectedCustomer()?.discountGroup ? (
-                    <span className="ml-1">({getSelectedCustomer()!.discountGroup!.name} pris)</span>
-                  ) : (
-                    <span className="ml-1">(standard pris)</span>
-                  )}
+                  {(() => {
+                    const customerPricing = calculateCustomerPrice();
+                    return (
+                      <>
+                        {customerPricing.hasDiscount ? (
+                          <>
+                            <span className="line-through text-brand-gray-400 mr-2">
+                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.originalPrice || 0)}
+                            </span>
+                            <span className="font-medium text-brand-primary">
+                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="font-medium text-brand-primary">
+                            {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                          </span>
+                        )}
+                        <span className="ml-1">({customerPricing.label})</span>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -807,9 +866,26 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         </div>
         {offerData.fixedPrice && getSelectedProduct() && (
           <div className="text-base text-brand-gray-600 bg-brand-gray-50 p-4 rounded-lg border">
-            <strong>Besparelse:</strong> {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(
-              getSelectedProduct()!.basispris - parseFloat(offerData.fixedPrice)
-            )} ({Math.round(((getSelectedProduct()!.basispris - parseFloat(offerData.fixedPrice)) / getSelectedProduct()!.basispris) * 100)}%)
+            {(() => {
+              const customerPricing = calculateCustomerPrice();
+              const customerPrice = customerPricing.price;
+              const offerPrice = parseFloat(offerData.fixedPrice);
+              const savings = customerPrice - offerPrice;
+              const savingsPercentage = Math.round((savings / customerPrice) * 100);
+              
+              return (
+                <>
+                  <strong>Besparelse fra {customerPricing.label}:</strong> {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(savings)} ({savingsPercentage}%)
+                  {customerPricing.hasDiscount && (
+                    <div className="text-sm text-brand-gray-500 mt-1">
+                      Samlet besparelse fra standard pris: {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(
+                        (customerPricing.originalPrice || 0) - offerPrice
+                      )} ({Math.round(((customerPricing.originalPrice || 0) - offerPrice) / (customerPricing.originalPrice || 1) * 100)}%)
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </div>
         )}
       </div>
@@ -902,12 +978,27 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             <span className="font-semibold text-brand-gray-900">{getSelectedCustomer()?.companyName}</span>
           </div>
           
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-brand-gray-700">Normal pris:</span>
-            <span className="text-brand-gray-600 line-through">
-              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(getSelectedProduct()?.basispris || 0)}
-            </span>
-          </div>
+          {(() => {
+            const customerPricing = calculateCustomerPrice();
+            return (
+              <>
+                {customerPricing.hasDiscount && (
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-brand-gray-700">Standard pris:</span>
+                    <span className="text-brand-gray-400 line-through">
+                      {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.originalPrice || 0)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="font-medium text-brand-gray-700">{customerPricing.label}:</span>
+                  <span className="text-brand-gray-600 line-through">
+                    {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                  </span>
+                </div>
+              </>
+            );
+          })()}
           
           <div className="flex items-center justify-between">
             <span className="font-medium text-brand-gray-700">Tilbudspris:</span>
@@ -919,9 +1010,12 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
           <div className="flex items-center justify-between">
             <span className="font-medium text-brand-gray-700">Besparelse:</span>
             <span className="font-semibold text-brand-success">
-              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(
-                (getSelectedProduct()?.basispris || 0) - parseFloat(offerData.fixedPrice)
-              )} ({Math.round((((getSelectedProduct()?.basispris || 0) - parseFloat(offerData.fixedPrice)) / (getSelectedProduct()?.basispris || 1)) * 100)}%)
+              {(() => {
+                const customerPricing = calculateCustomerPrice();
+                const savings = customerPricing.price - parseFloat(offerData.fixedPrice);
+                const savingsPercentage = Math.round((savings / customerPricing.price) * 100);
+                return `${new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(savings)} (${savingsPercentage}%)`;
+              })()}
             </span>
           </div>
           
