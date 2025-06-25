@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,17 +91,6 @@ interface OfferData {
   isUnlimited: boolean;
 }
 
-// COMPLETELY ISOLATED CATEGORY SYSTEM - NO RECURSION POSSIBLE
-const SAFE_CATEGORIES_CACHE = new Map<string, Category[]>();
-const SAFE_PRODUCTS_CACHE = new Map<string, Product[]>();
-const SAFE_CUSTOMERS_CACHE = new Map<string, Customer[]>();
-const SAFE_DISCOUNT_GROUPS_CACHE = new Map<string, DiscountGroup[]>();
-
-let CATEGORIES_LOADED = false;
-let PRODUCTS_LOADED = false;
-let CUSTOMERS_LOADED = false;
-let DISCOUNT_GROUPS_LOADED = false;
-
 const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   isOpen,
   onClose,
@@ -109,23 +98,29 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   preselectedProduct
 }) => {
   const { toast } = useToast();
+  const loadingRef = useRef({
+    products: false,
+    customers: false,
+    categories: false,
+    discountGroups: false
+  });
   
   // Wizard state
   const [currentStep, setCurrentStep] = useState<WizardStep>('product');
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Data state
+  // Data state - STABLE REFERENCES
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [discountGroups, setDiscountGroups] = useState<DiscountGroup[]>([]);
   
-  // Loading states
+  // Loading states - STABLE REFERENCES
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [loadingCustomers, setLoadingCustomers] = useState(false);
   const [loadingCategories, setLoadingCategories] = useState(false);
   
-  // Filter states
+  // Filter states - STABLE REFERENCES
   const [productSearch, setProductSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [customerSearch, setCustomerSearch] = useState('');
@@ -142,138 +137,112 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     isUnlimited: false
   });
 
-  // Load initial data
-  useEffect(() => {
-    if (isOpen) {
-      if (!preselectedProduct) {
-        loadProducts();
-      }
-      loadCustomers();
-      loadDiscountGroups();
-      
-      // Set initial step based on preselected product
-      setCurrentStep(preselectedProduct ? 'customer' : 'product');
-    }
-  }, [isOpen, preselectedProduct]);
+  // BULLETPROOF DATA LOADING - NO RECURSION POSSIBLE
+  const loadAllData = useCallback(async () => {
+    if (!isOpen) return;
 
-  // NUCLEAR SAFE CATEGORY LOADING - NO RECURSION POSSIBLE
-  const loadCategoriesSafe = useCallback(async () => {
-    if (CATEGORIES_LOADED && SAFE_CATEGORIES_CACHE.has('categories')) {
-      setCategories(SAFE_CATEGORIES_CACHE.get('categories') || []);
+    // Prevent multiple simultaneous loads
+    if (Object.values(loadingRef.current).some(loading => loading)) {
       return;
     }
 
-    if (loadingCategories) return;
-
     try {
+      // Mark all as loading
+      loadingRef.current = {
+        products: true,
+        customers: true,
+        categories: true,
+        discountGroups: true
+      };
+
+      setLoadingProducts(true);
+      setLoadingCustomers(true);
       setLoadingCategories(true);
-      const response = await authService.apiClient.get('/.netlify/functions/categories');
-      const data = await response.json();
-      
-      if (data.success && data.data) {
-        const categoriesArray = Array.isArray(data.data) ? data.data : (data.data.categories || []);
-        SAFE_CATEGORIES_CACHE.set('categories', categoriesArray);
-        setCategories(categoriesArray);
-        CATEGORIES_LOADED = true;
+
+      // Load all data in parallel - NO DEPENDENCIES
+      const [productsResponse, customersResponse, categoriesResponse, discountGroupsResponse] = await Promise.allSettled([
+        // Products
+        authService.apiClient.get('/.netlify/functions/products?limit=500&aktiv=true'),
+        // Customers
+        authService.getAllCustomers(),
+        // Categories
+        authService.apiClient.get('/.netlify/functions/categories'),
+        // Discount Groups
+        authService.getDiscountGroups()
+      ]);
+
+      // Process products
+      if (productsResponse.status === 'fulfilled') {
+        const productsData = await productsResponse.value.json();
+        if (productsData.success && productsData.data) {
+          const productsArray = Array.isArray(productsData.data) ? productsData.data : productsData.data.products || [];
+          const activeProducts = productsArray.filter((p: Product) => p.aktiv);
+          setProducts(activeProducts);
+        }
       }
+
+      // Process customers
+      if (customersResponse.status === 'fulfilled') {
+        const customersData = customersResponse.value;
+        if (customersData.success) {
+          const customerList = customersData.customers?.filter((c: Customer) => c.isActive) || [];
+          setCustomers(customerList);
+        }
+      }
+
+      // Process categories
+      if (categoriesResponse.status === 'fulfilled') {
+        const categoriesData = await categoriesResponse.value.json();
+        if (categoriesData.success && categoriesData.data) {
+          const categoriesArray = Array.isArray(categoriesData.data) ? categoriesData.data : (categoriesData.data.categories || []);
+          setCategories(categoriesArray);
+        }
+      }
+
+      // Process discount groups
+      if (discountGroupsResponse.status === 'fulfilled') {
+        const discountGroupsData = discountGroupsResponse.value;
+        if (discountGroupsData.success) {
+          const groups = (discountGroupsData.discountGroups as DiscountGroup[]) || [];
+          setDiscountGroups(groups);
+        }
+      }
+
     } catch (error) {
+      console.error('Error loading data:', error);
       // Silent error handling to prevent recursion
-      setCategories([]);
     } finally {
+      // Reset loading states
+      loadingRef.current = {
+        products: false,
+        customers: false,
+        categories: false,
+        discountGroups: false
+      };
+
+      setLoadingProducts(false);
+      setLoadingCustomers(false);
       setLoadingCategories(false);
     }
-  }, [loadingCategories]);
+  }, [isOpen]);
 
-  // SAFE PRODUCT LOADING WITH CACHING
-  const loadProducts = useCallback(async () => {
-    if (PRODUCTS_LOADED && SAFE_PRODUCTS_CACHE.has('products')) {
-      setProducts(SAFE_PRODUCTS_CACHE.get('products') || []);
-      return;
-    }
-
-    if (loadingProducts) return;
-
-    try {
-      setLoadingProducts(true);
-      const response = await authService.apiClient.get('/.netlify/functions/products?limit=500&aktiv=true');
-      const data = await response.json();
-      
-      if (data.success && data.data) {
-        const productsArray = Array.isArray(data.data) ? data.data : data.data.products || [];
-        const activeProducts = productsArray.filter((p: Product) => p.aktiv);
-        SAFE_PRODUCTS_CACHE.set('products', activeProducts);
-        setProducts(activeProducts);
-        PRODUCTS_LOADED = true;
-      }
-    } catch (error) {
-      // Silent error handling to prevent recursion
-      setProducts([]);
-    } finally {
-      setLoadingProducts(false);
-    }
-  }, [loadingProducts]);
-
-  // SAFE CUSTOMER LOADING WITH CACHING
-  const loadCustomers = useCallback(async () => {
-    if (CUSTOMERS_LOADED && SAFE_CUSTOMERS_CACHE.has('customers')) {
-      setCustomers(SAFE_CUSTOMERS_CACHE.get('customers') || []);
-      return;
-    }
-
-    if (loadingCustomers) return;
-
-    try {
-      setLoadingCustomers(true);
-      const response = await authService.getAllCustomers();
-      if (response.success) {
-        const customerList = response.customers?.filter((c: Customer) => c.isActive) || [];
-        SAFE_CUSTOMERS_CACHE.set('customers', customerList);
-        setCustomers(customerList);
-        CUSTOMERS_LOADED = true;
-      }
-    } catch (error) {
-      // Silent error handling to prevent recursion
-      setCustomers([]);
-    } finally {
-      setLoadingCustomers(false);
-    }
-  }, [loadingCustomers]);
-
-  // SAFE DISCOUNT GROUPS LOADING WITH CACHING
-  const loadDiscountGroups = useCallback(async () => {
-    if (DISCOUNT_GROUPS_LOADED && SAFE_DISCOUNT_GROUPS_CACHE.has('discountGroups')) {
-      setDiscountGroups(SAFE_DISCOUNT_GROUPS_CACHE.get('discountGroups') || []);
-      return;
-    }
-
-    try {
-      const response = await authService.getDiscountGroups();
-      if (response.success) {
-        const groups = (response.discountGroups as DiscountGroup[]) || [];
-        SAFE_DISCOUNT_GROUPS_CACHE.set('discountGroups', groups);
-        setDiscountGroups(groups);
-        DISCOUNT_GROUPS_LOADED = true;
-      }
-    } catch (error) {
-      // Silent error handling to prevent recursion
-      setDiscountGroups([]);
-    }
-  }, []);
-
-  // SINGLE LOAD EFFECT - NO RECURSION - DEBOUNCED
+  // SINGLE EFFECT - LOADS EVERYTHING ONCE
   useEffect(() => {
     if (isOpen) {
-      // Debounce the loading to prevent excessive API calls
-      const timeoutId = setTimeout(() => {
-        loadCategoriesSafe();
-        loadProducts();
-        loadCustomers();
-        loadDiscountGroups();
-      }, 100);
-
-      return () => clearTimeout(timeoutId);
+      // Set initial step
+      setCurrentStep(preselectedProduct ? 'customer' : 'product');
+      
+      // Load all data once
+      loadAllData();
+    } else {
+      // Reset when closed
+      setCurrentStep(preselectedProduct ? 'customer' : 'product');
+      setProductSearch('');
+      setCustomerSearch('');
+      setSelectedCategory('');
+      setSelectedDiscountGroup('');
     }
-  }, [isOpen]);
+  }, [isOpen, preselectedProduct, loadAllData]);
 
   const handleNext = () => {
     const steps: WizardStep[] = ['product', 'customer', 'details', 'confirmation'];
@@ -361,21 +330,35 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     return customers.find(c => (c._id || (c as any).id) === offerData.customerId);
   };
 
-  // Memoized filtered arrays to prevent infinite re-renders
+  // SAFE MEMOIZED FILTERING - STABLE DEPENDENCIES
   const filteredProducts = useMemo(() => {
+    if (!products.length) return [];
+    
     return products.filter(product => {
-      const matchesSearch = product.produktnavn.toLowerCase().includes(productSearch.toLowerCase()) ||
-                           product.varenummer?.toLowerCase().includes(productSearch.toLowerCase());
-      const matchesCategory = !selectedCategory || selectedCategory === 'all' || product.kategori?._id === selectedCategory;
+      const matchesSearch = !productSearch || 
+        product.produktnavn.toLowerCase().includes(productSearch.toLowerCase()) ||
+        (product.varenummer && product.varenummer.toLowerCase().includes(productSearch.toLowerCase()));
+      
+      const matchesCategory = !selectedCategory || 
+        selectedCategory === 'all' || 
+        product.kategori?._id === selectedCategory;
+      
       return matchesSearch && matchesCategory;
     });
   }, [products, productSearch, selectedCategory]);
 
   const filteredCustomers = useMemo(() => {
+    if (!customers.length) return [];
+    
     return customers.filter(customer => {
-      const matchesSearch = customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
-                           customer.contactPersonName.toLowerCase().includes(customerSearch.toLowerCase());
-      const matchesGroup = !selectedDiscountGroup || selectedDiscountGroup === 'all' || customer.discountGroup?._id === selectedDiscountGroup;
+      const matchesSearch = !customerSearch ||
+        customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
+        customer.contactPersonName.toLowerCase().includes(customerSearch.toLowerCase());
+      
+      const matchesGroup = !selectedDiscountGroup || 
+        selectedDiscountGroup === 'all' || 
+        customer.discountGroup?._id === selectedDiscountGroup;
+      
       return matchesSearch && matchesGroup;
     });
   }, [customers, customerSearch, selectedDiscountGroup]);
@@ -466,18 +449,13 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Vælg kategori">
-              {selectedCategory ? 
-                categories.find(c => c._id === selectedCategory)?.navn || "Alle kategorier" : 
-                "Alle kategorier"
-              }
-            </SelectValue>
+            <SelectValue placeholder="Vælg kategori" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle kategorier</SelectItem>
             {loadingCategories ? (
               <SelectItem value="loading" disabled>Indlæser kategorier...</SelectItem>
-            ) : categories && categories.length > 0 ? (
+            ) : categories.length > 0 ? (
               categories.map(category => (
                 <SelectItem key={category._id} value={category._id}>
                   {category.navn}
@@ -652,16 +630,11 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Vælg rabatgruppe">
-              {selectedDiscountGroup ? 
-                discountGroups.find(g => g._id === selectedDiscountGroup)?.name || "Alle rabatgrupper" : 
-                "Alle rabatgrupper"
-              }
-            </SelectValue>
+            <SelectValue placeholder="Vælg rabatgruppe" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Alle rabatgrupper</SelectItem>
-            {discountGroups && discountGroups.length > 0 ? discountGroups.map(group => (
+            {discountGroups.length > 0 ? discountGroups.map(group => (
               <SelectItem key={group._id} value={group._id}>
                 {group.name}
               </SelectItem>
