@@ -93,7 +93,14 @@ interface OfferData {
 
 // COMPLETELY ISOLATED CATEGORY SYSTEM - NO RECURSION POSSIBLE
 const SAFE_CATEGORIES_CACHE = new Map<string, Category[]>();
+const SAFE_PRODUCTS_CACHE = new Map<string, Product[]>();
+const SAFE_CUSTOMERS_CACHE = new Map<string, Customer[]>();
+const SAFE_DISCOUNT_GROUPS_CACHE = new Map<string, DiscountGroup[]>();
+
 let CATEGORIES_LOADED = false;
+let PRODUCTS_LOADED = false;
+let CUSTOMERS_LOADED = false;
+let DISCOUNT_GROUPS_LOADED = false;
 
 const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   isOpen,
@@ -177,8 +184,13 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     }
   }, [loadingCategories]);
 
-  // SAFE PRODUCT LOADING
+  // SAFE PRODUCT LOADING WITH CACHING
   const loadProducts = useCallback(async () => {
+    if (PRODUCTS_LOADED && SAFE_PRODUCTS_CACHE.has('products')) {
+      setProducts(SAFE_PRODUCTS_CACHE.get('products') || []);
+      return;
+    }
+
     if (loadingProducts) return;
 
     try {
@@ -188,21 +200,26 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       
       if (data.success && data.data) {
         const productsArray = Array.isArray(data.data) ? data.data : data.data.products || [];
-        setProducts(productsArray.filter((p: Product) => p.aktiv));
+        const activeProducts = productsArray.filter((p: Product) => p.aktiv);
+        SAFE_PRODUCTS_CACHE.set('products', activeProducts);
+        setProducts(activeProducts);
+        PRODUCTS_LOADED = true;
       }
     } catch (error) {
-      toast({
-        title: 'Fejl',
-        description: 'Kunne ikke indlæse produkter',
-        variant: 'destructive'
-      });
+      // Silent error handling to prevent recursion
+      setProducts([]);
     } finally {
       setLoadingProducts(false);
     }
   }, [loadingProducts]);
 
-  // SAFE CUSTOMER LOADING
+  // SAFE CUSTOMER LOADING WITH CACHING
   const loadCustomers = useCallback(async () => {
+    if (CUSTOMERS_LOADED && SAFE_CUSTOMERS_CACHE.has('customers')) {
+      setCustomers(SAFE_CUSTOMERS_CACHE.get('customers') || []);
+      return;
+    }
+
     if (loadingCustomers) return;
 
     try {
@@ -210,41 +227,53 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       const response = await authService.getAllCustomers();
       if (response.success) {
         const customerList = response.customers?.filter((c: Customer) => c.isActive) || [];
+        SAFE_CUSTOMERS_CACHE.set('customers', customerList);
         setCustomers(customerList);
+        CUSTOMERS_LOADED = true;
       }
     } catch (error) {
-      console.error('Error loading customers:', error);
-      toast({
-        title: 'Fejl',
-        description: 'Kunne ikke indlæse kunder',
-        variant: 'destructive'
-      });
+      // Silent error handling to prevent recursion
+      setCustomers([]);
     } finally {
       setLoadingCustomers(false);
     }
   }, [loadingCustomers]);
 
-  // SAFE DISCOUNT GROUPS LOADING
+  // SAFE DISCOUNT GROUPS LOADING WITH CACHING
   const loadDiscountGroups = useCallback(async () => {
+    if (DISCOUNT_GROUPS_LOADED && SAFE_DISCOUNT_GROUPS_CACHE.has('discountGroups')) {
+      setDiscountGroups(SAFE_DISCOUNT_GROUPS_CACHE.get('discountGroups') || []);
+      return;
+    }
+
     try {
       const response = await authService.getDiscountGroups();
       if (response.success) {
-        setDiscountGroups((response.discountGroups as DiscountGroup[]) || []);
+        const groups = (response.discountGroups as DiscountGroup[]) || [];
+        SAFE_DISCOUNT_GROUPS_CACHE.set('discountGroups', groups);
+        setDiscountGroups(groups);
+        DISCOUNT_GROUPS_LOADED = true;
       }
     } catch (error) {
-      console.error('Error loading discount groups:', error);
+      // Silent error handling to prevent recursion
+      setDiscountGroups([]);
     }
   }, []);
 
-  // SINGLE LOAD EFFECT - NO RECURSION
+  // SINGLE LOAD EFFECT - NO RECURSION - DEBOUNCED
   useEffect(() => {
     if (isOpen) {
-      loadCategoriesSafe();
-      loadProducts();
-      loadCustomers();
-      loadDiscountGroups();
+      // Debounce the loading to prevent excessive API calls
+      const timeoutId = setTimeout(() => {
+        loadCategoriesSafe();
+        loadProducts();
+        loadCustomers();
+        loadDiscountGroups();
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
     }
-  }, [isOpen, loadCategoriesSafe, loadProducts, loadCustomers, loadDiscountGroups]);
+  }, [isOpen]);
 
   const handleNext = () => {
     const steps: WizardStep[] = ['product', 'customer', 'details', 'confirmation'];
@@ -704,17 +733,17 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   );
 
   const renderDetailsStep = () => (
-    <div className="space-y-8">
+    <div className="space-y-10">
       <div className="text-center">
-        <div className="h-12 w-12 text-brand-primary mx-auto mb-4 flex items-center justify-center bg-brand-primary/10 rounded-full">
+        <div className="h-12 w-12 text-brand-primary mx-auto mb-6 flex items-center justify-center bg-brand-primary/10 rounded-full">
           <Calendar className="h-6 w-6" />
         </div>
-        <h3 className="text-lg font-semibold text-brand-gray-900 mb-2">Tilbudsdetaljer</h3>
+        <h3 className="text-lg font-semibold text-brand-gray-900 mb-3">Tilbudsdetaljer</h3>
         <p className="text-brand-gray-600">Angiv pris og gyldighedsperiode for tilbuddet</p>
       </div>
 
       {/* Selected Items Display */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="bg-brand-gray-50 border-brand-gray-200">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -777,10 +806,10 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       </div>
 
       {/* Price Input */}
-      <div className="space-y-4">
-        <Label className="text-base font-semibold text-brand-gray-900">Unikt Tilbudspris *</Label>
+      <div className="space-y-6">
+        <Label className="text-lg font-semibold text-brand-gray-900">Unikt Tilbudspris *</Label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-brand-gray-400 text-sm font-medium">kr</span>
+          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-brand-gray-400 text-base font-medium">kr</span>
           <Input
             type="number"
             step="0.01"
@@ -788,15 +817,15 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             placeholder="0,00"
             value={offerData.fixedPrice}
             onChange={(e) => setOfferData(prev => ({ ...prev, fixedPrice: e.target.value }))}
-            className="pl-8 h-12 text-lg"
+            className="pl-12 pr-16 h-16 text-xl border-2 focus:border-brand-primary rounded-lg"
           />
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-brand-gray-500 text-sm">
+          <div className="absolute right-4 top-1/2 transform -translate-y-1/2 text-brand-gray-500 text-base font-medium">
             DKK
           </div>
         </div>
         {offerData.fixedPrice && getSelectedProduct() && (
-          <div className="text-sm text-brand-gray-600">
-            Besparelse: {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(
+          <div className="text-base text-brand-gray-600 bg-brand-gray-50 p-4 rounded-lg border">
+            <strong>Besparelse:</strong> {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(
               getSelectedProduct()!.basispris - parseFloat(offerData.fixedPrice)
             )} ({Math.round(((getSelectedProduct()!.basispris - parseFloat(offerData.fixedPrice)) / getSelectedProduct()!.basispris) * 100)}%)
           </div>
@@ -804,47 +833,49 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       </div>
 
       {/* Description */}
-      <div className="space-y-4">
-        <Label className="text-base font-semibold text-brand-gray-900">Beskrivelse (valgfri)</Label>
+      <div className="space-y-6">
+        <Label className="text-lg font-semibold text-brand-gray-900">Beskrivelse (valgfri)</Label>
         <Textarea
           placeholder="Beskrivelse af tilbuddet..."
           value={offerData.description}
           onChange={(e) => setOfferData(prev => ({ ...prev, description: e.target.value }))}
-          rows={3}
-          className="resize-none"
+          rows={4}
+          className="resize-none text-base p-4 border-2 focus:border-brand-primary rounded-lg"
         />
       </div>
 
       {/* Validity Period */}
-      <div className="space-y-4">
-        <Label className="text-base font-semibold text-brand-gray-900">Gyldighedsperiode</Label>
+      <div className="space-y-6">
+        <Label className="text-lg font-semibold text-brand-gray-900">Gyldighedsperiode</Label>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="validFrom" className="text-sm text-brand-gray-600">Gyldig fra</Label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="validFrom" className="text-base font-medium text-brand-gray-700">Gyldig fra</Label>
             <Input
               id="validFrom"
               type="date"
               value={offerData.validFrom}
               onChange={(e) => setOfferData(prev => ({ ...prev, validFrom: e.target.value }))}
+              className="h-12 text-base border-2 focus:border-brand-primary"
             />
           </div>
           
           {!offerData.isUnlimited && (
-            <div>
-              <Label htmlFor="validTo" className="text-sm text-brand-gray-600">Gyldig til</Label>
+            <div className="space-y-2">
+              <Label htmlFor="validTo" className="text-base font-medium text-brand-gray-700">Gyldig til</Label>
               <Input
                 id="validTo"
                 type="date"
                 value={offerData.validTo}
                 onChange={(e) => setOfferData(prev => ({ ...prev, validTo: e.target.value }))}
+                className="h-12 text-base border-2 focus:border-brand-primary"
               />
             </div>
           )}
         </div>
         
         {/* Unlimited Toggle */}
-        <div className="flex items-center space-x-3 p-4 bg-brand-gray-50 rounded-lg border border-brand-gray-200">
+        <div className="flex items-center space-x-4 p-6 bg-brand-gray-50 rounded-lg border border-brand-gray-200">
           <Switch
             id="unlimited-toggle"
             checked={offerData.isUnlimited}
