@@ -287,11 +287,20 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         onClose();
         resetForm();
       } else {
-        toast({
-          title: 'Fejl',
-          description: response.message || 'Kunne ikke oprette tilbud',
-          variant: 'destructive'
-        });
+        // Handle duplicate offer error specifically
+        if (response.message?.includes('already exists') || response.message?.includes('combination')) {
+          toast({
+            title: 'Tilbud findes allerede',
+            description: `Der eksisterer allerede et aktivt tilbud for denne kunde og dette produkt. Rediger det eksisterende tilbud i stedet.`,
+            variant: 'destructive'
+          });
+        } else {
+          toast({
+            title: 'Fejl',
+            description: response.message || 'Kunne ikke oprette tilbud',
+            variant: 'destructive'
+          });
+        }
       }
     } catch (error) {
       console.error('Error creating offer:', error);
