@@ -302,17 +302,29 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         onClose();
         resetForm();
       } else {
-        // Handle duplicate offer error specifically
-        if (response.message?.includes('already exists') || response.message?.includes('combination')) {
+        // Handle different error types
+        if (response.error?.includes('eksisterer allerede') || response.message?.includes('already exists') || response.message?.includes('combination')) {
           toast({
             title: 'Tilbud findes allerede',
-            description: `Der eksisterer allerede et aktivt tilbud for denne kunde og dette produkt. Rediger det eksisterende tilbud i stedet.`,
+            description: `Der eksisterer allerede et aktivt tilbud for denne kunde og dette produkt. Du kan kun have ét aktivt tilbud per kunde per produkt.`,
+            variant: 'destructive'
+          });
+        } else if (response.error?.includes('Ugyldig pris') || response.message?.includes('INVALID_PRICE')) {
+          toast({
+            title: 'Ugyldig pris',
+            description: 'Prisen skal være mellem 0,01 og 100.000 DKK',
+            variant: 'destructive'
+          });
+        } else if (response.error?.includes('For mange tilbud')) {
+          toast({
+            title: 'For mange tilbud',
+            description: 'Der er for mange tilbud for denne kombination. Slet nogle inaktive tilbud først.',
             variant: 'destructive'
           });
         } else {
           toast({
             title: 'Fejl',
-            description: response.message || 'Kunne ikke oprette tilbud',
+            description: response.error || response.message || 'Kunne ikke oprette tilbud',
             variant: 'destructive'
           });
         }

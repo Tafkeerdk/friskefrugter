@@ -1470,7 +1470,7 @@ export const authService = {
     validFrom?: string;
     validTo?: string;
     isUnlimited?: boolean;
-  }): Promise<{ success: boolean; message: string; offer?: any }> {
+  }): Promise<{ success: boolean; message?: string; error?: string; offer?: any }> {
     const response = await apiClient.post('/.netlify/functions/admin-unique-offers', offerData);
     const result = await response.json();
     
@@ -1491,7 +1491,7 @@ export const authService = {
     validTo?: string;
     isActive?: boolean;
     isUnlimited?: boolean;
-  }): Promise<{ success: boolean; message: string; offer?: any }> {
+  }): Promise<{ success: boolean; message?: string; error?: string; offer?: any }> {
     const response = await apiClient.put('/.netlify/functions/admin-unique-offers', {
       offerId,
       ...offerData
