@@ -249,7 +249,20 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     const steps: WizardStep[] = ['product', 'customer', 'details', 'confirmation'];
     const currentIndex = steps.indexOf(currentStep);
     if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1]);
+      const nextStep = steps[currentIndex + 1];
+      
+      // Auto-populate fixed price with customer's discounted price when moving to details step
+      if (nextStep === 'details' && !offerData.fixedPrice) {
+        const customerPricing = calculateCustomerPrice();
+        if (customerPricing.price > 0) {
+          setOfferData(prev => ({ 
+            ...prev, 
+            fixedPrice: customerPricing.price.toFixed(2)
+          }));
+        }
+      }
+      
+      setCurrentStep(nextStep);
     }
   };
 
@@ -728,6 +741,30 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 onClick={() => {
                   const customerId = customer._id || (customer as any).id;
                   setOfferData(prev => ({ ...prev, customerId }));
+                  
+                  // If already in details step and price is empty or standard price, update with customer price
+                  if (currentStep === 'details') {
+                    const product = getSelectedProduct();
+                    if (product) {
+                      const selectedCustomer = customers.find(c => (c._id || (c as any).id) === customerId);
+                      if (selectedCustomer?.discountGroup) {
+                        const discountGroup = discountGroups.find(g => g._id === selectedCustomer.discountGroup._id);
+                        if (discountGroup && discountGroup.discountPercentage > 0) {
+                          const discountAmount = (product.basispris * discountGroup.discountPercentage) / 100;
+                          const discountedPrice = product.basispris - discountAmount;
+                          
+                          // Update price if it's empty or if it's the standard price
+                          const currentPrice = parseFloat(offerData.fixedPrice);
+                          if (!offerData.fixedPrice || Math.abs(currentPrice - product.basispris) < 0.01) {
+                            setOfferData(prevData => ({ 
+                              ...prevData, 
+                              fixedPrice: discountedPrice.toFixed(2)
+                            }));
+                          }
+                        }
+                      }
+                    }
+                  }
                 }}
                 className={cn(
                   "w-full p-4 text-left hover:bg-brand-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
@@ -857,7 +894,33 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
 
       {/* Price Input */}
       <div className="space-y-6">
-        <Label className="text-lg font-semibold text-brand-gray-900">Unikt Tilbudspris *</Label>
+        <div className="flex items-center justify-between">
+          <Label className="text-lg font-semibold text-brand-gray-900">Unikt Tilbudspris *</Label>
+          {(() => {
+            const customerPricing = calculateCustomerPrice();
+            const currentPrice = parseFloat(offerData.fixedPrice);
+            const customerPrice = customerPricing.price;
+            
+            // Show button if customer has discount or if current price doesn't match customer price
+            if (customerPrice > 0 && Math.abs(customerPrice - currentPrice) > 0.01) {
+              return (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setOfferData(prev => ({ 
+                    ...prev, 
+                    fixedPrice: customerPrice.toFixed(2)
+                  }))}
+                  className="text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white text-xs"
+                >
+                  Brug {customerPricing.label}: {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPrice)}
+                </Button>
+              );
+            }
+            return null;
+          })()}
+        </div>
         <div className="relative">
           <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-brand-gray-400 text-base font-medium">kr</span>
           <Input
