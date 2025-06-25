@@ -31,12 +31,22 @@ import {
   AlertTriangle
 } from 'lucide-react';
 
+interface ProductImage {
+  _id?: string;
+  url: string;
+  filename?: string;
+  originalname?: string;
+  size?: number;
+  uploadedAt?: string;
+  isPrimary?: boolean;
+}
+
 interface Product {
   _id: string;
   produktnavn: string;
   varenummer: string;
   basispris: number;
-  billeder?: string[];
+  billeder?: ProductImage[];
   aktiv: boolean;
   kategori?: {
     _id: string;
@@ -76,7 +86,7 @@ interface UniqueOffer {
     produktnavn: string;
     varenummer: string;
     basispris: number;
-    billeder?: string[];
+    billeder?: ProductImage[];
     aktiv: boolean;
   };
   customer: {
@@ -606,23 +616,30 @@ const DashboardUniqueOffers: React.FC = () => {
                           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                             {/* Product Info */}
                             <div className="flex items-center gap-3 flex-1">
-                              <div className="h-12 w-12 rounded-lg bg-brand-gray-100 flex items-center justify-center shrink-0">
-                                {offer.product.billeder && offer.product.billeder[0] ? (
-                                  <img
-                                    src={offer.product.billeder[0]}
-                                    alt={offer.product.produktnavn}
-                                    className="h-10 w-10 rounded object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
-                                      target.nextElementSibling!.classList.remove('hidden');
-                                    }}
-                                  />
-                                ) : null}
-                                <Package className={cn(
-                                  "h-6 w-6 text-brand-gray-400",
-                                  offer.product.billeder && offer.product.billeder[0] ? "hidden" : ""
-                                )} />
+                              <div className="h-12 w-12 rounded-lg bg-brand-gray-100 flex items-center justify-center shrink-0 relative overflow-hidden">
+                                {offer.product.billeder && offer.product.billeder.length > 0 ? (
+                                  <>
+                                    <img
+                                      src={offer.product.billeder.find(img => img.isPrimary)?.url || offer.product.billeder[0]?.url}
+                                      alt={offer.product.produktnavn}
+                                      className="h-10 w-10 rounded object-cover"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
+                                        if (placeholder) placeholder.style.display = 'flex';
+                                      }}
+                                    />
+                                    <div 
+                                      className="image-placeholder absolute inset-0 w-full h-full flex items-center justify-center bg-brand-gray-100 text-brand-gray-400"
+                                      style={{ display: 'none' }}
+                                    >
+                                      <Package className="h-6 w-6" />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <Package className="h-6 w-6 text-brand-gray-400" />
+                                )}
                               </div>
                               <div className="min-w-0 flex-1">
                                 <h3 className="font-medium text-brand-gray-900 truncate">
@@ -978,13 +995,27 @@ const DashboardUniqueOffers: React.FC = () => {
               <div className="bg-brand-gray-50 p-4 rounded-lg">
                 <h4 className="font-medium text-brand-gray-900 mb-2">Produkt</h4>
                 <div className="flex items-center gap-3">
-                  <div className="h-12 w-12 rounded-lg bg-white flex items-center justify-center">
-                    {selectedOffer.product.billeder && selectedOffer.product.billeder[0] ? (
-                      <img
-                        src={selectedOffer.product.billeder[0]}
-                        alt={selectedOffer.product.produktnavn}
-                        className="h-10 w-10 rounded object-cover"
-                      />
+                  <div className="h-12 w-12 rounded-lg bg-white flex items-center justify-center relative overflow-hidden">
+                    {selectedOffer.product.billeder && selectedOffer.product.billeder.length > 0 ? (
+                      <>
+                        <img
+                          src={selectedOffer.product.billeder.find(img => img.isPrimary)?.url || selectedOffer.product.billeder[0]?.url}
+                          alt={selectedOffer.product.produktnavn}
+                          className="h-10 w-10 rounded object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
+                            if (placeholder) placeholder.style.display = 'flex';
+                          }}
+                        />
+                        <div 
+                          className="image-placeholder absolute inset-0 w-full h-full flex items-center justify-center bg-white text-brand-gray-400"
+                          style={{ display: 'none' }}
+                        >
+                          <Package className="h-6 w-6" />
+                        </div>
+                      </>
                     ) : (
                       <Package className="h-6 w-6 text-brand-gray-400" />
                     )}
