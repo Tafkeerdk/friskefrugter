@@ -144,9 +144,9 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     }
   }, [isOpen, preselectedProduct]);
 
-  // Load categories when dialog opens
+  // Load categories when dialog opens - single time only
   useEffect(() => {
-    if (isOpen && categories.length === 0) {
+    if (isOpen) {
       loadCategories();
     }
   }, [isOpen]);
@@ -177,11 +177,8 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     try {
       setLoadingCustomers(true);
       const response = await authService.getAllCustomers();
-      console.log('🔍 Raw customer response:', response);
       if (response.success) {
         const customerList = response.customers?.filter((c: Customer) => c.isActive) || [];
-        console.log('🔍 Filtered customers:', customerList);
-        console.log('🔍 First customer structure:', customerList[0]);
         setCustomers(customerList);
       }
     } catch (error) {
@@ -198,20 +195,15 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
 
   const loadCategories = async () => {
     try {
-      console.log('🔄 Loading categories...');
       const response = await authService.apiClient.get('/.netlify/functions/categories');
       const data = await response.json();
-      console.log('📋 Categories response:', data);
-      if (data.success && data.data) {
-        setCategories(Array.isArray(data.data) ? data.data : []);
-        console.log('✅ Categories loaded:', data.data.length);
+      if (data.success && data.data && Array.isArray(data.data)) {
+        setCategories(data.data);
       } else {
-        console.warn('⚠️ Categories response not successful or no data');
         setCategories([]);
       }
     } catch (error) {
-      console.error('❌ Error loading categories:', error);
-      setCategories([]); // Set empty array on error to prevent crashes
+      setCategories([]);
     }
   };
 
@@ -327,23 +319,18 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   });
 
   const canProceedFromStep = (step: WizardStep): boolean => {
-    const result = (() => {
-      switch (step) {
-        case 'product':
-          return !!offerData.productId;
-        case 'customer':
-          return !!offerData.customerId;
-        case 'details':
-          return !!offerData.fixedPrice && parseFloat(offerData.fixedPrice) > 0;
-        case 'confirmation':
-          return true;
-        default:
-          return false;
-      }
-    })();
-    
-    console.log(`🚦 canProceedFromStep(${step}):`, result, 'offerData:', offerData);
-    return result;
+    switch (step) {
+      case 'product':
+        return !!offerData.productId;
+      case 'customer':
+        return !!offerData.customerId;
+      case 'details':
+        return !!offerData.fixedPrice && parseFloat(offerData.fixedPrice) > 0;
+      case 'confirmation':
+        return true;
+      default:
+        return false;
+    }
   };
 
   const renderStepIndicator = () => (
@@ -617,21 +604,8 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 key={customer._id}
                 type="button"
                 onClick={() => {
-                  console.log('🎯 Customer clicked:', customer.companyName);
-                  console.log('🔍 Full customer object:', customer);
-                  console.log('🔍 Customer._id:', customer._id);
-                  console.log('🔍 Customer.id:', (customer as any).id);
-                  console.log('🔍 Current customerId:', offerData.customerId);
-                  
-                  // Try both _id and id properties
                   const customerId = customer._id || (customer as any).id;
-                  console.log('🔍 Resolved customerId:', customerId);
-                  
-                  setOfferData(prev => {
-                    const newData = { ...prev, customerId };
-                    console.log('✅ New offer data:', newData);
-                    return newData;
-                  });
+                  setOfferData(prev => ({ ...prev, customerId }));
                 }}
                 className={cn(
                   "w-full p-4 text-left hover:bg-brand-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
