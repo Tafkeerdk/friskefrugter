@@ -245,13 +245,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     }
   }, [isOpen, preselectedProduct, loadAllData]);
 
-  // Force re-render when customer is selected to update pricing preview
-  useEffect(() => {
-    if (offerData.customerId && currentStep === 'customer') {
-      // Trigger re-render by updating a state that doesn't affect the data
-      // This ensures the pricing preview updates when customer is selected
-    }
-  }, [offerData.customerId, currentStep]);
+
 
   const handleNext = () => {
     const steps: WizardStep[] = ['product', 'customer', 'details', 'confirmation'];
@@ -261,11 +255,11 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       
       // Auto-populate fixed price with customer's discounted price when moving to details step
       if (nextStep === 'details' && !offerData.fixedPrice) {
-        const customerPricing = calculateCustomerPrice();
-        if (customerPricing.price > 0) {
+        const currentPricing = getCustomerPricing();
+        if (currentPricing.price > 0) {
           setOfferData(prev => ({ 
             ...prev, 
-            fixedPrice: customerPricing.price.toFixed(2)
+            fixedPrice: currentPricing.price.toFixed(2)
           }));
         }
       }
@@ -361,12 +355,30 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     return customers.find(c => (c._id || (c as any).id) === offerData.customerId);
   };
 
-  // Calculate customer's actual price based on their discount group
-  const calculateCustomerPrice = () => {
+  // State for customer pricing
+  const [customerPricing, setCustomerPricing] = useState<{
+    price: number;
+    label: string;
+    hasDiscount: boolean;
+    originalPrice?: number;
+    discountPercentage?: number;
+  }>({
+    price: 0,
+    label: 'standard pris',
+    hasDiscount: false
+  });
+
+  // Calculate customer's actual price based on their discount group using backend API
+  const calculateCustomerPrice = useCallback(async () => {
     const product = getSelectedProduct();
     const customer = getSelectedCustomer();
     
     if (!product || !customer) {
+      setCustomerPricing({
+        price: 0,
+        label: 'standard pris',
+        hasDiscount: false
+      });
       return {
         price: 0,
         label: 'standard pris',
@@ -374,34 +386,51 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       };
     }
 
-    const basePrice = product.basispris;
-    
-    // If customer has a discount group, calculate their discounted price
-    if (customer.discountGroup && customer.discountGroup.name) {
-      // Find the discount group details to get the percentage
-      const discountGroup = discountGroups.find(g => g._id === customer.discountGroup._id);
-      
-      if (discountGroup && discountGroup.discountPercentage > 0) {
-        const discountAmount = (basePrice * discountGroup.discountPercentage) / 100;
-        const discountedPrice = basePrice - discountAmount;
+    try {
+      // Use backend API to get accurate customer pricing
+      const response = await authService.getCustomerPricing({
+        customerId: customer._id || (customer as any).id,
+        productIds: [product._id]
+      });
+
+      if (response.success && response.data && response.data.products.length > 0) {
+        const productWithPricing = response.data.products[0];
+        const pricing = productWithPricing.customerPricing;
         
-        return {
-          price: discountedPrice,
-          label: `${customer.discountGroup.name} pris`,
-          hasDiscount: true,
-          originalPrice: basePrice,
-          discountPercentage: discountGroup.discountPercentage
+        const result = {
+          price: pricing.customerPrice,
+          label: pricing.priceLabel,
+          hasDiscount: pricing.hasDiscount,
+          originalPrice: pricing.originalPrice,
+          discountPercentage: pricing.discountPercentage
         };
+        
+        setCustomerPricing(result);
+        return result;
       }
+    } catch (error) {
+      console.error('Error calculating customer price:', error);
     }
 
-    // No discount group or 0% discount
-    return {
-      price: basePrice,
+    // Fallback to base price
+    const fallback = {
+      price: product.basispris,
       label: 'standard pris',
       hasDiscount: false
     };
-  };
+    setCustomerPricing(fallback);
+    return fallback;
+  }, [getSelectedProduct, getSelectedCustomer]);
+
+  // Sync version for immediate use
+  const getCustomerPricing = () => customerPricing;
+
+  // Calculate pricing when customer or product changes
+  useEffect(() => {
+    if (offerData.customerId && offerData.productId) {
+      calculateCustomerPrice();
+    }
+  }, [offerData.customerId, offerData.productId, calculateCustomerPrice]);
 
   // SAFE MEMOIZED FILTERING - STABLE DEPENDENCIES
   const filteredProducts = useMemo(() => {
@@ -685,25 +714,25 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 <h4 className="font-medium text-brand-gray-900">{getSelectedProduct()?.produktnavn}</h4>
                 <div className="text-sm text-brand-gray-600">
                   {(() => {
-                    const customerPricing = calculateCustomerPrice();
-                    if (customerPricing.price > 0) {
+                    const currentPricing = getCustomerPricing();
+                    if (currentPricing.price > 0) {
                       return (
                         <>
-                          {customerPricing.hasDiscount ? (
+                          {currentPricing.hasDiscount ? (
                             <>
                               <span className="line-through text-brand-gray-400 mr-2">
-                                {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.originalPrice || 0)}
+                                {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.originalPrice || 0)}
                               </span>
                               <span className="font-medium text-brand-primary">
-                                {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                                {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.price)}
                               </span>
                             </>
                           ) : (
                             <span className="font-medium text-brand-primary">
-                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.price)}
                             </span>
                           )}
-                          <span className="ml-1">({customerPricing.label})</span>
+                          <span className="ml-1">({currentPricing.label})</span>
                         </>
                       );
                     }
@@ -884,24 +913,24 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 <h4 className="font-medium text-brand-gray-900">{getSelectedProduct()?.produktnavn}</h4>
                 <div className="text-sm text-brand-gray-600">
                   {(() => {
-                    const customerPricing = calculateCustomerPrice();
+                    const currentPricing = getCustomerPricing();
                     return (
                       <>
-                        {customerPricing.hasDiscount ? (
+                        {currentPricing.hasDiscount ? (
                           <>
                             <span className="line-through text-brand-gray-400 mr-2">
-                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.originalPrice || 0)}
+                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.originalPrice || 0)}
                             </span>
                             <span className="font-medium text-brand-primary">
-                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                              {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.price)}
                             </span>
                           </>
                         ) : (
                           <span className="font-medium text-brand-primary">
-                            {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                            {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.price)}
                           </span>
                         )}
-                        <span className="ml-1">({customerPricing.label})</span>
+                        <span className="ml-1">({currentPricing.label})</span>
                       </>
                     );
                   })()}
@@ -931,9 +960,9 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         <div className="flex items-center justify-between">
           <Label className="text-lg font-semibold text-brand-gray-900">Unikt Tilbudspris *</Label>
           {(() => {
-            const customerPricing = calculateCustomerPrice();
+            const currentPricing = getCustomerPricing();
             const currentPrice = parseFloat(offerData.fixedPrice);
-            const customerPrice = customerPricing.price;
+            const customerPrice = currentPricing.price;
             
             // Show button if customer has discount or if current price doesn't match customer price
             if (customerPrice > 0 && Math.abs(customerPrice - currentPrice) > 0.01) {
@@ -948,7 +977,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                   }))}
                   className="text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white text-xs"
                 >
-                  Brug {customerPricing.label}: {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPrice)}
+                  Brug {currentPricing.label}: {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPrice)}
                 </Button>
               );
             }
@@ -973,20 +1002,20 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         {offerData.fixedPrice && getSelectedProduct() && (
           <div className="text-base text-brand-gray-600 bg-brand-gray-50 p-4 rounded-lg border">
             {(() => {
-              const customerPricing = calculateCustomerPrice();
-              const customerPrice = customerPricing.price;
+              const currentPricing = getCustomerPricing();
+              const customerPrice = currentPricing.price;
               const offerPrice = parseFloat(offerData.fixedPrice);
               const savings = customerPrice - offerPrice;
               const savingsPercentage = Math.round((savings / customerPrice) * 100);
               
               return (
                 <>
-                  <strong>Besparelse fra {customerPricing.label}:</strong> {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(savings)} ({savingsPercentage}%)
-                  {customerPricing.hasDiscount && (
+                  <strong>Besparelse fra {currentPricing.label}:</strong> {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(savings)} ({savingsPercentage}%)
+                  {currentPricing.hasDiscount && (
                     <div className="text-sm text-brand-gray-500 mt-1">
                       Samlet besparelse fra standard pris: {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(
-                        (customerPricing.originalPrice || 0) - offerPrice
-                      )} ({Math.round(((customerPricing.originalPrice || 0) - offerPrice) / (customerPricing.originalPrice || 1) * 100)}%)
+                        (currentPricing.originalPrice || 0) - offerPrice
+                      )} ({Math.round(((currentPricing.originalPrice || 0) - offerPrice) / (currentPricing.originalPrice || 1) * 100)}%)
                     </div>
                   )}
                 </>
@@ -1085,21 +1114,21 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
           </div>
           
           {(() => {
-            const customerPricing = calculateCustomerPrice();
+            const currentPricing = getCustomerPricing();
             return (
               <>
-                {customerPricing.hasDiscount && (
+                {currentPricing.hasDiscount && (
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-brand-gray-700">Standard pris:</span>
                     <span className="text-brand-gray-400 line-through">
-                      {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.originalPrice || 0)}
+                      {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.originalPrice || 0)}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center justify-between">
-                  <span className="font-medium text-brand-gray-700">{customerPricing.label}:</span>
+                  <span className="font-medium text-brand-gray-700">{currentPricing.label}:</span>
                   <span className="text-brand-gray-600 line-through">
-                    {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(customerPricing.price)}
+                    {new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(currentPricing.price)}
                   </span>
                 </div>
               </>
@@ -1117,9 +1146,9 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             <span className="font-medium text-brand-gray-700">Besparelse:</span>
             <span className="font-semibold text-brand-success">
               {(() => {
-                const customerPricing = calculateCustomerPrice();
-                const savings = customerPricing.price - parseFloat(offerData.fixedPrice);
-                const savingsPercentage = Math.round((savings / customerPricing.price) * 100);
+                const currentPricing = getCustomerPricing();
+                const savings = currentPricing.price - parseFloat(offerData.fixedPrice);
+                const savingsPercentage = Math.round((savings / currentPricing.price) * 100);
                 return `${new Intl.NumberFormat('da-DK', { style: 'currency', currency: 'DKK' }).format(savings)} (${savingsPercentage}%)`;
               })()}
             </span>

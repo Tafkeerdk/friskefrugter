@@ -1392,6 +1392,28 @@ export const authService = {
     return response.json();
   },
 
+  // Get customer-specific pricing for products
+  async getCustomerPricing(params: {
+    customerId?: string;
+    discountGroupId?: string;
+    productIds?: string[];
+  }): Promise<{ success: boolean; data?: any; error?: string }> {
+    const searchParams = new URLSearchParams();
+    
+    if (params.customerId) {
+      searchParams.append('customerId', params.customerId);
+    }
+    if (params.discountGroupId) {
+      searchParams.append('discountGroupId', params.discountGroupId);
+    }
+    if (params.productIds && params.productIds.length > 0) {
+      searchParams.append('productIds', params.productIds.join(','));
+    }
+    
+    const response = await apiClient.get(`/.netlify/functions/products/customer-pricing?${searchParams.toString()}`);
+    return response.json();
+  },
+
   // Get all customers (for adding to discount groups)
   async getAllCustomers(): Promise<{ success: boolean; customers?: any[]; message?: string }> {
     const response = await apiClient.get('/.netlify/functions/admin-customers');
