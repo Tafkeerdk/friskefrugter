@@ -184,25 +184,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             await attemptTokenRefresh();
           }
           
-          // Fetch fresh customer profile data ONLY ONCE
-          try {
-            console.log('🔄 Fetching fresh customer profile data on init...');
-            const profileResponse = await authService.getCustomerProfile();
-            if (profileResponse.success && profileResponse.customer) {
-              // Validate that essential customer data exists before setting state
-              const customer = profileResponse.customer;
-              if (customer.contactPersonName && customer.email && customer.companyName) {
-                console.log('✅ Fresh customer profile data fetched on init');
-                tokenManager.setUser(customer, 'customer');
-                setCustomerUser(customer);
+          // Only fetch fresh customer profile if admin is NOT logged in to avoid 403 conflicts
+          const hasValidAdminToken = adminToken && !isTokenExpired(adminToken);
+          if (!hasValidAdminToken) {
+            try {
+              console.log('🔄 Fetching fresh customer profile data on init...');
+              const profileResponse = await authService.getCustomerProfile();
+              if (profileResponse.success && profileResponse.customer) {
+                // Validate that essential customer data exists before setting state
+                const customer = profileResponse.customer;
+                if (customer && customer.contactPersonName && customer.email && customer.companyName) {
+                  console.log('✅ Fresh customer profile data fetched on init');
+                  tokenManager.setUser(customer, 'customer');
+                  setCustomerUser(customer);
+                } else {
+                  console.warn('⚠️ Customer profile data incomplete on init');
+                }
               } else {
-                console.warn('⚠️ Customer profile data incomplete on init');
+                console.warn('⚠️ Customer profile fetch failed on init');
               }
-            } else {
-              console.warn('⚠️ Customer profile fetch failed on init');
+            } catch (error) {
+              console.warn('⚠️ Could not fetch fresh customer profile data on init:', error);
             }
-          } catch (error) {
-            console.warn('⚠️ Could not fetch fresh customer profile data on init:', error);
+          } else {
+            console.log('🔒 Admin session active - skipping customer profile fetch to avoid conflicts');
           }
         } else if (savedCustomerUser || customerToken) {
           console.warn('🚨 SECURITY: Customer session invalid - clearing');

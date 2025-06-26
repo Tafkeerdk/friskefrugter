@@ -61,7 +61,7 @@ interface ProductFilters {
 }
 
 const Products = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isCustomerAuthenticated } = useAuth();
   const { toast } = useToast();
   
   // State management
@@ -95,14 +95,14 @@ const Products = () => {
   // Load initial data
   useEffect(() => {
     loadInitialData();
-  }, [isAuthenticated]);
+  }, [isCustomerAuthenticated]);
 
   // Load products when filters change
   useEffect(() => {
     if (categories.length > 0) {
       loadProducts(true); // Reset to page 1 when filters change
     }
-  }, [filters, isAuthenticated]);
+  }, [filters, isCustomerAuthenticated]);
 
   // Load initial data (categories and customer info)
   const loadInitialData = async () => {
@@ -118,8 +118,8 @@ const Products = () => {
         setCategories(categoriesResponse.data as Category[]);
       }
       
-      // Load customer info if authenticated
-      if (isAuthenticated && user) {
+      // Load customer info if authenticated as customer (not admin)
+      if (isCustomerAuthenticated && user && user.userType === 'customer') {
         try {
           const customerResponse = await authService.getCustomerProfile();
           if (customerResponse.success && customerResponse.customer) {
@@ -202,7 +202,7 @@ const Products = () => {
       
       let response;
       
-      if (isAuthenticated) {
+      if (isCustomerAuthenticated && user && user.userType === 'customer') {
         // Customer endpoint with advanced filtering
         if (filters.priceRange.min > 0 || filters.priceRange.max < 10000) {
           params.minPrice = filters.priceRange.min;
@@ -223,7 +223,7 @@ const Products = () => {
         
         response = await api.getCustomerProducts(params);
       } else {
-        // Public endpoint with limited filtering
+        // Public endpoint with limited filtering (used for both non-authenticated users and admins)
         response = await api.getPublicProducts(params);
       }
       
@@ -337,7 +337,7 @@ const Products = () => {
               )}
             </div>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              {isAuthenticated 
+              {isCustomerAuthenticated && user?.userType === 'customer'
                 ? "Professionelle priser og tilbud til din virksomhed"
                 : "Friske råvarer af højeste kvalitet - Log ind for at se priser"
               }
@@ -345,7 +345,7 @@ const Products = () => {
           </div>
 
           {/* Filters */}
-          {isAuthenticated ? (
+          {isCustomerAuthenticated && user?.userType === 'customer' ? (
             <CustomerProductFilters
               search={filters.search}
               category={filters.category}
@@ -493,9 +493,9 @@ const Products = () => {
                     name={product.produktnavn}
                     image={getProductImageUrl(product)}
                     category={product.kategori?.navn || 'Ukategoriserad'}
-                    isLoggedIn={isAuthenticated}
-                    userType={isAuthenticated ? 'customer' : 'public'}
-                    price={!isAuthenticated ? undefined : product.basispris}
+                    isLoggedIn={isCustomerAuthenticated && user?.userType === 'customer'}
+                    userType={isCustomerAuthenticated && user?.userType === 'customer' ? 'customer' : 'public'}
+                    price={!(isCustomerAuthenticated && user?.userType === 'customer') ? undefined : product.basispris}
                     customerPricing={product.customerPricing}
                   />
                 ))}
