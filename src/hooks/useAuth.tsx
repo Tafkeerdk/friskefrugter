@@ -37,6 +37,7 @@ interface AuthContextType {
   login: (email: string, password: string, userType: 'customer' | 'admin') => Promise<LoginResponse>;
   logout: (userType?: 'customer' | 'admin') => void;
   refreshUser: () => Promise<void>;
+  forceRefreshCustomer: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -457,6 +458,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(savedUser);
   };
 
+  // Force refresh customer profile - useful when discount group is updated
+  const forceRefreshCustomer = async () => {
+    const customerToken = tokenManager.getAccessToken('customer');
+    if (!customerToken || isTokenExpired(customerToken)) {
+      console.warn('🚨 No valid customer token for force refresh');
+      return;
+    }
+
+    try {
+      console.log('🔄 Force refreshing customer profile...');
+      const profileResponse = await authService.forceRefreshCustomerProfile();
+      if (profileResponse.success && profileResponse.customer) {
+        console.log('✅ Customer profile force refreshed with new discount group data');
+        tokenManager.setUser(profileResponse.customer, 'customer');
+        setCustomerUser(profileResponse.customer);
+        
+        // Update primary user if customer is the current user
+        const currentUser = tokenManager.getUser();
+        if (currentUser && currentUser.userType === 'customer') {
+          setUser(profileResponse.customer);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not force refresh customer profile:', error);
+    }
+  };
+
   const isAuthenticated = !!user;
   const isAdminAuthenticated = !!adminUser;
   const isCustomerAuthenticated = !!customerUser;
@@ -475,6 +503,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         login,
         logout,
         refreshUser,
+        forceRefreshCustomer,
       }}
     >
       {children}

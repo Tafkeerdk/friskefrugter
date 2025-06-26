@@ -1038,7 +1038,13 @@ export const authService = {
   },
 
   // Customer profile management
-  async getCustomerProfile(): Promise<{ success: boolean; customer?: User }> {
+  async getCustomerProfile(forceRefresh: boolean = false): Promise<{ success: boolean; customer?: User }> {
+    // Clear cache if force refresh is requested
+    if (forceRefresh) {
+      requestCache.clearPattern('.*customer.*profile.*');
+      requestCache.clearPattern('.*profile.*');
+    }
+    
     const response = await apiClient.get(getEndpoint('/api/auth/customer/profile'));
     const data = await response.json();
     
@@ -1048,6 +1054,12 @@ export const authService = {
     }
     
     return data;
+  },
+
+  // Force refresh customer profile - useful when discount group is updated by admin
+  async forceRefreshCustomerProfile(): Promise<{ success: boolean; customer?: User }> {
+    console.log('🔄 Force refreshing customer profile...');
+    return this.getCustomerProfile(true);
   },
 
   async updateCustomerProfile(profileData: { 
@@ -1348,7 +1360,15 @@ export const authService = {
       customerId,
       discountGroupId
     });
-    return response.json();
+    const result = await response.json();
+    
+    // Clear customer profile cache to force refresh on next access
+    if (result.success) {
+      requestCache.clearPattern('.*customer.*profile.*');
+      requestCache.clearPattern('.*profile.*');
+    }
+    
+    return result;
   },
 
   async createCustomerAsAdmin(customerData: {
