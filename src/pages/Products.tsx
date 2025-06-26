@@ -229,8 +229,9 @@ const Products = () => {
       
       if (response.success && response.data) {
         const newProducts = response.data.products || [];
-        const totalPages = response.data.totalPages || 1;
-        const total = response.data.total || 0;
+        // Handle both formats: direct total/totalPages or pagination object
+        const total = response.data.total || response.data.pagination?.total || 0;
+        const totalPages = response.data.totalPages || response.data.pagination?.pages || 1;
         
         if (resetPagination) {
           setProducts(newProducts);
