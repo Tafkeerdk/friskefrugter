@@ -69,7 +69,11 @@ export interface User {
   userType: 'customer' | 'admin';
   companyName?: string;
   contactPersonName?: string;
-  discountGroup?: string;
+  discountGroup?: {
+    id?: string;
+    name: string;
+    discountPercentage: number;
+  } | string; // Support both object and string for backward compatibility
   name?: string;
   role?: string;
   profilePictureUrl?: string;
