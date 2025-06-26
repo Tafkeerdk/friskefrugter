@@ -109,8 +109,11 @@ const Products = () => {
     try {
       setIsLoading(true);
       
-      // Load categories
-      const categoriesResponse = await api.getCategories({ activeOnly: true });
+      // Load categories with product counts
+      const categoriesResponse = await api.getCategories({ 
+        activeOnly: true, 
+        includeProductCount: true 
+      });
       if (categoriesResponse.success && categoriesResponse.data) {
         setCategories(categoriesResponse.data as Category[]);
       }

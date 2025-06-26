@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, Filter, LogIn, X } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Search, Filter, LogIn, X, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
@@ -46,6 +47,7 @@ export function PublicProductFilters({
   isMobile = false,
   className
 }: PublicProductFiltersProps) {
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const activeFiltersCount = [
     category !== 'all',
@@ -54,35 +56,10 @@ export function PublicProductFilters({
 
   return (
     <Card className={cn("w-full", className)}>
+      {/* Always Visible: Login Prompt + Search */}
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-brand-primary" />
-            Søg & Filtrer
-            {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {activeFiltersCount}
-              </Badge>
-            )}
-          </CardTitle>
-          
-          {activeFiltersCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-xs"
-            >
-              <X className="h-3 w-3 mr-1" />
-              Ryd
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-6">
-        {/* Login Prompt */}
-        <div className="bg-brand-primary/5 border border-brand-primary/20 rounded-lg p-4">
+        {/* Login Prompt - Always Visible */}
+        <div className="bg-brand-primary/5 border border-brand-primary/20 rounded-lg p-4 mb-4">
           <div className="flex items-center gap-3">
             <LogIn className="h-5 w-5 text-brand-primary flex-shrink-0" />
             <div className="flex-1">
@@ -101,15 +78,11 @@ export function PublicProductFilters({
           </div>
         </div>
 
-        <Separator />
-
-        {/* Search */}
+        {/* Search - Always Visible */}
         <div className="space-y-2">
-          <Label htmlFor="search">Søg produkter</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="search"
               type="text"
               placeholder="Søg efter produktnavn..."
               value={search}
@@ -119,8 +92,49 @@ export function PublicProductFilters({
             />
           </div>
         </div>
+      </CardHeader>
 
-        <Separator />
+      {/* Collapsible Advanced Filters */}
+      <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="pt-0 pb-4 cursor-pointer hover:bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-brand-primary" />
+                <span className="text-sm font-medium">Filtre & Sortering</span>
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {activeFiltersCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClearFilters();
+                    }}
+                    className="text-xs"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Ryd
+                  </Button>
+                )}
+                {isFiltersOpen ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+
+        <CollapsibleContent>
+          <CardContent className="pt-0 space-y-6">
 
         {/* Category Filter */}
         <div className="space-y-2">
@@ -183,7 +197,9 @@ export function PublicProductFilters({
           <p className="font-medium mb-1">Begrænsede filtermuligheder</p>
           <p>Log ind som kunde for at få adgang til prisfiltre, specialtilbud og rabatgrupper.</p>
         </div>
-      </CardContent>
-    </Card>
-  );
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+    );
 } 
