@@ -120,7 +120,23 @@ const Products = () => {
         try {
           const customerResponse = await authService.getCustomerProfile();
           if (customerResponse.success && customerResponse.customer) {
-            setCustomerInfo(customerResponse.customer);
+            // Ensure discount group is properly structured
+            const customerData = { ...customerResponse.customer } as any;
+            if (customerData.discountGroupId && typeof customerData.discountGroupId === 'object') {
+              // Transform discountGroupId object to discountGroup for consistency
+              customerData.discountGroup = {
+                name: customerData.discountGroupId.name || 'Standard',
+                discountPercentage: customerData.discountGroupId.discountPercentage || 0
+              };
+            } else {
+              // Default to Standard if no discount group
+              customerData.discountGroup = {
+                name: 'Standard',
+                discountPercentage: 0
+              };
+            }
+            customerData.uniqueOffersCount = 0; // TODO: Get from backend
+            setCustomerInfo(customerData);
           }
         } catch (error) {
           console.warn('Could not load customer profile:', error);

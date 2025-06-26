@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Star, Tag, Award, X, Search, Filter } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Star, Tag, Award, X, Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CustomerProductFiltersProps {
@@ -71,6 +72,7 @@ export function CustomerProductFilters({
   isMobile = false,
   className
 }: CustomerProductFiltersProps) {
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const activeFiltersCount = [
     category !== 'all',
@@ -92,52 +94,36 @@ export function CustomerProductFilters({
 
   return (
     <Card className={cn("w-full", className)}>
+      {/* Always Visible: Search + Customer Info */}
       <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5 text-brand-primary" />
-            Filtre & Søgning
-            {activeFiltersCount > 0 && (
-              <Badge variant="secondary" className="ml-2">
-                {activeFiltersCount}
-              </Badge>
-            )}
-          </CardTitle>
-          
-          {activeFiltersCount > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={onClearFilters}
-              className="text-xs"
-            >
-              <X className="h-3 w-3 mr-1" />
-              Ryd filtre
-            </Button>
-          )}
-        </div>
-
         {/* Customer Info */}
         {customerInfo && (
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">{customerInfo.companyName}</span>
-            {customerInfo.discountGroup && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {customerInfo.discountGroup.name} ({customerInfo.discountGroup.discountPercentage}% rabat)
+          <div className="flex items-center justify-between text-sm mb-4">
+            <div>
+              <span className="font-medium text-gray-900">{customerInfo.companyName}</span>
+              {customerInfo.discountGroup && (
+                <Badge variant="secondary" className="ml-2 text-xs">
+                  {customerInfo.discountGroup.name} Kunde
+                  {customerInfo.discountGroup.discountPercentage > 0 && (
+                    <span className="ml-1">({customerInfo.discountGroup.discountPercentage}% rabat)</span>
+                  )}
+                </Badge>
+              )}
+            </div>
+            {customerInfo.uniqueOffersCount > 0 && (
+              <Badge variant="default" className="bg-brand-primary text-xs">
+                <Star className="h-3 w-3 mr-1" />
+                {customerInfo.uniqueOffersCount} Unique Offers
               </Badge>
             )}
           </div>
         )}
-      </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Search */}
+        {/* Search - Always Visible */}
         <div className="space-y-2">
-          <Label htmlFor="search">Søg produkter</Label>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
-              id="search"
               type="text"
               placeholder="Søg efter navn, varenummer eller EAN..."
               value={search}
@@ -147,8 +133,49 @@ export function CustomerProductFilters({
             />
           </div>
         </div>
+      </CardHeader>
 
-        <Separator />
+      {/* Collapsible Advanced Filters */}
+      <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+        <CollapsibleTrigger asChild>
+          <CardHeader className="pt-0 pb-4 cursor-pointer hover:bg-gray-50">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-brand-primary" />
+                <span className="text-sm font-medium">Avancerede filtre</span>
+                {activeFiltersCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {activeFiltersCount > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onClearFilters();
+                    }}
+                    className="text-xs"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Ryd
+                  </Button>
+                )}
+                {isFiltersOpen ? (
+                  <ChevronUp className="h-4 w-4 text-gray-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                )}
+              </div>
+            </div>
+          </CardHeader>
+        </CollapsibleTrigger>
+
+                 <CollapsibleContent>
+           <CardContent className="pt-0 space-y-6">
 
         {/* Category Filter */}
         <div className="space-y-2">
@@ -273,17 +300,17 @@ export function CustomerProductFilters({
             />
           </div>
 
-          {/* Rabat Gruppe Filter */}
-          {customerInfo?.discountGroup && (
+          {/* Rabat Gruppe Filter - Only show if customer has discount group with >0% */}
+          {customerInfo?.discountGroup && customerInfo.discountGroup.discountPercentage > 0 && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-brand-secondary" />
                 <div>
                   <Label htmlFor="rabatGruppe" className="text-sm font-medium">
-                    Guldkunde Rabat
+                    {customerInfo.discountGroup.name} Rabat
                   </Label>
                   <p className="text-xs text-gray-500">
-                    {customerInfo.discountGroup.name} produkter
+                    Produkter med {customerInfo.discountGroup.name} rabat
                   </p>
                 </div>
               </div>
@@ -330,7 +357,9 @@ export function CustomerProductFilters({
             </Select>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+    );
 } 
