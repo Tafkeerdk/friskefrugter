@@ -28,13 +28,21 @@ import { api, handleApiError } from "@/lib/api";
 import { CustomerPricing } from "@/components/products/card/ProductPricing";
 
 // Types
+interface Unit {
+  _id: string;
+  value: string;
+  label: string;
+  description?: string;
+  isActive: boolean;
+}
+
 interface Product {
   _id: string;
   produktnavn: string;
   varenummer?: string;
   beskrivelse?: string;
   eanNummer?: string;
-  enhed: string;
+  enhed: string | Unit; // Can be either string or Unit object
   basispris: number;
   kategori: {
     _id: string;
@@ -202,6 +210,13 @@ const ProductDetail = () => {
     return primary?.url || product.billeder[0]?.url || '';
   };
 
+  // Get unit display value
+  const getUnitDisplay = () => {
+    if (!product?.enhed) return '';
+    if (typeof product.enhed === 'string') return product.enhed;
+    return product.enhed.label || product.enhed.value || '';
+  };
+
   // Check stock availability
   const getStockStatus = () => {
     if (!product?.lagerstyring?.enabled) {
@@ -332,7 +347,7 @@ const ProductDetail = () => {
                        }).format(product.basispris)}
                      </div>
                    )}
-                  <p className="text-sm text-gray-500 mt-1">Per {product.enhed}</p>
+                  <p className="text-sm text-gray-500 mt-1">Per {getUnitDisplay()}</p>
                 </div>
               ) : (
                 <div className="p-4 mb-6 bg-blue-50 rounded-lg border border-blue-200">
@@ -384,7 +399,7 @@ const ProductDetail = () => {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
                     <span className="text-gray-500">Enhed:</span>
-                    <span className="ml-2 font-medium">{product.enhed}</span>
+                    <span className="ml-2 font-medium">{getUnitDisplay()}</span>
                   </div>
                   {product.eanNummer && (
                     <div>
