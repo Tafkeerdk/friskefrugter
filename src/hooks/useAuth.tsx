@@ -1,5 +1,29 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, authService, tokenManager, LoginResponse, isAdmin } from '../lib/auth';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
+import { authService, User, LoginResponse, tokenManager } from '../lib/auth';
+
+// Token validation helpers
+const isTokenExpired = (token: string): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Date.now() / 1000;
+    return payload.exp < currentTime;
+  } catch (error) {
+    console.error('🚨 SECURITY: Error parsing token:', error);
+    return true;
+  }
+};
+
+const isTokenExpiringSoon = (token: string, minutesBeforeExpiry: number = 5): boolean => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Date.now() / 1000;
+    const expiryThreshold = currentTime + (minutesBeforeExpiry * 60);
+    return payload.exp < expiryThreshold;
+  } catch (error) {
+    console.error('🚨 SECURITY: Error parsing token for expiry check:', error);
+    return true;
+  }
+};
 
 interface AuthContextType {
   user: User | null;
@@ -26,277 +50,208 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [adminUser, setAdminUser] = useState<User | null>(null);
   const [customerUser, setCustomerUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileLoading, setProfileLoading] = useState(false);
+  
+  // Add ref to prevent multiple concurrent initializations
+  const initializingRef = useRef(false);
+  const initializedRef = useRef(false);
 
-  // CRITICAL SECURITY FIX: Enhanced token expiration check
-  const isTokenExpired = (token: string): boolean => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Date.now() / 1000;
-      const isExpired = payload.exp < currentTime;
-      
-      if (isExpired) {
-        console.warn('🚨 SECURITY: Token has expired!', {
-          tokenExp: new Date(payload.exp * 1000).toISOString(),
-          currentTime: new Date().toISOString(),
-          expiredBy: Math.floor(currentTime - payload.exp) + ' seconds'
-        });
-      }
-      
-      return isExpired;
-    } catch (error) {
-      console.error('🚨 SECURITY: Error parsing token - treating as expired:', error);
-      return true; // Assume expired if we can't parse
-    }
-  };
-
-  // CRITICAL SECURITY FIX: Check if token is expiring soon (within 5 minutes)
-  const isTokenExpiringSoon = (token: string, minutesBeforeExpiry: number = 5): boolean => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      const currentTime = Date.now() / 1000;
-      const timeUntilExpiry = payload.exp - currentTime;
-      const minutesUntilExpiry = timeUntilExpiry / 60;
-      
-      return minutesUntilExpiry <= minutesBeforeExpiry && minutesUntilExpiry > 0;
-    } catch (error) {
-      return true; // Assume expiring if we can't parse
-    }
-  };
-
-  // CRITICAL SECURITY FIX: Force logout if tokens are expired
+  // Cleanup expired tokens
   const validateAndCleanupExpiredTokens = (): boolean => {
-    let hasValidSession = false;
-    
-    // Check admin session
     const adminToken = tokenManager.getAccessToken('admin');
-    if (adminToken) {
-      if (isTokenExpired(adminToken)) {
-        console.warn('🚨 SECURITY: Admin token expired - forcing logout');
-        tokenManager.clearTokens('admin');
-        setAdminUser(null);
-      } else {
-        hasValidSession = true;
-      }
-    }
-    
-    // Check customer session
     const customerToken = tokenManager.getAccessToken('customer');
-    if (customerToken) {
-      if (isTokenExpired(customerToken)) {
-        console.warn('🚨 SECURITY: Customer token expired - forcing logout');
-        tokenManager.clearTokens('customer');
-        setCustomerUser(null);
-      } else {
-        hasValidSession = true;
-      }
+    let hasValidTokens = false;
+
+    if (adminToken && isTokenExpired(adminToken)) {
+      console.warn('🚨 SECURITY: Admin token expired - clearing');
+      tokenManager.clearTokens('admin');
+    } else if (adminToken) {
+      hasValidTokens = true;
     }
-    
-    return hasValidSession;
+
+    if (customerToken && isTokenExpired(customerToken)) {
+      console.warn('🚨 SECURITY: Customer token expired - clearing');
+      tokenManager.clearTokens('customer');
+    } else if (customerToken) {
+      hasValidTokens = true;
+    }
+
+    return hasValidTokens;
   };
 
-  // CRITICAL SECURITY FIX: Attempt token refresh only if refresh token is valid
+  // Token refresh with validation
   const attemptTokenRefresh = async (): Promise<boolean> => {
-    const refreshToken = tokenManager.getRefreshToken();
-    if (!refreshToken) {
-      console.warn('🚨 SECURITY: No refresh token available');
-      return false;
-    }
-
-    // Check if refresh token is expired
-    if (isTokenExpired(refreshToken)) {
-      console.warn('🚨 SECURITY: Refresh token expired - forcing complete logout');
-      tokenManager.clearTokens();
-      setUser(null);
-      setAdminUser(null);
-      setCustomerUser(null);
-      return false;
-    }
-
     try {
-      const response = await authService.refreshToken();
-      if (response.success && response.tokens) {
-        tokenManager.setTokens(response.tokens);
+      if (import.meta.env.DEV) {
+        console.log('🔄 SECURITY: Attempting token refresh');
+      }
+      const result = await authService.refreshToken();
+      if (result.success) {
         if (import.meta.env.DEV) {
           console.log('✅ SECURITY: Token refresh successful');
         }
         return true;
       } else {
-        console.warn('🚨 SECURITY: Token refresh failed - server rejected');
+        console.warn('⚠️ SECURITY: Token refresh failed:', result.message);
         return false;
       }
     } catch (error) {
-      console.error('🚨 SECURITY: Token refresh failed:', error);
+      console.error('❌ SECURITY: Token refresh error:', error);
       return false;
     }
   };
 
-  // CRITICAL SECURITY FIX: Periodic token validation
+  // Initialize auth state on mount
   useEffect(() => {
+    // Prevent multiple concurrent initializations
+    if (initializingRef.current || initializedRef.current) {
+      console.log('🔄 Auth initialization already in progress or completed, skipping...');
+      return;
+    }
+
+    initializingRef.current = true;
+
+    // Periodic token validation
     const validateTokensPeriodically = () => {
-      const hasValidSession = validateAndCleanupExpiredTokens();
-      
-      if (!hasValidSession && (adminUser || customerUser)) {
-        console.warn('🚨 SECURITY: No valid sessions found - clearing user state');
+      const hasValidTokens = validateAndCleanupExpiredTokens();
+      if (!hasValidTokens) {
         setUser(null);
         setAdminUser(null);
         setCustomerUser(null);
-        
-        // Redirect to login if on protected route
-        const currentPath = window.location.pathname;
-        if (currentPath.includes('/admin') || currentPath.includes('/dashboard')) {
-          console.warn('🚨 SECURITY: Redirecting to login due to expired session');
-          window.location.href = '/login';
-        }
       }
     };
 
-    // CRITICAL SECURITY FIX: Check tokens every 30 seconds
-    const tokenValidationInterval = setInterval(validateTokensPeriodically, 30000);
+    // Set up periodic validation
+    const validationInterval = setInterval(validateTokensPeriodically, 60000); // Every minute
 
-    // CRITICAL SECURITY FIX: Also check on focus (when user returns to tab)
+    // Handle focus events for token validation
     const handleFocus = () => {
-      if (import.meta.env.DEV) {
-        console.log('🔍 SECURITY: Page focused - validating tokens');
-      }
       validateTokensPeriodically();
     };
 
     window.addEventListener('focus', handleFocus);
 
-    return () => {
-      clearInterval(tokenValidationInterval);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [adminUser, customerUser]);
-
-  // Enhanced initialization with strict security validation
-  useEffect(() => {
     const initializeAuth = async () => {
-      console.log('🔄 Initializing auth state with STRICT security validation...');
-      
-      // CRITICAL SECURITY FIX: Validate all tokens before setting user state
-      const hasValidSession = validateAndCleanupExpiredTokens();
-      
-      if (!hasValidSession) {
-        console.log('❌ SECURITY: No valid sessions found during initialization');
+      try {
+        console.log('🔄 Initializing auth state with STRICT security validation...');
+        
+        // Get stored tokens and users
+        const savedAdminUser = tokenManager.getUser('admin');
+        const savedCustomerUser = tokenManager.getUser('customer');
+        const adminToken = tokenManager.getAccessToken('admin');
+        const customerToken = tokenManager.getAccessToken('customer');
+        
+        console.log('📊 Auth state check:', {
+          hasAdminUser: !!savedAdminUser,
+          hasCustomerUser: !!savedCustomerUser,
+          hasValidAdminToken: adminToken ? !isTokenExpired(adminToken) : null,
+          hasValidCustomerToken: customerToken ? !isTokenExpired(customerToken) : null,
+          currentPath: window.location.pathname
+        });
+
+        // Initialize admin session ONLY if token is valid
+        if (savedAdminUser && adminToken && !isTokenExpired(adminToken)) {
+          if (import.meta.env.DEV) {
+            console.log('✅ SECURITY: Setting admin user with valid token');
+          }
+          setAdminUser(savedAdminUser);
+          
+          // Check if token is expiring soon and attempt refresh
+          if (isTokenExpiringSoon(adminToken)) {
+            if (import.meta.env.DEV) {
+              console.log('⚠️ SECURITY: Admin token expiring soon - attempting refresh');
+            }
+            await attemptTokenRefresh();
+          }
+        } else if (savedAdminUser || adminToken) {
+          console.warn('🚨 SECURITY: Admin session invalid - clearing');
+          tokenManager.clearTokens('admin');
+          setAdminUser(null);
+        }
+        
+        // Initialize customer session ONLY if token is valid
+        if (savedCustomerUser && customerToken && !isTokenExpired(customerToken)) {
+          if (import.meta.env.DEV) {
+            console.log('✅ SECURITY: Setting customer user with valid token');
+          }
+          setCustomerUser(savedCustomerUser);
+          
+          // Check if token is expiring soon and attempt refresh
+          if (isTokenExpiringSoon(customerToken)) {
+            if (import.meta.env.DEV) {
+              console.log('⚠️ SECURITY: Customer token expiring soon - attempting refresh');
+            }
+            await attemptTokenRefresh();
+          }
+          
+          // Fetch fresh customer profile data ONLY ONCE
+          try {
+            console.log('🔄 Fetching fresh customer profile data on init...');
+            const profileResponse = await authService.getCustomerProfile();
+            if (profileResponse.success && profileResponse.customer) {
+              // Validate that essential customer data exists before setting state
+              const customer = profileResponse.customer;
+              if (customer.contactPersonName && customer.email && customer.companyName) {
+                console.log('✅ Fresh customer profile data fetched on init');
+                tokenManager.setUser(customer, 'customer');
+                setCustomerUser(customer);
+              } else {
+                console.warn('⚠️ Customer profile data incomplete on init');
+              }
+            } else {
+              console.warn('⚠️ Customer profile fetch failed on init');
+            }
+          } catch (error) {
+            console.warn('⚠️ Could not fetch fresh customer profile data on init:', error);
+          }
+        } else if (savedCustomerUser || customerToken) {
+          console.warn('🚨 SECURITY: Customer session invalid - clearing');
+          tokenManager.clearTokens('customer');
+          setCustomerUser(null);
+        }
+        
+        // Set primary user based on current route and valid sessions
+        const currentPath = window.location.pathname;
+        const validAdminUser = adminToken && !isTokenExpired(adminToken) ? savedAdminUser : null;
+        const validCustomerUser = customerToken && !isTokenExpired(customerToken) ? savedCustomerUser : null;
+        
+        if (currentPath.includes('/admin') || currentPath.includes('/super')) {
+          console.log('🔒 Admin route detected - setting admin as primary user');
+          setUser(validAdminUser);
+        } else if (currentPath.includes('/dashboard') && !currentPath.includes('/admin')) {
+          console.log('👤 Customer route detected - setting customer as primary user');
+          setUser(validCustomerUser);
+        } else {
+          // Default to admin if both are logged in, otherwise use whichever is available
+          const primaryUser = validAdminUser || validCustomerUser;
+          console.log('🎯 Setting primary user:', primaryUser ? primaryUser.userType : 'none');
+          setUser(primaryUser);
+        }
+        
+      } catch (error) {
+        console.error('❌ SECURITY: Auth initialization error:', error);
+        // Clear all state on initialization error
+        setUser(null);
+        setAdminUser(null);
+        setCustomerUser(null);
+        tokenManager.clearTokens();
+      } finally {
         setIsLoading(false);
         setProfileLoading(false);
-        return;
+        initializingRef.current = false;
+        initializedRef.current = true;
+        console.log('✅ SECURITY: Auth initialization complete with strict validation');
       }
-      
-      const savedAdminUser = authService.getUser('admin');
-      const savedCustomerUser = authService.getUser('customer');
-      const adminToken = tokenManager.getAccessToken('admin');
-      const customerToken = tokenManager.getAccessToken('customer');
-      
-      console.log('📊 Auth state check:', {
-        hasAdminUser: !!savedAdminUser,
-        hasCustomerUser: !!savedCustomerUser,
-        hasValidAdminToken: adminToken && !isTokenExpired(adminToken),
-        hasValidCustomerToken: customerToken && !isTokenExpired(customerToken),
-        currentPath: window.location.pathname
-      });
-      
-      // Initialize admin session ONLY if token is valid
-      if (savedAdminUser && adminToken && !isTokenExpired(adminToken)) {
-        if (import.meta.env.DEV) {
-          console.log('✅ SECURITY: Setting admin user with valid token');
-        }
-        setAdminUser(savedAdminUser);
-        
-        // Check if token is expiring soon and attempt refresh
-        if (isTokenExpiringSoon(adminToken)) {
-          if (import.meta.env.DEV) {
-          console.log('⚠️ SECURITY: Admin token expiring soon - attempting refresh');
-        }
-          await attemptTokenRefresh();
-        }
-        
-        // Fetch fresh admin profile data (but don't block initialization)
-        authService.getAdminProfile()
-          .then(profileResponse => {
-            if (profileResponse.success && profileResponse.admin) {
-              console.log('✅ Fresh admin profile data fetched');
-              tokenManager.setUser(profileResponse.admin, 'admin');
-              setAdminUser(profileResponse.admin);
-            }
-          })
-          .catch(error => {
-            console.warn('⚠️ Could not fetch fresh admin profile data on init:', error);
-          });
-      } else if (savedAdminUser || adminToken) {
-        console.warn('🚨 SECURITY: Admin session invalid - clearing');
-        tokenManager.clearTokens('admin');
-        setAdminUser(null);
-      }
-      
-      // Initialize customer session ONLY if token is valid
-      if (savedCustomerUser && customerToken && !isTokenExpired(customerToken)) {
-        if (import.meta.env.DEV) {
-          console.log('✅ SECURITY: Setting customer user with valid token');
-        }
-        setCustomerUser(savedCustomerUser);
-        
-        // Check if token is expiring soon and attempt refresh
-        if (isTokenExpiringSoon(customerToken)) {
-          if (import.meta.env.DEV) {
-          console.log('⚠️ SECURITY: Customer token expiring soon - attempting refresh');
-        }
-          await attemptTokenRefresh();
-        }
-        
-        // Fetch fresh customer profile data
-        try {
-          console.log('🔄 Fetching fresh customer profile data on init...');
-          const profileResponse = await authService.getCustomerProfile();
-          if (profileResponse.success && profileResponse.customer) {
-            // Validate that essential customer data exists before setting state
-            const customer = profileResponse.customer;
-            if (customer.contactPersonName && customer.email && customer.companyName) {
-              console.log('✅ Fresh customer profile data fetched on init');
-              tokenManager.setUser(customer, 'customer');
-              setCustomerUser(customer);
-            } else {
-              console.warn('⚠️ Customer profile data incomplete on init');
-            }
-          } else {
-            console.warn('⚠️ Customer profile fetch failed on init');
-          }
-        } catch (error) {
-          console.warn('⚠️ Could not fetch fresh customer profile data on init:', error);
-        }
-      } else if (savedCustomerUser || customerToken) {
-        console.warn('🚨 SECURITY: Customer session invalid - clearing');
-        tokenManager.clearTokens('customer');
-        setCustomerUser(null);
-      }
-      
-      // Set primary user based on current route and valid sessions
-      const currentPath = window.location.pathname;
-      const validAdminUser = adminToken && !isTokenExpired(adminToken) ? savedAdminUser : null;
-      const validCustomerUser = customerToken && !isTokenExpired(customerToken) ? savedCustomerUser : null;
-      
-      if (currentPath.includes('/admin') || currentPath.includes('/super')) {
-        console.log('🔒 Admin route detected - setting admin as primary user');
-        setUser(validAdminUser);
-      } else if (currentPath.includes('/dashboard') && !currentPath.includes('/admin')) {
-        console.log('👤 Customer route detected - setting customer as primary user');
-        setUser(validCustomerUser);
-      } else {
-        // Default to admin if both are logged in, otherwise use whichever is available
-        const primaryUser = validAdminUser || validCustomerUser;
-        console.log('🎯 Setting primary user:', primaryUser ? primaryUser.userType : 'none');
-        setUser(primaryUser);
-      }
-      
-      setIsLoading(false);
-      setProfileLoading(false);
-      console.log('✅ SECURITY: Auth initialization complete with strict validation');
     };
 
     initializeAuth();
-  }, []);
+
+    // Cleanup
+    return () => {
+      clearInterval(validationInterval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []); // Empty dependency array to run only once
 
   const login = async (email: string, password: string, userType: 'customer' | 'admin') => {
     try {
@@ -338,7 +293,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setCustomerUser(response.user);
           setProfileLoading(true); // Start profile loading
           
-          // Fetch fresh customer profile data
+          // Fetch fresh customer profile data - NO DOUBLE CALL
           try {
             console.log('🔄 Fetching fresh customer profile data after login...');
             const profileResponse = await authService.getCustomerProfile();
@@ -377,8 +332,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         }
         
         if (import.meta.env.DEV) {
-        console.log('✅ SECURITY: Login successful with valid tokens');
-      }
+          console.log('✅ SECURITY: Login successful with valid tokens');
+        }
         return response;
       } else {
         throw new Error(response.message || 'Login failed');
@@ -453,7 +408,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
 
     // If it's an admin user, fetch fresh profile data from server
-    if (isAdmin(savedUser)) {
+    if (savedUser.userType === 'admin') {
       try {
         console.log('🔄 Refreshing admin profile data from server...');
         const profileResponse = await authService.getAdminProfile();
@@ -462,21 +417,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             hasProfilePicture: !!profileResponse.admin.profilePictureUrl,
             profilePictureUrl: profileResponse.admin.profilePictureUrl
           });
-          tokenManager.setUser(profileResponse.admin);
+          tokenManager.setUser(profileResponse.admin, 'admin');
+          setAdminUser(profileResponse.admin);
           setUser(profileResponse.admin);
           return;
         }
       } catch (error) {
-        console.warn('⚠️ Could not refresh profile data from server:', error);
-        // Check if error is due to token expiration
-        if (error.message?.includes('expired') || error.message?.includes('unauthorized')) {
-          console.warn('🚨 SECURITY: Token expired during profile refresh - forcing logout');
-          logout('admin');
-          return;
-        }
+        console.warn('⚠️ Could not refresh admin profile data from server:', error);
       }
     }
-    
+
     // If it's a customer user, fetch fresh profile data from server
     if (savedUser.userType === 'customer') {
       try {
@@ -485,46 +435,43 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         if (profileResponse.success && profileResponse.customer) {
           console.log('✅ Customer profile refreshed:', {
             hasProfilePicture: !!profileResponse.customer.profilePictureUrl,
-            profilePictureUrl: profileResponse.customer.profilePictureUrl,
-            companyName: profileResponse.customer.companyName,
-            cvrNumber: profileResponse.customer.cvrNumber
+            profilePictureUrl: profileResponse.customer.profilePictureUrl
           });
           tokenManager.setUser(profileResponse.customer, 'customer');
-          setUser(profileResponse.customer);
           setCustomerUser(profileResponse.customer);
+          setUser(profileResponse.customer);
           return;
         }
       } catch (error) {
         console.warn('⚠️ Could not refresh customer profile data from server:', error);
-        // Check if error is due to token expiration
-        if (error.message?.includes('expired') || error.message?.includes('unauthorized')) {
-          console.warn('🚨 SECURITY: Token expired during customer profile refresh - forcing logout');
-          logout('customer');
-          return;
-        }
       }
     }
-    
-    // Fallback to localStorage data
+
+    // Fallback: use stored user data
+    console.log('🔄 Using stored user data as fallback');
     setUser(savedUser);
   };
 
-  const value: AuthContextType = {
-    user,
-    adminUser,
-    customerUser,
-    isLoading,
-    profileLoading,
-    isAuthenticated: !!user,
-    isAdminAuthenticated: !!adminUser,
-    isCustomerAuthenticated: !!customerUser,
-    login,
-    logout,
-    refreshUser,
-  };
+  const isAuthenticated = !!user;
+  const isAdminAuthenticated = !!adminUser;
+  const isCustomerAuthenticated = !!customerUser;
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        adminUser,
+        customerUser,
+        isLoading,
+        profileLoading,
+        isAuthenticated,
+        isAdminAuthenticated,
+        isCustomerAuthenticated,
+        login,
+        logout,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

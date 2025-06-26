@@ -625,9 +625,16 @@ const DashboardUniqueOffers: React.FC = () => {
                                       className="h-10 w-10 rounded object-cover"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
-                                        target.style.display = 'none';
-                                        const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
-                                        if (placeholder) placeholder.style.display = 'flex';
+                                        if (target) {
+                                          target.style.display = 'none';
+                                          const parent = target.parentElement;
+                                          if (parent) {
+                                            const placeholder = parent.querySelector('.image-placeholder') as HTMLElement;
+                                            if (placeholder) {
+                                              placeholder.style.display = 'flex';
+                                            }
+                                          }
+                                        }
                                       }}
                                     />
                                     <div 
@@ -1004,9 +1011,16 @@ const DashboardUniqueOffers: React.FC = () => {
                           className="h-10 w-10 rounded object-cover"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
-                            if (placeholder) placeholder.style.display = 'flex';
+                            if (target) {
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                const placeholder = parent.querySelector('.image-placeholder') as HTMLElement;
+                                if (placeholder) {
+                                  placeholder.style.display = 'flex';
+                                }
+                              }
+                            }
                           }}
                         />
                         <div 

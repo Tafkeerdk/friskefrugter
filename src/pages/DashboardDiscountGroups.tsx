@@ -1220,9 +1220,13 @@ const DashboardDiscountGroups: React.FC = () => {
                                   onError={(e) => {
                                     // Replace broken image with placeholder
                                     const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    const placeholder = target.nextElementSibling as HTMLElement;
-                                    if (placeholder) placeholder.style.display = 'flex';
+                                    if (target) {
+                                      target.style.display = 'none';
+                                      const placeholder = target.nextElementSibling as HTMLElement;
+                                      if (placeholder) {
+                                        placeholder.style.display = 'flex';
+                                      }
+                                    }
                                   }}
                                 />
                               ) : null}
