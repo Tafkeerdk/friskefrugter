@@ -244,8 +244,15 @@ const Dashboard: React.FC = () => {
                         <p className="text-sm font-medium text-gray-700 mb-2">Rabatgrupper</p>
                         <div className="flex flex-wrap gap-2">
                           {safeUser.discountGroup && (
-                            <Badge className={`text-xs ${getDiscountGroupColor(safeUser.discountGroup)}`}>
-                              {safeUser.discountGroup}
+                            <Badge className={`text-xs ${getDiscountGroupColor(
+                              typeof safeUser.discountGroup === 'object' && safeUser.discountGroup
+                                ? safeUser.discountGroup.name
+                                : (typeof safeUser.discountGroup === 'string' ? safeUser.discountGroup : 'Standard')
+                            )}`}>
+                              {typeof safeUser.discountGroup === 'object' && safeUser.discountGroup
+                                ? `${safeUser.discountGroup.name} (${safeUser.discountGroup.discountPercentage}% rabat)`
+                                : (typeof safeUser.discountGroup === 'string' ? safeUser.discountGroup : 'Standard')
+                              }
                             </Badge>
                           )}
                           {safeUser.discountGroups && safeUser.discountGroups.map((group: string, index: number) => (
