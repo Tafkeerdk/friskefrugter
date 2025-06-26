@@ -1537,67 +1537,6 @@ export const authService = {
     return response.json();
   },
 
-  // Public API methods (no authentication required)
-  async getPublicProducts(params?: {
-    page?: number;
-    limit?: number;
-    search?: string;
-    category?: string;
-    sortBy?: string;
-    sortOrder?: string;
-  }): Promise<{ success: boolean; products: any[]; pagination?: any; filters?: any; meta?: any; message?: string }> {
-    const queryParams = new URLSearchParams();
-    if (params?.page) queryParams.append('page', params.page.toString());
-    if (params?.limit) queryParams.append('limit', params.limit.toString());
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.category) queryParams.append('category', params.category);
-    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-    
-    const queryString = queryParams.toString();
-    const endpoint = `/.netlify/functions/public-products${queryString ? `?${queryString}` : ''}`;
-    
-    // Use fetch directly for public endpoints (no auth required)
-    const response = await fetch(`${this.apiClient['baseURL']}${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-PWA': isPWAMode() ? 'true' : 'false',
-        'X-Display-Mode': window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
-        'X-Session-Type': getSessionType()
-      }
-    });
-    
-    return response.json();
-  },
-
-  async getPublicCategories(params?: {
-    search?: string;
-    sortBy?: string;
-    sortOrder?: string;
-  }): Promise<{ success: boolean; categories: any[]; count: number; filters?: any; meta?: any; message?: string }> {
-    const queryParams = new URLSearchParams();
-    if (params?.search) queryParams.append('search', params.search);
-    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
-    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
-    
-    const queryString = queryParams.toString();
-    const endpoint = `/.netlify/functions/public-categories${queryString ? `?${queryString}` : ''}`;
-    
-    // Use fetch directly for public endpoints (no auth required)
-    const response = await fetch(`${this.apiClient['baseURL']}${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-PWA': isPWAMode() ? 'true' : 'false',
-        'X-Display-Mode': window.matchMedia('(display-mode: standalone)').matches ? 'standalone' : 'browser',
-        'X-Session-Type': getSessionType()
-      }
-    });
-    
-    return response.json();
-  },
-
   // Expose apiClient for direct use when needed
   apiClient
 };
