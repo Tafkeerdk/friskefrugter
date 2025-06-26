@@ -150,9 +150,17 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
             <div>
               <p className="text-sm font-medium text-muted-foreground">Rabatgruppe</p>
               <div className="flex items-center space-x-2">
-                <Badge variant="secondary">{user.discountGroup}</Badge>
+                <Badge variant="secondary">
+                  {typeof user.discountGroup === 'object' && user.discountGroup 
+                    ? user.discountGroup.name 
+                    : (typeof user.discountGroup === 'string' ? user.discountGroup : 'Standard')
+                  }
+                </Badge>
                 <span className="text-sm text-muted-foreground">
-                  ({getDiscountPercentage(user.discountGroup)}% rabat)
+                  ({typeof user.discountGroup === 'object' && user.discountGroup 
+                    ? user.discountGroup.discountPercentage 
+                    : getDiscountPercentage(typeof user.discountGroup === 'string' ? user.discountGroup : 'Standard')
+                  }% rabat)
                 </span>
               </div>
             </div>
