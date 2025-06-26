@@ -433,6 +433,64 @@ class ApiClient {
     return this.request(endpoint);
   }
 
+  // NEW: Public products endpoint (no pricing, category filter only)
+  async getPublicProducts(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    kategori?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    // Use dedicated public endpoint
+    const endpoint = import.meta.env.DEV 
+      ? `/.netlify/functions/products-public?${searchParams.toString()}`
+      : `/.netlify/functions/products-public?${searchParams.toString()}`;
+    
+    return this.request(endpoint, {
+      method: 'GET',
+      // No authorization header for public endpoint
+    });
+  }
+
+  // NEW: Customer products endpoint (with pricing hierarchy)
+  async getCustomerProducts(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    kategori?: string;
+    priceRange?: string; // "min-max" format
+    rabatGruppe?: boolean;
+    fastUdsalgspris?: boolean;
+    uniqueOffer?: boolean;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    // Use dedicated customer endpoint
+    const endpoint = import.meta.env.DEV 
+      ? `/.netlify/functions/products-customer?${searchParams.toString()}`
+      : `/.netlify/functions/products-customer?${searchParams.toString()}`;
+    
+    return this.request(endpoint, {
+      method: 'GET',
+      // Authorization header will be added by request method
+    });
+  }
+
   async getProduct(id: string) {
     const endpoint = this.getEndpoint(`/api/products/${id}`);
     return this.request(endpoint);

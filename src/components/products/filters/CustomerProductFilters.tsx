@@ -1,0 +1,336 @@
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Star, Tag, Award, X, Search, Filter } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface CustomerProductFiltersProps {
+  // Filter values
+  search: string;
+  category: string;
+  priceRange: { min: number; max: number };
+  rabatGruppe: boolean;
+  fastUdsalgspris: boolean;
+  uniqueOffer: boolean;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
+
+  // Filter handlers
+  onSearchChange: (value: string) => void;
+  onCategoryChange: (value: string) => void;
+  onPriceRangeChange: (range: { min: number; max: number }) => void;
+  onRabatGruppeChange: (value: boolean) => void;
+  onFastUdsalgsprisChange: (value: boolean) => void;
+  onUniqueOfferChange: (value: boolean) => void;
+  onSortChange: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
+  onClearFilters: () => void;
+
+  // Data
+  categories: Array<{ _id: string; navn: string; productCount?: number }>;
+  customerInfo?: {
+    companyName: string;
+    discountGroup?: {
+      name: string;
+      discountPercentage: number;
+    };
+    uniqueOffersCount: number;
+  };
+
+  // UI State
+  isLoading?: boolean;
+  isMobile?: boolean;
+  className?: string;
+}
+
+export function CustomerProductFilters({
+  search,
+  category,
+  priceRange,
+  rabatGruppe,
+  fastUdsalgspris,
+  uniqueOffer,
+  sortBy,
+  sortOrder,
+  onSearchChange,
+  onCategoryChange,
+  onPriceRangeChange,
+  onRabatGruppeChange,
+  onFastUdsalgsprisChange,
+  onUniqueOfferChange,
+  onSortChange,
+  onClearFilters,
+  categories = [],
+  customerInfo,
+  isLoading = false,
+  isMobile = false,
+  className
+}: CustomerProductFiltersProps) {
+
+  const activeFiltersCount = [
+    category !== 'all',
+    priceRange.min > 0 || priceRange.max < 10000,
+    rabatGruppe,
+    fastUdsalgspris,
+    uniqueOffer
+  ].filter(Boolean).length;
+
+  const handlePriceMinChange = (value: string) => {
+    const min = parseFloat(value) || 0;
+    onPriceRangeChange({ min, max: priceRange.max });
+  };
+
+  const handlePriceMaxChange = (value: string) => {
+    const max = parseFloat(value) || 10000;
+    onPriceRangeChange({ min: priceRange.min, max });
+  };
+
+  return (
+    <Card className={cn("w-full", className)}>
+      <CardHeader className="pb-4">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Filter className="h-5 w-5 text-brand-primary" />
+            Filtre & Søgning
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="ml-2">
+                {activeFiltersCount}
+              </Badge>
+            )}
+          </CardTitle>
+          
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onClearFilters}
+              className="text-xs"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Ryd filtre
+            </Button>
+          )}
+        </div>
+
+        {/* Customer Info */}
+        {customerInfo && (
+          <div className="text-sm text-gray-600">
+            <span className="font-medium">{customerInfo.companyName}</span>
+            {customerInfo.discountGroup && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {customerInfo.discountGroup.name} ({customerInfo.discountGroup.discountPercentage}% rabat)
+              </Badge>
+            )}
+          </div>
+        )}
+      </CardHeader>
+
+      <CardContent className="space-y-6">
+        {/* Search */}
+        <div className="space-y-2">
+          <Label htmlFor="search">Søg produkter</Label>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Input
+              id="search"
+              type="text"
+              placeholder="Søg efter navn, varenummer eller EAN..."
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pl-10"
+              disabled={isLoading}
+            />
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Category Filter */}
+        <div className="space-y-2">
+          <Label htmlFor="category">Kategori</Label>
+          <Select
+            value={category}
+            onValueChange={onCategoryChange}
+            disabled={isLoading}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Vælg kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Alle kategorier</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat._id} value={cat._id}>
+                  <div className="flex items-center justify-between w-full">
+                    <span>{cat.navn}</span>
+                    {cat.productCount && (
+                      <Badge variant="outline" className="ml-2 text-xs">
+                        {cat.productCount}
+                      </Badge>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Separator />
+
+        {/* Price Range Filter */}
+        <div className="space-y-3">
+          <Label>Prisinterval (DKK)</Label>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label htmlFor="minPrice" className="text-xs text-gray-500">
+                Fra
+              </Label>
+              <Input
+                id="minPrice"
+                type="number"
+                placeholder="0"
+                value={priceRange.min > 0 ? priceRange.min : ''}
+                onChange={(e) => handlePriceMinChange(e.target.value)}
+                disabled={isLoading}
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div>
+              <Label htmlFor="maxPrice" className="text-xs text-gray-500">
+                Til
+              </Label>
+              <Input
+                id="maxPrice"
+                type="number"
+                placeholder="10000"
+                value={priceRange.max < 10000 ? priceRange.max : ''}
+                onChange={(e) => handlePriceMaxChange(e.target.value)}
+                disabled={isLoading}
+                min="0"
+                step="0.01"
+              />
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Discount Type Filters */}
+        <div className="space-y-4">
+          <Label>Specialtilbud</Label>
+          
+          {/* Unique Offers Filter */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Star className="h-4 w-4 text-brand-primary" />
+              <div>
+                <Label htmlFor="uniqueOffer" className="text-sm font-medium">
+                  Unique Offers
+                </Label>
+                <p className="text-xs text-gray-500">
+                  Særlige tilbud kun til dig
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {customerInfo?.uniqueOffersCount && (
+                <Badge variant="default" className="text-xs bg-brand-primary">
+                  {customerInfo.uniqueOffersCount}
+                </Badge>
+              )}
+              <Switch
+                id="uniqueOffer"
+                checked={uniqueOffer}
+                onCheckedChange={onUniqueOfferChange}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+
+          {/* Fast Udsalgspris Filter */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Tag className="h-4 w-4 text-brand-error" />
+              <div>
+                <Label htmlFor="fastUdsalgspris" className="text-sm font-medium">
+                  Fast Udsalgspris
+                </Label>
+                <p className="text-xs text-gray-500">
+                  Produkter på tilbud
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="fastUdsalgspris"
+              checked={fastUdsalgspris}
+              onCheckedChange={onFastUdsalgsprisChange}
+              disabled={isLoading}
+            />
+          </div>
+
+          {/* Rabat Gruppe Filter */}
+          {customerInfo?.discountGroup && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-brand-secondary" />
+                <div>
+                  <Label htmlFor="rabatGruppe" className="text-sm font-medium">
+                    Guldkunde Rabat
+                  </Label>
+                  <p className="text-xs text-gray-500">
+                    {customerInfo.discountGroup.name} produkter
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="text-xs">
+                  -{customerInfo.discountGroup.discountPercentage}%
+                </Badge>
+                <Switch
+                  id="rabatGruppe"
+                  checked={rabatGruppe}
+                  onCheckedChange={onRabatGruppeChange}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Sort Options */}
+        <div className="space-y-3">
+          <Label>Sortér efter</Label>
+          <div className="grid grid-cols-1 gap-2">
+            <Select
+              value={`${sortBy}-${sortOrder}`}
+              onValueChange={(value) => {
+                const [newSortBy, newSortOrder] = value.split('-') as [string, 'asc' | 'desc'];
+                onSortChange(newSortBy, newSortOrder);
+              }}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="produktnavn-asc">Navn (A-Z)</SelectItem>
+                <SelectItem value="produktnavn-desc">Navn (Z-A)</SelectItem>
+                <SelectItem value="basispris-asc">Pris (lav til høj)</SelectItem>
+                <SelectItem value="basispris-desc">Pris (høj til lav)</SelectItem>
+                <SelectItem value="createdAt-desc">Nyeste først</SelectItem>
+                <SelectItem value="createdAt-asc">Ældste først</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+} 

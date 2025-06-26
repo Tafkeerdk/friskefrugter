@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
+import { ProductPricing, MobilePricingOverlay, CustomerPricing } from "./card/ProductPricing";
 
 interface ProductCardProps {
   id: string;
@@ -14,9 +15,11 @@ interface ProductCardProps {
   category: string;
   isLoggedIn?: boolean;
   price?: number;
+  customerPricing?: CustomerPricing;
+  userType?: 'public' | 'customer';
 }
 
-export function ProductCard({ id, name, image, category, isLoggedIn = false, price }: ProductCardProps) {
+export function ProductCard({ id, name, image, category, isLoggedIn = false, price, customerPricing, userType = 'public' }: ProductCardProps) {
   const [quantity, setQuantity] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -140,7 +143,12 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
           </div>
           
           {/* Mobile: Show price overlay */}
-          {isMobile && isLoggedIn && price && (
+          {isMobile && isLoggedIn && customerPricing && (
+            <MobilePricingOverlay customerPricing={customerPricing} />
+          )}
+          
+          {/* Fallback for legacy price display */}
+          {isMobile && isLoggedIn && !customerPricing && price && (
             <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
               <span className="text-xs font-semibold text-gray-800">{price.toFixed(2)} kr</span>
             </div>
@@ -161,8 +169,18 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
           </h3>
         </Link>
         
-        {/* Desktop: Show price */}
-        {!isMobile && isLoggedIn && price && (
+        {/* Desktop: Show customer pricing */}
+        {!isMobile && isLoggedIn && customerPricing && (
+          <ProductPricing 
+            customerPricing={customerPricing} 
+            isMobile={isMobile}
+            position="card"
+            className="mt-2"
+          />
+        )}
+        
+        {/* Fallback for legacy price display */}
+        {!isMobile && isLoggedIn && !customerPricing && price && (
           <p className="mt-2 text-gray-700 font-semibold text-lg">{price.toFixed(2)} kr</p>
         )}
         
