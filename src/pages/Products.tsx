@@ -392,7 +392,7 @@ const Products = () => {
             <div className="mb-6 flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">
-                  {totalProducts > 0 ? (
+                  {products.length > 0 ? (
                     <>
                       Viser {products.length} af {totalProducts} produkter
                       {filters.category !== 'all' && (
