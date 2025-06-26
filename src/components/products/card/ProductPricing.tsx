@@ -178,7 +178,7 @@ export function MobilePricingOverlay({ customerPricing }: { customerPricing: Cus
     );
   }
 
-  return (
+    return (
     <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
       <div className="flex items-center gap-1">
         <span className="text-xs font-bold text-brand-primary-dark">
@@ -187,7 +187,7 @@ export function MobilePricingOverlay({ customerPricing }: { customerPricing: Cus
             currency: 'DKK',
             minimumFractionDigits: 2
           }).format(customerPricing.price)}
-        </span>
+          </span>
         {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
           <span className="text-xs text-gray-500 line-through">
             {new Intl.NumberFormat('da-DK', {

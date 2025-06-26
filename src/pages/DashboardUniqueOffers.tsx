@@ -1056,7 +1056,7 @@ const DashboardUniqueOffers: React.FC = () => {
                   <div>
                     <p className="font-medium">{selectedOffer.customer.companyName}</p>
                     <p className="text-sm text-brand-gray-600">{selectedOffer.customer.contactPersonName}</p>
-                    <p className="text-sm text-brand-gray-600">{selectedOffer.customer.email}</p>
+                    <p className="text-sm text-brand-gray-600">{selectedOffer.customer?.email || 'N/A'}</p>
                     {selectedOffer.customer.discountGroup && (
                       <Badge variant="outline" className="mt-1">
                         {selectedOffer.customer.discountGroup.name} ({selectedOffer.customer.discountGroup.discountPercentage}% rabat)

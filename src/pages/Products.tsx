@@ -171,7 +171,7 @@ const Products = () => {
         setCurrentPage(1);
         setIsLoading(true);
       } else {
-        setIsLoadingMore(true);
+    setIsLoadingMore(true);
       }
       
       setError(null);
@@ -328,8 +328,8 @@ const Products = () => {
           <div className="text-center mb-8 md:mb-12">
             <div className="flex items-center justify-center gap-3 mb-4">
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Vores Produkter
-              </h1>
+              Vores Produkter
+            </h1>
               {isAuthenticated && (
                 <Badge variant="default" className="bg-brand-primary">
                   B2B Kunde
@@ -392,7 +392,7 @@ const Products = () => {
           {!isLoading && (
             <div className="mb-6 flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600">
                   {products.length > 0 ? (
                     <>
                       Viser {products.length} af {totalProducts} produkter
@@ -408,7 +408,7 @@ const Products = () => {
                   ) : (
                     'Ingen produkter fundet'
                   )}
-                </p>
+              </p>
               </div>
               
               {getActiveFilterCount() > 0 && (

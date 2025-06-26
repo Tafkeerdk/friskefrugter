@@ -773,10 +773,10 @@ const DashboardDiscountGroups: React.FC = () => {
 
   // Filter customers based on search term
   const filteredCustomers = allCustomers.filter(customer =>
-    customer.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.contactPersonName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.cvrNumber?.includes(customerSearchTerm)
+    customer?.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer?.contactPersonName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer?.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer?.cvrNumber?.includes(customerSearchTerm)
   );
 
   if (isLoading) {
@@ -1518,7 +1518,7 @@ const DashboardDiscountGroups: React.FC = () => {
                               </div>
                               <div className="flex items-center gap-1">
                                 <span>📧</span>
-                                <span className="truncate">{customer.email}</span>
+                                <span className="truncate">{customer?.email || 'N/A'}</span>
                               </div>
                               <div className="flex items-center gap-1">
                                 <span>📞</span>
@@ -1671,7 +1671,7 @@ const DashboardDiscountGroups: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-1">
                             <span>📧</span>
-                            <span className="truncate">{customer.email}</span>
+                            <span className="truncate">{customer?.email || 'N/A'}</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <span>📞</span>

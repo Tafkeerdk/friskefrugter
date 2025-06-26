@@ -379,7 +379,7 @@ const DashboardCustomers: React.FC = () => {
                     <div className="grid gap-2">
                       <div className="flex items-center gap-2 text-sm">
                         <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                        <span className="truncate">{customer.email}</span>
+                        <span className="truncate">{customer?.email || 'N/A'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm">
                         <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />

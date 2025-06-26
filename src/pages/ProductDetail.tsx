@@ -301,11 +301,11 @@ const ProductDetail = () => {
             {/* Product Image */}
             <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
               {getPrimaryImage() ? (
-                <img 
+              <img 
                   src={getPrimaryImage()} 
                   alt={product.produktnavn} 
-                  className="w-full h-auto object-cover"
-                />
+                className="w-full h-auto object-cover"
+              />
               ) : (
                 <div className="aspect-square bg-gray-100 flex items-center justify-center">
                   <Package className="h-24 w-24 text-gray-400" />
@@ -414,27 +414,27 @@ const ProductDetail = () => {
               {isAuthenticated ? (
                 <div className="mt-auto">
                   <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center border border-gray-300 rounded-md">
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-none" 
-                        onClick={decreaseQuantity}
+                  <div className="flex items-center border border-gray-300 rounded-md">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 rounded-none" 
+                      onClick={decreaseQuantity}
                         disabled={isAddingToCart}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <span className="w-10 text-center font-medium">{quantity}</span>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-none" 
-                        onClick={increaseQuantity}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="w-10 text-center font-medium">{quantity}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-10 w-10 rounded-none" 
+                      onClick={increaseQuantity}
                         disabled={isAddingToCart}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
 
                     <Button 
                       className="btn-brand-primary flex-1" 
@@ -448,11 +448,11 @@ const ProductDetail = () => {
                         </>
                       ) : (
                         <>
-                          <ShoppingCart className="h-5 w-5 mr-2" />
-                          Tilføj til kurv
+                    <ShoppingCart className="h-5 w-5 mr-2" />
+                    Tilføj til kurv
                         </>
                       )}
-                    </Button>
+                  </Button>
                   </div>
 
                   {/* Stock Status */}
@@ -514,13 +514,13 @@ const ProductDetail = () => {
 
           {/* Related Products Section */}
           {relatedProducts.length > 0 && (
-            <div className="border-t border-gray-200 pt-12">
+          <div className="border-t border-gray-200 pt-12">
               <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center">
                 <Star className="h-6 w-6 mr-2 text-brand-primary" />
                 Relaterede produkter
               </h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                {relatedProducts.map((relatedProduct) => (
+              {relatedProducts.map((relatedProduct) => (
                   <ProductCard 
                     key={relatedProduct._id}
                     id={relatedProduct._id}
@@ -532,9 +532,9 @@ const ProductDetail = () => {
                     price={!isAuthenticated ? undefined : relatedProduct.basispris}
                     customerPricing={relatedProduct.customerPricing}
                   />
-                ))}
-              </div>
+              ))}
             </div>
+          </div>
           )}
         </div>
       </main>
