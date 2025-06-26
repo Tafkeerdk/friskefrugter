@@ -1,0 +1,1 @@
+export { useProductFilters, sortOptions } from './useProductFilters'; 

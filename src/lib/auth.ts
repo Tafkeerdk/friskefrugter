@@ -1531,6 +1531,12 @@ export const authService = {
     requestCache.clearPattern('.*unique-offers.*');
   },
 
+  // Customer Unique Offers - Get offers for currently logged in customer
+  async getMyUniqueOffers(): Promise<{ success: boolean; offers: any[]; count: number; message?: string }> {
+    const response = await apiClient.get('/.netlify/functions/customer-unique-offers');
+    return response.json();
+  },
+
   // Expose apiClient for direct use when needed
   apiClient
 };

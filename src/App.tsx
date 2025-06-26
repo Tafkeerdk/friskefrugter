@@ -32,6 +32,7 @@ import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
 import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
+import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -238,6 +239,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireCustomer={true}>
                   <Profile />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/unique-offers" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <CustomerUniqueOffers />
                 </ProtectedRoute>
               } 
             />
