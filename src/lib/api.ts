@@ -466,7 +466,8 @@ class ApiClient {
     limit?: number;
     search?: string;
     kategori?: string;
-    priceRange?: string; // "min-max" format
+    minPrice?: number;
+    maxPrice?: number;
     rabatGruppe?: boolean;
     fastUdsalgspris?: boolean;
     uniqueOffer?: boolean;
