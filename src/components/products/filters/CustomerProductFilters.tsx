@@ -190,15 +190,15 @@ export function CustomerProductFilters({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Alle kategorier</SelectItem>
-              {categories.map((cat) => (
+              {categories
+                .filter(cat => (cat.productCount || 0) > 0) // Only show categories with products
+                .map((cat) => (
                 <SelectItem key={cat._id} value={cat._id}>
                   <div className="flex items-center justify-between w-full">
                     <span>{cat.navn}</span>
-                    {cat.productCount && (
-                      <Badge variant="outline" className="ml-2 text-xs">
-                        {cat.productCount}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="ml-2 text-xs bg-gray-100 text-gray-600">
+                      {cat.productCount}
+                    </Badge>
                   </div>
                 </SelectItem>
               ))}

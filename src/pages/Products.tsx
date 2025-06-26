@@ -145,6 +145,9 @@ const Products = () => {
           console.warn('Could not load customer profile:', error);
         }
       }
+
+      // Load initial products after categories are loaded
+      await loadProducts(true);
       
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -152,7 +155,7 @@ const Products = () => {
       setError(apiError.message);
       toast({
         title: 'Fejl',
-        description: 'Kunne ikke indlæse kategorier',
+        description: 'Kunne ikke indlæse data',
         variant: 'destructive',
         duration: 5000,
       });
