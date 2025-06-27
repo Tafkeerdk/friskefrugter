@@ -30,7 +30,12 @@ interface Product {
     navn: string;
   };
   basispris: number;
-  enhed: string;
+  enhed: string | {
+    _id: string;
+    value: string;
+    label: string;
+    description?: string;
+  };
   aktiv: boolean;
   varenummer?: string;
   eanNummer?: string;
@@ -497,6 +502,7 @@ const Products = () => {
                     name={product.produktnavn}
                     image={getProductImageUrl(product)}
                     category={product.kategori?.navn || 'Ukategoriserad'}
+                    unit={product.enhed}
                     isLoggedIn={isCustomerAuthenticated && user?.userType === 'customer'}
                     userType={isCustomerAuthenticated && user?.userType === 'customer' ? 'customer' : 'public'}
                     price={!(isCustomerAuthenticated && user?.userType === 'customer') ? undefined : product.basispris}

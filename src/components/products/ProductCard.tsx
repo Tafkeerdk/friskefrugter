@@ -8,18 +8,26 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 import { ProductPricing, MobilePricingOverlay, CustomerPricing } from "./card/ProductPricing";
 
+interface Unit {
+  _id: string;
+  value: string;
+  label: string;
+  description?: string;
+}
+
 interface ProductCardProps {
   id: string;
   name: string;
   image: string;
   category: string;
+  unit?: Unit | string;
   isLoggedIn?: boolean;
   price?: number;
   customerPricing?: CustomerPricing;
   userType?: 'public' | 'customer';
 }
 
-export function ProductCard({ id, name, image, category, isLoggedIn = false, price, customerPricing, userType = 'public' }: ProductCardProps) {
+export function ProductCard({ id, name, image, category, unit, isLoggedIn = false, price, customerPricing, userType = 'public' }: ProductCardProps) {
   const [quantity, setQuantity] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
@@ -56,6 +64,13 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
     
     setImageError(true);
     setImageLoaded(true);
+  };
+
+  // Get unit display value
+  const getUnitDisplay = () => {
+    if (!unit) return '';
+    if (typeof unit === 'string') return unit;
+    return unit.label || unit.value || '';
   };
 
   const renderImage = () => {
@@ -171,26 +186,37 @@ export function ProductCard({ id, name, image, category, isLoggedIn = false, pri
         
         {/* Desktop: Show customer pricing */}
         {!isMobile && isLoggedIn && customerPricing && (
-          <ProductPricing 
-            customerPricing={customerPricing} 
-            isMobile={isMobile}
-            position="card"
-            className="mt-2"
-          />
+          <div className="mt-2">
+            <ProductPricing 
+              customerPricing={customerPricing} 
+              isMobile={isMobile}
+              position="card"
+            />
+            {getUnitDisplay() && (
+              <p className="text-xs text-gray-500 mt-1">Per {getUnitDisplay()}</p>
+            )}
+          </div>
         )}
         
         {/* Fallback for legacy price display */}
         {!isMobile && isLoggedIn && !customerPricing && price && (
-          <p className="mt-2 text-gray-700 font-semibold text-lg">{price.toFixed(2)} kr</p>
+          <div className="mt-2">
+            <p className="text-gray-700 font-semibold text-lg">{price.toFixed(2)} kr</p>
+            {getUnitDisplay() && (
+              <p className="text-xs text-gray-500">Per {getUnitDisplay()}</p>
+            )}
+          </div>
         )}
         
         {!isLoggedIn && (
-          <p className={cn(
-            "mt-1 text-gray-500",
-            isMobile ? "text-xs" : "text-sm"
-          )}>
-            Log ind for at se priser
-          </p>
+          <div className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>
+            <p className="text-gray-500">
+              Log ind for at se priser
+            </p>
+            {getUnitDisplay() && (
+              <p className="text-gray-400 text-xs mt-1">Enhed: {getUnitDisplay()}</p>
+            )}
+          </div>
         )}
       </CardContent>
       

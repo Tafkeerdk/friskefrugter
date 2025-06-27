@@ -83,16 +83,33 @@ const ProductDetail = () => {
   // Load product data
   useEffect(() => {
     if (id) {
-      loadProductData();
+      // Force reload on mount if no product data exists (handles force refresh)
+      const shouldForceRefresh = !product && !!id;
+      loadProductData(shouldForceRefresh);
     }
   }, [id, isAuthenticated]);
+  
+  // Handle force refresh - refetch data when component mounts without product
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !product && id) {
+        console.log('🔄 Page became visible without product data, refetching...');
+        loadProductData(true);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [product, id]);
 
-     const loadProductData = async () => {
+     const loadProductData = async (forceRefresh = false) => {
      if (!id) return;
      
      try {
        setIsLoading(true);
        setError(null);
+       
+       console.log('🔄 Loading product data...', { id, isAuthenticated, forceRefresh });
        
        if (!isAuthenticated) {
          // For public users, use public endpoint
@@ -120,37 +137,43 @@ const ProductDetail = () => {
            setError('Produktet blev ikke fundet');
          }
        } else {
-         // For authenticated users, get customer pricing by fetching all products and finding this one
-         // This ensures we get the proper customer pricing with discount types
-         const customerResponse = await api.getCustomerProducts({ 
-           limit: 1000 // Get enough to find our product
-         });
+         // For authenticated users, try multiple approaches for robust data fetching
+         let productData = null;
          
-         if (customerResponse.success && customerResponse.data && (customerResponse.data as any).products) {
-           const products = (customerResponse.data as any).products;
-           console.log('🔍 Looking for product ID:', id);
-           console.log('📦 Available product IDs:', products.map((p: Product) => p._id).slice(0, 10));
-           console.log('🔍 First product enhed:', products[0]?.enhed);
-           const productData = products.find((p: Product) => p._id === id);
+         try {
+           // First: Try to get from customer products with pricing
+           console.log('🔄 Attempting customer products fetch...');
+           const customerResponse = await api.getCustomerProducts({ 
+             limit: 1000 // Get enough to find our product
+           });
            
-           if (productData) {
-             console.log('✅ Found product in customer list:', productData.produktnavn);
-             console.log('🔧 Product enhed:', productData.enhed);
-             setProduct(productData);
+           if (customerResponse.success && customerResponse.data && (customerResponse.data as any).products) {
+             const products = (customerResponse.data as any).products;
+             console.log('🔍 Looking for product ID:', id);
+             console.log('📦 Available product IDs:', products.map((p: Product) => p._id).slice(0, 10));
+             console.log('🔍 First product enhed:', products[0]?.enhed);
+             productData = products.find((p: Product) => p._id === id);
              
-             // Load related products from same category
-             if (productData.kategori?._id) {
-               loadRelatedProducts(productData.kategori._id);
+             if (productData) {
+               console.log('✅ Found product in customer list:', productData.produktnavn);
+               console.log('🔧 Product enhed:', productData.enhed);
              }
-           } else {
-             console.log('❌ Product not found in customer list, using fallback');
-             // Fallback: try the single product endpoint
+           }
+         } catch (customerError) {
+           console.warn('⚠️ Customer products fetch failed:', customerError);
+         }
+         
+         // Fallback: Always try single product endpoint if customer fetch failed or product not found
+         if (!productData) {
+           try {
              console.log('🔄 Using fallback: api.getProduct()');
              const singleProductResponse = await api.getProduct(id);
              if (singleProductResponse.success && singleProductResponse.data) {
                const fallbackData = singleProductResponse.data as Product;
                console.log('📦 Fallback product enhed:', fallbackData.enhed);
-               const customerProductData = {
+               
+               // For authenticated users, create basic customer pricing structure
+               productData = {
                  ...fallbackData,
                  customerPricing: {
                    price: fallbackData.basispris,
@@ -161,17 +184,22 @@ const ProductDetail = () => {
                    showStrikethrough: false
                  }
                };
-               setProduct(customerProductData);
-               
-               if (fallbackData.kategori?._id) {
-                 loadRelatedProducts(fallbackData.kategori._id);
-               }
-             } else {
-               setError('Produktet blev ikke fundet');
+               console.log('✅ Fallback product loaded:', productData.produktnavn);
              }
+           } catch (fallbackError) {
+             console.error('❌ Fallback product fetch failed:', fallbackError);
+           }
+         }
+         
+         if (productData) {
+           setProduct(productData);
+           
+           // Load related products from same category
+           if (productData.kategori?._id) {
+             loadRelatedProducts(productData.kategori._id);
            }
          } else {
-           setError('Kunne ikke hente produktdata');
+           setError('Produktet blev ikke fundet');
          }
        }
        
