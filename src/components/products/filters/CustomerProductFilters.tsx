@@ -265,7 +265,7 @@ export function CustomerProductFilters({
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {customerInfo?.uniqueOffersCount && (
+              {customerInfo?.uniqueOffersCount > 0 && (
                 <Badge variant="default" className="text-xs bg-brand-primary">
                   {customerInfo.uniqueOffersCount}
                 </Badge>
@@ -274,7 +274,7 @@ export function CustomerProductFilters({
                 id="uniqueOffer"
                 checked={uniqueOffer}
                 onCheckedChange={onUniqueOfferChange}
-                disabled={isLoading}
+                disabled={isLoading || !customerInfo?.uniqueOffersCount}
               />
             </div>
           </div>

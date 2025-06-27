@@ -138,7 +138,6 @@ const Products = () => {
                 discountPercentage: 0
               };
             }
-            customerData.uniqueOffersCount = 0; // TODO: Get from backend
             setCustomerInfo(customerData);
           }
         } catch (error) {
@@ -210,7 +209,7 @@ const Products = () => {
         }
         
         if (filters.uniqueOffers) {
-          params.uniqueOffers = true;
+          params.uniqueOffer = true;
         }
         
         if (filters.fastUdsalgspris) {
@@ -243,6 +242,11 @@ const Products = () => {
         setTotalPages(totalPages);
         setTotalProducts(total);
         setHasMore(page < totalPages);
+        
+        // Update customer info if provided from backend (for customer endpoints)
+        if (response.data.customerInfo && isCustomerAuthenticated) {
+          setCustomerInfo(response.data.customerInfo);
+        }
         
         // Auto-increment page for next load
         if (!resetPagination) {
