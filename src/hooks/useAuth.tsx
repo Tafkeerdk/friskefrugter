@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { authService, User, LoginResponse, tokenManager } from '../lib/auth';
+import { toast } from '../components/ui/use-toast';
 
 // Token validation helpers
 const isTokenExpired = (token: string): boolean => {
@@ -150,6 +151,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           currentPath: window.location.pathname
         });
 
+        // SINGLE SESSION: Prioritize sessions - if both exist, prefer admin
+        const hasValidAdminSession = savedAdminUser && adminToken && !isTokenExpired(adminToken);
+        const hasValidCustomerSession = savedCustomerUser && customerToken && !isTokenExpired(customerToken);
+        
+        if (hasValidAdminSession && hasValidCustomerSession) {
+          console.log('🔄 SINGLE SESSION: Both sessions found - prioritizing admin, clearing customer');
+          tokenManager.clearTokens('customer');
+          setCustomerUser(null);
+          toast({
+            title: "Dual session detected",
+            description: "Admin session prioriteret - kunde session er ryddet",
+            duration: 4000,
+          });
+        }
+        
         // Initialize admin session ONLY if token is valid
         if (savedAdminUser && adminToken && !isTokenExpired(adminToken)) {
           if (import.meta.env.DEV) {
@@ -170,8 +186,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setAdminUser(null);
         }
         
-        // Initialize customer session ONLY if token is valid
-        if (savedCustomerUser && customerToken && !isTokenExpired(customerToken)) {
+        // Initialize customer session ONLY if token is valid AND no admin session
+        if (savedCustomerUser && customerToken && !isTokenExpired(customerToken) && !hasValidAdminSession) {
           if (import.meta.env.DEV) {
             console.log('✅ SECURITY: Setting customer user with valid token');
           }
@@ -261,6 +277,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string, userType: 'customer' | 'admin') => {
     try {
+      // SINGLE SESSION: Clear other session type before logging in
+      if (userType === 'admin') {
+        // Logging in as admin - clear customer session
+        if (customerUser) {
+          console.log('🔄 SINGLE SESSION: Clearing customer session for admin login');
+          tokenManager.clearTokens('customer');
+          setCustomerUser(null);
+          toast({
+            title: "Session skiftet",
+            description: "Kunde session er logget ud - nu logget ind som admin",
+            duration: 3000,
+          });
+        }
+      } else {
+        // Logging in as customer - clear admin session
+        if (adminUser) {
+          console.log('🔄 SINGLE SESSION: Clearing admin session for customer login');
+          tokenManager.clearTokens('admin');
+          setAdminUser(null);
+          toast({
+            title: "Session skiftet",
+            description: "Admin session er logget ud - nu logget ind som kunde",
+            duration: 3000,
+          });
+        }
+      }
+      
       let response;
       
       if (userType === 'customer') {
@@ -351,39 +394,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = (userType?: 'customer' | 'admin') => {
-    console.log('🚪 SECURITY: Logging out', userType || 'all sessions');
+    console.log('🚪 SINGLE SESSION: Logging out', userType || 'all sessions');
     authService.logout(userType);
     
+    // SINGLE SESSION: Always clear everything on logout - no session switching
     if (userType === 'admin') {
       setAdminUser(null);
-      // If admin logs out but customer is still logged in, switch to customer
-      if (customerUser) {
-        const customerToken = tokenManager.getAccessToken('customer');
-        if (customerToken && !isTokenExpired(customerToken)) {
-          setUser(customerUser);
-        } else {
-          tokenManager.clearTokens('customer');
-          setCustomerUser(null);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+      setUser(null);
     } else if (userType === 'customer') {
       setCustomerUser(null);
-      // If customer logs out but admin is still logged in, switch to admin
-      if (adminUser) {
-        const adminToken = tokenManager.getAccessToken('admin');
-        if (adminToken && !isTokenExpired(adminToken)) {
-          setUser(adminUser);
-        } else {
-          tokenManager.clearTokens('admin');
-          setAdminUser(null);
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
+      setUser(null);
     } else {
       // Logout all
       setAdminUser(null);
