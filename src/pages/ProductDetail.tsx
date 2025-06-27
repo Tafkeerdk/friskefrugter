@@ -94,13 +94,11 @@ const ProductDetail = () => {
        setIsLoading(true);
        setError(null);
        
-       // Get the single product using the existing product endpoint
-       const singleProductResponse = await api.getProduct(id);
-       if (singleProductResponse.success && singleProductResponse.data) {
-         const productData = singleProductResponse.data as Product;
-         
-         if (!isAuthenticated) {
-           // For public users, create mock customer pricing with no discount
+       if (!isAuthenticated) {
+         // For public users, use public endpoint
+         const publicResponse = await api.getProduct(id);
+         if (publicResponse.success && publicResponse.data) {
+           const productData = publicResponse.data as Product;
            const publicProductData = {
              ...productData,
              customerPricing: {
@@ -113,29 +111,60 @@ const ProductDetail = () => {
              }
            };
            setProduct(publicProductData);
+           
+           // Load related products from same category
+           if (productData.kategori?._id) {
+             loadRelatedProducts(productData.kategori._id);
+           }
          } else {
-           // For authenticated users, create proper customer pricing
-           // TODO: This should come from the backend with actual customer-specific pricing
-           const customerProductData = {
-             ...productData,
-             customerPricing: {
-               price: productData.basispris,
-               originalPrice: productData.basispris,
-               discountType: 'none' as const,
-               discountLabel: null,
-               discountPercentage: 0,
-               showStrikethrough: false
-             }
-           };
-           setProduct(customerProductData);
-         }
-         
-         // Load related products from same category
-         if (productData.kategori?._id) {
-           loadRelatedProducts(productData.kategori._id);
+           setError('Produktet blev ikke fundet');
          }
        } else {
-         setError('Produktet blev ikke fundet');
+         // For authenticated users, get customer pricing by fetching all products and finding this one
+         // This ensures we get the proper customer pricing with discount types
+         const customerResponse = await api.getCustomerProducts({ 
+           limit: 1000 // Get enough to find our product
+         });
+         
+         if (customerResponse.success && customerResponse.data && (customerResponse.data as any).products) {
+           const products = (customerResponse.data as any).products;
+           const productData = products.find((p: Product) => p._id === id);
+           
+           if (productData) {
+             setProduct(productData);
+             
+             // Load related products from same category
+             if (productData.kategori?._id) {
+               loadRelatedProducts(productData.kategori._id);
+             }
+           } else {
+             // Fallback: try the single product endpoint
+             const singleProductResponse = await api.getProduct(id);
+             if (singleProductResponse.success && singleProductResponse.data) {
+               const fallbackData = singleProductResponse.data as Product;
+               const customerProductData = {
+                 ...fallbackData,
+                 customerPricing: {
+                   price: fallbackData.basispris,
+                   originalPrice: fallbackData.basispris,
+                   discountType: 'none' as const,
+                   discountLabel: null,
+                   discountPercentage: 0,
+                   showStrikethrough: false
+                 }
+               };
+               setProduct(customerProductData);
+               
+               if (fallbackData.kategori?._id) {
+                 loadRelatedProducts(fallbackData.kategori._id);
+               }
+             } else {
+               setError('Produktet blev ikke fundet');
+             }
+           }
+         } else {
+           setError('Kunne ikke hente produktdata');
+         }
        }
        
      } catch (error) {
