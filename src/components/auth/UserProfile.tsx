@@ -85,7 +85,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
               <p className="text-sm font-medium leading-none">{getUserDisplayName()}</p>
-              <p className="text-xs leading-none text-muted-foreground">{displayUser.email}</p>
+              <p className="text-xs leading-none text-muted-foreground">{displayUser?.email}</p>
               {isCustomer(displayUser) && displayUser.companyName && (
                 <p className="text-xs leading-none text-muted-foreground">{displayUser.companyName}</p>
               )}
@@ -135,7 +135,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
           </Avatar>
           <div>
             <CardTitle className="text-lg">{getUserDisplayName()}</CardTitle>
-            <CardDescription>{user.email}</CardDescription>
+            <CardDescription>{user?.email}</CardDescription>
           </div>
         </div>
       </CardHeader>

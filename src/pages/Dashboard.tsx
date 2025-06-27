@@ -43,17 +43,17 @@ const Dashboard: React.FC = () => {
 
   // Add safety checks for user properties
   const safeUser = {
-    contactPersonName: user.contactPersonName || 'Ikke angivet',
-    companyName: user.companyName || 'Ikke angivet',
-    email: user.email || 'Ikke angivet',
-    phone: (user as any).phone || null,
-    address: (user as any).address || null,
-    discountGroup: user.discountGroup || null,
-    discountGroups: (user as any).discountGroups || null
+    contactPersonName: user?.contactPersonName || 'Ikke angivet',
+    companyName: user?.companyName || 'Ikke angivet',
+    email: user?.email || 'Ikke angivet',
+    phone: (user as any)?.phone || null,
+    address: (user as any)?.address || null,
+    discountGroup: user?.discountGroup || null,
+    discountGroups: (user as any)?.discountGroups || null
   };
 
   // Additional validation to ensure core user data is available
-  if (!user.contactPersonName || !user.email || !user.companyName) {
+  if (!user?.contactPersonName || !user?.email || !user?.companyName) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />

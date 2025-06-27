@@ -83,7 +83,7 @@ const DashboardSidebar: React.FC = () => {
                   "text-muted-foreground font-normal truncate",
                   isMobile ? "text-xs" : "text-sm"
                 )}>
-                  {user.name || user.email}
+                  {user?.name || user?.email || 'Bruger'}
                 </div>
               )}
             </div>

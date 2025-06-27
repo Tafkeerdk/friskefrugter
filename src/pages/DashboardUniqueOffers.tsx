@@ -1144,7 +1144,7 @@ const DashboardUniqueOffers: React.FC = () => {
               
               {/* Metadata */}
               <div className="text-xs text-brand-gray-500 space-y-1">
-                <p>Oprettet af: {selectedOffer.createdBy.name} ({selectedOffer.createdBy.email})</p>
+                <p>Oprettet af: {selectedOffer.createdBy?.name} ({selectedOffer.createdBy?.email})</p>
                 <p>Oprettet: {formatDate(selectedOffer.createdAt)}</p>
                 <p>Sidst opdateret: {formatDate(selectedOffer.updatedAt)}</p>
               </div>

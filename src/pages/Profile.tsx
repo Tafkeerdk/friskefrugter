@@ -583,7 +583,7 @@ const Profile = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold">{user.contactPersonName}</h3>
-                      <p className="text-sm text-muted-foreground">{user.email}</p>
+                      <p className="text-sm text-muted-foreground">{user?.email}</p>
                       <p className="text-sm text-muted-foreground">{user.companyName}</p>
                       {user.discountGroup && (
                         <p className="text-sm text-brand-primary">
@@ -906,7 +906,7 @@ const Profile = () => {
                                     <span className="font-medium">Sikkerhed først</span>
                                   </div>
                                   <p className="text-sm text-brand-gray-600">
-                                    Vi sender en verifikationskode til din email ({user.email}) for at bekræfte din identitet.
+                                    Vi sender en verifikationskode til din email ({user?.email}) for at bekræfte din identitet.
                                   </p>
                                 </div>
                                 
@@ -936,7 +936,7 @@ const Profile = () => {
                                 {passwordDialogState.verificationSent && (
                                   <div className="flex items-center gap-2 text-brand-success text-sm">
                                     <CheckCircle className="h-4 w-4" />
-                                    <span>Verifikationskode sendt til {user.email}</span>
+                                    <span>Verifikationskode sendt til {user?.email}</span>
                                   </div>
                                 )}
                                 

@@ -54,7 +54,7 @@ const Admin: React.FC = () => {
                 "text-blue-100 mt-1",
                 isMobile ? "text-sm" : "text-base"
               )}>
-                Velkommen {adminUser.name || adminUser.email}
+                Velkommen {adminUser?.name || adminUser?.email || 'Administrator'}
               </p>
               {isMobile && (
                 <p className="text-xs text-blue-200 mt-1">

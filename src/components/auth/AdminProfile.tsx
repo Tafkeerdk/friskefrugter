@@ -535,7 +535,7 @@ export const AdminProfile: React.FC = () => {
             </div>
             <div>
               <h3 className="text-lg font-semibold">{user.name}</h3>
-              <p className="text-sm text-muted-foreground">{user.email}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
               <p className="text-sm text-muted-foreground">
                 Rolle: {user.role || 'Administrator'}
               </p>

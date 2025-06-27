@@ -194,7 +194,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (profileResponse.success && profileResponse.customer) {
               // Validate that essential customer data exists before setting state
               const customer = profileResponse.customer;
-                if (customer && customer.contactPersonName && customer.email && customer.companyName) {
+              if (customer && customer.contactPersonName && customer.email && customer.companyName) {
                 console.log('✅ Fresh customer profile data fetched on init');
                 tokenManager.setUser(customer, 'customer');
                 setCustomerUser(customer);
