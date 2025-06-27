@@ -128,9 +128,14 @@ const ProductDetail = () => {
          
          if (customerResponse.success && customerResponse.data && (customerResponse.data as any).products) {
            const products = (customerResponse.data as any).products;
+           console.log('🔍 Looking for product ID:', id);
+           console.log('📦 Available product IDs:', products.map((p: Product) => p._id).slice(0, 10));
+           console.log('🔍 First product enhed:', products[0]?.enhed);
            const productData = products.find((p: Product) => p._id === id);
            
            if (productData) {
+             console.log('✅ Found product in customer list:', productData.produktnavn);
+             console.log('🔧 Product enhed:', productData.enhed);
              setProduct(productData);
              
              // Load related products from same category
@@ -138,10 +143,13 @@ const ProductDetail = () => {
                loadRelatedProducts(productData.kategori._id);
              }
            } else {
+             console.log('❌ Product not found in customer list, using fallback');
              // Fallback: try the single product endpoint
+             console.log('🔄 Using fallback: api.getProduct()');
              const singleProductResponse = await api.getProduct(id);
              if (singleProductResponse.success && singleProductResponse.data) {
                const fallbackData = singleProductResponse.data as Product;
+               console.log('📦 Fallback product enhed:', fallbackData.enhed);
                const customerProductData = {
                  ...fallbackData,
                  customerPricing: {
