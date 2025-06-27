@@ -71,7 +71,7 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
   const getBadgeClassName = () => {
     switch (customerPricing.discountType) {
       case 'unique_offer':
-        return 'bg-brand-primary text-white border-brand-primary hover:bg-brand-primary-hover';
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg animate-pulse';
       case 'fast_udsalgspris':
         return 'bg-brand-error text-white border-brand-error';
       case 'rabat_gruppe':
@@ -79,6 +79,47 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
       default:
         return '';
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('da-DK', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const getUniqueOfferValidityText = () => {
+    if (!customerPricing.offerDetails) return null;
+    
+    const { validFrom, validTo } = customerPricing.offerDetails;
+    
+    if (!validTo) {
+      return (
+        <div className="text-xs text-purple-600 font-medium">
+          🎯 Permanent tilbud!
+        </div>
+      );
+    }
+    
+    const endDate = new Date(validTo);
+    const now = new Date();
+    const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysLeft <= 7) {
+      return (
+        <div className="text-xs text-red-600 font-medium animate-bounce">
+          ⚡ Slutter {formatDate(validTo)} ({daysLeft} dage tilbage!)
+        </div>
+      );
+    }
+    
+    return (
+      <div className="text-xs text-purple-600 font-medium">
+        📅 Gyldig til {formatDate(validTo)}
+      </div>
+    );
   };
 
   // No discount - show standard price
@@ -110,12 +151,20 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
           )}
         >
           {getPricingIcon()}
-          <span className="ml-1">{customerPricing.discountLabel}</span>
+          <span className="ml-1">
+            {customerPricing.discountType === 'unique_offer' 
+              ? '🌟 EKSKLUSIVT TILBUD' 
+              : customerPricing.discountLabel
+            }
+          </span>
         </Badge>
         
         {customerPricing.discountPercentage > 0 && (
           <span className={cn(
-            "text-xs font-medium text-brand-success",
+            "text-xs font-medium",
+            customerPricing.discountType === 'unique_offer' 
+              ? "text-purple-600 font-bold" 
+              : "text-brand-success",
             position === 'overlay' ? "text-white" : ""
           )}>
             -{customerPricing.discountPercentage}%
@@ -125,26 +174,33 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
 
       {/* Price Display */}
       <div className="flex items-center gap-2">
+        {/* Original price with strikethrough - SHOW FIRST for unique offers */}
+        {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
+          <div className={cn(
+            "text-gray-500 line-through font-medium",
+            position === 'overlay' ? "text-gray-200" : "",
+            isMobile ? "text-sm" : "text-lg",
+            customerPricing.discountType === 'unique_offer' ? "text-gray-600" : ""
+          )}>
+            {formatPrice(customerPricing.originalPrice)}
+          </div>
+        )}
+
         {/* Current (discounted) price */}
         <div className={cn(
-          "font-bold text-brand-primary-dark",
+          "font-bold",
+          customerPricing.discountType === 'unique_offer' 
+            ? "text-purple-600 text-xl" 
+            : "text-brand-primary-dark",
           position === 'overlay' ? "text-white" : "",
           isMobile ? "text-base" : "text-xl"
         )}>
           {formatPrice(customerPricing.price)}
         </div>
-
-        {/* Original price with strikethrough */}
-        {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
-          <div className={cn(
-            "text-gray-500 line-through",
-            position === 'overlay' ? "text-gray-200" : "",
-            isMobile ? "text-xs" : "text-sm"
-          )}>
-            {formatPrice(customerPricing.originalPrice)}
-          </div>
-        )}
       </div>
+
+      {/* Unique Offer Validity Info */}
+      {customerPricing.discountType === 'unique_offer' && getUniqueOfferValidityText()}
 
       {/* Additional Details (only for detail view) */}
       {position === 'detail' && customerPricing.offerDetails?.description && (
@@ -179,17 +235,20 @@ export function MobilePricingOverlay({ customerPricing }: { customerPricing: Cus
   }
 
     return (
-    <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
+    <div className={cn(
+      "absolute top-3 right-3 backdrop-blur-sm px-2 py-1 rounded-full",
+      customerPricing.discountType === 'unique_offer' 
+        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse" 
+        : "bg-white/90"
+    )}>
       <div className="flex items-center gap-1">
-        <span className="text-xs font-bold text-brand-primary-dark">
-          {new Intl.NumberFormat('da-DK', {
-            style: 'currency',
-            currency: 'DKK',
-            minimumFractionDigits: 2
-          }).format(customerPricing.price)}
-          </span>
         {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
-          <span className="text-xs text-gray-500 line-through">
+          <span className={cn(
+            "text-xs line-through",
+            customerPricing.discountType === 'unique_offer' 
+              ? "text-purple-100" 
+              : "text-gray-500"
+          )}>
             {new Intl.NumberFormat('da-DK', {
               style: 'currency',
               currency: 'DKK',
@@ -197,6 +256,18 @@ export function MobilePricingOverlay({ customerPricing }: { customerPricing: Cus
             }).format(customerPricing.originalPrice)}
           </span>
         )}
+        <span className={cn(
+          "text-xs font-bold",
+          customerPricing.discountType === 'unique_offer' 
+            ? "text-white" 
+            : "text-brand-primary-dark"
+        )}>
+          {new Intl.NumberFormat('da-DK', {
+            style: 'currency',
+            currency: 'DKK',
+            minimumFractionDigits: 2
+          }).format(customerPricing.price)}
+          </span>
       </div>
     </div>
   );

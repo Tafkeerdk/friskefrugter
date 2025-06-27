@@ -89,17 +89,33 @@ const UniqueOffersCard: React.FC = () => {
 
     if (offer.isUnlimited) {
       return (
-        <Badge className="bg-brand-success text-white">
+        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
           <CheckCircle className="h-3 w-3 mr-1" />
-          Permanent
+          🎯 PERMANENT TILBUD
         </Badge>
       );
     }
 
+    // Calculate days left if there's an end date
+    if (offer.validTo) {
+      const endDate = new Date(offer.validTo);
+      const now = new Date();
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysLeft <= 7) {
+        return (
+          <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white animate-bounce">
+            <Clock className="h-3 w-3 mr-1" />
+            ⚡ {daysLeft} DAGE TILBAGE!
+          </Badge>
+        );
+      }
+    }
+
     return (
-      <Badge className="bg-blue-100 text-blue-800">
+      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
         <Clock className="h-3 w-3 mr-1" />
-        Aktiv
+        🌟 EKSKLUSIVT TILBUD
       </Badge>
     );
   };
@@ -194,7 +210,7 @@ const UniqueOffersCard: React.FC = () => {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Tag className="h-5 w-5 text-brand-primary" />
-          Særlige tilbud ({offers.length})
+          Særlige tilbud ({offers.filter(offer => offer.isCurrentlyValid).length})
         </CardTitle>
         <CardDescription>
           Dine personlige tilbud og rabatter
@@ -202,7 +218,7 @@ const UniqueOffersCard: React.FC = () => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {offers.slice(0, 3).map((offer) => (
+          {offers.filter(offer => offer.isCurrentlyValid).slice(0, 3).map((offer) => (
             <div 
               key={offer._id} 
               className="flex items-center gap-4 p-4 bg-brand-gray-50 rounded-lg border border-brand-gray-200 hover:border-brand-primary/20 transition-colors"
@@ -231,22 +247,22 @@ const UniqueOffersCard: React.FC = () => {
                 
                 {/* Pricing */}
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="text-lg font-bold text-brand-primary">
+                  {offer.savings > 0 && (
+                    <span className="text-lg text-gray-500 line-through font-medium">
+                      {new Intl.NumberFormat('da-DK', {
+                        style: 'currency',
+                        currency: 'DKK'
+                      }).format(offer.product.basispris)}
+                    </span>
+                  )}
+                  <span className="text-xl font-bold text-purple-600">
                     {offer.formattedPrice}
                   </span>
                   {offer.savings > 0 && (
-                    <>
-                      <span className="text-sm text-brand-gray-400 line-through">
-                        {new Intl.NumberFormat('da-DK', {
-                          style: 'currency',
-                          currency: 'DKK'
-                        }).format(offer.product.basispris)}
-                      </span>
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        <Percent className="h-3 w-3 mr-1" />
-                        -{offer.savingsPercentage}%
-                      </Badge>
-                    </>
+                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                      <Percent className="h-3 w-3 mr-1" />
+                      -{offer.savingsPercentage}%
+                    </Badge>
                   )}
                 </div>
 
@@ -278,7 +294,7 @@ const UniqueOffersCard: React.FC = () => {
             </div>
           ))}
 
-          {offers.length > 3 && (
+          {offers.filter(offer => offer.isCurrentlyValid).length > 3 && (
             <div className="pt-4 border-t">
               <Button 
                 asChild
@@ -286,7 +302,7 @@ const UniqueOffersCard: React.FC = () => {
                 className="w-full"
               >
                 <Link to="/unique-offers">
-                  Se alle tilbud ({offers.length})
+                  Se alle tilbud ({offers.filter(offer => offer.isCurrentlyValid).length})
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>

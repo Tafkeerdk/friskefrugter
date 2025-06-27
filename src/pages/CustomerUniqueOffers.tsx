@@ -136,17 +136,33 @@ const CustomerUniqueOffers: React.FC = () => {
 
     if (offer.isUnlimited) {
       return (
-        <Badge className="bg-brand-success text-white">
+        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
           <CheckCircle className="h-3 w-3 mr-1" />
-          Permanent
+          🎯 PERMANENT TILBUD
         </Badge>
       );
     }
 
+    // Calculate days left if there's an end date
+    if (offer.validTo) {
+      const endDate = new Date(offer.validTo);
+      const now = new Date();
+      const daysLeft = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      
+      if (daysLeft <= 7) {
+        return (
+          <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white animate-bounce">
+            <Clock className="h-3 w-3 mr-1" />
+            ⚡ {daysLeft} DAGE TILBAGE!
+          </Badge>
+        );
+      }
+    }
+
     return (
-      <Badge className="bg-blue-100 text-blue-800">
+      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
         <Clock className="h-3 w-3 mr-1" />
-        Aktiv
+        🌟 EKSKLUSIVT TILBUD
       </Badge>
     );
   };
@@ -337,22 +353,22 @@ const CustomerUniqueOffers: React.FC = () => {
 
                             {/* Pricing */}
                             <div className="flex items-center gap-3 mb-3">
-                              <span className="text-2xl font-bold text-brand-primary">
+                              {offer.savings > 0 && (
+                                <span className="text-2xl text-gray-500 line-through font-medium">
+                                  {new Intl.NumberFormat('da-DK', {
+                                    style: 'currency',
+                                    currency: 'DKK'
+                                  }).format(offer.product.basispris)}
+                                </span>
+                              )}
+                              <span className="text-3xl font-bold text-purple-600">
                                 {offer.formattedPrice}
                               </span>
                               {offer.savings > 0 && (
-                                <>
-                                  <span className="text-lg text-brand-gray-400 line-through">
-                                    {new Intl.NumberFormat('da-DK', {
-                                      style: 'currency',
-                                      currency: 'DKK'
-                                    }).format(offer.product.basispris)}
-                                  </span>
-                                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                                    <Percent className="h-3 w-3 mr-1" />
-                                    Spar {offer.savingsPercentage}%
-                                  </Badge>
-                                </>
+                                <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
+                                  <Percent className="h-3 w-3 mr-1" />
+                                  -{offer.savingsPercentage}%
+                                </Badge>
                               )}
                             </div>
 
