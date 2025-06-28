@@ -643,7 +643,7 @@ const ProductDetail = () => {
                     isLoggedIn={isAuthenticated}
                     userType={isAuthenticated ? 'customer' : 'public'}
                     price={!isAuthenticated ? undefined : relatedProduct.basispris}
-                    customerPricing={relatedProduct.customerPricing}
+                    customerPricing={relatedProduct.customerPricing as any}
                   />
               ))}
             </div>
