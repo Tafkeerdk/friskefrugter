@@ -208,16 +208,6 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     style: 'currency',
                     currency: 'DKK'
                   }).format(customerPricing.price)}
-                  
-                  {/* **SUBTLE TOTAL PRICE INDICATOR FOR PC** */}
-                  {quantity > 1 && !isMobile && (
-                    <span className="text-sm text-brand-primary font-semibold ml-2">
-                      (Total: {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(getTotalPrice())})
-                    </span>
-                  )}
                 </span>
                 {getUnitDisplay() && (
                   <span className={cn(
@@ -225,17 +215,30 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     isMobile ? "text-sm" : "text-xs"
                   )}>
                     per {getUnitDisplay()}
-                    {/* **MOBILE TOTAL PRICE - INLINE** */}
-                    {quantity > 1 && isMobile && (
-                      <span className="text-brand-primary font-semibold ml-2">
-                        • Total: {new Intl.NumberFormat('da-DK', {
-                          style: 'currency',
-                          currency: 'DKK'
-                        }).format(getTotalPrice())}
-                      </span>
-                    )}
                   </span>
                 )}
+                
+                {/* **TOTAL PRICE - ALWAYS RENDERED FOR CONSISTENT HEIGHT** */}
+                <div className={cn(
+                  "min-h-[1.25rem] flex items-center",
+                  isMobile ? "mt-1" : "mt-0.5"
+                )}>
+                  {quantity > 1 ? (
+                    <span className={cn(
+                      "text-brand-primary font-semibold",
+                      isMobile ? "text-sm" : "text-xs"
+                    )}>
+                      Total: {new Intl.NumberFormat('da-DK', {
+                        style: 'currency',
+                        currency: 'DKK'
+                      }).format(getTotalPrice())}
+                    </span>
+                  ) : (
+                    <span className="invisible">
+                      Total: 0,00 kr.
+                    </span>
+                  )}
+                </div>
               </div>
               
               {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
@@ -293,16 +296,6 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     style: 'currency',
                     currency: 'DKK'
                   }).format(price)}
-                  
-                  {/* **SUBTLE TOTAL PRICE INDICATOR FOR PC** */}
-                  {quantity > 1 && !isMobile && (
-                    <span className="text-sm text-brand-primary font-semibold ml-2">
-                      (Total: {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(price * quantity)})
-                    </span>
-                  )}
                 </span>
                 {getUnitDisplay() && (
                   <span className={cn(
@@ -310,17 +303,30 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     isMobile ? "text-sm" : "text-xs"
                   )}>
                     per {getUnitDisplay()}
-                    {/* **MOBILE TOTAL PRICE - INLINE** */}
-                    {quantity > 1 && isMobile && (
-                      <span className="text-brand-primary font-semibold ml-2">
-                        • Total: {new Intl.NumberFormat('da-DK', {
-                          style: 'currency',
-                          currency: 'DKK'
-                        }).format(price * quantity)}
-                      </span>
-                    )}
                   </span>
                 )}
+                
+                {/* **TOTAL PRICE - ALWAYS RENDERED FOR CONSISTENT HEIGHT** */}
+                <div className={cn(
+                  "min-h-[1.25rem] flex items-center",
+                  isMobile ? "mt-1" : "mt-0.5"
+                )}>
+                  {quantity > 1 ? (
+                    <span className={cn(
+                      "text-brand-primary font-semibold",
+                      isMobile ? "text-sm" : "text-xs"
+                    )}>
+                      Total: {new Intl.NumberFormat('da-DK', {
+                        style: 'currency',
+                        currency: 'DKK'
+                      }).format(price * quantity)}
+                    </span>
+                  ) : (
+                    <span className="invisible">
+                      Total: 0,00 kr.
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -349,6 +355,9 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                 </p>
               )}
             </div>
+            
+            {/* **CONSISTENT HEIGHT SPACER FOR NON-LOGGED-IN USERS** */}
+            <div className="min-h-[1.25rem]"></div>
           </div>
         )}
       </CardContent>
@@ -397,16 +406,16 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
               </Button>
             </div>
 
+            {/* **WIDER CART BUTTON - BETTER SPACE UTILIZATION** */}
             <Button 
               className={cn(
-                "rounded-xl transition-all duration-200 shadow-sm font-semibold",
-                isMobile ? "h-11 w-11" : "h-9 w-9",
+                "rounded-xl transition-all duration-200 shadow-sm font-semibold flex-1 max-w-[120px]",
+                isMobile ? "h-11 px-4" : "h-9 px-3",
                 quantity === 0 
                   ? "opacity-50 cursor-not-allowed bg-gray-400" 
                   : "bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md text-white"
               )}
               disabled={quantity === 0}
-              size="icon"
               aria-label="Tilføj til kurv"
             >
               <ShoppingCart className={cn(isMobile ? "h-5 w-5" : "h-4 w-4")} />

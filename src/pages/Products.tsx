@@ -14,6 +14,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { api, handleApiError } from "@/lib/api";
 import { authService } from "@/lib/auth";
 import { CustomerPricing } from "@/components/products/card/ProductPricing";
+import { FabBackToTop } from '@/components/ui/fab-back-to-top';
+import { cn } from '@/lib/utils';
 
 // Types
 interface Product {
@@ -471,61 +473,59 @@ const Products = () => {
           )}
 
           {/* Products Grid */}
-          <div className="content-width">
-            {isLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <div className="aspect-video bg-gray-200 animate-pulse" />
-                    <CardContent className="p-4">
-                      <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
-                      <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : products.length === 0 ? (
-              <Card className="text-center py-12">
-                <CardContent>
-                  <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">
-                    Ingen produkter fundet
-                  </h3>
-                  <p className="text-gray-600 mb-4">
-                    {getActiveFilterCount() > 0
-                      ? "Prøv at ændre dine søgekriterier eller filtrer" 
-                      : "Der er ingen produkter tilgængelige i øjeblikket"
-                    }
-                  </p>
-                  {getActiveFilterCount() > 0 && (
-                    <Button 
-                      variant="outline" 
-                      onClick={clearFilters}
-                    >
-                      Ryd alle filtre
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product._id}
-                    id={product._id}
-                    name={product.produktnavn}
-                    image={getProductImageUrl(product)}
-                    category={product.kategori?.navn || 'Ukategoriserad'}
-                    unit={product.enhed}
-                    isLoggedIn={isCustomerAuthenticated && user?.userType === 'customer'}
-                    userType={isCustomerAuthenticated && user?.userType === 'customer' ? 'customer' : 'public'}
-                    price={!(isCustomerAuthenticated && user?.userType === 'customer') ? undefined : product.basispris}
-                    customerPricing={product.customerPricing}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          {isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="overflow-hidden">
+                  <div className="aspect-video bg-gray-200 animate-pulse" />
+                  <CardContent className="p-4">
+                    <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
+                    <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : products.length === 0 ? (
+            <Card className="text-center py-12">
+              <CardContent>
+                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Ingen produkter fundet
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  {getActiveFilterCount() > 0
+                    ? "Prøv at ændre dine søgekriterier eller filtrer" 
+                    : "Der er ingen produkter tilgængelige i øjeblikket"
+                  }
+                </p>
+                {getActiveFilterCount() > 0 && (
+                  <Button 
+                    variant="outline" 
+                    onClick={clearFilters}
+                  >
+                    Ryd alle filtre
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {products.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  id={product._id}
+                  name={product.produktnavn}
+                  image={getProductImageUrl(product)}
+                  category={product.kategori?.navn || 'Ukategoriserad'}
+                  unit={product.enhed}
+                  isLoggedIn={isCustomerAuthenticated && user?.userType === 'customer'}
+                  userType={isCustomerAuthenticated && user?.userType === 'customer' ? 'customer' : 'public'}
+                  price={!(isCustomerAuthenticated && user?.userType === 'customer') ? undefined : product.basispris}
+                  customerPricing={product.customerPricing}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Load More Button */}
           {!isLoading && products.length > 0 && hasMore && (
@@ -552,6 +552,9 @@ const Products = () => {
         </div>
       </main>
       <Footer />
+      
+      {/* **FAB BACK-TO-TOP BUTTON - PC & MOBILE** */}
+      <FabBackToTop />
     </div>
   );
 };
