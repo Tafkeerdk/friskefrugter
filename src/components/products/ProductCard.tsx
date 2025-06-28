@@ -159,7 +159,7 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
           
           {/* Mobile: Show price overlay */}
           {isMobile && isLoggedIn && customerPricing && (
-            <MobilePricingOverlay customerPricing={customerPricing} quantity={quantity} />
+            <MobilePricingOverlay customerPricing={customerPricing} quantity={quantity} unit={getUnitDisplay()} />
           )}
           
           {/* Fallback for legacy price display */}
@@ -191,10 +191,8 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
               customerPricing={customerPricing} 
               isMobile={isMobile}
               position="card"
+              unit={getUnitDisplay()}
             />
-            {getUnitDisplay() && (
-              <p className="text-xs text-gray-500 mt-1">Per {getUnitDisplay()}</p>
-            )}
             {/* Show total price when quantity > 1 */}
             {quantity > 1 && (
               <div className="mt-2 p-2 bg-brand-gray-50 rounded-md border">
@@ -239,8 +237,19 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
               Log ind for at se priser
             </p>
             {getUnitDisplay() && (
-              <p className="text-gray-400 text-xs mt-1">Enhed: {getUnitDisplay()}</p>
+              <p className="text-gray-400 text-xs mt-1">
+                Enhed: {getUnitDisplay()}
+              </p>
             )}
+          </div>
+        )}
+
+        {/* Mobile: Show unit info for logged-in users below pricing */}
+        {isMobile && isLoggedIn && getUnitDisplay() && (
+          <div className="mt-1">
+            <p className="text-xs text-gray-500">
+              Per {getUnitDisplay()}
+            </p>
           </div>
         )}
       </CardContent>

@@ -23,6 +23,7 @@ export interface CustomerPricing {
   groupDetails?: {
     groupName?: string;
     groupDescription?: string;
+    groupColor?: string; // Add color from database
   };
 }
 
@@ -31,9 +32,10 @@ interface ProductPricingProps {
   isMobile?: boolean;
   position?: 'card' | 'overlay' | 'detail'; // Different display positions
   className?: string;
+  unit?: string; // Add unit information for display
 }
 
-export function ProductPricing({ customerPricing, isMobile = false, position = 'card', className }: ProductPricingProps) {
+export function ProductPricing({ customerPricing, isMobile = false, position = 'card', className, unit }: ProductPricingProps) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('da-DK', {
       style: 'currency',
@@ -75,10 +77,24 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
       case 'fast_udsalgspris':
         return 'bg-brand-error text-white border-brand-error';
       case 'rabat_gruppe':
-        return 'bg-brand-secondary text-white border-brand-secondary';
+        // Use dynamic color if available, otherwise fallback to brand-secondary
+        return customerPricing.groupDetails?.groupColor 
+          ? '' // Empty class, will use inline styles
+          : 'bg-brand-secondary text-white border-brand-secondary';
       default:
         return '';
     }
+  };
+
+  const getBadgeStyle = () => {
+    if (customerPricing.discountType === 'rabat_gruppe' && customerPricing.groupDetails?.groupColor) {
+      return {
+        backgroundColor: customerPricing.groupDetails.groupColor,
+        borderColor: customerPricing.groupDetails.groupColor,
+        color: 'white'
+      };
+    }
+    return undefined;
   };
 
   const formatDate = (dateString: string) => {
@@ -149,6 +165,7 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
             getBadgeClassName(),
             isMobile ? "px-1.5 py-0.5" : "px-2 py-1"
           )}
+          style={getBadgeStyle()}
         >
           {getPricingIcon()}
           <span className="ml-1">
@@ -214,12 +231,19 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
           {customerPricing.groupDetails.groupName} rabat
         </p>
       )}
+
+      {/* Unit Information */}
+      {unit && position !== 'overlay' && (
+        <p className="text-xs text-gray-500 mt-1">
+          Per {unit}
+        </p>
+      )}
     </div>
   );
 }
 
 // Helper component for mobile overlay pricing
-export function MobilePricingOverlay({ customerPricing, quantity = 1 }: { customerPricing: CustomerPricing; quantity?: number }) {
+export function MobilePricingOverlay({ customerPricing, quantity = 1, unit }: { customerPricing: CustomerPricing; quantity?: number; unit?: string }) {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('da-DK', {
       style: 'currency',
@@ -230,59 +254,106 @@ export function MobilePricingOverlay({ customerPricing, quantity = 1 }: { custom
 
   if (customerPricing.discountType === 'none') {
     return (
-      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
-        <div className="flex flex-col items-end">
+      <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-sm">
+        <div className="flex flex-col items-end text-right">
           <span className="text-xs font-semibold text-gray-800">
             {formatPrice(customerPricing.price)}
           </span>
-          {quantity > 1 && (
-            <span className="text-xs font-bold text-brand-primary">
-              {formatPrice(customerPricing.price * quantity)} total
+          {unit && (
+            <span className="text-xs text-gray-600">
+              per {unit}
             </span>
+          )}
+          {quantity > 1 && (
+            <div className="border-t border-gray-200 pt-1 mt-1">
+              <span className="text-xs font-bold text-brand-primary">
+                {formatPrice(customerPricing.price * quantity)} total
+              </span>
+            </div>
           )}
         </div>
       </div>
     );
   }
 
+  // Get badge styling for mobile overlay
+  const getMobileBadgeStyle = () => {
+    if (customerPricing.discountType === 'rabat_gruppe' && customerPricing.groupDetails?.groupColor) {
+      return {
+        backgroundColor: customerPricing.groupDetails.groupColor,
+        borderColor: customerPricing.groupDetails.groupColor,
+        color: 'white'
+      };
+    }
+    return undefined;
+  };
+
+  const getMobileBadgeColor = () => {
+    switch (customerPricing.discountType) {
+      case 'unique_offer':
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white';
+      case 'fast_udsalgspris':
+        return 'bg-red-500 text-white';
+      case 'rabat_gruppe':
+        return customerPricing.groupDetails?.groupColor 
+          ? '' // Will use inline styles
+          : 'bg-green-500 text-white';
+      default:
+        return 'bg-blue-500 text-white';
+    }
+  };
+
   return (
-    <div className={cn(
-      "absolute top-3 right-3 backdrop-blur-sm px-2 py-1 rounded-full",
-      customerPricing.discountType === 'unique_offer' 
-        ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse" 
-        : "bg-white/90"
-    )}>
-      <div className="flex flex-col items-end gap-1">
+    <div className="absolute top-3 right-3 backdrop-blur-sm rounded-lg shadow-sm overflow-hidden">
+      {/* Discount Badge */}
+      <div className={cn(
+        "px-2 py-1 text-xs font-medium",
+        getMobileBadgeColor(),
+        customerPricing.discountType === 'unique_offer' && "animate-pulse"
+      )}
+      style={getMobileBadgeStyle()}>
         <div className="flex items-center gap-1">
-          {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
-            <span className={cn(
-              "text-xs line-through",
-              customerPricing.discountType === 'unique_offer' 
-                ? "text-purple-100" 
-                : "text-gray-500"
-            )}>
-              {formatPrice(customerPricing.originalPrice)}
+          {customerPricing.discountType === 'unique_offer' && <Star className="h-3 w-3" />}
+          {customerPricing.discountType === 'fast_udsalgspris' && <Tag className="h-3 w-3" />}
+          {customerPricing.discountType === 'rabat_gruppe' && <Award className="h-3 w-3" />}
+          <span>
+            {customerPricing.discountType === 'unique_offer' 
+              ? 'TILBUD' 
+              : customerPricing.discountLabel?.replace(' Rabat', '') || customerPricing.discountLabel
+            }
+          </span>
+          {customerPricing.discountPercentage > 0 && (
+            <span>-{customerPricing.discountPercentage}%</span>
+          )}
+        </div>
+      </div>
+      
+      {/* Pricing */}
+      <div className="bg-white/95 px-2 py-1">
+        <div className="flex flex-col items-end text-right">
+          <div className="flex items-center gap-1">
+            {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
+              <span className="text-xs line-through text-gray-500">
+                {formatPrice(customerPricing.originalPrice)}
+              </span>
+            )}
+            <span className="text-xs font-bold text-brand-primary-dark">
+              {formatPrice(customerPricing.price)}
+            </span>
+          </div>
+          {unit && (
+            <span className="text-xs text-gray-600">
+              per {unit}
             </span>
           )}
-          <span className={cn(
-            "text-xs font-bold",
-            customerPricing.discountType === 'unique_offer' 
-              ? "text-white" 
-              : "text-brand-primary-dark"
-          )}>
-            {formatPrice(customerPricing.price)}
-          </span>
+          {quantity > 1 && (
+            <div className="border-t border-gray-200 pt-1 mt-1">
+              <span className="text-xs font-bold text-brand-primary">
+                {formatPrice(customerPricing.price * quantity)} total
+              </span>
+            </div>
+          )}
         </div>
-        {quantity > 1 && (
-          <span className={cn(
-            "text-xs font-bold border-t pt-1",
-            customerPricing.discountType === 'unique_offer' 
-              ? "text-white border-purple-200" 
-              : "text-brand-primary border-gray-300"
-          )}>
-            {formatPrice(customerPricing.price * quantity)} total
-          </span>
-        )}
       </div>
     </div>
   );

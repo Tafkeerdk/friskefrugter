@@ -402,17 +402,20 @@ const ProductDetail = () => {
                      <ProductPricing
                        customerPricing={product.customerPricing}
                        position="detail"
+                       unit={getUnitDisplay()}
                      />
                    ) : (
-                     <div className="text-2xl font-bold text-gray-900">
-                       {new Intl.NumberFormat('da-DK', {
-                         style: 'currency',
-                         currency: 'DKK',
-                         minimumFractionDigits: 2
-                       }).format(product.basispris)}
-                     </div>
+                     <>
+                       <div className="text-2xl font-bold text-gray-900">
+                         {new Intl.NumberFormat('da-DK', {
+                           style: 'currency',
+                           currency: 'DKK',
+                           minimumFractionDigits: 2
+                         }).format(product.basispris)}
+                       </div>
+                       <p className="text-sm text-gray-500 mt-1">Per {getUnitDisplay()}</p>
+                     </>
                    )}
-                  <p className="text-sm text-gray-500 mt-1">Per {getUnitDisplay()}</p>
                 </div>
               ) : (
                 <div className="p-4 mb-6 bg-blue-50 rounded-lg border border-blue-200">
@@ -500,6 +503,31 @@ const ProductDetail = () => {
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
+
+                  {/* Enhanced Total Price Display for B2B */}
+                  {quantity > 1 && product.customerPricing && (
+                    <div className="p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200 mb-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-brand-gray-700">
+                          Total ({quantity} × {getUnitDisplay() || 'stk'}):
+                        </span>
+                        <span className="text-xl font-bold text-brand-primary">
+                          {new Intl.NumberFormat('da-DK', {
+                            style: 'currency',
+                            currency: 'DKK'
+                          }).format(product.customerPricing.price * quantity)}
+                        </span>
+                      </div>
+                      {product.customerPricing.discountPercentage > 0 && (
+                        <div className="text-xs text-brand-gray-600 mt-1">
+                          Du sparer: {new Intl.NumberFormat('da-DK', {
+                            style: 'currency',
+                            currency: 'DKK'
+                          }).format((product.customerPricing.originalPrice - product.customerPricing.price) * quantity)}
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                     <Button 
                       className="btn-brand-primary flex-1" 
