@@ -233,21 +233,17 @@ export function Navbar() {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          {/* **FUNCTIONAL DESKTOP SEARCH** */}
-          <form 
-            onSubmit={handleSearchSubmit}
-            className={cn(
-              "relative hidden md:flex items-center transition-all duration-300",
-              searchActive || searchValue ? "w-60 lg:w-80" : "w-60 lg:w-80"
-            )}
-          >
+          {/* Desktop Search */}
+          <div className={cn(
+            "relative hidden md:flex items-center transition-all duration-300",
+            searchActive || searchValue ? "w-60 lg:w-80" : "w-60 lg:w-80"
+          )}>
             <input 
               type="text" 
               placeholder="Søg efter produkter..." 
-              className="border border-gray-200 px-4 py-2 pr-10 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all"
+              className="border border-gray-200 px-4 py-2 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-brand-primary transition-all"
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
-              onKeyPress={handleSearchKeyPress}
               onFocus={() => {
                 setSearchActive(true);
                 setShowResults(true);
@@ -255,77 +251,39 @@ export function Navbar() {
               onBlur={() => {
                 setTimeout(() => {
                   setShowResults(false);
-                  setSearchActive(false);
                 }, 200);
               }}
+              onKeyDown={handleSearchKeyPress}
             />
-            <Button
-              type="submit"
-              variant="ghost"
-              size="sm"
-              className="absolute right-1 top-1 h-8 w-8 p-0 hover:bg-brand-primary/10"
-              disabled={!searchValue.trim() || isSearching}
-            >
-              <Search className="h-4 w-4 text-brand-primary" />
-            </Button>
-            
-            {/* **REAL SEARCH RESULTS DROPDOWN** */}
             <SearchResults 
               results={searchResults}
-              isVisible={showResults && (searchResults.length > 0 || isSearching)}
-              isLoading={isSearching}
-              onResultClick={() => {
-                setShowResults(false);
-                setSearchValue('');
-              }}
-              onViewAllResults={() => handleSearchSubmit()}
-              searchQuery={searchValue}
+              isVisible={showResults && searchResults.length > 0}
             />
-          </form>
+          </div>
           
-          {/* **FUNCTIONAL MOBILE SEARCH** */}
+          {/* Mobile Search - Integrated into mobile menu */}
           {isMobile && (
-            <form 
-              onSubmit={handleSearchSubmit}
-              className="relative flex flex-1 max-w-xs"
-            >
+            <div className="relative flex flex-1 max-w-xs">
               <input 
                 type="text" 
                 placeholder="Søg..." 
-                className="border border-gray-200 px-3 py-2 pr-10 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary transition-all text-sm"
+                className="border border-gray-200 px-3 py-2 pr-10 rounded-md w-full bg-gray-50 focus:ring-2 focus:ring-green-200 focus:border-brand-primary transition-all text-sm"
                 value={searchValue}
                 onChange={(e) => setSearchValue(e.target.value)}
-                onKeyPress={handleSearchKeyPress}
                 onFocus={() => setShowResults(true)}
                 onBlur={() => {
                   setTimeout(() => {
                     setShowResults(false);
                   }, 200);
                 }}
+                onKeyDown={handleSearchKeyPress}
               />
-              <Button
-                type="submit"
-                variant="ghost"
-                size="sm"
-                className="absolute right-1 top-1 h-6 w-6 p-0"
-                disabled={!searchValue.trim() || isSearching}
-              >
-                <Search className="h-3 w-3 text-brand-primary" />
-              </Button>
-              
-              {/* **MOBILE SEARCH RESULTS** */}
+              <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
               <SearchResults 
                 results={searchResults}
-                isVisible={showResults && (searchResults.length > 0 || isSearching)}
-                isLoading={isSearching}
-                onResultClick={() => {
-                  setShowResults(false);
-                  setSearchValue('');
-                }}
-                onViewAllResults={() => handleSearchSubmit()}
-                searchQuery={searchValue}
+                isVisible={showResults && searchResults.length > 0}
               />
-            </form>
+            </div>
           )}
           
           {/* Cart Button - Always visible */}
@@ -340,110 +298,127 @@ export function Navbar() {
               aria-label="Shopping cart"
             >
               <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
-              <span className="absolute -top-1 -right-1 bg-brand-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 bg-brand-gray-1000 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
                 0
               </span>
             </Button>
           </Link>
 
-          {/* User Menu */}
-          <div className="relative">
-            {isCustomerAuthenticated ? (
-              <UserProfile />
+          {/* Customer Profile or Login Button - Hidden on mobile */}
+          <div className="hidden sm:block">
+            {isCustomerAuthenticated && customerUser ? (
+              <UserProfile variant="dropdown" />
             ) : (
-              <div className="flex items-center gap-2">
-                {!isMobile && (
-                  <Link to="/apply">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white transition-all"
-                    >
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Bliv kunde
-                    </Button>
-                  </Link>
-                )}
-                
-                <Link to="/login">
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className={cn(
-                      "hover:bg-brand-gray-100 hover:text-brand-primary transition-all",
-                      isMobile ? "h-9 w-9" : "h-10 w-10"
-                    )}
-                    aria-label="Log ind"
-                  >
-                    <User className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                  </Button>
-                </Link>
-              </div>
+              <Link to="/login">
+                <Button 
+                  variant="outline" 
+                  className="gap-2 hover:bg-brand-gray-100 hover:text-brand-primary-dark transition-all border-brand-gray-200"
+                >
+                  <User className="h-4 w-4" />
+                  <span>Log ind</span>
+                </Button>
+              </Link>
             )}
           </div>
 
           {/* Mobile Menu Button */}
-          {isMobile && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 hover:bg-brand-gray-100"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-              aria-label="Menu"
+          <Button 
+            variant="default" 
+            size="icon" 
+            className={cn(
+              "md:hidden hover:bg-brand-primary-hover transition-all",
+              isMobile ? "h-9 w-9" : "h-10 w-10"
+            )}
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle menu"
+          >
+            <Menu className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+      
+      {/* Mobile Menu */}
+      <div className={cn(
+        "md:hidden bg-white w-full shadow-md overflow-hidden transition-all duration-300 ease-in-out",
+        isMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+      )}>
+        <div className="page-container flex flex-col space-y-2 py-4">
+          {/* Bliv kunde CTA - Mobile - Only show when not logged in as customer */}
+          {!isCustomerAuthenticated && (
+            <Link 
+              to="/apply" 
+              className="bg-brand-primary hover:bg-brand-primary-hover text-white py-3 px-4 rounded-lg font-semibold flex items-center gap-2 transition-all duration-200 shadow-md hover:shadow-lg transform hover:scale-[1.02] mb-2"
+              onClick={() => setIsMenuOpen(false)}
             >
-              <Menu className="h-4 w-4" />
-            </Button>
+              <UserPlus className="h-5 w-5" />
+              Bliv kunde
+            </Link>
+          )}
+          
+          <Link 
+            to="/products" 
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Produkter
+          </Link>
+          <Link 
+            to="/about" 
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Om os
+          </Link>
+          <Link 
+            to="/faq" 
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            FAQ
+          </Link>
+          <Link 
+            to="/contact" 
+            className="text-gray-700 py-3 border-b border-gray-100 font-medium flex items-center hover:pl-2 hover:text-brand-primary transition-all duration-200"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Kontakt
+          </Link>
+          
+          {/* Customer Profile or Login - Mobile */}
+          {isCustomerAuthenticated && customerUser ? (
+            <div className="py-3 border-b border-gray-100">
+              <UserProfile variant="card" />
+            </div>
+          ) : (
+            <Link 
+              to="/login" 
+              className="text-gray-700 py-3 border-b border-gray-100 flex items-center gap-2 font-medium hover:pl-2 hover:text-brand-primary transition-all duration-200"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <User className="h-4 w-4" />
+              Log ind som kunde
+            </Link>
+          )}
+          
+          {/* Mobile Admin Access - Only show when PWA is installed */}
+          {isInstalled && (
+            <div className="pt-2 border-t border-gray-200">
+              <div className="text-xs text-gray-500 mb-2 px-2">Admin adgang</div>
+              <Link 
+                to="/super/admin" 
+                className="text-gray-700 py-3 flex items-center gap-2 font-medium hover:pl-2 hover:text-brand-primary transition-all duration-200 bg-brand-gray-100/50 rounded-md px-2"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <Shield className="h-4 w-4 text-brand-primary" />
+                <div className="flex flex-col">
+                  <span className="text-sm">Admin Login</span>
+                  <span className="text-xs text-gray-500">System administration</span>
+                </div>
+              </Link>
+            </div>
           )}
         </div>
       </div>
-
-      {/* Mobile Navigation Menu */}
-      {isMobile && isMenuOpen && (
-        <div className="md:hidden bg-white border-t shadow-lg">
-          <div className="page-container py-4">
-            <nav className="flex flex-col space-y-3">
-              <Link 
-                to="/products" 
-                className="px-4 py-3 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Produkter
-              </Link>
-              <Link 
-                to="/about" 
-                className="px-4 py-3 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Om os
-              </Link>
-              <Link 
-                to="/faq" 
-                className="px-4 py-3 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                FAQ
-              </Link>
-              <Link 
-                to="/contact" 
-                className="px-4 py-3 rounded-md text-gray-700 hover:text-brand-primary hover:bg-brand-gray-100 transition-all font-medium"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Kontakt
-              </Link>
-              
-              {!isCustomerAuthenticated && (
-                <Link 
-                  to="/apply" 
-                  className="px-4 py-3 rounded-md bg-brand-primary text-white font-semibold transition-all"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Bliv kunde
-                </Link>
-              )}
-            </nav>
-          </div>
-        </div>
-      )}
     </header>
   );
 }
