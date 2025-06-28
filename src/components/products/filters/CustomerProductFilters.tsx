@@ -39,6 +39,7 @@ interface CustomerProductFiltersProps {
     discountGroup?: {
       name: string;
       discountPercentage: number;
+      color: string;
     };
     uniqueOffersCount: number;
   };
@@ -102,12 +103,17 @@ export function CustomerProductFilters({
             <div>
               <span className="font-medium text-gray-900">{customerInfo.companyName}</span>
               {customerInfo.discountGroup && (
-                <Badge variant="secondary" className="ml-2 text-xs">
+                <span 
+                  className="ml-2 text-xs px-2 py-1 rounded-full text-white font-medium"
+                  style={{
+                    backgroundColor: customerInfo.discountGroup.color || '#6B7280'
+                  }}
+                >
                   {customerInfo.discountGroup.name} Kunde
                   {customerInfo.discountGroup.discountPercentage > 0 && (
                     <span className="ml-1">({customerInfo.discountGroup.discountPercentage}% rabat)</span>
                   )}
-                </Badge>
+                </span>
               )}
             </div>
             {customerInfo.uniqueOffersCount > 0 && (
@@ -315,9 +321,14 @@ export function CustomerProductFilters({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
+                <span 
+                  className="text-xs px-2 py-1 rounded text-white font-medium"
+                  style={{
+                    backgroundColor: customerInfo.discountGroup.color || '#6B7280'
+                  }}
+                >
                   -{customerInfo.discountGroup.discountPercentage}%
-                </Badge>
+                </span>
                 <Switch
                   id="rabatGruppe"
                   checked={rabatGruppe}
