@@ -73,7 +73,7 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
   const getBadgeClassName = () => {
     switch (customerPricing.discountType) {
       case 'unique_offer':
-        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg animate-pulse';
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg';
       case 'fast_udsalgspris':
         return 'bg-brand-error text-white border-brand-error';
       case 'rabat_gruppe':
@@ -170,8 +170,8 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
           {getPricingIcon()}
           <span className="ml-1">
             {customerPricing.discountType === 'unique_offer' 
-              ? '🌟 EKSKLUSIVT TILBUD' 
-              : customerPricing.discountLabel
+              ? 'Særlig tilbud' 
+              : customerPricing.discountLabel || 'Rabat'
             }
           </span>
         </Badge>
@@ -308,8 +308,7 @@ export function MobilePricingOverlay({ customerPricing, quantity = 1, unit }: { 
       {/* Discount Badge */}
       <div className={cn(
         "px-2 py-1 text-xs font-medium",
-        getMobileBadgeColor(),
-        customerPricing.discountType === 'unique_offer' && "animate-pulse"
+        getMobileBadgeColor()
       )}
       style={getMobileBadgeStyle()}>
         <div className="flex items-center gap-1">
@@ -318,8 +317,8 @@ export function MobilePricingOverlay({ customerPricing, quantity = 1, unit }: { 
           {customerPricing.discountType === 'rabat_gruppe' && <Award className="h-3 w-3" />}
           <span>
             {customerPricing.discountType === 'unique_offer' 
-              ? 'TILBUD' 
-              : customerPricing.discountLabel?.replace(' Rabat', '') || customerPricing.discountLabel
+              ? 'SÆRLIG' 
+              : customerPricing.discountLabel?.replace(' Rabat', '') || customerPricing.discountLabel || 'RABAT'
             }
           </span>
           {customerPricing.discountPercentage > 0 && (
