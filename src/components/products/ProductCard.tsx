@@ -1,12 +1,23 @@
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Minus, Plus, ShoppingCart, Package } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ShoppingCart, Minus, Plus, Package, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ProductPricing, CustomerPricing } from "./card/ProductPricing";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+interface CustomerPricing {
+  price: number;
+  originalPrice?: number;
+  discountType: 'none' | 'fastUdsalgspris' | 'rabatGruppe' | 'uniqueOffer';
+  discountLabel?: string;
+  showStrikethrough?: boolean;
+  groupDetails?: {
+    groupColor?: string;
+  };
+}
 
 interface Unit {
   _id: string;
@@ -27,12 +38,21 @@ interface ProductCardProps {
   userType?: 'public' | 'customer';
 }
 
-export function ProductCard({ id, name, image, category, unit, isLoggedIn = false, price, customerPricing, userType = 'public' }: ProductCardProps) {
+export function ProductCard({ 
+  id, 
+  name, 
+  image, 
+  category, 
+  unit, 
+  isLoggedIn = false, 
+  price, 
+  customerPricing, 
+  userType = 'public' 
+}: ProductCardProps) {
   const [quantity, setQuantity] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-  const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const isMobile = useIsMobile();
 
   const increaseQuantity = () => {
@@ -40,15 +60,7 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
   };
 
   const decreaseQuantity = () => {
-    setQuantity(prev => (prev > 0 ? prev - 1 : 0));
-  };
-
-  const handleTouchStart = () => {
-    if (isMobile) setIsPressed(true);
-  };
-
-  const handleTouchEnd = () => {
-    if (isMobile) setTimeout(() => setIsPressed(false), 150);
+    setQuantity(prev => Math.max(0, prev - 1));
   };
 
   const handleImageLoad = () => {
@@ -56,42 +68,36 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
     setImageError(false);
   };
 
-  const handleImageError = (event) => {
-    console.error('❌ ProductCard image failed to load:', {
-      src: image,
-      productName: name
-    });
-    
+  const handleImageError = () => {
     setImageError(true);
     setImageLoaded(true);
   };
 
-  // Get unit display value
   const getUnitDisplay = () => {
-    if (!unit) return '';
     if (typeof unit === 'string') return unit;
-    return unit.label || unit.value || '';
+    if (unit && typeof unit === 'object') return unit.label || unit.value;
+    return 'Stykker';
   };
 
+  const getCurrentPrice = () => {
+    if (customerPricing) return customerPricing.price;
+    if (price) return price;
+    return 0;
+  };
+
+  const getTotalPrice = () => {
+    return getCurrentPrice() * quantity;
+  };
+
+  // **IMAGE AREA - TOP 50-60% WITH FALLBACK**
   const renderImage = () => {
-    if (imageError) {
+    if (imageError || !image) {
       return (
-        <div className="h-full w-full bg-gray-100 flex items-center justify-center">
-          <div className="text-center">
-            <Package className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-            <p className={cn(
-              "text-gray-500 font-medium",
-              isMobile ? "text-sm" : "text-xs"
-            )}>
-              Billede ikke tilgængeligt
-            </p>
-            <p className={cn(
-              "text-gray-400 mt-1",
-              isMobile ? "text-xs" : "text-xs"
-            )}>
-              {name}
-            </p>
-          </div>
+        <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
+          <Package className="h-6 w-6 text-gray-400 mb-1" />
+          <span className="text-xs text-gray-500 text-center px-2 leading-tight">
+            Billede ikke tilgængeligt
+          </span>
         </div>
       );
     }
@@ -100,340 +106,244 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
       <>
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
-            <div className="text-center">
-              <div className="h-8 w-8 border-2 border-gray-300 border-t-brand-primary rounded-full animate-spin mx-auto mb-2"></div>
-              <p className={cn(
-                "text-gray-500 font-medium",
-                isMobile ? "text-sm" : "text-xs"
-              )}>
-                Indlæser...
-              </p>
-            </div>
+            <Package className="h-6 w-6 text-gray-400" />
           </div>
         )}
         <img 
           src={image} 
           alt={name} 
           className={cn(
-            "h-full w-full object-cover transition-all duration-500",
-            !isMobile && isHovered && "scale-110",
+            "w-full h-full object-cover transition-all duration-300 rounded-t-lg",
+            !isMobile && isHovered && "scale-105",
             imageLoaded ? "opacity-100" : "opacity-0"
           )}
+          style={{ objectFit: 'cover' }}
           loading="lazy"
           onLoad={handleImageLoad}
           onError={handleImageError}
           crossOrigin="anonymous"
           referrerPolicy="no-referrer-when-downgrade"
-          data-product-name={name}
-          data-image-src={image}
-          data-debug="product-card-image"
         />
       </>
     );
   };
 
-  // Calculate total price for quantity display
-  const getTotalPrice = () => {
-    if (customerPricing) {
-      return customerPricing.price * quantity;
-    }
-    if (price) {
-      return price * quantity;
-    }
-    return 0;
-  };
-
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 shadow-sm group bg-white border border-gray-200",
-        isMobile ? "rounded-2xl" : "rounded-xl hover:scale-[1.02] hover:shadow-lg",
-        isMobile && isPressed && "scale-[0.98]"
+        "overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-lg group",
+        // **FIXED WIDTH 320PX WITH RESPONSIVE BEHAVIOR**
+        "w-[320px] max-w-full mx-auto",
+        // **HOVER EFFECTS**
+        !isMobile && "hover:shadow-lg hover:shadow-gray-200/50",
+        "shadow-sm"
       )}
+      style={{ width: isMobile ? '100%' : '320px' }}
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
+      {/* **🖼️ 1. PRODUCT IMAGE AREA (TOP 50-60%) - SQUARE FORMAT** */}
       <Link to={`/products/${id}`}>
-        <div className={cn(
-          "overflow-hidden bg-gray-50 relative",
-          isMobile ? "aspect-[4/3] rounded-t-2xl" : "aspect-square rounded-t-xl"
-        )}>
+        <div 
+          className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg"
+          style={{ height: '200px' }} // **Fixed height for 50-60% of card**
+        >
           {renderImage()}
           
+          {/* Hover overlay for interactivity */}
           <div className={cn(
-            "absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent transition-opacity duration-300",
+            "absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent transition-opacity duration-300",
             isHovered && !isMobile ? "opacity-100" : "opacity-0"
           )} />
-          
-          <div className="absolute top-3 left-3">
-            <span className={cn(
-              "font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full backdrop-blur-sm border",
-              isMobile ? "text-xs bg-white/95 text-gray-800 border-white/50" : "text-xs bg-brand-primary text-white border-brand-primary/20",
-              "shadow-sm"
-            )}>
-              {category}
-            </span>
-          </div>
         </div>
       </Link>
       
-      <CardContent className={cn(
-        "bg-white",
-        isMobile ? "p-4 space-y-3" : "p-4 space-y-2"
-      )}>
-        <Link to={`/products/${id}`}>
-          <h3 className={cn(
-            "font-semibold text-gray-900 hover:text-brand-primary transition-colors leading-snug line-clamp-2",
-            isMobile ? "text-base" : "text-base",
-            "tracking-tight"
-          )}>
-            {name}
-          </h3>
-        </Link>
+      <CardContent className="p-4 flex flex-col space-y-4" style={{ minHeight: '200px' }}>
+        {/* **📝 2. INFORMATION & PRICING (MIDDLE BLOCK)** */}
+        <div className="flex-1 space-y-3">
+          {/* **Product Name - Bold, 16-18px, 1-2 lines max** */}
+          <Link to={`/products/${id}`}>
+            <h3 
+              className="font-bold text-gray-900 hover:text-brand-primary transition-colors leading-tight line-clamp-2 cursor-pointer"
+              style={{ fontSize: '17px', lineHeight: '1.3' }}
+            >
+              {name}
+            </h3>
+          </Link>
+          
+          {/* **Category Label - Small green pill tag inline** */}
+          <Badge 
+            variant="secondary" 
+            className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
+          >
+            {category.toUpperCase()}
+          </Badge>
 
-        {isLoggedIn && customerPricing && (
-          <div className={cn(
-            "space-y-2",
-            isMobile && "pt-1 border-t border-gray-100"
-          )}>
-            <div className="flex items-baseline justify-between">
-              <div className="flex flex-col">
-                <span className={cn(
-                  "font-bold text-gray-900",
-                  isMobile ? "text-lg" : "text-base"
-                )}>
+          {/* **Price Display Section** */}
+          {isLoggedIn && customerPricing && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* **Discounted Price - Bold, large, primary color** */}
+                <span 
+                  className="font-bold text-gray-900"
+                  style={{ fontSize: '18px' }}
+                >
                   {new Intl.NumberFormat('da-DK', {
                     style: 'currency',
                     currency: 'DKK'
                   }).format(customerPricing.price)}
                 </span>
-                {getUnitDisplay() && (
-                  <span className={cn(
-                    "text-gray-500 font-medium",
-                    isMobile ? "text-sm" : "text-xs"
-                  )}>
-                    per {getUnitDisplay()}
+                
+                {/* **Original Price - Light gray, struck through** */}
+                {customerPricing.showStrikethrough && customerPricing.originalPrice && (
+                  <span className="text-sm text-gray-400 line-through font-medium">
+                    {new Intl.NumberFormat('da-DK', {
+                      style: 'currency',
+                      currency: 'DKK'
+                    }).format(customerPricing.originalPrice)}
                   </span>
                 )}
                 
-                {/* **TOTAL PRICE - ALWAYS RENDERED FOR CONSISTENT HEIGHT** */}
-                <div className={cn(
-                  "min-h-[1.25rem] flex items-center",
-                  isMobile ? "mt-1" : "mt-0.5"
-                )}>
-                  {quantity > 1 ? (
-                    <span className={cn(
-                      "text-brand-primary font-semibold",
-                      isMobile ? "text-sm" : "text-xs"
-                    )}>
-                      Total: {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(getTotalPrice())}
-                    </span>
-                  ) : (
-                    <span className="invisible">
-                      Total: 0,00 kr.
-                    </span>
-                  )}
-                </div>
+                {/* **"Guldkunderne Rabat" - Small yellow badge beside price** */}
+                {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          className="text-xs font-medium px-2 py-1 text-white cursor-help"
+                          style={{
+                            backgroundColor: customerPricing.groupDetails?.groupColor || '#F59E0B'
+                          }}
+                        >
+                          {customerPricing.discountLabel.includes('Guldkunderne') ? 'Guldkunde' : 'Rabat'}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Rabatteret pris for guldkunder</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               
-              {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
-                <div className="flex flex-col items-end">
-                  <span 
-                     className={cn(
-                       "text-white font-semibold px-2 py-1 rounded-md",
-                       isMobile ? "text-xs" : "text-xs"
-                     )}
-                     style={{
-                       backgroundColor: customerPricing.groupDetails?.groupColor || '#609c14'
-                     }}
-                   >
-                    {customerPricing.discountLabel}
-                  </span>
-                  {customerPricing.showStrikethrough && customerPricing.originalPrice && (
-                    <span className={cn(
-                      "text-gray-400 line-through font-medium mt-1",
-                      isMobile ? "text-sm" : "text-xs"
-                    )}>
-                      {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(customerPricing.originalPrice)}
-                    </span>
-                  )}
-                </div>
-              )}
+              {/* **Unit Info - Light gray, small font under price** */}
+              <p className="text-xs text-gray-500">
+                per {getUnitDisplay()}
+              </p>
             </div>
+          )}
 
-            {/* **MOBILE ONLY: COMPACT SAVINGS INDICATOR** */}
-            {quantity > 1 && isMobile && customerPricing.showStrikethrough && customerPricing.originalPrice && (
-              <div className="text-xs text-brand-success font-medium bg-green-50 px-2 py-1 rounded border-l-2 border-green-400">
-                💰 Du sparer: {new Intl.NumberFormat('da-DK', {
+          {/* **Standard Price (for non-customer pricing)** */}
+          {isLoggedIn && !customerPricing && price && (
+            <div className="space-y-2">
+              <span 
+                className="font-bold text-gray-900"
+                style={{ fontSize: '18px' }}
+              >
+                {new Intl.NumberFormat('da-DK', {
                   style: 'currency',
                   currency: 'DKK'
-                }).format((customerPricing.originalPrice - customerPricing.price) * quantity)}
-              </div>
-            )}
-          </div>
-        )}
-
-        {isLoggedIn && !customerPricing && price && (
-          <div className={cn(
-            "space-y-2",
-            isMobile && "pt-1 border-t border-gray-100"
-          )}>
-            <div className="flex items-baseline justify-between">
-              <div className="flex flex-col">
-                <span className={cn(
-                  "font-bold text-gray-900",
-                  isMobile ? "text-lg" : "text-base"
-                )}>
-                  {new Intl.NumberFormat('da-DK', {
-                    style: 'currency',
-                    currency: 'DKK'
-                  }).format(price)}
-                </span>
-                {getUnitDisplay() && (
-                  <span className={cn(
-                    "text-gray-500 font-medium",
-                    isMobile ? "text-sm" : "text-xs"
-                  )}>
-                    per {getUnitDisplay()}
-                  </span>
-                )}
-                
-                {/* **TOTAL PRICE - ALWAYS RENDERED FOR CONSISTENT HEIGHT** */}
-                <div className={cn(
-                  "min-h-[1.25rem] flex items-center",
-                  isMobile ? "mt-1" : "mt-0.5"
-                )}>
-                  {quantity > 1 ? (
-                    <span className={cn(
-                      "text-brand-primary font-semibold",
-                      isMobile ? "text-sm" : "text-xs"
-                    )}>
-                      Total: {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(price * quantity)}
-                    </span>
-                  ) : (
-                    <span className="invisible">
-                      Total: 0,00 kr.
-                    </span>
-                  )}
-                </div>
-              </div>
+                }).format(price)}
+              </span>
+              <p className="text-xs text-gray-500">
+                per {getUnitDisplay()}
+              </p>
             </div>
-          </div>
-        )}
+          )}
 
-        {!isLoggedIn && (
-          <div className={cn(
-            "space-y-2",
-            isMobile && "pt-1 border-t border-gray-100"
-          )}>
-            <div className={cn(
-              "text-center p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200"
-            )}>
-              <p className={cn(
-                "text-brand-gray-700 font-medium",
-                isMobile ? "text-sm" : "text-sm"
-              )}>
+          {/* **Login Required Message** */}
+          {!isLoggedIn && (
+            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-700 font-medium">
                 Log ind for at se priser
               </p>
-              {getUnitDisplay() && (
-                <p className={cn(
-                  "text-brand-gray-500 mt-1",
-                  isMobile ? "text-xs" : "text-xs"
-                )}>
-                  Enhed: {getUnitDisplay()}
-                </p>
-              )}
+              <p className="text-xs text-gray-500 mt-1">
+                Enhed: {getUnitDisplay()}
+              </p>
             </div>
-            
-            {/* **CONSISTENT HEIGHT SPACER FOR NON-LOGGED-IN USERS** */}
-            <div className="min-h-[1.25rem]"></div>
-          </div>
-        )}
-      </CardContent>
-      
-      <CardFooter className={cn(
-        "bg-white border-t border-gray-100",
-        isMobile ? "p-4" : "p-4",
-        "flex justify-between items-center gap-3"
-      )}>
-        {isLoggedIn ? (
-          <>
-            <div className="flex items-center gap-3">
+          )}
+        </div>
+
+        {/* **🛒 3. ACTIONS & QUANTITY (BOTTOM BLOCK)** */}
+        {isLoggedIn && (
+          <div className="space-y-3 pt-2 border-t border-gray-100">
+            {/* **Quantity Selector - Horizontal layout with larger touch targets** */}
+            <div className="flex items-center justify-center gap-4">
               <Button 
                 variant="outline" 
                 size="icon" 
                 className={cn(
-                  "rounded-xl transition-all duration-200 border-gray-300 bg-white",
-                  isMobile ? "h-11 w-11" : "h-9 w-9",
+                  "rounded-lg h-9 w-9 border-gray-300 transition-all hover:bg-gray-50",
                   quantity === 0 
                     ? "opacity-50 cursor-not-allowed" 
-                    : "hover:bg-brand-gray-50 hover:text-brand-primary hover:border-brand-primary/30 active:scale-95 shadow-sm"
+                    : "hover:border-brand-primary/40 active:scale-95"
                 )}
                 onClick={decreaseQuantity}
                 disabled={quantity === 0}
               >
-                <Minus className={cn(isMobile ? "h-4 w-4" : "h-4 w-4")} />
+                <Minus className="h-4 w-4" />
               </Button>
               
-              <span className={cn(
-                "text-center font-bold text-gray-900 min-w-[2rem]",
-                isMobile ? "text-lg" : "text-base"
-              )}>
+              <span 
+                className="text-center font-bold text-gray-900 min-w-[2.5rem]"
+                style={{ fontSize: '18px' }}
+              >
                 {quantity}
               </span>
               
               <Button 
                 variant="outline" 
                 size="icon" 
-                className={cn(
-                  "rounded-xl transition-all duration-200 border-gray-300 bg-white hover:bg-brand-gray-50 hover:text-brand-primary hover:border-brand-primary/30 active:scale-95 shadow-sm",
-                  isMobile ? "h-11 w-11" : "h-9 w-9"
-                )}
+                className="rounded-lg h-9 w-9 border-gray-300 transition-all hover:bg-gray-50 hover:border-brand-primary/40 active:scale-95"
                 onClick={increaseQuantity}
               >
-                <Plus className={cn(isMobile ? "h-4 w-4" : "h-4 w-4")} />
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* **WIDER CART BUTTON - BETTER SPACE UTILIZATION** */}
+            {/* **Add to Cart Button - Full-width green button** */}
             <Button 
               className={cn(
-                "rounded-xl transition-all duration-200 shadow-sm font-semibold flex-1 max-w-[120px]",
-                isMobile ? "h-11 px-4" : "h-9 px-3",
+                "w-full rounded-lg transition-all duration-200 font-semibold gap-2 h-11",
                 quantity === 0 
-                  ? "opacity-50 cursor-not-allowed bg-gray-400" 
-                  : "bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md text-white"
+                  ? "opacity-50 cursor-not-allowed bg-gray-400 text-gray-200" 
+                  : "bg-brand-primary hover:bg-brand-primary-hover active:scale-[0.98] shadow-sm hover:shadow-md text-white"
               )}
               disabled={quantity === 0}
               aria-label="Tilføj til kurv"
             >
-              <ShoppingCart className={cn(isMobile ? "h-5 w-5" : "h-4 w-4")} />
+              <ShoppingCart className="h-4 w-4" />
+              Tilføj til kurv
             </Button>
-          </>
-        ) : (
-          <Link to="/login" className="w-full">
-            <Button 
-              className={cn(
-                "w-full rounded-xl transition-all duration-200 shadow-sm bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md text-white font-semibold",
-                isMobile ? "h-11 text-sm" : "h-9 text-sm"
-              )}
-            >
-              Log ind for at handle
-            </Button>
-          </Link>
+
+            {/* **Total Price (Dynamic) - Only appears if quantity > 0** */}
+            {quantity > 0 && (
+              <div className="text-center">
+                <span 
+                  className="font-semibold text-brand-primary-dark"
+                  style={{ fontSize: '16px' }}
+                >
+                  Total: {new Intl.NumberFormat('da-DK', {
+                    style: 'currency',
+                    currency: 'DKK'
+                  }).format(getTotalPrice())}
+                </span>
+              </div>
+            )}
+          </div>
         )}
-      </CardFooter>
+
+        {/* **Login Button for Non-Authenticated Users** */}
+        {!isLoggedIn && (
+          <div className="pt-2 border-t border-gray-100">
+            <Link to="/login" className="w-full">
+              <Button className="w-full rounded-lg bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold transition-all h-11">
+                Log ind for at handle
+              </Button>
+            </Link>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 }

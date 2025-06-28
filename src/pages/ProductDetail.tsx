@@ -22,10 +22,9 @@ import {
 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ProductCard } from "@/components/products/ProductCard";
-import { ProductPricing } from "@/components/products/card/ProductPricing";
+import { ProductPricing, CustomerPricing } from "@/components/products/card/ProductPricing";
 import { useAuth } from "@/hooks/useAuth";
 import { api, handleApiError } from "@/lib/api";
-import { CustomerPricing } from "@/components/products/card/ProductPricing";
 
 // Types
 interface Unit {
@@ -481,56 +480,34 @@ const ProductDetail = () => {
               {/* Add to Cart Section */}
               {isAuthenticated ? (
                 <div className="mt-auto">
-                  <div className="flex items-center gap-4 mb-4">
-                  <div className="flex items-center border border-gray-300 rounded-md">
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 rounded-none" 
-                      onClick={decreaseQuantity}
+                  {/* **SAME ROW: Quantity Selector + Add to Cart Button** */}
+                  <div className="flex items-center gap-3 mb-4">
+                    {/* Quantity Selector */}
+                    <div className="flex items-center border border-gray-300 rounded-md flex-shrink-0">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-10 w-10 rounded-none" 
+                        onClick={decreaseQuantity}
                         disabled={isAddingToCart}
-                    >
-                      <Minus className="h-4 w-4" />
-                    </Button>
-                    <span className="w-10 text-center font-medium">{quantity}</span>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      className="h-10 w-10 rounded-none" 
-                      onClick={increaseQuantity}
+                      >
+                        <Minus className="h-4 w-4" />
+                      </Button>
+                      <span className="w-10 text-center font-medium">{quantity}</span>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-10 w-10 rounded-none" 
+                        onClick={increaseQuantity}
                         disabled={isAddingToCart}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Enhanced Total Price Display for B2B */}
-                  {quantity > 1 && product.customerPricing && (
-                    <div className="p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200 mb-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-brand-gray-700">
-                          Total ({quantity} × {getUnitDisplay() || 'stk'}):
-                        </span>
-                        <span className="text-xl font-bold text-brand-primary">
-                          {new Intl.NumberFormat('da-DK', {
-                            style: 'currency',
-                            currency: 'DKK'
-                          }).format(product.customerPricing.price * quantity)}
-                        </span>
-                      </div>
-                      {product.customerPricing.discountPercentage > 0 && (
-                        <div className="text-xs text-brand-gray-600 mt-1">
-                          Du sparer: {new Intl.NumberFormat('da-DK', {
-                            style: 'currency',
-                            currency: 'DKK'
-                          }).format((product.customerPricing.originalPrice - product.customerPricing.price) * quantity)}
-                        </div>
-                      )}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                     </div>
-                  )}
 
+                    {/* Add to Cart Button - Takes remaining space */}
                     <Button 
-                      className="btn-brand-primary flex-1" 
+                      className="btn-brand-primary flex-1 h-10" 
                       onClick={handleAddToCart}
                       disabled={isAddingToCart || stockStatus.status === 'out'}
                     >
@@ -541,12 +518,55 @@ const ProductDetail = () => {
                         </>
                       ) : (
                         <>
-                    <ShoppingCart className="h-5 w-5 mr-2" />
-                    Tilføj til kurv
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          <span className="hidden sm:inline">Tilføj til kurv</span>
+                          <span className="sm:hidden">Tilføj</span>
                         </>
                       )}
-                  </Button>
+                    </Button>
                   </div>
+
+                  {/* **NEW LINE: Total Price Formula (Always Show if Quantity > 0)** */}
+                  {quantity > 0 && product.customerPricing && (
+                    <div className="p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200 mb-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                        <span className="text-sm font-medium text-brand-gray-700">
+                          Total ({quantity} × {getUnitDisplay() || 'stk'}):
+                        </span>
+                        <span className="text-xl font-bold text-brand-primary">
+                          {new Intl.NumberFormat('da-DK', {
+                            style: 'currency',
+                            currency: 'DKK'
+                          }).format(product.customerPricing.price * quantity)}
+                        </span>
+                      </div>
+                      {product.customerPricing.showStrikethrough && product.customerPricing.originalPrice && quantity > 0 && (
+                        <div className="text-xs text-brand-success mt-2 font-medium">
+                          Du sparer: {new Intl.NumberFormat('da-DK', {
+                            style: 'currency',
+                            currency: 'DKK'
+                          }).format((product.customerPricing.originalPrice - product.customerPricing.price) * quantity)}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Fallback for products without customerPricing but with basispris */}
+                  {quantity > 0 && !product.customerPricing && product.basispris && (
+                    <div className="p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200 mb-4">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                        <span className="text-sm font-medium text-brand-gray-700">
+                          Total ({quantity} × {getUnitDisplay() || 'stk'}):
+                        </span>
+                        <span className="text-xl font-bold text-brand-primary">
+                          {new Intl.NumberFormat('da-DK', {
+                            style: 'currency',
+                            currency: 'DKK'
+                          }).format(product.basispris * quantity)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Stock Status */}
                   <div className="flex items-center gap-2">
