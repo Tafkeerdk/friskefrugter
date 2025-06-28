@@ -154,12 +154,21 @@ export function Navbar() {
     }
   };
 
-  // **HANDLE ENTER KEY IN SEARCH INPUT**
+  // **HANDLE ENTER KEY IN SEARCH INPUT - Show results instead of navigating**
   const handleSearchKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      handleSearchSubmit();
+      // Just ensure results are visible, don't navigate
+      if (searchValue.trim() && searchResults.length > 0) {
+        setShowResults(true);
+      }
     }
+  };
+
+  // **HANDLE RESULT CLICK - Clear search and close dropdown**
+  const handleResultClick = () => {
+    setShowResults(false);
+    setSearchValue('');
   };
 
   // **CLEANUP ON UNMOUNT**
@@ -258,6 +267,9 @@ export function Navbar() {
             <SearchResults 
               results={searchResults}
               isVisible={showResults && searchResults.length > 0}
+              onResultClick={handleResultClick}
+              onViewAllResults={() => handleSearchSubmit()}
+              searchQuery={searchValue}
             />
           </div>
           
@@ -282,6 +294,9 @@ export function Navbar() {
               <SearchResults 
                 results={searchResults}
                 isVisible={showResults && searchResults.length > 0}
+                onResultClick={handleResultClick}
+                onViewAllResults={() => handleSearchSubmit()}
+                searchQuery={searchValue}
               />
             </div>
           )}

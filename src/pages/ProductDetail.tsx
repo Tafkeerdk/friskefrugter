@@ -221,13 +221,14 @@ const ProductDetail = () => {
   const loadRelatedProducts = async (categoryId: string) => {
     try {
       const response = isAuthenticated 
-        ? await api.getCustomerProducts({ kategori: categoryId, limit: 4 })
-        : await api.getPublicProducts({ kategori: categoryId, limit: 4 });
+        ? await api.getCustomerProducts({ kategori: categoryId, limit: 6 })
+        : await api.getPublicProducts({ kategori: categoryId, limit: 6 });
       
              if (response.success && response.data && (response.data as any).products) {
          // Filter out current product
          const filtered = (response.data as any).products.filter((p: Product) => p._id !== id);
-         setRelatedProducts(filtered.slice(0, 3));
+         // Show 4 products for PC, responsive grid will handle mobile
+         setRelatedProducts(filtered.slice(0, 4));
        }
     } catch (error) {
       console.warn('Could not load related products:', error);
@@ -632,7 +633,7 @@ const ProductDetail = () => {
                 <Star className="h-6 w-6 mr-2 text-brand-primary" />
                 Relaterede produkter
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((relatedProduct) => (
                   <ProductCard 
                     key={relatedProduct._id}
