@@ -11,7 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface CustomerPricing {
   price: number;
   originalPrice?: number;
-  discountType: 'none' | 'fastUdsalgspris' | 'rabatGruppe' | 'uniqueOffer';
+  discountType: 'none' | 'fast_udsalgspris' | 'rabat_gruppe' | 'unique_offer';
   discountLabel?: string;
   showStrikethrough?: boolean;
   groupDetails?: {
@@ -204,7 +204,7 @@ export function ProductCard({
                   </span>
                 )}
                 
-                {/* **"Guldkunderne Rabat" - Small yellow badge beside price** */}
+                {/* **Discount Badge - Shows actual admin-set labels** */}
                 {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
                   <TooltipProvider>
                     <Tooltip>
@@ -212,14 +212,28 @@ export function ProductCard({
                         <Badge 
                           className="text-xs font-medium px-2 py-1 text-white cursor-help"
                           style={{
-                            backgroundColor: customerPricing.groupDetails?.groupColor || '#F59E0B'
+                            backgroundColor: customerPricing.discountType === 'unique_offer' 
+                              ? '#9333EA' // Purple for unique offers
+                              : customerPricing.discountType === 'fast_udsalgspris'
+                                ? '#DC2626' // Red for fast sales
+                                : customerPricing.groupDetails?.groupColor || '#F59E0B' // Group color or fallback
                           }}
                         >
-                          {customerPricing.discountLabel.includes('Guldkunderne') ? 'Guldkunde' : 'Rabat'}
+                          {customerPricing.discountType === 'unique_offer' 
+                            ? 'Særlig tilbud'
+                            : customerPricing.discountLabel
+                          }
                         </Badge>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p className="text-xs">Rabatteret pris for guldkunder</p>
+                        <p className="text-xs">
+                          {customerPricing.discountType === 'unique_offer' 
+                            ? 'Særligt tilbud kun til dig'
+                            : customerPricing.discountType === 'fast_udsalgspris'
+                              ? 'Produkt på tilbud'
+                              : 'Rabatteret pris for din gruppe'
+                          }
+                        </p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
