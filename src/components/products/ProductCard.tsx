@@ -1,12 +1,12 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Minus, Plus, ShoppingCart } from "lucide-react";
+import { Minus, Plus, ShoppingCart, Package } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
-import { ProductPricing, MobilePricingOverlay, CustomerPricing } from "./card/ProductPricing";
+import { ProductPricing, CustomerPricing } from "./card/ProductPricing";
 
 interface Unit {
   _id: string;
@@ -78,9 +78,19 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
       return (
         <div className="h-full w-full bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <div className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-            <p className="text-xs text-gray-500">Billede ikke tilgængeligt</p>
-            <p className="text-xs text-gray-400 mt-1">{name}</p>
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+            <p className={cn(
+              "text-gray-500 font-medium",
+              isMobile ? "text-sm" : "text-xs"
+            )}>
+              Billede ikke tilgængeligt
+            </p>
+            <p className={cn(
+              "text-gray-400 mt-1",
+              isMobile ? "text-xs" : "text-xs"
+            )}>
+              {name}
+            </p>
           </div>
         </div>
       );
@@ -91,8 +101,13 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
             <div className="text-center">
-              <div className="h-8 w-8 border-2 border-gray-300 border-t-green-600 rounded-full animate-spin mx-auto mb-2"></div>
-              <p className="text-xs text-gray-500">Indlæser...</p>
+              <div className="h-8 w-8 border-2 border-gray-300 border-t-brand-primary rounded-full animate-spin mx-auto mb-2"></div>
+              <p className={cn(
+                "text-gray-500 font-medium",
+                isMobile ? "text-sm" : "text-xs"
+              )}>
+                Indlæser...
+              </p>
             </div>
           </div>
         )}
@@ -107,11 +122,8 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
           loading="lazy"
           onLoad={handleImageLoad}
           onError={handleImageError}
-          // Add crossorigin for external images (like Unsplash)
           crossOrigin="anonymous"
-          // Add referrer policy for better compatibility
           referrerPolicy="no-referrer-when-downgrade"
-          // Add data attributes for debugging
           data-product-name={name}
           data-image-src={image}
           data-debug="product-card-image"
@@ -120,13 +132,23 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
     );
   };
 
+  // Calculate total price for quantity display
+  const getTotalPrice = () => {
+    if (customerPricing) {
+      return customerPricing.price * quantity;
+    }
+    if (price) {
+      return price * quantity;
+    }
+    return 0;
+  };
+
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 shadow-sm rounded-xl group",
-        !isMobile && "hover:scale-[1.02] hover:shadow-lg",
-        isMobile && isPressed && "scale-[0.98]",
-        "bg-white border-0"
+        "overflow-hidden transition-all duration-300 shadow-sm group bg-white border border-gray-200",
+        isMobile ? "rounded-2xl" : "rounded-xl hover:scale-[1.02] hover:shadow-lg",
+        isMobile && isPressed && "scale-[0.98]"
       )}
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
@@ -135,8 +157,8 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
     >
       <Link to={`/products/${id}`}>
         <div className={cn(
-          "aspect-square overflow-hidden bg-gray-50 relative",
-          isMobile ? "rounded-t-xl" : "rounded-t-xl"
+          "overflow-hidden bg-gray-50 relative",
+          isMobile ? "aspect-[4/3] rounded-t-2xl" : "aspect-square rounded-t-xl"
         )}>
           {renderImage()}
           
@@ -145,188 +167,270 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
             isHovered && !isMobile ? "opacity-100" : "opacity-0"
           )} />
           
-          <div className={cn(
-            "absolute bottom-3 left-3 transition-all duration-300",
-            isHovered && !isMobile ? "translate-y-0 opacity-100" : isMobile ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          )}>
+          <div className="absolute top-3 left-3">
             <span className={cn(
-              "text-xs font-medium uppercase px-2 py-1 rounded-full backdrop-blur-sm",
-              isMobile ? "bg-white/90 text-gray-800" : "bg-brand-primary text-white"
+              "font-semibold uppercase tracking-wide px-3 py-1.5 rounded-full backdrop-blur-sm border",
+              isMobile ? "text-xs bg-white/95 text-gray-800 border-white/50" : "text-xs bg-brand-primary text-white border-brand-primary/20",
+              "shadow-sm"
             )}>
               {category}
             </span>
           </div>
-          
-          {/* Mobile: Show price overlay */}
-          {isMobile && isLoggedIn && customerPricing && (
-            <MobilePricingOverlay customerPricing={customerPricing} quantity={quantity} unit={getUnitDisplay()} />
-          )}
-          
-          {/* Fallback for legacy price display */}
-          {isMobile && isLoggedIn && !customerPricing && price && (
-            <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
-              <span className="text-xs font-semibold text-gray-800">{price.toFixed(2)} kr</span>
-            </div>
-          )}
         </div>
       </Link>
       
       <CardContent className={cn(
         "bg-white",
-        isMobile ? "p-3" : "p-4"
+        isMobile ? "p-4 space-y-3" : "p-4 space-y-2"
       )}>
         <Link to={`/products/${id}`}>
           <h3 className={cn(
-            "font-medium text-gray-900 hover:text-brand-primary transition-colors line-clamp-2",
-            isMobile ? "text-sm leading-tight" : "text-base"
+            "font-semibold text-gray-900 hover:text-brand-primary transition-colors leading-snug line-clamp-2",
+            isMobile ? "text-base" : "text-base",
+            "tracking-tight"
           )}>
             {name}
           </h3>
         </Link>
-        
-        {/* Desktop: Show customer pricing */}
-        {!isMobile && isLoggedIn && customerPricing && (
-          <div className="mt-2">
-            <ProductPricing 
-              customerPricing={customerPricing} 
-              isMobile={isMobile}
-              position="card"
-              unit={getUnitDisplay()}
-            />
-            {/* Show total price when quantity > 1 */}
+
+        {isLoggedIn && customerPricing && (
+          <div className={cn(
+            "space-y-2",
+            isMobile && "pt-1 border-t border-gray-100"
+          )}>
+            <div className="flex items-baseline justify-between">
+              <div className="flex flex-col">
+                <span className={cn(
+                  "font-bold text-gray-900",
+                  isMobile ? "text-lg" : "text-base"
+                )}>
+                  {new Intl.NumberFormat('da-DK', {
+                    style: 'currency',
+                    currency: 'DKK'
+                  }).format(customerPricing.price)}
+                </span>
+                {getUnitDisplay() && (
+                  <span className={cn(
+                    "text-gray-500 font-medium",
+                    isMobile ? "text-sm" : "text-xs"
+                  )}>
+                    per {getUnitDisplay()}
+                  </span>
+                )}
+              </div>
+              
+              {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+                <div className="flex flex-col items-end">
+                                     <span 
+                     className={cn(
+                       "text-white font-semibold px-2 py-1 rounded-md",
+                       isMobile ? "text-xs" : "text-xs"
+                     )}
+                     style={{
+                       backgroundColor: customerPricing.groupDetails?.groupColor || '#609c14'
+                     }}
+                   >
+                    {customerPricing.discountLabel}
+                  </span>
+                  {customerPricing.showStrikethrough && customerPricing.originalPrice && (
+                    <span className={cn(
+                      "text-gray-400 line-through font-medium mt-1",
+                      isMobile ? "text-sm" : "text-xs"
+                    )}>
+                      {new Intl.NumberFormat('da-DK', {
+                        style: 'currency',
+                        currency: 'DKK'
+                      }).format(customerPricing.originalPrice)}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
             {quantity > 1 && (
-              <div className="mt-2 p-2 bg-brand-gray-50 rounded-md border">
+              <div className={cn(
+                "p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200",
+                "space-y-1"
+              )}>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-brand-gray-700">Total ({quantity} × {getUnitDisplay() || 'stk'}):</span>
-                  <span className="text-lg font-bold text-brand-primary">
+                  <span className={cn(
+                    "text-brand-gray-700 font-medium",
+                    isMobile ? "text-sm" : "text-sm"
+                  )}>
+                    Total ({quantity} × {getUnitDisplay() || 'stk'}):
+                  </span>
+                  <span className={cn(
+                    "font-bold text-brand-primary",
+                    isMobile ? "text-lg" : "text-lg"
+                  )}>
                     {new Intl.NumberFormat('da-DK', {
                       style: 'currency',
                       currency: 'DKK'
-                    }).format(customerPricing.price * quantity)}
+                    }).format(getTotalPrice())}
                   </span>
                 </div>
+                {customerPricing.showStrikethrough && customerPricing.originalPrice && (
+                  <div className="text-xs text-brand-success font-medium">
+                    Du sparer: {new Intl.NumberFormat('da-DK', {
+                      style: 'currency',
+                      currency: 'DKK'
+                    }).format((customerPricing.originalPrice - customerPricing.price) * quantity)}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        )}
-        
-        {/* Fallback for legacy price display */}
-        {!isMobile && isLoggedIn && !customerPricing && price && (
-          <div className="mt-2">
-            <p className="text-gray-700 font-semibold text-lg">{price.toFixed(2)} kr</p>
-            {getUnitDisplay() && (
-              <p className="text-xs text-gray-500">Per {getUnitDisplay()}</p>
-            )}
-            {/* Show total price when quantity > 1 */}
-            {quantity > 1 && (
-              <div className="mt-2 p-2 bg-brand-gray-50 rounded-md border">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-brand-gray-700">Total ({quantity} × {getUnitDisplay() || 'stk'}):</span>
-                  <span className="text-lg font-bold text-brand-primary">
-                    {(price * quantity).toFixed(2)} kr
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-        
-        {!isLoggedIn && (
-          <div className={cn("mt-1", isMobile ? "text-xs" : "text-sm")}>
-            <p className="text-gray-500">
-              Log ind for at se priser
-            </p>
-            {getUnitDisplay() && (
-              <p className="text-gray-400 text-xs mt-1">
-                Enhed: {getUnitDisplay()}
-              </p>
             )}
           </div>
         )}
 
-        {/* Mobile: Show unit info for logged-in users below pricing */}
-        {isMobile && isLoggedIn && getUnitDisplay() && (
-          <div className="mt-1">
-            <p className="text-xs text-gray-500">
-              Per {getUnitDisplay()}
-            </p>
+        {isLoggedIn && !customerPricing && price && (
+          <div className={cn(
+            "space-y-2",
+            isMobile && "pt-1 border-t border-gray-100"
+          )}>
+            <div className="flex items-baseline justify-between">
+              <div className="flex flex-col">
+                <span className={cn(
+                  "font-bold text-gray-900",
+                  isMobile ? "text-lg" : "text-base"
+                )}>
+                  {new Intl.NumberFormat('da-DK', {
+                    style: 'currency',
+                    currency: 'DKK'
+                  }).format(price)}
+                </span>
+                {getUnitDisplay() && (
+                  <span className={cn(
+                    "text-gray-500 font-medium",
+                    isMobile ? "text-sm" : "text-xs"
+                  )}>
+                    per {getUnitDisplay()}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {quantity > 1 && (
+              <div className={cn(
+                "p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200"
+              )}>
+                <div className="flex justify-between items-center">
+                  <span className={cn(
+                    "text-brand-gray-700 font-medium",
+                    isMobile ? "text-sm" : "text-sm"
+                  )}>
+                    Total ({quantity} × {getUnitDisplay() || 'stk'}):
+                  </span>
+                  <span className={cn(
+                    "font-bold text-brand-primary",
+                    isMobile ? "text-lg" : "text-lg"
+                  )}>
+                    {new Intl.NumberFormat('da-DK', {
+                      style: 'currency',
+                      currency: 'DKK'
+                    }).format(price * quantity)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {!isLoggedIn && (
+          <div className={cn(
+            "space-y-2",
+            isMobile && "pt-1 border-t border-gray-100"
+          )}>
+            <div className={cn(
+              "text-center p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200"
+            )}>
+              <p className={cn(
+                "text-brand-gray-700 font-medium",
+                isMobile ? "text-sm" : "text-sm"
+              )}>
+                Log ind for at se priser
+              </p>
+              {getUnitDisplay() && (
+                <p className={cn(
+                  "text-brand-gray-500 mt-1",
+                  isMobile ? "text-xs" : "text-xs"
+                )}>
+                  Enhed: {getUnitDisplay()}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </CardContent>
       
       <CardFooter className={cn(
-        "bg-white border-t border-gray-50",
-        isMobile ? "p-3 pt-2" : "p-4 pt-3",
-        "flex justify-between items-center"
+        "bg-white border-t border-gray-100",
+        isMobile ? "p-4" : "p-4",
+        "flex justify-between items-center gap-3"
       )}>
         {isLoggedIn ? (
-          <div className="flex items-center gap-2">
+          <>
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className={cn(
+                  "rounded-xl transition-all duration-200 border-gray-300 bg-white",
+                  isMobile ? "h-11 w-11" : "h-9 w-9",
+                  quantity === 0 
+                    ? "opacity-50 cursor-not-allowed" 
+                    : "hover:bg-brand-gray-50 hover:text-brand-primary hover:border-brand-primary/30 active:scale-95 shadow-sm"
+                )}
+                onClick={decreaseQuantity}
+                disabled={quantity === 0}
+              >
+                <Minus className={cn(isMobile ? "h-4 w-4" : "h-4 w-4")} />
+              </Button>
+              
+              <span className={cn(
+                "text-center font-bold text-gray-900 min-w-[2rem]",
+                isMobile ? "text-lg" : "text-base"
+              )}>
+                {quantity}
+              </span>
+              
+              <Button 
+                variant="outline" 
+                size="icon" 
+                className={cn(
+                  "rounded-xl transition-all duration-200 border-gray-300 bg-white hover:bg-brand-gray-50 hover:text-brand-primary hover:border-brand-primary/30 active:scale-95 shadow-sm",
+                  isMobile ? "h-11 w-11" : "h-9 w-9"
+                )}
+                onClick={increaseQuantity}
+              >
+                <Plus className={cn(isMobile ? "h-4 w-4" : "h-4 w-4")} />
+              </Button>
+            </div>
+
             <Button 
-              variant="outline" 
-              size="icon" 
               className={cn(
-                "rounded-full transition-all duration-200 border-gray-200",
-                isMobile ? "h-8 w-8" : "h-9 w-9",
+                "rounded-xl gap-2 transition-all duration-200 shadow-sm font-semibold",
+                isMobile ? "h-11 px-5 text-sm flex-1" : "h-9 px-4 text-sm",
                 quantity === 0 
-                  ? "opacity-50" 
-                  : "hover:bg-brand-gray-100 hover:text-brand-primary-dark hover:border-brand-gray-300 active:scale-95"
+                  ? "opacity-50 cursor-not-allowed bg-gray-400" 
+                  : "bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md text-white"
               )}
-              onClick={decreaseQuantity}
               disabled={quantity === 0}
             >
-              <Minus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
+              <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-4 w-4")} />
+              <span>
+                {isMobile ? "Tilføj til kurv" : "Tilføj til kurv"}
+              </span>
             </Button>
-            <span className={cn(
-              "text-center font-semibold text-gray-900",
-              isMobile ? "w-6 text-sm" : "w-8 text-base"
-            )}>
-              {quantity}
-            </span>
-            <Button 
-              variant="outline" 
-              size="icon" 
-              className={cn(
-                "rounded-full transition-all duration-200 border-gray-200 hover:bg-brand-gray-100 hover:text-brand-primary-dark hover:border-brand-gray-300 active:scale-95",
-                isMobile ? "h-8 w-8" : "h-9 w-9"
-              )}
-              onClick={increaseQuantity}
-            >
-              <Plus className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            </Button>
-          </div>
+          </>
         ) : (
-          <div className="flex-1"></div>
-        )}
-        
-        {isLoggedIn && (
-          <Button 
-            size={isMobile ? "sm" : "default"}
-            className={cn(
-              "rounded-full gap-1 transition-all duration-200 shadow-sm",
-              isMobile ? "h-8 px-3 text-xs" : "h-9 px-4 text-sm",
-              quantity === 0 
-                ? "opacity-50 cursor-not-allowed" 
-                : "bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md"
-            )}
-            disabled={quantity === 0}
-          >
-            <ShoppingCart className={cn(isMobile ? "h-3 w-3" : "h-4 w-4")} />
-            <span className="font-medium">
-              {isMobile ? "Tilføj" : "Tilføj til kurv"}
-            </span>
-          </Button>
-        )}
-        
-        {!isLoggedIn && (
-          <Link to="/login" className="flex-1 flex justify-end">
+          <Link to="/login" className="w-full">
             <Button 
-              size={isMobile ? "sm" : "default"}
               className={cn(
-                "rounded-full transition-all duration-200 shadow-sm bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md",
-                isMobile ? "h-8 px-4 text-xs" : "h-9 px-6 text-sm"
+                "w-full rounded-xl transition-all duration-200 shadow-sm bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md text-white font-semibold",
+                isMobile ? "h-11 text-sm" : "h-9 text-sm"
               )}
             >
-              <span className="font-medium">Log ind</span>
+              Log ind for at handle
             </Button>
           </Link>
         )}
