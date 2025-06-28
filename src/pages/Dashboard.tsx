@@ -82,14 +82,20 @@ const Dashboard: React.FC = () => {
     { id: "ORD-003", date: "2024-01-08", amount: 3420, status: "Leveret" }
   ];
 
-  const getDiscountGroupColor = (group: string) => {
-    switch (group) {
-      case 'Bronze': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'Sølv': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'Guld': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Platin': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-blue-100 text-blue-800 border-blue-200';
+  const getDiscountGroupStyle = (discountGroup: any) => {
+    if (typeof discountGroup === 'object' && discountGroup?.color) {
+      return {
+        backgroundColor: `${discountGroup.color}20`,
+        borderColor: discountGroup.color,
+        color: discountGroup.color
+      };
     }
+    // Fallback for legacy string-based discount groups or missing color
+    return {
+      backgroundColor: '#6B728020',
+      borderColor: '#6B7280',
+      color: '#6B7280'
+    };
   };
 
   const getStatusColor = (status: string) => {
@@ -244,11 +250,10 @@ const Dashboard: React.FC = () => {
                         <p className="text-sm font-medium text-gray-700 mb-2">Rabatgrupper</p>
                         <div className="flex flex-wrap gap-2">
                           {safeUser.discountGroup && (
-                            <Badge className={`text-xs ${getDiscountGroupColor(
-                              typeof safeUser.discountGroup === 'object' && safeUser.discountGroup
-                                ? safeUser.discountGroup.name
-                                : (typeof safeUser.discountGroup === 'string' ? safeUser.discountGroup : 'Standard')
-                            )}`}>
+                            <Badge 
+                              className="text-xs border"
+                              style={getDiscountGroupStyle(safeUser.discountGroup)}
+                            >
                               {typeof safeUser.discountGroup === 'object' && safeUser.discountGroup
                                 ? `${safeUser.discountGroup.name} (${safeUser.discountGroup.discountPercentage}% rabat)`
                                 : (typeof safeUser.discountGroup === 'string' ? safeUser.discountGroup : 'Standard')
@@ -258,7 +263,8 @@ const Dashboard: React.FC = () => {
                           {safeUser.discountGroups && safeUser.discountGroups.map((group: string, index: number) => (
                             <Badge 
                               key={index}
-                              className={`text-xs ${getDiscountGroupColor(group)}`}
+                              className="text-xs border"
+                              style={getDiscountGroupStyle(group)}
                             >
                               {group}
                             </Badge>

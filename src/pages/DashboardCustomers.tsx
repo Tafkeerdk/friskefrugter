@@ -235,12 +235,20 @@ const DashboardCustomers: React.FC = () => {
     setDiscountGroupDialogOpen(true);
   };
 
-  const getDiscountGroupColor = (group: { name: string; discountPercentage: number }) => {
-    const percentage = group.discountPercentage;
-    if (percentage >= 20) return 'bg-purple-100 text-purple-800 border-purple-200';
-    if (percentage >= 15) return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    if (percentage >= 10) return 'bg-gray-100 text-gray-800 border-gray-200';
-    return 'bg-amber-100 text-amber-800 border-amber-200';
+  const getDiscountGroupStyle = (group: { name: string; discountPercentage: number; color?: string }) => {
+    if (group.color) {
+      return {
+        backgroundColor: `${group.color}20`,
+        borderColor: group.color,
+        color: group.color
+      };
+    }
+    // Fallback for missing color
+    return {
+      backgroundColor: '#6B728020',
+      borderColor: '#6B7280',
+      color: '#6B7280'
+    };
   };
 
   const getInitials = (name: string) => {
@@ -335,7 +343,8 @@ const DashboardCustomers: React.FC = () => {
                       <div className="min-w-0 flex-1">
                         <h3 className="font-medium truncate">{customer.companyName}</h3>
                         <Badge
-                          className={`mt-1 rounded-full px-2.5 text-xs ${getDiscountGroupColor(customer.discountGroup)}`}
+                          className="mt-1 rounded-full px-2.5 text-xs border"
+                          style={getDiscountGroupStyle(customer.discountGroup)}
                         >
                           {customer.discountGroup.name} ({customer.discountGroup.discountPercentage}%)
                         </Badge>
