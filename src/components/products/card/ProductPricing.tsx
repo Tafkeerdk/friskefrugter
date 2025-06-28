@@ -73,7 +73,7 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
   const getBadgeClassName = () => {
     switch (customerPricing.discountType) {
       case 'unique_offer':
-        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg';
+        return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg animate-pulse';
       case 'fast_udsalgspris':
         return 'bg-brand-error text-white border-brand-error';
       case 'rabat_gruppe':
@@ -171,7 +171,7 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
           <span className="ml-1">
             {customerPricing.discountType === 'unique_offer' 
               ? 'Særlig tilbud' 
-              : customerPricing.discountLabel || 'Rabat'
+              : customerPricing.discountLabel
             }
           </span>
         </Badge>
@@ -308,7 +308,8 @@ export function MobilePricingOverlay({ customerPricing, quantity = 1, unit }: { 
       {/* Discount Badge */}
       <div className={cn(
         "px-2 py-1 text-xs font-medium",
-        getMobileBadgeColor()
+        getMobileBadgeColor(),
+        customerPricing.discountType === 'unique_offer' && "animate-pulse"
       )}
       style={getMobileBadgeStyle()}>
         <div className="flex items-center gap-1">
@@ -318,7 +319,7 @@ export function MobilePricingOverlay({ customerPricing, quantity = 1, unit }: { 
           <span>
             {customerPricing.discountType === 'unique_offer' 
               ? 'SÆRLIG' 
-              : customerPricing.discountLabel?.replace(' Rabat', '') || customerPricing.discountLabel || 'RABAT'
+              : customerPricing.discountLabel?.replace(' Rabat', '') || customerPricing.discountLabel
             }
           </span>
           {customerPricing.discountPercentage > 0 && (
