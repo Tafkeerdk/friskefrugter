@@ -474,10 +474,10 @@ const Products = () => {
 
           {/* Products Grid */}
           {isLoading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
                 <Card key={i} className="overflow-hidden">
-                  <div className="aspect-square bg-gray-200 animate-pulse" />
+                  <div className="aspect-video bg-gray-200 animate-pulse" />
                   <CardContent className="p-4">
                     <div className="h-4 bg-gray-200 rounded animate-pulse mb-2" />
                     <div className="h-3 bg-gray-200 rounded animate-pulse w-2/3" />
@@ -509,7 +509,7 @@ const Products = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {products.map((product) => (
                 <ProductCard
                   key={product._id}

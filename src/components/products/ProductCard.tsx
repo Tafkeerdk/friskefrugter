@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ShoppingCart, Minus, Plus, Package, Star, Zap, TrendingDown } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Package, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -89,43 +89,13 @@ export function ProductCard({
     return getCurrentPrice() * quantity;
   };
 
-  // Professional savings calculation
-  const getSavingsInfo = () => {
-    if (!customerPricing?.showStrikethrough || !customerPricing?.originalPrice) return null;
-    
-    const savings = customerPricing.originalPrice - customerPricing.price;
-    const percentage = Math.round((savings / customerPricing.originalPrice) * 100);
-    
-    return {
-      amount: savings,
-      percentage: percentage,
-      totalSavings: savings * quantity
-    };
-  };
-
-  // Professional discount icon
-  const getDiscountIcon = () => {
-    if (!customerPricing || customerPricing.discountType === 'none') return null;
-    
-    switch (customerPricing.discountType) {
-      case 'uniqueOffer':
-        return <Star className="h-3 w-3" />;
-      case 'fastUdsalgspris':
-        return <Zap className="h-3 w-3" />;
-      case 'rabatGruppe':
-        return <TrendingDown className="h-3 w-3" />;
-      default:
-        return null;
-    }
-  };
-
-  // Professional image rendering
+  // **IMAGE AREA - TOP 50-60% WITH FALLBACK**
   const renderImage = () => {
     if (imageError || !image) {
       return (
         <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
-          <Package className="h-10 w-10 text-gray-400 mb-2" />
-          <span className="text-sm text-gray-500 text-center px-2 font-medium">
+          <Package className="h-6 w-6 text-gray-400 mb-1" />
+          <span className="text-xs text-gray-500 text-center px-2 leading-tight">
             Billede ikke tilgængeligt
           </span>
         </div>
@@ -136,14 +106,14 @@ export function ProductCard({
       <>
         {!imageLoaded && (
           <div className="absolute inset-0 bg-gray-100 animate-pulse flex items-center justify-center">
-            <Package className="h-10 w-10 text-gray-400" />
+            <Package className="h-6 w-6 text-gray-400" />
           </div>
         )}
         <img 
           src={image} 
           alt={name} 
           className={cn(
-            "w-full h-full object-cover transition-all duration-300",
+            "w-full h-full object-cover transition-all duration-300 rounded-t-lg",
             !isMobile && isHovered && "scale-105",
             imageLoaded ? "opacity-100" : "opacity-0"
           )}
@@ -158,80 +128,62 @@ export function ProductCard({
     );
   };
 
-  const savingsInfo = getSavingsInfo();
-
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 bg-white border border-gray-200 group",
-        // Professional hover effects
-        !isMobile && "hover:shadow-lg hover:border-gray-300",
+        "overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-lg group",
+        // **FIXED WIDTH 320PX WITH RESPONSIVE BEHAVIOR**
+        "w-[320px] max-w-full mx-auto",
+        // **HOVER EFFECTS**
+        !isMobile && "hover:shadow-lg hover:shadow-gray-200/50",
         "shadow-sm"
       )}
+      style={{ width: isMobile ? '100%' : '320px' }}
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
-      style={{ height: '500px' }} // **FIXED HEIGHT FOR ALL CARDS**
     >
-      {/* **LARGER PRODUCT IMAGE** */}
+      {/* **🖼️ 1. PRODUCT IMAGE AREA (TOP 50-60%) - SQUARE FORMAT** */}
       <Link to={`/products/${id}`}>
         <div 
-          className="relative w-full bg-gray-50 overflow-hidden"
-          style={{ height: '280px' }} // **Larger image area**
+          className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg"
+          style={{ height: '200px' }} // **Fixed height for 50-60% of card**
         >
           {renderImage()}
           
-          {/* **Professional discount badge** */}
-          {customerPricing && customerPricing.discountType !== 'none' && savingsInfo && (
-            <div className="absolute top-3 left-3 z-10">
-              <Badge 
-                className={cn(
-                  "text-xs font-semibold px-2 py-1 text-white border-0",
-                  customerPricing.discountType === 'uniqueOffer' && "bg-purple-600",
-                  customerPricing.discountType === 'fastUdsalgspris' && "bg-red-600",
-                  customerPricing.discountType === 'rabatGruppe' && "bg-brand-primary"
-                )}
-              >
-                {getDiscountIcon()}
-                <span className="ml-1">-{savingsInfo.percentage}%</span>
-              </Badge>
-            </div>
-          )}
-          
-          {/* Subtle hover overlay */}
+          {/* Hover overlay for interactivity */}
           <div className={cn(
-            "absolute inset-0 bg-black/5 transition-opacity duration-300",
+            "absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent transition-opacity duration-300",
             isHovered && !isMobile ? "opacity-100" : "opacity-0"
           )} />
         </div>
       </Link>
       
-      <CardContent className="p-4 flex flex-col h-[220px]"> {/* **FIXED CONTENT HEIGHT** */}
-        {/* **PRODUCT INFO** */}
+      <CardContent className="p-4 flex flex-col space-y-4" style={{ minHeight: '200px' }}>
+        {/* **📝 2. INFORMATION & PRICING (MIDDLE BLOCK)** */}
         <div className="flex-1 space-y-3">
-          {/* Category and Product Name */}
-          <div className="space-y-2">
-            <Badge 
-              variant="secondary" 
-              className="bg-gray-100 text-gray-600 text-xs font-medium px-2 py-1 w-fit"
+          {/* **Product Name - Bold, 16-18px, 1-2 lines max** */}
+          <Link to={`/products/${id}`}>
+            <h3 
+              className="font-bold text-gray-900 hover:text-brand-primary transition-colors leading-tight line-clamp-2 cursor-pointer"
+              style={{ fontSize: '17px', lineHeight: '1.3' }}
             >
-              {category.toUpperCase()}
-            </Badge>
-            
-            <Link to={`/products/${id}`}>
-              <h3 
-                className="font-semibold text-gray-900 hover:text-brand-primary transition-colors leading-tight line-clamp-2 cursor-pointer"
-                style={{ fontSize: '16px', lineHeight: '1.3' }}
-              >
-                {name}
-              </h3>
-            </Link>
-          </div>
+              {name}
+            </h3>
+          </Link>
+          
+          {/* **Category Label - Small green pill tag inline** */}
+          <Badge 
+            variant="secondary" 
+            className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
+          >
+            {category.toUpperCase()}
+          </Badge>
 
-          {/* **PROFESSIONAL PRICING SECTION** */}
+          {/* **Price Display Section** */}
           {isLoggedIn && customerPricing && (
             <div className="space-y-2">
-              {/* Close price positioning */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* **Discounted Price - Bold, large, primary color** */}
                 <span 
                   className="font-bold text-gray-900"
                   style={{ fontSize: '18px' }}
@@ -242,57 +194,48 @@ export function ProductCard({
                   }).format(customerPricing.price)}
                 </span>
                 
-                {/* Strikethrough price close by */}
+                {/* **Original Price - Light gray, struck through** */}
                 {customerPricing.showStrikethrough && customerPricing.originalPrice && (
-                  <span className="text-gray-500 line-through text-sm">
+                  <span className="text-sm text-gray-400 line-through font-medium">
                     {new Intl.NumberFormat('da-DK', {
                       style: 'currency',
                       currency: 'DKK'
                     }).format(customerPricing.originalPrice)}
                   </span>
                 )}
+                
+                {/* **"Guldkunderne Rabat" - Small yellow badge beside price** */}
+                {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          className="text-xs font-medium px-2 py-1 text-white cursor-help"
+                          style={{
+                            backgroundColor: customerPricing.groupDetails?.groupColor || '#F59E0B'
+                          }}
+                        >
+                          {customerPricing.discountLabel.includes('Guldkunderne') ? 'Guldkunde' : 'Rabat'}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Rabatteret pris for guldkunder</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
               
-              {/* **SUBTLE savings info** */}
-              {savingsInfo && (
-                <div className="text-xs text-green-700 font-medium">
-                  Sparer {new Intl.NumberFormat('da-DK', {
-                    style: 'currency',
-                    currency: 'DKK'
-                  }).format(savingsInfo.amount)} pr. {getUnitDisplay()}
-                </div>
-              )}
-              
-              {/* Professional discount badge */}
-              {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Badge 
-                        className="text-xs font-medium px-2 py-1 text-white cursor-help w-fit"
-                        style={{
-                          backgroundColor: customerPricing.groupDetails?.groupColor || '#F59E0B'
-                        }}
-                      >
-                        {customerPricing.discountLabel.includes('Guldkunderne') ? 'Guldkunde' : 'Rabat'}
-                      </Badge>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">Særpris for din kundegruppe</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              )}
-              
+              {/* **Unit Info - Light gray, small font under price** */}
               <p className="text-xs text-gray-500">
-                Pris per {getUnitDisplay()}
+                per {getUnitDisplay()}
               </p>
             </div>
           )}
 
-          {/* Standard Price */}
+          {/* **Standard Price (for non-customer pricing)** */}
           {isLoggedIn && !customerPricing && price && (
-            <div className="space-y-1">
+            <div className="space-y-2">
               <span 
                 className="font-bold text-gray-900"
                 style={{ fontSize: '18px' }}
@@ -303,14 +246,14 @@ export function ProductCard({
                 }).format(price)}
               </span>
               <p className="text-xs text-gray-500">
-                Pris per {getUnitDisplay()}
+                per {getUnitDisplay()}
               </p>
             </div>
           )}
 
-          {/* Professional login required message */}
+          {/* **Login Required Message** */}
           {!isLoggedIn && (
-            <div className="text-center p-3 bg-gray-50 border border-gray-200">
+            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
               <p className="text-sm text-gray-700 font-medium">
                 Log ind for at se priser
               </p>
@@ -321,19 +264,19 @@ export function ProductCard({
           )}
         </div>
 
-        {/* **PROFESSIONAL ACTIONS SECTION** */}
+        {/* **🛒 3. ACTIONS & QUANTITY (BOTTOM BLOCK)** */}
         {isLoggedIn && (
-          <div className="space-y-3 pt-3 border-t border-gray-100 mt-auto">
-            {/* Quantity selector */}
-            <div className="flex items-center justify-center gap-3">
+          <div className="space-y-3 pt-2 border-t border-gray-100">
+            {/* **Quantity Selector - Horizontal layout with larger touch targets** */}
+            <div className="flex items-center justify-center gap-4">
               <Button 
                 variant="outline" 
                 size="icon" 
                 className={cn(
-                  "h-8 w-8 border-gray-300",
+                  "rounded-lg h-9 w-9 border-gray-300 transition-all hover:bg-gray-50",
                   quantity === 0 
                     ? "opacity-50 cursor-not-allowed" 
-                    : "hover:border-brand-primary hover:bg-brand-primary hover:text-white"
+                    : "hover:border-brand-primary/40 active:scale-95"
                 )}
                 onClick={decreaseQuantity}
                 disabled={quantity === 0}
@@ -342,8 +285,8 @@ export function ProductCard({
               </Button>
               
               <span 
-                className="text-center font-semibold text-gray-900 min-w-[2.5rem]"
-                style={{ fontSize: '16px' }}
+                className="text-center font-bold text-gray-900 min-w-[2.5rem]"
+                style={{ fontSize: '18px' }}
               >
                 {quantity}
               </span>
@@ -351,63 +294,50 @@ export function ProductCard({
               <Button 
                 variant="outline" 
                 size="icon" 
-                className="h-8 w-8 border-gray-300 hover:border-brand-primary hover:bg-brand-primary hover:text-white"
+                className="rounded-lg h-9 w-9 border-gray-300 transition-all hover:bg-gray-50 hover:border-brand-primary/40 active:scale-95"
                 onClick={increaseQuantity}
               >
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
 
-            {/* Add to Cart Button */}
+            {/* **Add to Cart Button - Full-width green button** */}
             <Button 
               className={cn(
-                "w-full font-semibold gap-2 h-10",
+                "w-full rounded-lg transition-all duration-200 font-semibold gap-2 h-11",
                 quantity === 0 
                   ? "opacity-50 cursor-not-allowed bg-gray-400 text-gray-200" 
-                  : "bg-brand-primary hover:bg-brand-primary-hover text-white"
+                  : "bg-brand-primary hover:bg-brand-primary-hover active:scale-[0.98] shadow-sm hover:shadow-md text-white"
               )}
               disabled={quantity === 0}
+              aria-label="Tilføj til kurv"
             >
               <ShoppingCart className="h-4 w-4" />
               Tilføj til kurv
             </Button>
 
-            {/* **FIXED HEIGHT TOTAL AREA** */}
-            <div className="h-12 flex flex-col justify-center">
-              {quantity > 0 ? (
-                <div className="text-center space-y-1">
-                  <div 
-                    className="font-semibold text-brand-primary"
-                    style={{ fontSize: '14px' }}
-                  >
-                    Total: {new Intl.NumberFormat('da-DK', {
-                      style: 'currency',
-                      currency: 'DKK'
-                    }).format(getTotalPrice())}
-                  </div>
-                  
-                  {/* **SUBTLE total savings** */}
-                  {savingsInfo && quantity > 0 && (
-                    <div className="text-xs text-green-700">
-                      Total besparelse: {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(savingsInfo.totalSavings)}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="h-full"></div> // **PLACEHOLDER TO MAINTAIN HEIGHT**
-              )}
-            </div>
+            {/* **Total Price (Dynamic) - Only appears if quantity > 0** */}
+            {quantity > 0 && (
+              <div className="text-center">
+                <span 
+                  className="font-semibold text-brand-primary-dark"
+                  style={{ fontSize: '16px' }}
+                >
+                  Total: {new Intl.NumberFormat('da-DK', {
+                    style: 'currency',
+                    currency: 'DKK'
+                  }).format(getTotalPrice())}
+                </span>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Professional login button */}
+        {/* **Login Button for Non-Authenticated Users** */}
         {!isLoggedIn && (
-          <div className="pt-3 border-t border-gray-100 mt-auto">
+          <div className="pt-2 border-t border-gray-100">
             <Link to="/login" className="w-full">
-              <Button className="w-full bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold h-10">
+              <Button className="w-full rounded-lg bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold transition-all h-11">
                 Log ind for at handle
               </Button>
             </Link>
