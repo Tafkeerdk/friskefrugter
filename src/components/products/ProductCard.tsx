@@ -399,18 +399,17 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
 
             <Button 
               className={cn(
-                "rounded-xl gap-2 transition-all duration-200 shadow-sm font-semibold",
-                isMobile ? "h-11 px-5 text-sm flex-1" : "h-9 px-4 text-sm",
+                "rounded-xl transition-all duration-200 shadow-sm font-semibold",
+                isMobile ? "h-11 w-11" : "h-9 w-9",
                 quantity === 0 
                   ? "opacity-50 cursor-not-allowed bg-gray-400" 
                   : "bg-brand-primary hover:bg-brand-primary-hover active:scale-95 hover:shadow-md text-white"
               )}
               disabled={quantity === 0}
+              size="icon"
+              aria-label="Tilføj til kurv"
             >
-              <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-4 w-4")} />
-              <span>
-                {isMobile ? "Tilføj til kurv" : "Tilføj til kurv"}
-              </span>
+              <ShoppingCart className={cn(isMobile ? "h-5 w-5" : "h-4 w-4")} />
             </Button>
           </>
         ) : (

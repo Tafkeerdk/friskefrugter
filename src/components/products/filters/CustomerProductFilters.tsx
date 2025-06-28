@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,6 +74,92 @@ export function CustomerProductFilters({
   className
 }: CustomerProductFiltersProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  
+  // **LOCAL STATE FOR DEBOUNCED SEARCH**
+  const [localSearch, setLocalSearch] = useState(search);
+  const [pendingFilters, setPendingFilters] = useState({
+    category,
+    priceRange,
+    rabatGruppe,
+    fastUdsalgspris,
+    uniqueOffer,
+    sortBy,
+    sortOrder
+  });
+  
+  // **DEBOUNCING REFS**
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // **SYNC LOCAL SEARCH WITH PROP WHEN IT CHANGES EXTERNALLY**
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  // **DEBOUNCED SEARCH - 800MS DELAY**
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (localSearch !== search) {
+        onSearchChange(localSearch);
+      }
+    }, 800);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [localSearch, search, onSearchChange]);
+
+  // **HANDLE ENTER KEY FOR IMMEDIATE SEARCH**
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+      onSearchChange(localSearch);
+    }
+  };
+
+  // **CHECK IF FILTERS HAVE PENDING CHANGES**
+  const hasFilterChanges = () => {
+    return (
+      pendingFilters.category !== category ||
+      pendingFilters.priceRange.min !== priceRange.min ||
+      pendingFilters.priceRange.max !== priceRange.max ||
+      pendingFilters.rabatGruppe !== rabatGruppe ||
+      pendingFilters.fastUdsalgspris !== fastUdsalgspris ||
+      pendingFilters.uniqueOffer !== uniqueOffer ||
+      pendingFilters.sortBy !== sortBy ||
+      pendingFilters.sortOrder !== sortOrder
+    );
+  };
+
+  // **APPLY FILTERS BUTTON HANDLER**
+  const handleApplyFilters = () => {
+    if (pendingFilters.category !== category) {
+      onCategoryChange(pendingFilters.category);
+    }
+    if (pendingFilters.priceRange.min !== priceRange.min || pendingFilters.priceRange.max !== priceRange.max) {
+      onPriceRangeChange(pendingFilters.priceRange);
+    }
+    if (pendingFilters.rabatGruppe !== rabatGruppe) {
+      onRabatGruppeChange(pendingFilters.rabatGruppe);
+    }
+    if (pendingFilters.fastUdsalgspris !== fastUdsalgspris) {
+      onFastUdsalgsprisChange(pendingFilters.fastUdsalgspris);
+    }
+    if (pendingFilters.uniqueOffer !== uniqueOffer) {
+      onUniqueOfferChange(pendingFilters.uniqueOffer);
+    }
+    if (pendingFilters.sortBy !== sortBy || pendingFilters.sortOrder !== sortOrder) {
+      onSortChange(pendingFilters.sortBy, pendingFilters.sortOrder);
+    }
+  };
 
   const activeFiltersCount = [
     category !== 'all',
@@ -85,12 +171,18 @@ export function CustomerProductFilters({
 
   const handlePriceMinChange = (value: string) => {
     const min = parseFloat(value) || 0;
-    onPriceRangeChange({ min, max: priceRange.max });
+    setPendingFilters(prev => ({ 
+      ...prev, 
+      priceRange: { min, max: prev.priceRange.max } 
+    }));
   };
 
   const handlePriceMaxChange = (value: string) => {
     const max = parseFloat(value) || 10000;
-    onPriceRangeChange({ min: priceRange.min, max });
+    setPendingFilters(prev => ({ 
+      ...prev, 
+      priceRange: { min: prev.priceRange.min, max } 
+    }));
   };
 
   return (
@@ -125,19 +217,30 @@ export function CustomerProductFilters({
           </div>
         )}
 
-        {/* Search - Always Visible */}
+        {/* **DEBOUNCED SEARCH WITH ENTER KEY SUPPORT** */}
         <div className="space-y-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               type="text"
-              placeholder="Søg efter navn, varenummer eller EAN..."
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder="Søg efter navn, varenummer eller EAN... (Tryk Enter for øjeblikkelig søgning)"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              onKeyDown={handleSearchKeyPress}
               className="pl-10"
               disabled={isLoading}
             />
+            {localSearch !== search && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="h-2 w-2 bg-orange-400 rounded-full animate-pulse"></div>
+              </div>
+            )}
           </div>
+          {localSearch !== search && (
+            <p className="text-xs text-gray-500">
+              Søger automatisk om {0.8} sekunder eller tryk Enter for øjeblikkelig søgning...
+            </p>
+          )}
         </div>
       </CardHeader>
 
@@ -154,6 +257,11 @@ export function CustomerProductFilters({
                     {activeFiltersCount}
                   </Badge>
                 )}
+                {hasFilterChanges() && (
+                  <Badge variant="outline" className="text-xs border-orange-400 text-orange-600">
+                    Ikke anvendt
+                  </Badge>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {activeFiltersCount > 0 && (
@@ -163,6 +271,15 @@ export function CustomerProductFilters({
                     onClick={(e) => {
                       e.stopPropagation();
                       onClearFilters();
+                      setPendingFilters({
+                        category: 'all',
+                        priceRange: { min: 0, max: 10000 },
+                        rabatGruppe: false,
+                        fastUdsalgspris: false,
+                        uniqueOffer: false,
+                        sortBy: 'produktnavn',
+                        sortOrder: 'asc'
+                      });
                     }}
                     className="text-xs"
                   >
@@ -180,15 +297,15 @@ export function CustomerProductFilters({
           </CardHeader>
         </CollapsibleTrigger>
 
-                 <CollapsibleContent>
-           <CardContent className="pt-0 space-y-6">
+        <CollapsibleContent>
+          <CardContent className="pt-0 space-y-6">
 
         {/* Category Filter */}
         <div className="space-y-2">
           <Label htmlFor="category">Kategori</Label>
           <Select
-            value={category}
-            onValueChange={onCategoryChange}
+            value={pendingFilters.category}
+            onValueChange={(value) => setPendingFilters(prev => ({ ...prev, category: value }))}
             disabled={isLoading}
           >
             <SelectTrigger>
@@ -226,7 +343,7 @@ export function CustomerProductFilters({
                 id="minPrice"
                 type="number"
                 placeholder="0"
-                value={priceRange.min > 0 ? priceRange.min : ''}
+                value={pendingFilters.priceRange.min > 0 ? pendingFilters.priceRange.min : ''}
                 onChange={(e) => handlePriceMinChange(e.target.value)}
                 disabled={isLoading}
                 min="0"
@@ -241,7 +358,7 @@ export function CustomerProductFilters({
                 id="maxPrice"
                 type="number"
                 placeholder="10000"
-                value={priceRange.max < 10000 ? priceRange.max : ''}
+                value={pendingFilters.priceRange.max < 10000 ? pendingFilters.priceRange.max : ''}
                 onChange={(e) => handlePriceMaxChange(e.target.value)}
                 disabled={isLoading}
                 min="0"
@@ -278,8 +395,8 @@ export function CustomerProductFilters({
               )}
               <Switch
                 id="uniqueOffer"
-                checked={uniqueOffer}
-                onCheckedChange={onUniqueOfferChange}
+                checked={pendingFilters.uniqueOffer}
+                onCheckedChange={(value) => setPendingFilters(prev => ({ ...prev, uniqueOffer: value }))}
                 disabled={isLoading || !customerInfo?.uniqueOffersCount}
               />
             </div>
@@ -300,8 +417,8 @@ export function CustomerProductFilters({
             </div>
             <Switch
               id="fastUdsalgspris"
-              checked={fastUdsalgspris}
-              onCheckedChange={onFastUdsalgsprisChange}
+              checked={pendingFilters.fastUdsalgspris}
+              onCheckedChange={(value) => setPendingFilters(prev => ({ ...prev, fastUdsalgspris: value }))}
               disabled={isLoading}
             />
           </div>
@@ -331,8 +448,8 @@ export function CustomerProductFilters({
                 </span>
                 <Switch
                   id="rabatGruppe"
-                  checked={rabatGruppe}
-                  onCheckedChange={onRabatGruppeChange}
+                  checked={pendingFilters.rabatGruppe}
+                  onCheckedChange={(value) => setPendingFilters(prev => ({ ...prev, rabatGruppe: value }))}
                   disabled={isLoading}
                 />
               </div>
@@ -347,10 +464,10 @@ export function CustomerProductFilters({
           <Label>Sortér efter</Label>
           <div className="grid grid-cols-1 gap-2">
             <Select
-              value={`${sortBy}-${sortOrder}`}
+              value={`${pendingFilters.sortBy}-${pendingFilters.sortOrder}`}
               onValueChange={(value) => {
                 const [newSortBy, newSortOrder] = value.split('-') as [string, 'asc' | 'desc'];
-                onSortChange(newSortBy, newSortOrder);
+                setPendingFilters(prev => ({ ...prev, sortBy: newSortBy, sortOrder: newSortOrder }));
               }}
               disabled={isLoading}
             >
@@ -368,6 +485,26 @@ export function CustomerProductFilters({
             </Select>
           </div>
         </div>
+
+        {/* **APPLY FILTERS BUTTON - INDUSTRY STANDARD UX PATTERN** */}
+        {hasFilterChanges() && (
+          <>
+            <Separator />
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-sm text-gray-600">
+                Du har ændringer, der ikke er anvendt endnu
+              </p>
+              <Button 
+                onClick={handleApplyFilters}
+                disabled={isLoading}
+                className="bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold px-6"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Anvend filtre
+              </Button>
+            </div>
+          </>
+        )}
             </CardContent>
           </CollapsibleContent>
         </Collapsible>
