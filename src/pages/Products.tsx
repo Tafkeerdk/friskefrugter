@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from "react-router-dom";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ProductCard } from "@/components/products/ProductCard";
@@ -68,6 +69,7 @@ interface ProductFilters {
 const Products = () => {
   const { user, isAuthenticated, isCustomerAuthenticated } = useAuth();
   const { toast } = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   
   // State management
   const [products, setProducts] = useState<Product[]>([]);
@@ -96,6 +98,18 @@ const Products = () => {
   
   // Customer info for authenticated users
   const [customerInfo, setCustomerInfo] = useState<any>(null);
+
+  // **HANDLE URL SEARCH PARAMETERS FROM NAVBAR**
+  useEffect(() => {
+    const urlSearch = searchParams.get('search');
+    if (urlSearch && urlSearch.trim()) {
+      setFilters(prev => ({ ...prev, search: urlSearch.trim() }));
+      // Clear the URL parameter after setting the search
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete('search');
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Load initial data
   useEffect(() => {
