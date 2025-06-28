@@ -208,6 +208,16 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     style: 'currency',
                     currency: 'DKK'
                   }).format(customerPricing.price)}
+                  
+                  {/* **SUBTLE TOTAL PRICE INDICATOR FOR PC** */}
+                  {quantity > 1 && !isMobile && (
+                    <span className="text-sm text-brand-primary font-semibold ml-2">
+                      (Total: {new Intl.NumberFormat('da-DK', {
+                        style: 'currency',
+                        currency: 'DKK'
+                      }).format(getTotalPrice())})
+                    </span>
+                  )}
                 </span>
                 {getUnitDisplay() && (
                   <span className={cn(
@@ -215,13 +225,22 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     isMobile ? "text-sm" : "text-xs"
                   )}>
                     per {getUnitDisplay()}
+                    {/* **MOBILE TOTAL PRICE - INLINE** */}
+                    {quantity > 1 && isMobile && (
+                      <span className="text-brand-primary font-semibold ml-2">
+                        • Total: {new Intl.NumberFormat('da-DK', {
+                          style: 'currency',
+                          currency: 'DKK'
+                        }).format(getTotalPrice())}
+                      </span>
+                    )}
                   </span>
                 )}
               </div>
               
               {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
                 <div className="flex flex-col items-end">
-                                     <span 
+                  <span 
                      className={cn(
                        "text-white font-semibold px-2 py-1 rounded-md",
                        isMobile ? "text-xs" : "text-xs"
@@ -247,36 +266,13 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
               )}
             </div>
 
-            {quantity > 1 && (
-              <div className={cn(
-                "p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200",
-                "space-y-1"
-              )}>
-                <div className="flex justify-between items-center">
-                  <span className={cn(
-                    "text-brand-gray-700 font-medium",
-                    isMobile ? "text-sm" : "text-sm"
-                  )}>
-                    Total ({quantity} × {getUnitDisplay() || 'stk'}):
-                  </span>
-                  <span className={cn(
-                    "font-bold text-brand-primary",
-                    isMobile ? "text-lg" : "text-lg"
-                  )}>
-                    {new Intl.NumberFormat('da-DK', {
-                      style: 'currency',
-                      currency: 'DKK'
-                    }).format(getTotalPrice())}
-                  </span>
-                </div>
-                {customerPricing.showStrikethrough && customerPricing.originalPrice && (
-                  <div className="text-xs text-brand-success font-medium">
-                    Du sparer: {new Intl.NumberFormat('da-DK', {
-                      style: 'currency',
-                      currency: 'DKK'
-                    }).format((customerPricing.originalPrice - customerPricing.price) * quantity)}
-                  </div>
-                )}
+            {/* **MOBILE ONLY: COMPACT SAVINGS INDICATOR** */}
+            {quantity > 1 && isMobile && customerPricing.showStrikethrough && customerPricing.originalPrice && (
+              <div className="text-xs text-brand-success font-medium bg-green-50 px-2 py-1 rounded border-l-2 border-green-400">
+                💰 Du sparer: {new Intl.NumberFormat('da-DK', {
+                  style: 'currency',
+                  currency: 'DKK'
+                }).format((customerPricing.originalPrice - customerPricing.price) * quantity)}
               </div>
             )}
           </div>
@@ -297,6 +293,16 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     style: 'currency',
                     currency: 'DKK'
                   }).format(price)}
+                  
+                  {/* **SUBTLE TOTAL PRICE INDICATOR FOR PC** */}
+                  {quantity > 1 && !isMobile && (
+                    <span className="text-sm text-brand-primary font-semibold ml-2">
+                      (Total: {new Intl.NumberFormat('da-DK', {
+                        style: 'currency',
+                        currency: 'DKK'
+                      }).format(price * quantity)})
+                    </span>
+                  )}
                 </span>
                 {getUnitDisplay() && (
                   <span className={cn(
@@ -304,34 +310,19 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
                     isMobile ? "text-sm" : "text-xs"
                   )}>
                     per {getUnitDisplay()}
+                    {/* **MOBILE TOTAL PRICE - INLINE** */}
+                    {quantity > 1 && isMobile && (
+                      <span className="text-brand-primary font-semibold ml-2">
+                        • Total: {new Intl.NumberFormat('da-DK', {
+                          style: 'currency',
+                          currency: 'DKK'
+                        }).format(price * quantity)}
+                      </span>
+                    )}
                   </span>
                 )}
               </div>
             </div>
-
-            {quantity > 1 && (
-              <div className={cn(
-                "p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200"
-              )}>
-                <div className="flex justify-between items-center">
-                  <span className={cn(
-                    "text-brand-gray-700 font-medium",
-                    isMobile ? "text-sm" : "text-sm"
-                  )}>
-                    Total ({quantity} × {getUnitDisplay() || 'stk'}):
-                  </span>
-                  <span className={cn(
-                    "font-bold text-brand-primary",
-                    isMobile ? "text-lg" : "text-lg"
-                  )}>
-                    {new Intl.NumberFormat('da-DK', {
-                      style: 'currency',
-                      currency: 'DKK'
-                    }).format(price * quantity)}
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
