@@ -110,6 +110,12 @@ const Products = () => {
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('search');
       setSearchParams(newParams, { replace: true });
+      
+      // **IMMEDIATELY LOAD PRODUCTS WHEN SEARCH IS SET FROM URL**
+      // This ensures search results show immediately without waiting for categories
+      setTimeout(() => {
+        loadProducts(true);
+      }, 100);
     }
   }, [searchParams, setSearchParams]);
 
@@ -118,12 +124,14 @@ const Products = () => {
     loadInitialData();
   }, [isCustomerAuthenticated]);
 
-  // Load products when filters change
+  // Load products when filters change (but not on initial search from URL)
   useEffect(() => {
-    if (categories.length > 0) {
+    // Only auto-load products if we have categories AND we're not processing a URL search
+    const urlSearch = searchParams.get('search');
+    if (categories.length > 0 && !urlSearch) {
       loadProducts(true); // Reset to page 1 when filters change
     }
-  }, [filters, isCustomerAuthenticated]);
+  }, [filters, isCustomerAuthenticated, categories]);
 
   // Load initial data (categories and customer info)
   const loadInitialData = async () => {

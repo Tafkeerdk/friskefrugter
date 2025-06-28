@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Navbar } from "@/components/layout/Navbar";
@@ -6,47 +6,61 @@ import { Footer } from "@/components/layout/Footer";
 import { ContactOverlay } from "@/components/layout/ContactOverlay";
 import { ProductCard } from "@/components/products/ProductCard";
 import PWAInstallBanner from "@/components/ui/pwa-install-banner";
-import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock, User } from "lucide-react";
+import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock, User, RefreshCw } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePWA } from "@/hooks/usePWA";
+import { useAuth } from "@/hooks/useAuth";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-// Sample product data
-const featuredProducts = [
-  {
-    id: "1",
-    name: "Økologiske Æbler",
-    image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?auto=format&fit=crop&q=80&w=800",
-    category: "Frugt",
-    isLoggedIn: false,
-  },
-  {
-    id: "2",
-    name: "Danske Gulerødder",
-    image: "https://images.unsplash.com/photo-1598170845058-32b9d6a5da37?auto=format&fit=crop&q=80&w=800",
-    category: "Grøntsager",
-    isLoggedIn: false,
-  },
-  {
-    id: "3",
-    name: "Friske Jordbær",
-    image: "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&q=80&w=800",
-    category: "Bær",
-    isLoggedIn: false,
-  },
-  {
-    id: "4",
-    name: "Økologisk Mælk",
-    image: "https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&q=80&w=800",
-    category: "Mejeri",
-    isLoggedIn: false,
-  }
-];
+interface FeaturedProduct {
+  id: string;
+  name: string;
+  image?: string;
+  category: string;
+  price?: number;
+  isLoggedIn: boolean;
+  userType?: string;
+  customerPricing?: any;
+}
 
 const Index = () => {
   const isMobile = useIsMobile();
   const { canInstall } = usePWA();
+  const { isCustomerAuthenticated, customerUser } = useAuth();
   const [showPWABanner, setShowPWABanner] = useState(true);
+  const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFeaturedProducts = async () => {
+      try {
+        setLoading(true);
+        
+        let response;
+        if (isCustomerAuthenticated && customerUser) {
+          // Load customer-specific featured products with pricing
+          response = await api.getFeaturedProductsCustomer();
+        } else {
+          // Load public featured products
+          response = await api.getFeaturedProductsPublic();
+        }
+
+        if (response.success && response.data) {
+          const data = response.data as any;
+          setFeaturedProducts(data.products || []);
+        }
+      } catch (error) {
+        console.error('Error loading featured products:', error);
+        // Fallback to empty array if API fails
+        setFeaturedProducts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadFeaturedProducts();
+  }, [isCustomerAuthenticated, customerUser]);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -341,11 +355,41 @@ const Index = () => {
                 ? "grid-cols-2" 
                 : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
             )}>
-              {featuredProducts.map((product, index) => (
-                <div key={product.id}>
-                  <ProductCard {...product} />
+              {loading ? (
+                // Loading skeleton
+                Array.from({ length: 4 }).map((_, index) => (
+                  <div key={index} className="animate-pulse">
+                    <div className="bg-gray-200 rounded-lg aspect-square mb-3"></div>
+                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                    <div className="bg-gray-200 h-3 rounded w-2/3"></div>
+                  </div>
+                ))
+              ) : featuredProducts.length > 0 ? (
+                featuredProducts.map((product) => (
+                  <div key={product.id}>
+                    <ProductCard 
+                      id={product.id}
+                      name={product.name}
+                      image={product.image || '/placeholder.svg'}
+                      category={product.category}
+                      isLoggedIn={product.isLoggedIn}
+                      userType={product.userType as "customer" | "public"}
+                      price={product.price}
+                      customerPricing={product.customerPricing}
+                    />
+                  </div>
+                ))
+              ) : (
+                // No products fallback
+                <div className="col-span-full text-center py-12">
+                  <p className="text-gray-500 mb-4">Ingen udvalgte produkter tilgængelige.</p>
+                  <Link to="/products">
+                    <Button variant="outline">
+                      Se alle produkter <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </Link>
                 </div>
-              ))}
+              )}
             </div>
             <div className={cn("text-center flex justify-center", isMobile ? "mt-8" : "mt-12")}>
               <Link to="/products">

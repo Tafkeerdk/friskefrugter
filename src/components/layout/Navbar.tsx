@@ -266,7 +266,8 @@ export function Navbar() {
             />
             <SearchResults 
               results={searchResults}
-              isVisible={showResults && searchResults.length > 0}
+              isVisible={showResults && (searchResults.length > 0 || isSearching)}
+              isLoading={isSearching}
               onResultClick={handleResultClick}
               onViewAllResults={() => handleSearchSubmit()}
               searchQuery={searchValue}
@@ -293,7 +294,8 @@ export function Navbar() {
               <Search className="absolute right-3 top-2.5 h-4 w-4 text-gray-400" />
               <SearchResults 
                 results={searchResults}
-                isVisible={showResults && searchResults.length > 0}
+                isVisible={showResults && (searchResults.length > 0 || isSearching)}
+                isLoading={isSearching}
                 onResultClick={handleResultClick}
                 onViewAllResults={() => handleSearchSubmit()}
                 searchQuery={searchValue}

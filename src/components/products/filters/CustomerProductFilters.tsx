@@ -189,30 +189,58 @@ export function CustomerProductFilters({
     <Card className={cn("w-full", className)}>
       {/* Always Visible: Search + Customer Info */}
       <CardHeader className="pb-4">
-        {/* Customer Info */}
+        {/* Customer Info - Mobile Responsive */}
         {customerInfo && (
-          <div className="flex items-center justify-between text-sm mb-4">
-            <div>
-              <span className="font-medium text-gray-900">{customerInfo.companyName}</span>
+          <div className={cn(
+            "text-sm mb-4 space-y-3",
+            isMobile ? "space-y-2" : "space-y-3"
+          )}>
+            {/* Company Name Row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium text-gray-900 truncate">
+                {customerInfo.companyName}
+              </span>
               {customerInfo.discountGroup && (
                 <span 
-                  className="ml-2 text-xs px-2 py-1 rounded-full text-white font-medium"
+                  className={cn(
+                    "text-xs px-2 py-1 rounded-full text-white font-medium inline-flex items-center flex-shrink-0",
+                    isMobile ? "text-xs" : "text-xs"
+                  )}
                   style={{
                     backgroundColor: customerInfo.discountGroup.color || '#6B7280'
                   }}
                 >
-                  {customerInfo.discountGroup.name} Kunde
+                  <span className={cn(isMobile ? "hidden" : "inline")}>
+                    {customerInfo.discountGroup.name} Kunde
+                  </span>
+                  <span className={cn(isMobile ? "inline" : "hidden")}>
+                    {customerInfo.discountGroup.name}
+                  </span>
                   {customerInfo.discountGroup.discountPercentage > 0 && (
-                    <span className="ml-1">({customerInfo.discountGroup.discountPercentage}% rabat)</span>
+                    <span className="ml-1">
+                      ({customerInfo.discountGroup.discountPercentage}%)
+                    </span>
                   )}
                 </span>
               )}
             </div>
+            
+            {/* Unique Offers Badge - Separate Row on Mobile */}
             {customerInfo.uniqueOffersCount > 0 && (
-              <Badge variant="default" className="bg-brand-primary text-xs">
-                <Star className="h-3 w-3 mr-1" />
-                {customerInfo.uniqueOffersCount} Unique Offers
-              </Badge>
+              <div className={cn(
+                "flex",
+                isMobile ? "justify-start" : "justify-end"
+              )}>
+                <Badge variant="default" className="bg-brand-primary text-xs flex-shrink-0">
+                  <Star className="h-3 w-3 mr-1" />
+                  <span className={cn(isMobile ? "hidden" : "inline")}>
+                    {customerInfo.uniqueOffersCount} Unique Offers
+                  </span>
+                  <span className={cn(isMobile ? "inline" : "hidden")}>
+                    {customerInfo.uniqueOffersCount} Tilbud
+                  </span>
+                </Badge>
+              </div>
             )}
           </div>
         )}

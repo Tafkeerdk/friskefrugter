@@ -781,6 +781,45 @@ class ApiClient {
     const endpoint = this.getEndpoint('/api/products/statistics');
     return this.request(endpoint);
   }
+
+  // Featured Products API methods
+  async getFeaturedProducts() {
+    const endpoint = this.getEndpoint('/api/admin/featured-products');
+    return this.request(endpoint);
+  }
+
+  async addFeaturedProducts(productIds: string[]) {
+    const endpoint = this.getEndpoint('/api/admin/featured-products');
+    return this.request(endpoint, {
+      method: 'POST',
+      body: JSON.stringify({ productIds })
+    });
+  }
+
+  async updateFeaturedProducts(products: { productId: string; featuredOrder: number }[]) {
+    const endpoint = this.getEndpoint('/api/admin/featured-products');
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify({ products })
+    });
+  }
+
+  async removeFeaturedProduct(productId: string) {
+    const endpoint = this.getEndpoint(`/api/admin/featured-products?productId=${productId}`);
+    return this.request(endpoint, {
+      method: 'DELETE'
+    });
+  }
+
+  async getFeaturedProductsPublic() {
+    const endpoint = this.getEndpoint('/api/featured-products');
+    return this.request(endpoint);
+  }
+
+  async getFeaturedProductsCustomer() {
+    const endpoint = this.getEndpoint('/api/featured-products-customer');
+    return this.request(endpoint);
+  }
 }
 
 // Create and export API client instance

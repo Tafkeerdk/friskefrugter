@@ -176,6 +176,26 @@ const DashboardSidebar: React.FC = () => {
               
               <SidebarMenuItem>
                 <SidebarMenuButton 
+                  onClick={handleNavigation("/admin/featured-products")}
+                  isActive={isActive("/admin/featured-products")}
+                  className={cn(
+                    "transition-all duration-200",
+                    isMobile ? "h-10 text-sm" : "h-11",
+                    isActive("/admin/featured-products") && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <Star className={cn(
+                    "transition-all flex-shrink-0",
+                    isMobile ? "h-4 w-4" : "h-5 w-5"
+                  )} />
+                  <span className="truncate">
+                    {isMobile ? "Udvalgte" : "Udvalgte Produkter"}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
                   onClick={handleNavigation("/admin/categories")}
                   isActive={isActive("/admin/categories")}
                   className={cn(

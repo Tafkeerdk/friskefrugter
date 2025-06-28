@@ -30,6 +30,7 @@ import ProductSetup from "./pages/ProductSetup";
 import PasswordReset from "./pages/PasswordReset";
 import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
 import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
+import DashboardFeaturedProducts from "./pages/DashboardFeaturedProducts";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
@@ -117,6 +118,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardProducts />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/featured-products" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardFeaturedProducts />
                 </ProtectedRoute>
               } 
             />

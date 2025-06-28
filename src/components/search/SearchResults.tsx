@@ -96,8 +96,11 @@ export const SearchResults = ({
                 onClick={onViewAllResults}
                 className="w-full text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white"
               >
-                <Eye className="h-4 w-4 mr-2" />
-                Se alle resultater for "{searchQuery}"
+                <Eye className="h-4 w-4 mr-2 flex-shrink-0" />
+                <span className="truncate">
+                  <span className="hidden sm:inline">Se alle resultater for "{searchQuery}"</span>
+                  <span className="sm:hidden">Se alle ({searchQuery})</span>
+                </span>
               </Button>
             </div>
           )}
