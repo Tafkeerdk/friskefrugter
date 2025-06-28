@@ -80,18 +80,18 @@ const UniqueOffersCard: React.FC = () => {
   const getOfferStatusBadge = (offer: UniqueOffer) => {
     if (!offer.isCurrentlyValid) {
       return (
-        <Badge variant="outline" className="text-red-600 border-red-200">
-          <Clock className="h-3 w-3 mr-1" />
-          Udløbet
+        <Badge variant="outline" className="text-red-600 border-red-200 text-xs">
+          <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+          <span className="truncate">Udløbet</span>
         </Badge>
       );
     }
 
     if (offer.isUnlimited) {
       return (
-        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          🎯 PERMANENT TILBUD
+        <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse text-xs max-w-full">
+          <CheckCircle className="h-3 w-3 mr-1 flex-shrink-0" />
+          <span className="truncate">🎯 PERMANENT</span>
         </Badge>
       );
     }
@@ -104,18 +104,18 @@ const UniqueOffersCard: React.FC = () => {
       
       if (daysLeft <= 7) {
         return (
-          <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white animate-bounce">
-            <Clock className="h-3 w-3 mr-1" />
-            ⚡ {daysLeft} DAGE TILBAGE!
+          <Badge className="bg-gradient-to-r from-red-500 to-orange-500 text-white animate-bounce text-xs max-w-full">
+            <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+            <span className="truncate">⚡ {daysLeft} DAGE</span>
           </Badge>
         );
       }
     }
 
     return (
-      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-        <Clock className="h-3 w-3 mr-1" />
-        🌟 EKSKLUSIVT TILBUD
+      <Badge className="bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs max-w-full">
+        <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
+        <span className="truncate">🌟 TILBUD</span>
       </Badge>
     );
   };
@@ -221,68 +221,75 @@ const UniqueOffersCard: React.FC = () => {
           {offers.filter(offer => offer.isCurrentlyValid).slice(0, 3).map((offer) => (
             <div 
               key={offer._id} 
-              className="flex items-center gap-4 p-4 bg-brand-gray-50 rounded-lg border border-brand-gray-200 hover:border-brand-primary/20 transition-colors"
+              className="flex flex-col gap-3 p-3 bg-brand-gray-50 rounded-lg border border-brand-gray-200 hover:border-brand-primary/20 transition-colors"
             >
-              {/* Product Image */}
-              <div className="flex-shrink-0 w-16 h-16 bg-white rounded-lg border border-brand-gray-200 flex items-center justify-center overflow-hidden">
-                {getProductImage(offer.product) ? (
-                  <img 
-                    src={getProductImage(offer.product)} 
-                    alt={offer.product.produktnavn}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <Package className="h-6 w-6 text-brand-gray-400" />
-                )}
-              </div>
-
-              {/* Product Info */}
-              <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-brand-gray-900 truncate">
-                  {offer.product.produktnavn}
-                </h4>
-                <p className="text-sm text-brand-gray-600">
-                  {offer.product.varenummer}
-                </p>
-                
-                {/* Pricing */}
-                <div className="flex items-center gap-2 mt-1">
-                  {offer.savings > 0 && (
-                    <span className="text-lg text-gray-500 line-through font-medium">
-                      {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(offer.product.basispris)}
-                    </span>
-                  )}
-                  <span className="text-xl font-bold text-purple-600">
-                    {offer.formattedPrice}
-                  </span>
-                  {offer.savings > 0 && (
-                    <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white">
-                      <Percent className="h-3 w-3 mr-1" />
-                      -{offer.savingsPercentage}%
-                    </Badge>
+              {/* Mobile: Stacked Layout */}
+              <div className="flex items-start gap-3">
+                {/* Product Image */}
+                <div className="flex-shrink-0 w-16 h-16 bg-white rounded-lg border border-brand-gray-200 flex items-center justify-center overflow-hidden">
+                  {getProductImage(offer.product) ? (
+                    <img 
+                      src={getProductImage(offer.product)} 
+                      alt={offer.product.produktnavn}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Package className="h-6 w-6 text-brand-gray-400" />
                   )}
                 </div>
 
-                {/* Validity */}
-                <div className="flex items-center gap-2 mt-2">
-                  {getOfferStatusBadge(offer)}
-                  {!offer.isUnlimited && offer.validTo && (
-                    <span className="text-xs text-brand-gray-500">
-                      Udløber: {formatDate(offer.validTo)}
-                    </span>
-                  )}
+                {/* Product Info */}
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div>
+                    <h4 className="font-medium text-brand-gray-900 truncate text-sm">
+                      {offer.product.produktnavn}
+                    </h4>
+                    <p className="text-xs text-brand-gray-600">
+                      {offer.product.varenummer}
+                    </p>
+                  </div>
+                  
+                  {/* Pricing - Mobile Stacked */}
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      {offer.savings > 0 && (
+                        <span className="text-sm text-gray-500 line-through font-medium">
+                          {new Intl.NumberFormat('da-DK', {
+                            style: 'currency',
+                            currency: 'DKK'
+                          }).format(offer.product.basispris)}
+                        </span>
+                      )}
+                      <span className="text-lg font-bold text-purple-600">
+                        {offer.formattedPrice}
+                      </span>
+                      {offer.savings > 0 && (
+                        <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs">
+                          <Percent className="h-3 w-3 mr-1" />
+                          -{offer.savingsPercentage}%
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Status Badge - More Mobile Friendly */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {getOfferStatusBadge(offer)}
+                      {!offer.isUnlimited && offer.validTo && (
+                        <span className="text-xs text-brand-gray-500">
+                          Udløber: {formatDate(offer.validTo)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Action Button */}
-              <div className="flex-shrink-0">
+              {/* Action Button - Full Width on Mobile */}
+              <div className="w-full">
                 <Button 
                   asChild
                   size="sm" 
-                  className="btn-brand-primary"
+                  className="btn-brand-primary w-full"
                   disabled={!offer.product.aktiv}
                 >
                   <Link to={`/products/${offer.product._id}`}>

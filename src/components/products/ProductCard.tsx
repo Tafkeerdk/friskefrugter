@@ -159,7 +159,7 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
           
           {/* Mobile: Show price overlay */}
           {isMobile && isLoggedIn && customerPricing && (
-            <MobilePricingOverlay customerPricing={customerPricing} />
+            <MobilePricingOverlay customerPricing={customerPricing} quantity={quantity} />
           )}
           
           {/* Fallback for legacy price display */}
@@ -195,6 +195,20 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
             {getUnitDisplay() && (
               <p className="text-xs text-gray-500 mt-1">Per {getUnitDisplay()}</p>
             )}
+            {/* Show total price when quantity > 1 */}
+            {quantity > 1 && (
+              <div className="mt-2 p-2 bg-brand-gray-50 rounded-md border">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-brand-gray-700">Total ({quantity} × {getUnitDisplay() || 'stk'}):</span>
+                  <span className="text-lg font-bold text-brand-primary">
+                    {new Intl.NumberFormat('da-DK', {
+                      style: 'currency',
+                      currency: 'DKK'
+                    }).format(customerPricing.price * quantity)}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
         
@@ -204,6 +218,17 @@ export function ProductCard({ id, name, image, category, unit, isLoggedIn = fals
             <p className="text-gray-700 font-semibold text-lg">{price.toFixed(2)} kr</p>
             {getUnitDisplay() && (
               <p className="text-xs text-gray-500">Per {getUnitDisplay()}</p>
+            )}
+            {/* Show total price when quantity > 1 */}
+            {quantity > 1 && (
+              <div className="mt-2 p-2 bg-brand-gray-50 rounded-md border">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-brand-gray-700">Total ({quantity} × {getUnitDisplay() || 'stk'}):</span>
+                  <span className="text-lg font-bold text-brand-primary">
+                    {(price * quantity).toFixed(2)} kr
+                  </span>
+                </div>
+              </div>
             )}
           </div>
         )}

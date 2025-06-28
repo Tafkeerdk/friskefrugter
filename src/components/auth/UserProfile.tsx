@@ -128,62 +128,79 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
 
   return (
     <Card className="w-full max-w-md">
-      <CardHeader>
-        <div className="flex items-center space-x-4">
+      <CardHeader className="pb-2">
+        <div className="flex items-center space-x-3">
           <Avatar className="h-12 w-12">
-            <AvatarFallback>{getUserInitials()}</AvatarFallback>
+            <AvatarImage 
+              src={displayUser.profilePictureUrl} 
+              alt={getUserDisplayName()}
+              enableCacheBusting={true}
+            />
+            <AvatarFallback className="text-sm">{getUserInitials()}</AvatarFallback>
           </Avatar>
-          <div>
-            <CardTitle className="text-lg">{getUserDisplayName()}</CardTitle>
-            <CardDescription>{user?.email}</CardDescription>
+          <div className="min-w-0 flex-1">
+            <CardTitle className="text-sm leading-tight truncate">{getUserDisplayName()}</CardTitle>
+            <CardDescription className="text-xs truncate">{displayUser?.email}</CardDescription>
+            {isCustomer(displayUser) && displayUser.companyName && (
+              <CardDescription className="text-xs truncate">{displayUser.companyName}</CardDescription>
+            )}
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {isCustomer(user) && (
+      <CardContent className="space-y-2 pt-0">
+        {isCustomer(displayUser) && (
           <>
             <div>
-              <p className="text-sm font-medium text-muted-foreground">Virksomhed</p>
-              <p className="text-sm">{user.companyName}</p>
-            </div>
-            
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Rabatgruppe</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Rabatgruppe</p>
               <div className="flex items-center space-x-2">
-                <Badge variant="secondary">
-                  {typeof user.discountGroup === 'object' && user.discountGroup 
-                    ? user.discountGroup.name 
-                    : (typeof user.discountGroup === 'string' ? user.discountGroup : 'Standard')
+                <Badge 
+                  variant="secondary" 
+                  className="text-xs"
+                  style={{
+                    backgroundColor: typeof displayUser.discountGroup === 'object' && displayUser.discountGroup?.color 
+                      ? `${displayUser.discountGroup.color}20` 
+                      : undefined,
+                    borderColor: typeof displayUser.discountGroup === 'object' && displayUser.discountGroup?.color 
+                      ? displayUser.discountGroup.color 
+                      : undefined,
+                    color: typeof displayUser.discountGroup === 'object' && displayUser.discountGroup?.color 
+                      ? displayUser.discountGroup.color 
+                      : undefined
+                  }}
+                >
+                  {typeof displayUser.discountGroup === 'object' && displayUser.discountGroup 
+                    ? displayUser.discountGroup.name 
+                    : (typeof displayUser.discountGroup === 'string' ? displayUser.discountGroup : 'Standard')
                   }
                 </Badge>
-                <span className="text-sm text-muted-foreground">
-                  ({typeof user.discountGroup === 'object' && user.discountGroup 
-                    ? user.discountGroup.discountPercentage 
-                    : getDiscountPercentage(typeof user.discountGroup === 'string' ? user.discountGroup : 'Standard')
+                <span className="text-xs text-muted-foreground">
+                  ({typeof displayUser.discountGroup === 'object' && displayUser.discountGroup 
+                    ? displayUser.discountGroup.discountPercentage 
+                    : getDiscountPercentage(typeof displayUser.discountGroup === 'string' ? displayUser.discountGroup : 'Standard')
                   }% rabat)
                 </span>
               </div>
             </div>
           </>
         )}
-
-        {isAdmin(user) && (
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Rolle</p>
-            <Badge variant="default">
-              <Shield className="w-3 h-3 mr-1" />
-              {user.role || 'Administrator'}
-            </Badge>
-          </div>
-        )}
-
-        <div className="flex space-x-2">
-          <Button variant="outline" className="flex-1">
-            <Settings className="w-4 h-4 mr-2" />
-            Indstillinger
+        
+        <div className="flex gap-2 pt-1">
+          <Button 
+            onClick={handleProfileClick}
+            variant="outline" 
+            size="sm"
+            className="flex-1 text-xs h-7"
+          >
+            <User className="mr-1 h-3 w-3" />
+            Profil
           </Button>
-          <Button variant="outline" onClick={handleLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
+          <Button 
+            onClick={handleLogout}
+            variant="outline" 
+            size="sm"
+            className="flex-1 text-xs h-7"
+          >
+            <LogOut className="mr-1 h-3 w-3" />
             Log ud
           </Button>
         </div>

@@ -73,6 +73,7 @@ export interface User {
     id?: string;
     name: string;
     discountPercentage: number;
+    color?: string;
   } | string; // Support both object and string for backward compatibility
   name?: string;
   role?: string;

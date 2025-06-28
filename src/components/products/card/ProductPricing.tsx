@@ -219,55 +219,70 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
 }
 
 // Helper component for mobile overlay pricing
-export function MobilePricingOverlay({ customerPricing }: { customerPricing: CustomerPricing }) {
+export function MobilePricingOverlay({ customerPricing, quantity = 1 }: { customerPricing: CustomerPricing; quantity?: number }) {
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('da-DK', {
+      style: 'currency',
+      currency: 'DKK',
+      minimumFractionDigits: 2
+    }).format(price);
+  };
+
   if (customerPricing.discountType === 'none') {
     return (
       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-full">
-        <span className="text-xs font-semibold text-gray-800">
-          {new Intl.NumberFormat('da-DK', {
-            style: 'currency',
-            currency: 'DKK',
-            minimumFractionDigits: 2
-          }).format(customerPricing.price)}
-        </span>
+        <div className="flex flex-col items-end">
+          <span className="text-xs font-semibold text-gray-800">
+            {formatPrice(customerPricing.price)}
+          </span>
+          {quantity > 1 && (
+            <span className="text-xs font-bold text-brand-primary">
+              {formatPrice(customerPricing.price * quantity)} total
+            </span>
+          )}
+        </div>
       </div>
     );
   }
 
-    return (
+  return (
     <div className={cn(
       "absolute top-3 right-3 backdrop-blur-sm px-2 py-1 rounded-full",
       customerPricing.discountType === 'unique_offer' 
         ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white animate-pulse" 
         : "bg-white/90"
     )}>
-      <div className="flex items-center gap-1">
-        {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center gap-1">
+          {customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price && (
+            <span className={cn(
+              "text-xs line-through",
+              customerPricing.discountType === 'unique_offer' 
+                ? "text-purple-100" 
+                : "text-gray-500"
+            )}>
+              {formatPrice(customerPricing.originalPrice)}
+            </span>
+          )}
           <span className={cn(
-            "text-xs line-through",
+            "text-xs font-bold",
             customerPricing.discountType === 'unique_offer' 
-              ? "text-purple-100" 
-              : "text-gray-500"
+              ? "text-white" 
+              : "text-brand-primary-dark"
           )}>
-            {new Intl.NumberFormat('da-DK', {
-              style: 'currency',
-              currency: 'DKK',
-              minimumFractionDigits: 2
-            }).format(customerPricing.originalPrice)}
+            {formatPrice(customerPricing.price)}
+          </span>
+        </div>
+        {quantity > 1 && (
+          <span className={cn(
+            "text-xs font-bold border-t pt-1",
+            customerPricing.discountType === 'unique_offer' 
+              ? "text-white border-purple-200" 
+              : "text-brand-primary border-gray-300"
+          )}>
+            {formatPrice(customerPricing.price * quantity)} total
           </span>
         )}
-        <span className={cn(
-          "text-xs font-bold",
-          customerPricing.discountType === 'unique_offer' 
-            ? "text-white" 
-            : "text-brand-primary-dark"
-        )}>
-          {new Intl.NumberFormat('da-DK', {
-            style: 'currency',
-            currency: 'DKK',
-            minimumFractionDigits: 2
-          }).format(customerPricing.price)}
-          </span>
       </div>
     </div>
   );
