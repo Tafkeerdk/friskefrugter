@@ -147,10 +147,25 @@ const DashboardFeaturedProducts: React.FC = () => {
     try {
       setLoading(true);
       
+      // Check authentication first
+      if (!user || user.userType !== 'admin') {
+        console.error('❌ Admin authentication required for featured products');
+        toast.error('Admin login påkrævet');
+        navigate('/admin');
+        return;
+      }
+      
       // Load featured products, initial products, and categories
       const [featuredResponse, categoriesResponse] = await Promise.all([
         api.getFeaturedProducts().catch(err => {
           console.error('Featured products API failed:', err);
+          // Check if it's an authentication error
+          if (err.message?.includes('Access token påkrævet') || err.message?.includes('Session expired')) {
+            console.error('❌ Authentication error - redirecting to admin login');
+            toast.error('Session udløbet. Log venligst ind igen.');
+            navigate('/admin');
+            return { success: false, error: 'Authentication required' };
+          }
           return { success: false, error: 'Featured products endpoint failed' };
         }),
         api.getCategories({ 
@@ -176,7 +191,10 @@ const DashboardFeaturedProducts: React.FC = () => {
         }
       } else {
         console.error('Featured products failed:', 'error' in featuredResponse ? featuredResponse.error : 'Unknown error');
-        toast.error('Kunne ikke indlæse udvalgte produkter');
+        // Don't show error toast if it's an authentication issue (already handled above)
+        if (!featuredResponse.error?.includes('Authentication required')) {
+          toast.error('Kunne ikke indlæse udvalgte produkter');
+        }
       }
 
       if (categoriesResponse.success && 'data' in categoriesResponse && categoriesResponse.data) {
@@ -209,7 +227,14 @@ const DashboardFeaturedProducts: React.FC = () => {
 
     } catch (error) {
       console.error('Error loading data:', error);
-      toast.error('Fejl ved indlæsning af data');
+      // Check if it's an authentication error
+      if (error instanceof Error && (error.message.includes('Access token påkrævet') || error.message.includes('Session expired'))) {
+        console.error('❌ Authentication error in loadData');
+        toast.error('Session udløbet. Log venligst ind igen.');
+        navigate('/admin');
+      } else {
+        toast.error('Fejl ved indlæsning af data');
+      }
     } finally {
       setLoading(false);
     }
@@ -276,9 +301,14 @@ const DashboardFeaturedProducts: React.FC = () => {
           toast.error('Kunne ikke indlæse produkter');
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error loading products:', error);
-      if (reset) {
+      
+      // Check if it's an authentication error
+      if (error.message?.includes('Access token påkrævet') || error.message?.includes('Session expired')) {
+        toast.error('Session udløbet. Log venligst ind igen.');
+        navigate('/admin');
+      } else if (reset) {
         toast.error('Fejl ved indlæsning af produkter');
       }
     } finally {
@@ -307,8 +337,12 @@ const DashboardFeaturedProducts: React.FC = () => {
     } catch (error: any) {
       console.error('Error saving settings:', error);
       
-      // If settings endpoint is not available yet, just save locally
-      if (error.message?.includes('503') || error.message?.includes('not available')) {
+      // Check if it's an authentication error
+      if (error.message?.includes('Access token påkrævet') || error.message?.includes('Session expired')) {
+        toast.error('Session udløbet. Log venligst ind igen.');
+        navigate('/admin');
+      } else if (error.message?.includes('503') || error.message?.includes('not available')) {
+        // If settings endpoint is not available yet, just save locally
         toast.success('Indstillinger gemt lokalt (endpoint ikke tilgængeligt endnu)');
         setSettingsChanged(false);
       } else {
@@ -387,7 +421,14 @@ const DashboardFeaturedProducts: React.FC = () => {
       }
     } catch (error: any) {
       console.error('❌ Error adding featured products:', error);
-      toast.error(error.response?.data?.error || 'Fejl ved tilføjelse af produkter');
+      
+      // Check if it's an authentication error
+      if (error.message?.includes('Access token påkrævet') || error.message?.includes('Session expired')) {
+        toast.error('Session udløbet. Log venligst ind igen.');
+        navigate('/admin');
+      } else {
+        toast.error(error.response?.data?.error || error.message || 'Fejl ved tilføjelse af produkter');
+      }
     } finally {
       setSaving(false);
     }
@@ -454,7 +495,14 @@ const DashboardFeaturedProducts: React.FC = () => {
       }
     } catch (error: any) {
       console.error('❌ Error removing featured product:', error);
-      toast.error(error.response?.data?.error || 'Fejl ved fjernelse af produkt');
+      
+      // Check if it's an authentication error
+      if (error.message?.includes('Access token påkrævet') || error.message?.includes('Session expired')) {
+        toast.error('Session udløbet. Log venligst ind igen.');
+        navigate('/admin');
+      } else {
+        toast.error(error.response?.data?.error || error.message || 'Fejl ved fjernelse af produkt');
+      }
     } finally {
       setSaving(false);
     }
@@ -495,7 +543,14 @@ const DashboardFeaturedProducts: React.FC = () => {
       }
     } catch (error: any) {
       console.error('❌ Error reordering products:', error);
-      toast.error(error.response?.data?.error || 'Fejl ved opdatering af rækkefølge');
+      
+      // Check if it's an authentication error
+      if (error.message?.includes('Access token påkrævet') || error.message?.includes('Session expired')) {
+        toast.error('Session udløbet. Log venligst ind igen.');
+        navigate('/admin');
+      } else {
+        toast.error(error.response?.data?.error || error.message || 'Fejl ved opdatering af rækkefølge');
+      }
     } finally {
       setSaving(false);
     }
