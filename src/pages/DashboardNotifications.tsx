@@ -22,6 +22,7 @@ import {
   ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { authService } from '../lib/auth';
 
 interface Notification {
   _id: string;
@@ -76,34 +77,17 @@ const DashboardNotifications: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      const params = new URLSearchParams({
-        limit: '50',
-        page: '1',
-        unreadOnly: filter === 'unread' ? 'true' : 'false'
+      const response = await authService.getNotifications({
+        limit: 50,
+        page: 1,
+        unreadOnly: filter === 'unread'
       });
-
-      const response = await fetch(`/.netlify/functions/admin-notifications?${params}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
-          'Content-Type': 'application/json',
-          'X-PWA': 'true',
-          'X-Display-Mode': 'browser',
-          'X-Session-Type': 'admin'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: NotificationResponse = await response.json();
       
-      if (data.success) {
-        setNotifications(data.notifications);
-        setStats(data.statistics);
+      if (response.success) {
+        setNotifications(response.notifications || []);
+        setStats(response.statistics || { total: 0, unread: 0, urgent: 0, thisWeek: 0 });
       } else {
-        throw new Error('Failed to fetch notifications');
+        throw new Error(response.message || 'Failed to fetch notifications');
       }
     } catch (err) {
       console.error('Error fetching notifications:', err);
@@ -121,22 +105,9 @@ const DashboardNotifications: React.FC = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch('/.netlify/functions/admin-notifications', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
-          'Content-Type': 'application/json',
-          'X-PWA': 'true',
-          'X-Display-Mode': 'browser',
-          'X-Session-Type': 'admin'
-        },
-        body: JSON.stringify({
-          notificationId,
-          action: 'mark_opened'
-        })
-      });
+      const response = await authService.markNotificationAsRead(notificationId);
 
-      if (response.ok) {
+      if (response.success) {
         // Update local state
         setNotifications(prev => 
           prev.map(notif => 
@@ -155,21 +126,9 @@ const DashboardNotifications: React.FC = () => {
 
   const markAllAsRead = async () => {
     try {
-      const response = await fetch('/.netlify/functions/admin-notifications', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
-          'Content-Type': 'application/json',
-          'X-PWA': 'true',
-          'X-Display-Mode': 'browser',
-          'X-Session-Type': 'admin'
-        },
-        body: JSON.stringify({
-          action: 'mark_all_opened'
-        })
-      });
+      const response = await authService.markAllNotificationsAsRead();
 
-      if (response.ok) {
+      if (response.success) {
         await fetchNotifications(); // Refresh data
       }
     } catch (error) {
