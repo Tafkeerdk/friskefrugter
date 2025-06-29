@@ -31,15 +31,17 @@ export const SearchResults = ({
   searchQuery = '',
   isAuthenticated = false
 }: SearchResultsProps) => {
-  if (!isVisible) return null;
-
+  if (!isVisible) {
+    return null;
+  }
+  
   return (
     <div className={cn(
-      "absolute top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto z-50",
-      // Desktop: same width as search input
-      "md:left-0 md:right-0",
-      // Mobile: much wider dropdown using most of the screen width
-      "left-[-20px] right-[-80px] min-w-[320px] max-w-[95vw] md:min-w-0 md:max-w-none"
+      "bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto z-50",
+      // Desktop: positioned relative to search input
+      "hidden md:block md:absolute md:top-full md:mt-1 md:left-0 md:right-0",
+      // Mobile: full-width fixed overlay
+      "md:hidden fixed top-[4.5rem] left-2 right-2 mt-1"
     )}>
       {/* Loading State */}
       {isLoading && (
@@ -74,32 +76,32 @@ export const SearchResults = ({
               onClick={onResultClick}
               className="block"
             >
-              <div className="flex items-center gap-3 p-3 md:p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
+              <div className="flex items-center gap-4 p-4 md:p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="h-12 w-12 object-cover rounded-md border flex-shrink-0"
+                  className="h-14 w-14 md:h-12 md:w-12 object-cover rounded-md border flex-shrink-0"
                   onError={(e) => {
                     e.currentTarget.src = '/placeholder.svg';
                   }}
                 />
-                <div className="flex-1 min-w-0 pr-2">
-                  <h4 className="font-medium text-sm text-gray-900 line-clamp-2 md:truncate leading-tight">{product.name}</h4>
-                  <p className="text-xs text-gray-500 mt-1 md:mt-0">{product.category}</p>
+                <div className="flex-1 min-w-0 pr-3">
+                  <h4 className="font-medium text-base md:text-sm text-gray-900 line-clamp-2 md:truncate leading-tight mb-1">{product.name}</h4>
+                  <p className="text-sm md:text-xs text-gray-500">{product.category}</p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   {isAuthenticated && product.price !== undefined ? (
-                    <span className="text-sm font-medium text-brand-primary whitespace-nowrap">
+                    <span className="text-base md:text-sm font-medium text-brand-primary whitespace-nowrap">
                       {product.price.toFixed(2)} kr
                     </span>
                   ) : (
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 md:gap-1">
-                      {/* Mobile: Styled pill with more padding */}
-                      <div className="md:hidden flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-md">
-                        <Lock className="h-3 w-3 flex-shrink-0" />
-                        <span className="whitespace-nowrap">Log ind for priser</span>
+                      {/* Mobile: Styled pill with generous padding */}
+                      <div className="md:hidden flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
+                        <Lock className="h-4 w-4 flex-shrink-0" />
+                        <span className="whitespace-nowrap text-sm">Log ind for priser</span>
                       </div>
-                      {/* Desktop: Simple layout */}
+                      {/* Desktop: Simple layout (unchanged) */}
                       <div className="hidden md:flex items-center gap-1">
                         <Lock className="h-3 w-3" />
                         <span>Log ind for priser</span>
@@ -113,14 +115,14 @@ export const SearchResults = ({
 
           {/* View All Results Button */}
           {onViewAllResults && searchQuery && (
-            <div className="p-3 border-t border-gray-200 bg-gray-50">
+            <div className="p-4 md:p-3 border-t border-gray-200 bg-gray-50">
               <Button
                 variant="outline"
-                size="sm"
+                size="default"
                 onClick={onViewAllResults}
-                className="w-full text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white"
+                className="w-full text-brand-primary border-brand-primary hover:bg-brand-primary hover:text-white h-12 md:h-auto text-base md:text-sm"
               >
-                <Eye className="h-4 w-4 mr-2 flex-shrink-0" />
+                <Eye className="h-5 w-5 md:h-4 md:w-4 mr-2 flex-shrink-0" />
                 <span className="truncate">
                   <span className="hidden sm:inline">Se alle resultater for "{searchQuery}"</span>
                   <span className="sm:hidden">Se alle ({searchQuery})</span>
