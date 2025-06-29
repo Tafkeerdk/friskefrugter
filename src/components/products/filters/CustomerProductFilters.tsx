@@ -234,7 +234,7 @@ export function CustomerProductFilters({
                 <Badge variant="default" className="bg-brand-primary text-xs flex-shrink-0">
                   <Star className="h-3 w-3 mr-1" />
                   <span className={cn(isMobile ? "hidden" : "inline")}>
-                    {customerInfo.uniqueOffersCount} Unique Offers
+                    {customerInfo.uniqueOffersCount} Unikke tilbud
                   </span>
                   <span className={cn(isMobile ? "inline" : "hidden")}>
                     {customerInfo.uniqueOffersCount} Tilbud
