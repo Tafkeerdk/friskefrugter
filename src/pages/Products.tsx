@@ -283,6 +283,16 @@ const Products = () => {
           params.rabatGruppe = true;
         }
         
+        // Debug logging for filter parameters
+        console.log('🔍 Customer filter parameters:', {
+          hasSpecialFilters: filters.uniqueOffers || filters.fastUdsalgspris || filters.rabatGruppe,
+          uniqueOffer: params.uniqueOffer,
+          fastUdsalgspris: params.fastUdsalgspris,
+          rabatGruppe: params.rabatGruppe,
+          search: params.search,
+          kategori: params.kategori
+        });
+        
         response = await api.getCustomerProducts(params);
       } else {
         // Public endpoint with limited filtering (used for both non-authenticated users and admins)
