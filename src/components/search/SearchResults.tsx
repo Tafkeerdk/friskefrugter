@@ -38,8 +38,8 @@ export const SearchResults = ({
       "absolute top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto z-50",
       // Desktop: same width as search input
       "md:left-0 md:right-0",
-      // Mobile: wider dropdown for better readability - extends beyond search input
-      "left-0 right-[-40px] min-w-[280px] max-w-[90vw] md:min-w-0 md:max-w-none"
+      // Mobile: much wider dropdown using most of the screen width
+      "left-[-20px] right-[-80px] min-w-[320px] max-w-[95vw] md:min-w-0 md:max-w-none"
     )}>
       {/* Loading State */}
       {isLoading && (
@@ -94,8 +94,8 @@ export const SearchResults = ({
                     </span>
                   ) : (
                     <div className="flex items-center gap-1.5 text-xs text-gray-500 md:gap-1">
-                      {/* Mobile: Styled pill */}
-                      <div className="md:hidden flex items-center gap-1.5 bg-gray-100 px-2 py-1 rounded-md">
+                      {/* Mobile: Styled pill with more padding */}
+                      <div className="md:hidden flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-md">
                         <Lock className="h-3 w-3 flex-shrink-0" />
                         <span className="whitespace-nowrap">Log ind for priser</span>
                       </div>
