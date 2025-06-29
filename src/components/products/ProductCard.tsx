@@ -132,13 +132,12 @@ export function ProductCard({
     <Card 
       className={cn(
         "overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-lg group",
-        // **FIXED WIDTH 320PX WITH RESPONSIVE BEHAVIOR**
-        "w-[320px] max-w-full mx-auto",
+        // **RESPONSIVE WIDTH - MOBILE FRIENDLY**
+        isMobile ? "w-full max-w-[180px] mx-auto" : "w-[320px] max-w-full mx-auto",
         // **HOVER EFFECTS**
         !isMobile && "hover:shadow-lg hover:shadow-gray-200/50",
         "shadow-sm"
       )}
-      style={{ width: isMobile ? '100%' : '320px' }}
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
@@ -146,7 +145,7 @@ export function ProductCard({
       <Link to={`/products/${id}`}>
         <div 
           className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg"
-          style={{ height: '200px' }} // **Fixed height for 50-60% of card**
+          style={{ height: isMobile ? '120px' : '200px' }} // **Responsive height for mobile**
         >
           {renderImage()}
           
@@ -195,14 +194,20 @@ export function ProductCard({
         </div>
       </Link>
       
-      <CardContent className="p-4 flex flex-col space-y-4" style={{ minHeight: '200px' }}>
+      <CardContent className={cn(
+        "flex flex-col",
+        isMobile ? "p-3 space-y-3" : "p-4 space-y-4"
+      )} style={{ minHeight: isMobile ? '160px' : '200px' }}>
         {/* **📝 2. INFORMATION & PRICING (MIDDLE BLOCK)** */}
-        <div className="flex-1 space-y-3">
+        <div className={cn(
+          "flex-1",
+          isMobile ? "space-y-2" : "space-y-3"
+        )}>
           {/* **Product Name - Bold, 16-18px, 1-2 lines max** */}
           <Link to={`/products/${id}`}>
             <h3 
               className="font-bold text-gray-900 hover:text-brand-primary transition-colors leading-tight line-clamp-2 cursor-pointer"
-              style={{ fontSize: '17px', lineHeight: '1.3' }}
+              style={{ fontSize: isMobile ? '14px' : '17px', lineHeight: '1.3' }}
             >
               {name}
             </h3>
@@ -267,13 +272,22 @@ export function ProductCard({
             </div>
           )}
 
-          {/* **Login Required Message - FIXED HEIGHT** */}
+          {/* **Login Required Message - MOBILE OPTIMIZED** */}
           {!isLoggedIn && (
-            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200" style={{ minHeight: '50px' }}>
-              <p className="text-sm text-gray-700 font-medium">
+            <div className={cn(
+              "text-center bg-gray-50 rounded-lg border border-gray-200",
+              isMobile ? "p-2" : "p-3"
+            )} style={{ minHeight: isMobile ? '40px' : '50px' }}>
+              <p className={cn(
+                "text-gray-700 font-medium",
+                isMobile ? "text-xs" : "text-sm"
+              )}>
                 Log ind for at se priser
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className={cn(
+                "text-gray-500 mt-1",
+                isMobile ? "text-xs" : "text-xs"
+              )}>
                 Enhed: {getUnitDisplay()}
               </p>
             </div>
@@ -349,11 +363,17 @@ export function ProductCard({
           </div>
         )}
 
-        {/* **Login Button for Non-Authenticated Users** */}
+        {/* **Login Button for Non-Authenticated Users - MOBILE OPTIMIZED** */}
         {!isLoggedIn && (
-          <div className="pt-2 border-t border-gray-100">
+          <div className={cn(
+            "border-t border-gray-100",
+            isMobile ? "pt-2 mt-2" : "pt-2"
+          )}>
             <Link to="/login" className="w-full">
-              <Button className="w-full rounded-lg bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold transition-all h-11">
+              <Button className={cn(
+                "w-full rounded-lg bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold transition-all",
+                isMobile ? "h-9 text-xs px-3" : "h-11 text-sm"
+              )}>
                 Log ind for at handle
               </Button>
             </Link>

@@ -387,17 +387,17 @@ const Index = () => {
             {/* CENTERED GRID WITH MAX 4 ITEMS PER ROW */}
             <div className="flex justify-center">
               <div className={cn(
-                "grid gap-6 w-full",
-                // MOBILE: 2 columns, max width to prevent stretching
+                "grid w-full",
+                // MOBILE: 2 columns with better spacing
                 isMobile 
-                  ? "grid-cols-2 max-w-lg" 
+                  ? "grid-cols-2 gap-4 max-w-sm px-4" 
                   // DESKTOP: Responsive grid that centers content
                   : featuredProducts.length === 1 
-                    ? "grid-cols-1 max-w-sm"
+                    ? "grid-cols-1 max-w-sm gap-6"
                     : featuredProducts.length === 2 
-                      ? "grid-cols-2 max-w-2xl"
+                      ? "grid-cols-2 max-w-2xl gap-6"
                       : featuredProducts.length === 3
-                        ? "grid-cols-3 max-w-4xl"
+                        ? "grid-cols-3 max-w-4xl gap-6"
                         : "grid-cols-4 max-w-6xl gap-8"
               )}>
                 {loading ? (
