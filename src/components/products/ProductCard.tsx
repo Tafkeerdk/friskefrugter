@@ -132,8 +132,8 @@ export function ProductCard({
     <Card 
       className={cn(
         "overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-lg group h-full flex flex-col",
-        // **RESPONSIVE WIDTH - OPTIMIZED FOR 3:4 IMAGES**
-        isMobile ? "w-full max-w-[200px] mx-auto" : "w-full max-w-[280px] mx-auto",
+        // **RESPONSIVE WIDTH - OPTIMIZED FOR 4:3 IMAGES**
+        isMobile ? "w-full max-w-[240px] mx-auto" : "w-full max-w-[320px] mx-auto",
         // **HOVER EFFECTS**
         !isMobile && "hover:shadow-lg hover:shadow-gray-200/50",
         "shadow-sm"
@@ -141,9 +141,9 @@ export function ProductCard({
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
-      {/* **🖼️ 1. PRODUCT IMAGE AREA - 3:4 ASPECT RATIO** */}
+      {/* **🖼️ 1. PRODUCT IMAGE AREA - 4:3 ASPECT RATIO** */}
       <Link to={`/products/${id}`}>
-        <div className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg aspect-[3/4]">
+        <div className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg aspect-[4/3]">
           {renderImage()}
           
           {/* **DISCOUNT BADGE - TOP RIGHT CORNER OF IMAGE** */}

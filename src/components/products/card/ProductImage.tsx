@@ -71,7 +71,7 @@ export function ProductImage({
 
   return (
     <div className={cn(
-      "aspect-[3/4] overflow-hidden bg-gray-50 relative",
+      "aspect-[4/3] overflow-hidden bg-gray-50 relative",
       isMobile ? "rounded-t-xl" : "rounded-t-xl"
     )}>
       {!imageUrl || imageError ? (
