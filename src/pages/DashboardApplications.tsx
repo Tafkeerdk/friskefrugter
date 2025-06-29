@@ -419,22 +419,6 @@ const DashboardApplications: React.FC = () => {
                                 <Eye className="h-4 w-4 mr-2" />
                                 Se detaljer
                               </Button>
-                              <Button 
-                                onClick={() => handleApprove(application._id)} 
-                                className="btn-brand-primary"
-                                size="sm"
-                              >
-                                <Check className="h-4 w-4 mr-2" />
-                                Godkend
-                              </Button>
-                              <Button 
-                                onClick={() => handleReject(application._id, 'Afvist af administrator')}
-                                className="bg-brand-error hover:bg-brand-error/90 text-white border-0"
-                                size="sm"
-                              >
-                                <X className="h-4 w-4 mr-2" />
-                                Afvis
-                              </Button>
                             </div>
                           </div>
                         </div>
