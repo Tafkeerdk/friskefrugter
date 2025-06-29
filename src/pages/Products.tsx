@@ -118,17 +118,25 @@ const Products = () => {
       
       // Load products with search term after categories are loaded
       const loadSearchResults = async () => {
-        // Wait for categories if they're not loaded yet
-        if (categories.length === 0) {
-          // Wait a bit and try again, or load categories first
-          setTimeout(() => {
-            loadProducts(true).finally(() => {
-              setIsProcessingUrlSearch(false);
-            });
-          }, 200);
-        } else {
-          await loadProducts(true);
+        try {
+          // Wait for categories if they're not loaded yet
+          if (categories.length === 0) {
+            // Wait a bit and try again, or load categories first
+            setTimeout(() => {
+              loadProducts(true).finally(() => {
+                setIsProcessingUrlSearch(false);
+                setIsLoading(false); // Ensure loading state is cleared
+              });
+            }, 200);
+          } else {
+            await loadProducts(true);
+            setIsProcessingUrlSearch(false);
+            setIsLoading(false); // Ensure loading state is cleared
+          }
+        } catch (error) {
+          console.error('Error loading search results:', error);
           setIsProcessingUrlSearch(false);
+          setIsLoading(false);
         }
       };
       
@@ -193,8 +201,11 @@ const Products = () => {
         }
       }
 
-      // Load initial products after categories are loaded
-      await loadProducts(true);
+      // FIXED: Only load initial products if NOT processing URL search and no search filters
+      // This prevents overwriting search results from navbar
+      if (!isProcessingUrlSearch && !filters.search.trim()) {
+        await loadProducts(true);
+      }
       
     } catch (error) {
       console.error('Error loading initial data:', error);
@@ -207,7 +218,11 @@ const Products = () => {
         duration: 5000,
       });
     } finally {
-      setIsLoading(false);
+      // Only set loading to false if we're not processing URL search
+      // URL search processing will handle this flag
+      if (!isProcessingUrlSearch) {
+        setIsLoading(false);
+      }
     }
   };
 
