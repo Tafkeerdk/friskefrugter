@@ -16,12 +16,18 @@ import { cn } from "@/lib/utils";
 interface FeaturedProduct {
   id: string;
   name: string;
+  description?: string;
   image?: string;
   category: string;
+  unit?: string;
+  basePrice?: number;
   price?: number;
   isLoggedIn: boolean;
   userType?: string;
   customerPricing?: any;
+  varenummer?: string;
+  eanNummer?: string;
+  featuredOrder?: number;
 }
 
 interface FeaturedProductsSettings {
@@ -59,6 +65,9 @@ const Index = () => {
 
         if (response.success && response.data) {
           const data = response.data as any;
+          console.log('🎯 Featured products data received:', data);
+          
+          // Backend already returns properly structured data - use it directly
           setFeaturedProducts(data.products || []);
         }
 
@@ -409,9 +418,10 @@ const Index = () => {
                         name={product.name}
                         image={product.image || '/placeholder.svg'}
                         category={product.category}
+                        unit={product.unit}
                         isLoggedIn={product.isLoggedIn}
                         userType={product.userType as "customer" | "public"}
-                        price={product.price}
+                        price={product.userType === 'customer' ? product.price : product.basePrice}
                         customerPricing={product.customerPricing}
                       />
                     </div>
