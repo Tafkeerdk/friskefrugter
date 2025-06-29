@@ -640,7 +640,7 @@ const DashboardProducts: React.FC = () => {
                       <div 
                         className={cn(
                           "relative overflow-hidden cursor-pointer product-image-container",
-                          isMobile ? "aspect-square" : "aspect-video"
+                          isMobile ? "aspect-[3/4]" : "aspect-[3/4]"
                         )}
                         data-product-id={product._id}
                         onClick={() => {
@@ -669,7 +669,7 @@ const DashboardProducts: React.FC = () => {
                           alt={primaryImage?.altText || product.produktnavn}
                           size="large"
                           className={cn(
-                            isMobile ? "aspect-square" : "aspect-video"
+                            isMobile ? "aspect-[3/4]" : "aspect-[3/4]"
                           )}
                           onImageStateChange={(hasValidImage) => updateProductImageState(product._id, hasValidImage)}
                         />

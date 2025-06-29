@@ -404,7 +404,7 @@ const Index = () => {
                   // Loading skeleton - responsive count
                   Array.from({ length: isMobile ? 4 : 4 }).map((_, index) => (
                     <div key={index} className="animate-pulse">
-                      <div className="bg-gray-200 rounded-lg aspect-square mb-3"></div>
+                      <div className="bg-gray-200 rounded-lg aspect-[3/4] mb-3"></div>
                       <div className="bg-gray-200 h-4 rounded mb-2"></div>
                       <div className="bg-gray-200 h-3 rounded w-2/3"></div>
                     </div>

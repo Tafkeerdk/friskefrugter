@@ -131,9 +131,9 @@ export function ProductCard({
   return (
     <Card 
       className={cn(
-        "overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-lg group",
-        // **RESPONSIVE WIDTH - MOBILE FRIENDLY**
-        isMobile ? "w-full max-w-[180px] mx-auto" : "w-[320px] max-w-full mx-auto",
+        "overflow-hidden transition-all duration-300 bg-white border border-gray-200 rounded-lg group h-full flex flex-col",
+        // **RESPONSIVE WIDTH - OPTIMIZED FOR 3:4 IMAGES**
+        isMobile ? "w-full max-w-[200px] mx-auto" : "w-full max-w-[280px] mx-auto",
         // **HOVER EFFECTS**
         !isMobile && "hover:shadow-lg hover:shadow-gray-200/50",
         "shadow-sm"
@@ -141,12 +141,9 @@ export function ProductCard({
       onMouseEnter={() => !isMobile && setIsHovered(true)}
       onMouseLeave={() => !isMobile && setIsHovered(false)}
     >
-      {/* **🖼️ 1. PRODUCT IMAGE AREA (TOP 50-60%) - SQUARE FORMAT** */}
+      {/* **🖼️ 1. PRODUCT IMAGE AREA - 3:4 ASPECT RATIO** */}
       <Link to={`/products/${id}`}>
-        <div 
-          className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg"
-          style={{ height: isMobile ? '120px' : '200px' }} // **Responsive height for mobile**
-        >
+        <div className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg aspect-[3/4]">
           {renderImage()}
           
           {/* **DISCOUNT BADGE - TOP RIGHT CORNER OF IMAGE** */}
@@ -195,190 +192,199 @@ export function ProductCard({
       </Link>
       
       <CardContent className={cn(
-        "flex flex-col",
-        isMobile ? "p-3 space-y-3" : "p-4 space-y-4"
-      )} style={{ minHeight: isMobile ? '160px' : '200px' }}>
+        "flex flex-col h-full",
+        isMobile ? "p-3" : "p-4"
+      )}>
         {/* **📝 2. INFORMATION & PRICING (MIDDLE BLOCK)** */}
-        <div className={cn(
-          "flex-1",
-          isMobile ? "space-y-2" : "space-y-3"
-        )}>
-          {/* **Product Name - Bold, 16-18px, 1-2 lines max** */}
-          <Link to={`/products/${id}`}>
-            <h3 
-              className="font-bold text-gray-900 hover:text-brand-primary transition-colors leading-tight line-clamp-2 cursor-pointer"
-              style={{ fontSize: isMobile ? '14px' : '17px', lineHeight: '1.3' }}
-            >
-              {name}
-            </h3>
-          </Link>
+        <div className="flex-1 flex flex-col">
+          {/* **Product Name - Bold, FIXED HEIGHT for consistency** */}
+          <div className={cn(
+            "mb-2",
+            isMobile ? "h-8" : "h-10" // Fixed height for 1-2 lines
+          )}>
+            <Link to={`/products/${id}`}>
+              <h3 
+                className="font-bold text-gray-900 hover:text-brand-primary transition-colors leading-tight line-clamp-2 cursor-pointer"
+                style={{ fontSize: isMobile ? '14px' : '16px', lineHeight: '1.2' }}
+              >
+                {name}
+              </h3>
+            </Link>
+          </div>
           
-          {/* **Category Label - Small green pill tag inline** */}
-          <Badge 
-            variant="secondary" 
-            className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
-          >
-            {category.toUpperCase()}
-          </Badge>
+          {/* **Category Label - FIXED HEIGHT for consistency** */}
+          <div className="mb-3 h-6 flex items-start">
+            <Badge 
+              variant="secondary" 
+              className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
+            >
+              {category.toUpperCase()}
+            </Badge>
+          </div>
 
-          {/* **Price Display Section - FIXED HEIGHT FOR CONSISTENCY** */}
-          {isLoggedIn && customerPricing && (
-            <div className="space-y-2" style={{ minHeight: '50px' }}>
-              <div className="flex items-center gap-2">
-                {/* **Discounted Price - Bold, large, primary color** */}
+          {/* **Price Display Section - CONSISTENT HEIGHT** */}
+          <div className={cn(
+            "flex-1 flex flex-col justify-start",
+            isMobile ? "min-h-[60px]" : "min-h-[70px]"
+          )}>
+            {isLoggedIn && customerPricing && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  {/* **Discounted Price - Bold, large, primary color** */}
+                  <span 
+                    className="font-bold text-gray-900"
+                    style={{ fontSize: isMobile ? '16px' : '18px' }}
+                  >
+                    {new Intl.NumberFormat('da-DK', {
+                      style: 'currency',
+                      currency: 'DKK'
+                    }).format(customerPricing.price)}
+                  </span>
+                  
+                  {/* **Original Price - Light gray, struck through** */}
+                  {customerPricing.showStrikethrough && customerPricing.originalPrice && (
+                    <span className="text-sm text-gray-400 line-through font-medium">
+                      {new Intl.NumberFormat('da-DK', {
+                        style: 'currency',
+                        currency: 'DKK'
+                      }).format(customerPricing.originalPrice)}
+                    </span>
+                  )}
+                </div>
+                
+                {/* **Unit Info - Light gray, small font under price** */}
+                <p className="text-xs text-gray-500">
+                  per {getUnitDisplay()}
+                </p>
+              </div>
+            )}
+
+            {/* **Standard Price (for non-customer pricing)** */}
+            {isLoggedIn && !customerPricing && price && (
+              <div className="space-y-2">
                 <span 
                   className="font-bold text-gray-900"
-                  style={{ fontSize: '18px' }}
+                  style={{ fontSize: isMobile ? '16px' : '18px' }}
                 >
                   {new Intl.NumberFormat('da-DK', {
                     style: 'currency',
                     currency: 'DKK'
-                  }).format(customerPricing.price)}
+                  }).format(price)}
                 </span>
-                
-                {/* **Original Price - Light gray, struck through** */}
-                {customerPricing.showStrikethrough && customerPricing.originalPrice && (
-                  <span className="text-sm text-gray-400 line-through font-medium">
-                    {new Intl.NumberFormat('da-DK', {
-                      style: 'currency',
-                      currency: 'DKK'
-                    }).format(customerPricing.originalPrice)}
-                  </span>
-                )}
+                <p className="text-xs text-gray-500">
+                  per {getUnitDisplay()}
+                </p>
               </div>
-              
-              {/* **Unit Info - Light gray, small font under price** */}
-              <p className="text-xs text-gray-500">
-                per {getUnitDisplay()}
-              </p>
-            </div>
-          )}
+            )}
 
-          {/* **Standard Price (for non-customer pricing) - FIXED HEIGHT** */}
-          {isLoggedIn && !customerPricing && price && (
-            <div className="space-y-2" style={{ minHeight: '50px' }}>
-              <span 
-                className="font-bold text-gray-900"
-                style={{ fontSize: '18px' }}
-              >
-                {new Intl.NumberFormat('da-DK', {
-                  style: 'currency',
-                  currency: 'DKK'
-                }).format(price)}
-              </span>
-              <p className="text-xs text-gray-500">
-                per {getUnitDisplay()}
-              </p>
-            </div>
-          )}
-
-          {/* **Login Required Message - MOBILE OPTIMIZED** */}
-          {!isLoggedIn && (
-            <div className={cn(
-              "text-center bg-gray-50 rounded-lg border border-gray-200",
-              isMobile ? "p-2" : "p-3"
-            )} style={{ minHeight: isMobile ? '40px' : '50px' }}>
-              <p className={cn(
-                "text-gray-700 font-medium",
-                isMobile ? "text-xs" : "text-sm"
+            {/* **Login Required Message - CONSISTENT HEIGHT** */}
+            {!isLoggedIn && (
+              <div className={cn(
+                "text-center bg-gray-50 rounded-lg border border-gray-200 flex flex-col justify-center",
+                isMobile ? "p-2 min-h-[50px]" : "p-3 min-h-[60px]"
               )}>
-                Log ind for at se priser
-              </p>
-              <p className={cn(
-                "text-gray-500 mt-1",
-                isMobile ? "text-xs" : "text-xs"
-              )}>
-                Enhed: {getUnitDisplay()}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* **🛒 3. ACTIONS & QUANTITY (BOTTOM BLOCK)** */}
-        {isLoggedIn && (
-          <div className="space-y-3 pt-2 border-t border-gray-100">
-            {/* **Quantity Selector - Horizontal layout with larger touch targets** */}
-            <div className="flex items-center justify-center gap-4">
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className={cn(
-                  "rounded-lg h-9 w-9 border-gray-300 transition-all hover:bg-gray-50",
-                  quantity === 0 
-                    ? "opacity-50 cursor-not-allowed" 
-                    : "hover:border-brand-primary/40 active:scale-95"
-                )}
-                onClick={decreaseQuantity}
-                disabled={quantity === 0}
-              >
-                <Minus className="h-4 w-4" />
-              </Button>
-              
-              <span 
-                className="text-center font-bold text-gray-900 min-w-[2.5rem]"
-                style={{ fontSize: '18px' }}
-              >
-                {quantity}
-              </span>
-              
-              <Button 
-                variant="outline" 
-                size="icon" 
-                className="rounded-lg h-9 w-9 border-gray-300 transition-all hover:bg-gray-50 hover:border-brand-primary/40 active:scale-95"
-                onClick={increaseQuantity}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* **Add to Cart Button - Full-width green button** */}
-            <Button 
-              className={cn(
-                "w-full rounded-lg transition-all duration-200 font-semibold gap-2 h-11",
-                quantity === 0 
-                  ? "opacity-50 cursor-not-allowed bg-gray-400 text-gray-200" 
-                  : "bg-brand-primary hover:bg-brand-primary-hover active:scale-[0.98] shadow-sm hover:shadow-md text-white"
-              )}
-              disabled={quantity === 0}
-              aria-label="Tilføj til kurv"
-            >
-              <ShoppingCart className="h-4 w-4" />
-              Tilføj til kurv
-            </Button>
-
-            {/* **Total Price (Dynamic) - Only appears if quantity > 0** */}
-            {quantity > 0 && (
-              <div className="text-center">
-                <span 
-                  className="font-semibold text-brand-primary-dark"
-                  style={{ fontSize: '16px' }}
-                >
-                  Total: {new Intl.NumberFormat('da-DK', {
-                    style: 'currency',
-                    currency: 'DKK'
-                  }).format(getTotalPrice())}
-                </span>
+                <p className={cn(
+                  "text-gray-700 font-medium",
+                  isMobile ? "text-xs" : "text-sm"
+                )}>
+                  Log ind for at se priser
+                </p>
+                <p className={cn(
+                  "text-gray-500 mt-1",
+                  isMobile ? "text-xs" : "text-xs"
+                )}>
+                  Enhed: {getUnitDisplay()}
+                </p>
               </div>
             )}
           </div>
-        )}
+        </div>
 
-        {/* **Login Button for Non-Authenticated Users - MOBILE OPTIMIZED** */}
-        {!isLoggedIn && (
-          <div className={cn(
-            "border-t border-gray-100",
-            isMobile ? "pt-2 mt-2" : "pt-2"
-          )}>
+        {/* **🛒 3. ACTIONS & QUANTITY (BOTTOM BLOCK) - CONSISTENT HEIGHT** */}
+        <div className="mt-auto pt-3 border-t border-gray-100">
+          {isLoggedIn ? (
+            <div className="space-y-3">
+              {/* **Quantity Selector - Horizontal layout with larger touch targets** */}
+              <div className="flex items-center justify-center gap-4">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className={cn(
+                    "rounded-lg border-gray-300 transition-all hover:bg-gray-50",
+                    isMobile ? "h-8 w-8" : "h-9 w-9",
+                    quantity === 0 
+                      ? "opacity-50 cursor-not-allowed" 
+                      : "hover:border-brand-primary/40 active:scale-95"
+                  )}
+                  onClick={decreaseQuantity}
+                  disabled={quantity === 0}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                
+                <span 
+                  className="text-center font-bold text-gray-900 min-w-[2.5rem]"
+                  style={{ fontSize: isMobile ? '16px' : '18px' }}
+                >
+                  {quantity}
+                </span>
+                
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className={cn(
+                    "rounded-lg border-gray-300 transition-all hover:bg-gray-50 hover:border-brand-primary/40 active:scale-95",
+                    isMobile ? "h-8 w-8" : "h-9 w-9"
+                  )}
+                  onClick={increaseQuantity}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* **Add to Cart Button - Full-width green button** */}
+              <Button 
+                className={cn(
+                  "w-full rounded-lg transition-all duration-200 font-semibold gap-2",
+                  isMobile ? "h-10 text-sm" : "h-11 text-base",
+                  quantity === 0 
+                    ? "opacity-50 cursor-not-allowed bg-gray-400 text-gray-200" 
+                    : "bg-brand-primary hover:bg-brand-primary-hover active:scale-[0.98] shadow-sm hover:shadow-md text-white"
+                )}
+                disabled={quantity === 0}
+                aria-label="Tilføj til kurv"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                {isMobile ? "Tilføj" : "Tilføj til kurv"}
+              </Button>
+
+              {/* **Total Price (Dynamic) - Only appears if quantity > 0** */}
+              {quantity > 0 && (
+                <div className="text-center">
+                  <span 
+                    className="font-semibold text-brand-primary-dark"
+                    style={{ fontSize: isMobile ? '14px' : '16px' }}
+                  >
+                    Total: {new Intl.NumberFormat('da-DK', {
+                      style: 'currency',
+                      currency: 'DKK'
+                    }).format(getTotalPrice())}
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            /* **Login Button for Non-Authenticated Users** */
             <Link to="/login" className="w-full">
               <Button className={cn(
                 "w-full rounded-lg bg-brand-primary hover:bg-brand-primary-hover text-white font-semibold transition-all",
-                isMobile ? "h-9 text-xs px-3" : "h-11 text-sm"
+                isMobile ? "h-10 text-sm" : "h-11 text-base"
               )}>
-                Log ind for at handle
+                {isMobile ? "Log ind" : "Log ind for at handle"}
               </Button>
             </Link>
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
     </Card>
   );
