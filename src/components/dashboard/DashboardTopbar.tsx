@@ -44,6 +44,13 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   // Load notifications from API
   useEffect(() => {
     loadNotifications();
+    
+    // Set up periodic refresh for notifications
+    const refreshInterval = setInterval(() => {
+      loadNotifications();
+    }, 30000); // Refresh every 30 seconds
+    
+    return () => clearInterval(refreshInterval);
   }, []);
 
   const loadNotifications = async () => {
@@ -147,6 +154,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       '/admin/statistics': 'Statistikker',
       '/admin/discount-groups': 'Rabatgrupper',
       '/admin/unique-offers': 'Unikke Tilbud',
+      '/admin/henvendelser': 'Henvendelser',
       '/admin/profile': 'Min Profil',
     };
     

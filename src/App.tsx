@@ -33,6 +33,7 @@ import PasswordReset from "./pages/PasswordReset";
 import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
 import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
 import DashboardFeaturedProducts from "./pages/DashboardFeaturedProducts";
+import DashboardHenvendelser from "./pages/DashboardHenvendelser";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
@@ -211,6 +212,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardUniqueOffers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/henvendelser" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardHenvendelser />
                 </ProtectedRoute>
               } 
             />

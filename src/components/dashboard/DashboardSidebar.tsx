@@ -32,6 +32,7 @@ import {
   ExternalLink,
   Scale,
   Star,
+  MessageSquare,
 } from "lucide-react";
 
 const DashboardSidebar: React.FC = () => {
@@ -153,6 +154,26 @@ const DashboardSidebar: React.FC = () => {
                   <div className="ml-auto flex items-center flex-shrink-0">
                     <div className="h-2 w-2 rounded-full bg-red-500 animate-pulse"></div>
                   </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
+                  onClick={handleNavigation("/admin/henvendelser")}
+                  isActive={isActive("/admin/henvendelser")}
+                  className={cn(
+                    "transition-all duration-200 group",
+                    isMobile ? "h-10 text-sm" : "h-11",
+                    isActive("/admin/henvendelser") && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <MessageSquare className={cn(
+                    "transition-all flex-shrink-0",
+                    isMobile ? "h-4 w-4" : "h-5 w-5"
+                  )} />
+                  <span className="truncate min-w-0 flex-1">
+                    {isMobile ? "Henvendelser" : "Henvendelser"}
+                  </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               
