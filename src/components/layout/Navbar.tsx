@@ -29,14 +29,18 @@ interface Product {
 }
 
 // Transform API product to SearchResults format
-const transformProductForSearch = (product: Product) => ({
+const transformProductForSearch = (product: Product, isAuthenticated: boolean) => ({
   id: product._id,
   name: product.produktnavn,
   image: product.billeder?.find(img => img.isPrimary)?.url || 
          product.billeder?.[0]?.url || 
          '/placeholder.svg',
   category: product.kategori?.navn || 'Ukendt kategori',
-  price: product.customerPricing?.customerPrice || product.basispris || 0,
+  // Only include price for authenticated customers
+  // Use the correct customerPricing.price which includes all discount hierarchy
+  ...(isAuthenticated && product.customerPricing?.price !== undefined && {
+    price: product.customerPricing.price
+  })
 });
 
 export function Navbar() {
@@ -116,7 +120,9 @@ export function Navbar() {
         // Only process if request wasn't aborted
         if (!searchAbortRef.current?.signal.aborted && response.success && response.data) {
           const products = response.data.products || [];
-          const transformedResults = products.map(transformProductForSearch);
+          const transformedResults = products.map(product => 
+            transformProductForSearch(product, isCustomerAuthenticated)
+          );
           setSearchResults(transformedResults);
         }
       } catch (error) {
@@ -271,6 +277,7 @@ export function Navbar() {
               onResultClick={handleResultClick}
               onViewAllResults={() => handleSearchSubmit()}
               searchQuery={searchValue}
+              isAuthenticated={isCustomerAuthenticated}
             />
           </div>
           
@@ -299,6 +306,7 @@ export function Navbar() {
                 onResultClick={handleResultClick}
                 onViewAllResults={() => handleSearchSubmit()}
                 searchQuery={searchValue}
+                isAuthenticated={isCustomerAuthenticated}
               />
             </div>
           )}

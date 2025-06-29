@@ -1,13 +1,13 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { Loader2, Search, Eye } from "lucide-react";
+import { Loader2, Search, Eye, Lock } from "lucide-react";
 
 interface SearchResult {
   id: string;
   name: string;
   image: string;
-  price: number;
+  price?: number;
   category: string;
 }
 
@@ -18,6 +18,7 @@ interface SearchResultsProps {
   onResultClick?: () => void;
   onViewAllResults?: () => void;
   searchQuery?: string;
+  isAuthenticated?: boolean;
 }
 
 export const SearchResults = ({ 
@@ -26,7 +27,8 @@ export const SearchResults = ({
   isLoading = false,
   onResultClick,
   onViewAllResults,
-  searchQuery = ''
+  searchQuery = '',
+  isAuthenticated = false
 }: SearchResultsProps) => {
   if (!isVisible) return null;
 
@@ -79,9 +81,16 @@ export const SearchResults = ({
                   <p className="text-xs text-gray-500">{product.category}</p>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm font-medium text-brand-primary">
-                    {product.price.toFixed(2)} kr
-                  </span>
+                  {isAuthenticated && product.price !== undefined ? (
+                    <span className="text-sm font-medium text-brand-primary">
+                      {product.price.toFixed(2)} kr
+                    </span>
+                  ) : (
+                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                      <Lock className="h-3 w-3" />
+                      <span>Log ind for priser</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </Link>
