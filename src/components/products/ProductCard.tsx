@@ -150,6 +150,43 @@ export function ProductCard({
         >
           {renderImage()}
           
+          {/* **DISCOUNT BADGE - TOP RIGHT CORNER OF IMAGE** */}
+          {isLoggedIn && customerPricing && customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+            <div className="absolute top-2 right-2 z-10">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge 
+                      className="text-xs font-medium px-2 py-1 text-white cursor-help shadow-lg"
+                      style={{
+                        backgroundColor: customerPricing.discountType === 'unique_offer' 
+                          ? '#9333EA' // Purple for unique offers
+                          : customerPricing.discountType === 'fast_udsalgspris'
+                            ? '#DC2626' // Red for fast sales
+                            : customerPricing.groupDetails?.groupColor || '#F59E0B' // Group color or fallback
+                      }}
+                    >
+                      {customerPricing.discountType === 'unique_offer' 
+                        ? 'Særlig tilbud'
+                        : customerPricing.discountLabel
+                      }
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">
+                      {customerPricing.discountType === 'unique_offer' 
+                        ? 'Særligt tilbud kun til dig'
+                        : customerPricing.discountType === 'fast_udsalgspris'
+                          ? 'Produkt på tilbud'
+                          : 'Rabatteret pris for din gruppe'
+                      }
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
+          
           {/* Hover overlay for interactivity */}
           <div className={cn(
             "absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent transition-opacity duration-300",
@@ -179,10 +216,10 @@ export function ProductCard({
             {category.toUpperCase()}
           </Badge>
 
-          {/* **Price Display Section** */}
+          {/* **Price Display Section - FIXED HEIGHT FOR CONSISTENCY** */}
           {isLoggedIn && customerPricing && (
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 flex-wrap">
+            <div className="space-y-2" style={{ minHeight: '50px' }}>
+              <div className="flex items-center gap-2">
                 {/* **Discounted Price - Bold, large, primary color** */}
                 <span 
                   className="font-bold text-gray-900"
@@ -203,41 +240,6 @@ export function ProductCard({
                     }).format(customerPricing.originalPrice)}
                   </span>
                 )}
-                
-                {/* **Discount Badge - Shows actual admin-set labels** */}
-                {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge 
-                          className="text-xs font-medium px-2 py-1 text-white cursor-help"
-                          style={{
-                            backgroundColor: customerPricing.discountType === 'unique_offer' 
-                              ? '#9333EA' // Purple for unique offers
-                              : customerPricing.discountType === 'fast_udsalgspris'
-                                ? '#DC2626' // Red for fast sales
-                                : customerPricing.groupDetails?.groupColor || '#F59E0B' // Group color or fallback
-                          }}
-                        >
-                          {customerPricing.discountType === 'unique_offer' 
-                            ? 'Særlig tilbud'
-                            : customerPricing.discountLabel
-                          }
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">
-                          {customerPricing.discountType === 'unique_offer' 
-                            ? 'Særligt tilbud kun til dig'
-                            : customerPricing.discountType === 'fast_udsalgspris'
-                              ? 'Produkt på tilbud'
-                              : 'Rabatteret pris for din gruppe'
-                          }
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
               </div>
               
               {/* **Unit Info - Light gray, small font under price** */}
@@ -247,9 +249,9 @@ export function ProductCard({
             </div>
           )}
 
-          {/* **Standard Price (for non-customer pricing)** */}
+          {/* **Standard Price (for non-customer pricing) - FIXED HEIGHT** */}
           {isLoggedIn && !customerPricing && price && (
-            <div className="space-y-2">
+            <div className="space-y-2" style={{ minHeight: '50px' }}>
               <span 
                 className="font-bold text-gray-900"
                 style={{ fontSize: '18px' }}
@@ -265,9 +267,9 @@ export function ProductCard({
             </div>
           )}
 
-          {/* **Login Required Message** */}
+          {/* **Login Required Message - FIXED HEIGHT** */}
           {!isLoggedIn && (
-            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200" style={{ minHeight: '50px' }}>
               <p className="text-sm text-gray-700 font-medium">
                 Log ind for at se priser
               </p>
