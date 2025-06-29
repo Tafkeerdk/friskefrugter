@@ -71,7 +71,11 @@ const DashboardApplicationDetail: React.FC = () => {
   const [application, setApplication] = useState<Application | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  
+  // Action states for approve/reject functionality
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [showRejectionForm, setShowRejectionForm] = useState(false);
 
   useEffect(() => {
     if (id && adminUser) {
@@ -101,7 +105,55 @@ const DashboardApplicationDetail: React.FC = () => {
     }
   };
 
+  const handleApprove = async () => {
+    if (!application) return;
+    
+    try {
+      setActionLoading('approve');
+      const response = await authService.approveApplication(application.id);
+      
+      if (response.success) {
+        await loadApplication(); // Refresh data
+        
+        // Show success message
+        if (response.emailSent) {
+          console.log('✅ Application approved and email sent successfully');
+        }
+      } else {
+        setError(response.message || 'Kunne ikke godkende ansøgning. Prøv igen.');
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
+  const handleReject = async () => {
+    if (!application || !rejectionReason.trim()) {
+      setError('Afvisningsårsag er påkrævet');
+      return;
+    }
+    
+    try {
+      setActionLoading('reject');
+      const response = await authService.rejectApplication(application.id, rejectionReason);
+      
+      if (response.success) {
+        await loadApplication(); // Refresh data
+        setShowRejectionForm(false);
+        setRejectionReason('');
+      } else {
+        setError(response.message || 'Kunne ikke afvise ansøgning. Prøv igen.');
+      }
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -384,6 +436,85 @@ const DashboardApplicationDetail: React.FC = () => {
                 </CardContent>
               </Card>
 
+              {/* Actions */}
+              {application.status === 'Afventer godkendelse' && (
+                <Card className="card-brand">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-brand-gray-900">
+                      <FileText className="h-5 w-5 text-brand-primary" />
+                      Handlinger
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <Button 
+                      onClick={handleApprove}
+                      disabled={!!actionLoading}
+                      className="w-full btn-brand-primary"
+                    >
+                      {actionLoading === 'approve' ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                      )}
+                      Godkend ansøgning
+                    </Button>
+                    
+                    {!showRejectionForm ? (
+                      <Button 
+                        onClick={() => setShowRejectionForm(true)}
+                        disabled={!!actionLoading}
+                        variant="outline"
+                        className="w-full border-brand-error text-brand-error hover:bg-brand-error hover:text-white"
+                      >
+                        <XCircle className="h-4 w-4 mr-2" />
+                        Afvis ansøgning
+                      </Button>
+                    ) : (
+                      <div className="space-y-3">
+                        <div>
+                          <Label htmlFor="rejectionReason" className="text-sm font-medium text-brand-gray-700">
+                            Afvisningsårsag *
+                          </Label>
+                          <Textarea
+                            id="rejectionReason"
+                            value={rejectionReason}
+                            onChange={(e) => setRejectionReason(e.target.value)}
+                            placeholder="Angiv årsag til afvisning..."
+                            className="input-brand mt-1"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={handleReject}
+                            disabled={!!actionLoading || !rejectionReason.trim()}
+                            className="flex-1 bg-brand-error hover:bg-brand-error/90 text-white"
+                            size="sm"
+                          >
+                            {actionLoading === 'reject' ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <XCircle className="h-4 w-4 mr-2" />
+                            )}
+                            Afvis
+                          </Button>
+                          <Button 
+                            onClick={() => {
+                              setShowRejectionForm(false);
+                              setRejectionReason('');
+                            }}
+                            disabled={!!actionLoading}
+                            variant="outline"
+                            size="sm"
+                          >
+                            Annuller
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
             </div>
           </div>
