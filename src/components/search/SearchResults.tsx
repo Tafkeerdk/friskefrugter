@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { Loader2, Search, Eye, Lock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface SearchResult {
   id: string;
@@ -33,7 +34,13 @@ export const SearchResults = ({
   if (!isVisible) return null;
 
   return (
-    <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto z-50">
+    <div className={cn(
+      "absolute top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto z-50",
+      // Desktop: same width as search input
+      "md:left-0 md:right-0",
+      // Mobile: wider dropdown for better readability - extends beyond search input
+      "left-0 right-[-40px] min-w-[280px] max-w-[90vw] md:min-w-0 md:max-w-none"
+    )}>
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-8">
@@ -67,28 +74,36 @@ export const SearchResults = ({
               onClick={onResultClick}
               className="block"
             >
-              <div className="flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
+              <div className="flex items-center gap-3 p-3 md:p-3 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0">
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="h-12 w-12 object-cover rounded-md border"
+                  className="h-12 w-12 object-cover rounded-md border flex-shrink-0"
                   onError={(e) => {
                     e.currentTarget.src = '/placeholder.svg';
                   }}
                 />
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-medium text-sm text-gray-900 truncate">{product.name}</h4>
-                  <p className="text-xs text-gray-500">{product.category}</p>
+                <div className="flex-1 min-w-0 pr-2">
+                  <h4 className="font-medium text-sm text-gray-900 line-clamp-2 md:truncate leading-tight">{product.name}</h4>
+                  <p className="text-xs text-gray-500 mt-1 md:mt-0">{product.category}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right flex-shrink-0">
                   {isAuthenticated && product.price !== undefined ? (
-                    <span className="text-sm font-medium text-brand-primary">
+                    <span className="text-sm font-medium text-brand-primary whitespace-nowrap">
                       {product.price.toFixed(2)} kr
                     </span>
                   ) : (
-                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <Lock className="h-3 w-3" />
-                      <span>Log ind for priser</span>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 md:gap-1">
+                      {/* Mobile: Styled pill */}
+                      <div className="md:hidden flex items-center gap-1.5 bg-gray-100 px-2 py-1 rounded-md">
+                        <Lock className="h-3 w-3 flex-shrink-0" />
+                        <span className="whitespace-nowrap">Log ind for priser</span>
+                      </div>
+                      {/* Desktop: Simple layout */}
+                      <div className="hidden md:flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        <span>Log ind for priser</span>
+                      </div>
                     </div>
                   )}
                 </div>
