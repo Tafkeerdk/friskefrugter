@@ -395,6 +395,18 @@ class ApiClient {
     }
     
     // In production, route to appropriate Netlify functions
+    if (path.startsWith('/api/admin/featured-products/settings')) {
+      return '/.netlify/functions/admin-featured-products-settings';
+    }
+    if (path.startsWith('/api/admin/featured-products')) {
+      return '/.netlify/functions/admin-featured-products';
+    }
+    if (path.startsWith('/api/featured-products-customer')) {
+      return '/.netlify/functions/featured-products-customer';
+    }
+    if (path.startsWith('/api/featured-products')) {
+      return '/.netlify/functions/featured-products';
+    }
     if (path.startsWith('/api/products')) {
       return path.replace('/api/products', '/.netlify/functions/products');
     }
@@ -805,7 +817,7 @@ class ApiClient {
   }
 
   async removeFeaturedProduct(productId: string) {
-    const endpoint = this.getEndpoint(`/api/admin/featured-products?productId=${productId}`);
+    const endpoint = this.getEndpoint('/api/admin/featured-products') + `?productId=${productId}`;
     return this.request(endpoint, {
       method: 'DELETE'
     });
@@ -819,6 +831,19 @@ class ApiClient {
   async getFeaturedProductsCustomer() {
     const endpoint = this.getEndpoint('/api/featured-products-customer');
     return this.request(endpoint);
+  }
+
+  async getFeaturedProductsSettings() {
+    const endpoint = this.getEndpoint('/api/admin/featured-products/settings');
+    return this.request(endpoint);
+  }
+
+  async updateFeaturedProductsSettings(settings: { title: string; subtitle: string; enabled: boolean; maxFeaturedProducts?: number }) {
+    const endpoint = this.getEndpoint('/api/admin/featured-products/settings');
+    return this.request(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(settings)
+    });
   }
 }
 

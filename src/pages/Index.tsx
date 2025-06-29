@@ -24,6 +24,12 @@ interface FeaturedProduct {
   customerPricing?: any;
 }
 
+interface FeaturedProductsSettings {
+  title: string;
+  subtitle: string;
+  enabled: boolean;
+}
+
 const Index = () => {
   const isMobile = useIsMobile();
   const { canInstall } = usePWA();
@@ -31,6 +37,11 @@ const Index = () => {
   const [showPWABanner, setShowPWABanner] = useState(true);
   const [featuredProducts, setFeaturedProducts] = useState<FeaturedProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<FeaturedProductsSettings>({
+    title: 'Udvalgte produkter',
+    subtitle: 'Se et udvalg af vores mest populære produkter til din virksomhed.',
+    enabled: true
+  });
 
   useEffect(() => {
     const loadFeaturedProducts = async () => {
@@ -49,6 +60,20 @@ const Index = () => {
         if (response.success && response.data) {
           const data = response.data as any;
           setFeaturedProducts(data.products || []);
+        }
+
+        // Try to load settings (admin endpoint, may fail for public users)
+        try {
+          const settingsResponse = await api.getFeaturedProductsSettings();
+          if (settingsResponse.success && settingsResponse.data) {
+            const settingsData = settingsResponse.data as any;
+            if (settingsData.settings) {
+              setSettings(settingsData.settings);
+            }
+          }
+        } catch (settingsError) {
+          // Settings loading failed - use defaults (normal for public users)
+          console.log('Could not load featured products settings (using defaults)');
         }
       } catch (error) {
         console.error('Error loading featured products:', error);
@@ -332,6 +357,7 @@ const Index = () => {
         </section>
 
         {/* Featured Products with mobile optimization */}
+        {settings.enabled && (
         <section className="py-12 md:py-16 bg-gray-50">
           <div className="page-container">
             <div className={cn("text-center", isMobile ? "mb-8" : "mb-12")}>
@@ -339,14 +365,14 @@ const Index = () => {
                 "font-bold text-gray-900 mb-4 relative inline-block",
                 isMobile ? "text-2xl" : "text-3xl md:text-4xl"
               )}>
-                Udvalgte produkter
+                {settings.title}
                 <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-brand-primary rounded-full"></div>
               </h2>
               <p className={cn(
                 "text-gray-600 max-w-2xl mx-auto",
                 isMobile ? "text-sm px-4" : "text-base"
               )}>
-                Se et udvalg af vores mest populære produkter til din virksomhed.
+                {settings.subtitle}
               </p>
             </div>
             <div className={cn(
@@ -404,6 +430,7 @@ const Index = () => {
             </div>
           </div>
         </section>
+        )}
 
         {/* CTA Section with mobile optimization */}
         <section className="relative overflow-hidden">
