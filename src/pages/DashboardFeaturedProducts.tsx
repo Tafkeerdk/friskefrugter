@@ -291,11 +291,9 @@ const DashboardFeaturedProducts: React.FC = () => {
     try {
       setSaving(true);
       
+      // Send array of product IDs in the new order (backend expects this format)
       const response = await api.updateFeaturedProducts(
-        newOrder.map((product, index) => ({
-          productId: product._id,
-          featuredOrder: index + 1
-        }))
+        newOrder.map(product => product._id)
       );
 
       if (response.success) {
@@ -553,27 +551,31 @@ const DashboardFeaturedProducts: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {featuredProducts.length > 0 ? (
-                    featuredProducts.slice(0, 4).map((product) => (
-                      <div key={product.id} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-                        {product.image && (
+                    featuredProducts.slice(0, 4).map((product) => {
+                      const primaryImage = product.billeder?.find(img => img.isPrimary)?.url || 
+                                         product.billeder?.[0]?.url || 
+                                         '/placeholder.svg';
+                      
+                      return (
+                        <div key={product._id} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
                           <img
-                            src={product.image}
-                            alt={product.name}
+                            src={primaryImage}
+                            alt={product.produktnavn}
                             className="w-full h-32 object-cover rounded-md mb-3"
                             onError={(e) => {
                               e.currentTarget.src = '/placeholder.svg';
                             }}
                           />
-                        )}
-                        <h3 className="font-medium text-gray-900 mb-1 text-sm truncate">
-                          {product.name}
-                        </h3>
-                        <p className="text-xs text-gray-500 mb-2">{product.category}</p>
-                        <div className="text-brand-primary font-semibold text-sm">
-                          Fra {product.price ? `${product.price} kr` : 'Se pris'}
+                          <h3 className="font-medium text-gray-900 mb-1 text-sm truncate">
+                            {product.produktnavn}
+                          </h3>
+                          <p className="text-xs text-gray-500 mb-2">{product.kategori?.navn}</p>
+                          <div className="text-brand-primary font-semibold text-sm">
+                            Fra {product.basispris ? `${product.basispris.toFixed(2)} kr` : 'Se pris'}
+                          </div>
                         </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="col-span-full text-center py-8 text-gray-500">
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -663,66 +665,70 @@ const DashboardFeaturedProducts: React.FC = () => {
               ) : (
                 <ScrollArea className="h-[500px]">
                   <div className="space-y-3">
-                    {featuredProducts.map((product, index) => (
-                      <div
-                        key={product.id}
-                        className="flex items-center gap-3 p-3 border rounded-lg bg-brand-success/10"
-                      >
-                        <div className="flex items-center justify-center w-8 h-8 bg-brand-success text-white rounded-full text-sm font-medium">
-                          {index + 1}
-                        </div>
-                        
-                        {product.image && (
+                    {featuredProducts.map((product, index) => {
+                      const primaryImage = product.billeder?.find(img => img.isPrimary)?.url || 
+                                         product.billeder?.[0]?.url || 
+                                         '/placeholder.svg';
+                      
+                      return (
+                        <div
+                          key={product._id}
+                          className="flex items-center gap-3 p-3 border rounded-lg bg-brand-success/10"
+                        >
+                          <div className="flex items-center justify-center w-8 h-8 bg-brand-success text-white rounded-full text-sm font-medium">
+                            {index + 1}
+                          </div>
+                          
                           <img
-                            src={product.image}
-                            alt={product.name}
+                            src={primaryImage}
+                            alt={product.produktnavn}
                             className="w-12 h-12 object-cover rounded-md"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               target.src = '/placeholder.svg';
                             }}
                           />
-                        )}
-                        
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{product.name}</p>
-                          <p className="text-sm text-muted-foreground">{product.category}</p>
-                          <p className="text-sm font-medium text-brand-success">
-                            {product.price?.toFixed(2)} DKK
-                          </p>
+                          
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{product.produktnavn}</p>
+                            <p className="text-sm text-muted-foreground">{product.kategori?.navn}</p>
+                            <p className="text-sm font-medium text-brand-success">
+                              {product.basispris?.toFixed(2)} DKK
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleMoveProduct(product._id, 'up')}
+                              disabled={saving || index === 0}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <MoveUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleMoveProduct(product._id, 'down')}
+                              disabled={saving || index === featuredProducts.length - 1}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                              <MoveDown className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveProduct(product._id)}
+                              disabled={saving}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
-                        
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMoveProduct(product.id, 'up')}
-                            disabled={saving || index === 0}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <MoveUp className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleMoveProduct(product.id, 'down')}
-                            disabled={saving || index === featuredProducts.length - 1}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          >
-                            <MoveDown className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveProduct(product.id)}
-                            disabled={saving}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               )}
@@ -766,40 +772,44 @@ const DashboardFeaturedProducts: React.FC = () => {
               {/* Products List */}
               <ScrollArea className="h-[400px]">
                 <div className="space-y-2">
-                  {filteredProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
-                      onClick={() => toggleProductSelection(product.id)}
-                    >
-                      <Checkbox
-                        checked={selectedProducts.has(product.id)}
-                        onChange={() => toggleProductSelection(product.id)}
-                      />
-                      
-                      {product.image && (
+                  {filteredProducts.map((product) => {
+                    const primaryImage = product.billeder?.find(img => img.isPrimary)?.url || 
+                                       product.billeder?.[0]?.url || 
+                                       '/placeholder.svg';
+                    
+                    return (
+                      <div
+                        key={product._id}
+                        className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 cursor-pointer"
+                        onClick={() => toggleProductSelection(product._id)}
+                      >
+                        <Checkbox
+                          checked={selectedProducts.has(product._id)}
+                          onChange={() => toggleProductSelection(product._id)}
+                        />
+                        
                         <img
-                          src={product.image}
-                          alt={product.name}
+                          src={primaryImage}
+                          alt={product.produktnavn}
                           className="w-10 h-10 object-cover rounded-md"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.src = '/placeholder.svg';
                           }}
                         />
-                      )}
-                      
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{product.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {product.category} • {product.varenummer}
-                        </p>
-                        <p className="text-sm font-medium text-blue-600">
-                          {product.price?.toFixed(2)} DKK
-                        </p>
+                        
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{product.produktnavn}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {product.kategori?.navn} • {product.varenummer}
+                          </p>
+                          <p className="text-sm font-medium text-blue-600">
+                            {product.basispris?.toFixed(2)} DKK
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   
                   {filteredProducts.length === 0 && (
                     <div className="text-center py-8 text-muted-foreground">

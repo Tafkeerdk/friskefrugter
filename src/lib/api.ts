@@ -810,11 +810,11 @@ class ApiClient {
     });
   }
 
-  async updateFeaturedProducts(products: { productId: string; featuredOrder: number }[]) {
+  async updateFeaturedProducts(productIds: string[]) {
     const endpoint = this.getEndpoint('/api/admin/featured-products');
     return this.request(endpoint, {
       method: 'PUT',
-      body: JSON.stringify({ products })
+      body: JSON.stringify({ products: productIds })
     });
   }
 
