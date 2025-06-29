@@ -149,7 +149,7 @@ const Products = () => {
     loadInitialData();
   }, [isCustomerAuthenticated]);
 
-  // Load products when filters change - FIXED TO AVOID RACE CONDITION
+  // Load products when filters change - FIXED TO AVOID RACE CONDITION & MULTIPLE CALLS
   useEffect(() => {
     // Only auto-load products if:
     // 1. We have categories loaded
@@ -157,6 +157,14 @@ const Products = () => {
     // 3. This isn't the initial load
     // 4. Not currently loading or loading more
     if (categories.length > 0 && !isProcessingUrlSearch && !isLoading && !isLoadingMore) {
+      // CRITICAL: Reset all pagination state BEFORE making API call
+      setProducts([]);           // Clear products immediately
+      setTotalProducts(0);       // Reset count immediately
+      setCurrentPage(1);         // Reset page immediately
+      setHasMore(false);         // Reset hasMore immediately
+      setError(null);            // Clear any errors
+      
+      console.log('🔄 Filter change detected - resetting state and loading products');
       loadProducts(true); // Reset to page 1 when filters change
     }
   }, [filters, isCustomerAuthenticated, categories.length, isProcessingUrlSearch]); // Removed isLoading to prevent infinite loop
@@ -230,11 +238,16 @@ const Products = () => {
   // Load products based on authentication status
   const loadProducts = async (resetPagination = false) => {
     try {
+      // CRITICAL: Ensure clean state for filter changes
       if (resetPagination) {
+        console.log('🎯 loadProducts with resetPagination=true - ensuring clean state');
+        setProducts([]);           // Force clear products array
+        setTotalProducts(0);       // Force reset total
         setCurrentPage(1);
+        setHasMore(false);         // Reset hasMore
         setIsLoading(true);
       } else {
-    setIsLoadingMore(true);
+        setIsLoadingMore(true);
       }
       
       setError(null);
@@ -308,10 +321,12 @@ const Products = () => {
         
         // Debug logging for new pagination logic
         console.log('📊 Frontend pagination processing:', {
+          resetPagination: resetPagination,
           productsReceived: newProducts.length,
           total: total,
           totalPages: totalPages,
           currentPage: page,
+          currentProductsCount: products.length,
           responseStructure: {
             hasDirectTotal: !!response.data.total,
             hasPaginationObject: !!response.data.pagination,
@@ -320,15 +335,33 @@ const Products = () => {
         });
         
         if (resetPagination) {
-          setProducts(newProducts);
+          console.log('🔄 RESET: Setting products to new array, clearing previous');
+          setProducts(newProducts);    // Complete replacement for filter changes
           setCurrentPage(1);
         } else {
-          setProducts(prev => [...prev, ...newProducts]);
+          console.log('➕ APPEND: Adding products to existing array for Load More');
+          setProducts(prev => {
+            const combined = [...prev, ...newProducts];
+            console.log(`📊 Combined products: ${prev.length} existing + ${newProducts.length} new = ${combined.length} total`);
+            return combined;
+          });
         }
         
         setTotalPages(totalPages);
+        console.log(`📊 Setting totalProducts to: ${total} (was: ${totalProducts})`);
         setTotalProducts(total);
         setHasMore(page < totalPages);
+        
+        // Final safety check for display consistency
+        if (resetPagination && newProducts.length > total) {
+          console.error('⚠️ INCONSISTENCY: Products received exceeds total count!', {
+            received: newProducts.length,
+            total: total,
+            willCap: true
+          });
+          // This shouldn't happen, but if it does, cap the products to prevent display issues
+          setProducts(newProducts.slice(0, total));
+        }
         
         // Update customer info if provided from backend (for customer endpoints)
         if (response.data.customerInfo && isCustomerAuthenticated) {
@@ -392,8 +425,11 @@ const Products = () => {
     return primaryImage?.url || fallbackImage?.url || '';
   };
 
-  // Clear all filters
+  // Clear all filters and reset state
   const clearFilters = () => {
+    console.log('🧹 Clearing all filters and resetting state');
+    
+    // Reset filter state
     setFilters({
       search: '',
       category: 'all',
@@ -404,6 +440,14 @@ const Products = () => {
       sortBy: 'produktnavn',
       sortOrder: 'asc'
     });
+    
+    // Force reset pagination state to prevent "x af x" issues
+    setProducts([]);
+    setTotalProducts(0);
+    setCurrentPage(1);
+    setTotalPages(1);
+    setHasMore(false);
+    setError(null);
   };
 
   // Get active filter count
