@@ -36,25 +36,54 @@ import {
 } from 'lucide-react';
 
 interface Product {
-  id: string;
-  name: string;
-  description?: string;
-  image?: string;
-  category: string;
-  price: number;
+  _id: string;
+  produktnavn: string;
+  beskrivelse?: string;
+  billeder?: Array<{
+    url: string;
+    altText?: string;
+    isPrimary: boolean;
+  }>;
+  kategori: {
+    _id: string;
+    navn: string;
+  };
+  enhed: {
+    _id: string;
+    value: string;
+    label: string;
+    description?: string;
+    isActive: boolean;
+    sortOrder: number;
+  };
+  basispris: number;
   varenummer: string;
   eanNummer?: string;
   featuredOrder?: number;
   isFeatured?: boolean;
-  aktiv: boolean; // CRITICAL: Track if product is active
+  aktiv: boolean;
+  lagerstyring: {
+    enabled: boolean;
+    antalPaaLager?: number;
+    minimumslager?: number;
+  };
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface FeaturedProduct {
-  id: string;
-  name: string;
-  image?: string;
-  category: string;
-  price: number;
+  _id: string;
+  produktnavn: string;
+  billeder?: Array<{
+    url: string;
+    altText?: string;
+    isPrimary: boolean;
+  }>;
+  kategori: {
+    _id: string;
+    navn: string;
+  };
+  basispris: number;
   featuredOrder: number;
 }
 
@@ -130,7 +159,7 @@ const DashboardFeaturedProducts: React.FC = () => {
         setAllProducts(products);
         
         // Extract unique categories with proper typing
-        const uniqueCategories = [...new Set(products.map((p: Product) => p.category).filter(Boolean))] as string[];
+        const uniqueCategories = [...new Set(products.map((p: Product) => p.kategori?.navn).filter(Boolean))] as string[];
         setCategories(uniqueCategories);
       } else {
         console.error('Products failed:', 'error' in productsResponse ? productsResponse.error : 'Unknown error');
@@ -195,11 +224,11 @@ const DashboardFeaturedProducts: React.FC = () => {
 
     // FRONTEND VALIDATION: Only active products can be featured
     const selectedProductIds = Array.from(selectedProducts);
-    const selectedProductDetails = allProducts.filter(p => selectedProductIds.includes(p.id));
+    const selectedProductDetails = allProducts.filter(p => selectedProductIds.includes(p._id));
     const inactiveProducts = selectedProductDetails.filter(p => !p.aktiv);
     
     if (inactiveProducts.length > 0) {
-      toast.error(`Kun aktive produkter kan udvælges. Følgende produkter er inaktive: ${inactiveProducts.map(p => p.name).join(', ')}`);
+      toast.error(`Kun aktive produkter kan udvælges. Følgende produkter er inaktive: ${inactiveProducts.map(p => p.produktnavn).join(', ')}`);
       return;
     }
 
@@ -250,7 +279,7 @@ const DashboardFeaturedProducts: React.FC = () => {
   };
 
   const handleMoveProduct = async (productId: string, direction: 'up' | 'down') => {
-    const currentIndex = featuredProducts.findIndex(p => p.id === productId);
+    const currentIndex = featuredProducts.findIndex(p => p._id === productId);
     if (currentIndex === -1) return;
 
     const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
@@ -264,7 +293,7 @@ const DashboardFeaturedProducts: React.FC = () => {
       
       const response = await api.updateFeaturedProducts(
         newOrder.map((product, index) => ({
-          productId: product.id,
+          productId: product._id,
           featuredOrder: index + 1
         }))
       );
@@ -297,18 +326,18 @@ const DashboardFeaturedProducts: React.FC = () => {
     // CRITICAL: Only show active products that can be featured
     if (!product.aktiv) return false;
     
-    // Don't show products that are already featured
-    const isAlreadyFeatured = featuredProducts.some(fp => fp.id === product.id);
+    // Don't show products that are already featured  
+    const isAlreadyFeatured = featuredProducts.some(fp => fp._id === product._id);
     if (isAlreadyFeatured) return false;
 
     // Filter by search term
     const matchesSearch = searchTerm === '' || 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.produktnavn.toLowerCase().includes(searchTerm.toLowerCase()) ||
       product.varenummer.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (product.eanNummer && product.eanNummer.toLowerCase().includes(searchTerm.toLowerCase()));
 
     // Filter by category
-    const matchesCategory = selectedCategory === 'all' || product.category === selectedCategory;
+    const matchesCategory = selectedCategory === 'all' || product.kategori?.navn === selectedCategory;
 
     return matchesSearch && matchesCategory;
   });
