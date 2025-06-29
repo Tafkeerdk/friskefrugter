@@ -158,106 +158,32 @@ export function ProductCard({
         </div>
       </Link>
       
-      <CardContent className="p-4 flex flex-col" style={{ minHeight: '220px' }}>
-        {/* **📝 2. INFORMATION & PRICING (FIXED HEIGHT BLOCK)** */}
-        <div className="flex-1 space-y-3" style={{ minHeight: '140px' }}>
+      <CardContent className="p-4 flex flex-col space-y-4" style={{ minHeight: '200px' }}>
+        {/* **📝 2. INFORMATION & PRICING (MIDDLE BLOCK)** */}
+        <div className="flex-1 space-y-3">
           {/* **Product Name - Bold, 16-18px, 1-2 lines max** */}
           <Link to={`/products/${id}`}>
             <h3 
               className="font-bold text-gray-900 hover:text-brand-primary transition-colors leading-tight line-clamp-2 cursor-pointer"
-              style={{ fontSize: '17px', lineHeight: '1.3', minHeight: '44px' }}
+              style={{ fontSize: '17px', lineHeight: '1.3' }}
             >
               {name}
             </h3>
           </Link>
           
-          {/* **Category Label - Small green pill tag** */}
-          <div style={{ minHeight: '24px' }}>
-            <Badge 
-              variant="secondary" 
-              className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
-            >
-              {category.toUpperCase()}
-            </Badge>
-          </div>
+          {/* **Category Label - Small green pill tag inline** */}
+          <Badge 
+            variant="secondary" 
+            className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
+          >
+            {category.toUpperCase()}
+          </Badge>
 
-          {/* **Price Display Section - FIXED HEIGHT FOR CONSISTENCY** */}
-          <div style={{ minHeight: '70px' }}>
-            {isLoggedIn && customerPricing && (
-              <div className="space-y-2">
-                {/* **Price Row - Fixed height** */}
-                <div className="flex items-center gap-2" style={{ minHeight: '28px' }}>
-                  {/* **Discounted Price - Bold, large, primary color** */}
-                  <span 
-                    className="font-bold text-gray-900"
-                    style={{ fontSize: '18px' }}
-                  >
-                    {new Intl.NumberFormat('da-DK', {
-                      style: 'currency',
-                      currency: 'DKK'
-                    }).format(customerPricing.price)}
-                  </span>
-                  
-                  {/* **Original Price - Light gray, struck through** */}
-                  {customerPricing.showStrikethrough && customerPricing.originalPrice && (
-                    <span className="text-sm text-gray-400 line-through font-medium">
-                      {new Intl.NumberFormat('da-DK', {
-                        style: 'currency',
-                        currency: 'DKK'
-                      }).format(customerPricing.originalPrice)}
-                    </span>
-                  )}
-                </div>
-                
-                {/* **Discount Badge Row - FIXED HEIGHT FOR CONSISTENCY** */}
-                <div style={{ minHeight: '28px' }} className="flex items-start">
-                  {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            className="text-xs font-medium px-2 py-1 text-white cursor-help"
-                            style={{
-                              backgroundColor: customerPricing.discountType === 'unique_offer' 
-                                ? '#9333EA' // Purple for unique offers
-                                : customerPricing.discountType === 'fast_udsalgspris'
-                                  ? '#DC2626' // Red for fast sales
-                                  : customerPricing.groupDetails?.groupColor || '#F59E0B' // Group color or fallback
-                            }}
-                          >
-                            {customerPricing.discountType === 'unique_offer' 
-                              ? 'Særlig Tilbud'
-                              : customerPricing.discountType === 'fast_udsalgspris'
-                                ? 'Fast Udsalgspris'
-                                : customerPricing.discountLabel
-                            }
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            {customerPricing.discountType === 'unique_offer' 
-                              ? 'Særligt tilbud kun til dig'
-                              : customerPricing.discountType === 'fast_udsalgspris'
-                                ? 'Produkt på tilbud'
-                                : 'Rabatteret pris for din gruppe'
-                            }
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                
-                {/* **Unit Info - Light gray, small font** */}
-                <p className="text-xs text-gray-500">
-                  per {getUnitDisplay()}
-                </p>
-              </div>
-            )}
-
-            {/* **Standard Price (for non-customer pricing)** */}
-            {isLoggedIn && !customerPricing && price && (
-              <div className="space-y-2">
+          {/* **Price Display Section** */}
+          {isLoggedIn && customerPricing && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* **Discounted Price - Bold, large, primary color** */}
                 <span 
                   className="font-bold text-gray-900"
                   style={{ fontSize: '18px' }}
@@ -265,26 +191,91 @@ export function ProductCard({
                   {new Intl.NumberFormat('da-DK', {
                     style: 'currency',
                     currency: 'DKK'
-                  }).format(price)}
+                  }).format(customerPricing.price)}
                 </span>
-                <p className="text-xs text-gray-500">
-                  per {getUnitDisplay()}
-                </p>
+                
+                {/* **Original Price - Light gray, struck through** */}
+                {customerPricing.showStrikethrough && customerPricing.originalPrice && (
+                  <span className="text-sm text-gray-400 line-through font-medium">
+                    {new Intl.NumberFormat('da-DK', {
+                      style: 'currency',
+                      currency: 'DKK'
+                    }).format(customerPricing.originalPrice)}
+                  </span>
+                )}
+                
+                {/* **Discount Badge - Shows actual admin-set labels** */}
+                {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          className="text-xs font-medium px-2 py-1 text-white cursor-help"
+                          style={{
+                            backgroundColor: customerPricing.discountType === 'unique_offer' 
+                              ? '#9333EA' // Purple for unique offers
+                              : customerPricing.discountType === 'fast_udsalgspris'
+                                ? '#DC2626' // Red for fast sales
+                                : customerPricing.groupDetails?.groupColor || '#F59E0B' // Group color or fallback
+                          }}
+                        >
+                          {customerPricing.discountType === 'unique_offer' 
+                            ? 'Særlig tilbud'
+                            : customerPricing.discountLabel
+                          }
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">
+                          {customerPricing.discountType === 'unique_offer' 
+                            ? 'Særligt tilbud kun til dig'
+                            : customerPricing.discountType === 'fast_udsalgspris'
+                              ? 'Produkt på tilbud'
+                              : 'Rabatteret pris for din gruppe'
+                          }
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
               </div>
-            )}
+              
+              {/* **Unit Info - Light gray, small font under price** */}
+              <p className="text-xs text-gray-500">
+                per {getUnitDisplay()}
+              </p>
+            </div>
+          )}
 
-            {/* **Login Required Message** */}
-            {!isLoggedIn && (
-              <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <p className="text-sm text-gray-700 font-medium">
-                  Log ind for at se priser
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Enhed: {getUnitDisplay()}
-                </p>
-              </div>
-            )}
-          </div>
+          {/* **Standard Price (for non-customer pricing)** */}
+          {isLoggedIn && !customerPricing && price && (
+            <div className="space-y-2">
+              <span 
+                className="font-bold text-gray-900"
+                style={{ fontSize: '18px' }}
+              >
+                {new Intl.NumberFormat('da-DK', {
+                  style: 'currency',
+                  currency: 'DKK'
+                }).format(price)}
+              </span>
+              <p className="text-xs text-gray-500">
+                per {getUnitDisplay()}
+              </p>
+            </div>
+          )}
+
+          {/* **Login Required Message** */}
+          {!isLoggedIn && (
+            <div className="text-center p-3 bg-gray-50 rounded-lg border border-gray-200">
+              <p className="text-sm text-gray-700 font-medium">
+                Log ind for at se priser
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Enhed: {getUnitDisplay()}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* **🛒 3. ACTIONS & QUANTITY (BOTTOM BLOCK)** */}

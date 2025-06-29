@@ -42,6 +42,8 @@ interface CustomerProductFiltersProps {
       color: string;
     };
     uniqueOffersCount: number;
+    fastUdsalgsprisCount?: number;
+    rabatGruppeCount?: number;
   };
 
   // UI State
@@ -443,12 +445,19 @@ export function CustomerProductFilters({
                 </p>
               </div>
             </div>
-            <Switch
-              id="fastUdsalgspris"
-              checked={pendingFilters.fastUdsalgspris}
-              onCheckedChange={(value) => setPendingFilters(prev => ({ ...prev, fastUdsalgspris: value }))}
-              disabled={isLoading}
-            />
+            <div className="flex items-center gap-2">
+              {customerInfo?.fastUdsalgsprisCount > 0 && (
+                <Badge variant="default" className="text-xs bg-red-600">
+                  {customerInfo.fastUdsalgsprisCount}
+                </Badge>
+              )}
+              <Switch
+                id="fastUdsalgspris"
+                checked={pendingFilters.fastUdsalgspris}
+                onCheckedChange={(value) => setPendingFilters(prev => ({ ...prev, fastUdsalgspris: value }))}
+                disabled={isLoading || !customerInfo?.fastUdsalgsprisCount}
+              />
+            </div>
           </div>
 
           {/* Rabat Gruppe Filter - Only show if customer has discount group with >0% */}
@@ -466,6 +475,17 @@ export function CustomerProductFilters({
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {customerInfo?.rabatGruppeCount > 0 && (
+                  <Badge 
+                    variant="default" 
+                    className="text-xs text-white" 
+                    style={{
+                      backgroundColor: customerInfo.discountGroup.color || '#6B7280'
+                    }}
+                  >
+                    {customerInfo.rabatGruppeCount}
+                  </Badge>
+                )}
                 <span 
                   className="text-xs px-2 py-1 rounded text-white font-medium"
                   style={{
@@ -478,7 +498,7 @@ export function CustomerProductFilters({
                   id="rabatGruppe"
                   checked={pendingFilters.rabatGruppe}
                   onCheckedChange={(value) => setPendingFilters(prev => ({ ...prev, rabatGruppe: value }))}
-                  disabled={isLoading}
+                  disabled={isLoading || !customerInfo?.rabatGruppeCount}
                 />
               </div>
             </div>
