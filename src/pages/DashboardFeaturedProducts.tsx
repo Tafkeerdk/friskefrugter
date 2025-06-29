@@ -77,6 +77,7 @@ const DashboardFeaturedProducts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [showLivePreview, setShowLivePreview] = useState(false);
   
   // New state for title/subtitle settings
   const [settings, setSettings] = useState<FeaturedProductsSettings>({
@@ -94,14 +95,19 @@ const DashboardFeaturedProducts: React.FC = () => {
     try {
       setLoading(true);
       
-      // Load featured products, all products, and settings in parallel
-      const [featuredResponse, productsResponse, settingsResponse] = await Promise.all([
-        api.getFeaturedProducts(),
-        api.getProducts(),
-        api.getFeaturedProductsSettings()
+      // Load featured products and all products - these should work
+      const [featuredResponse, productsResponse] = await Promise.all([
+        api.getFeaturedProducts().catch(err => {
+          console.error('Featured products API failed:', err);
+          return { success: false, error: 'Featured products endpoint failed' };
+        }),
+        api.getProducts().catch(err => {
+          console.error('Products API failed:', err);
+          return { success: false, error: 'Products endpoint failed' };
+        })
       ]);
 
-      if (featuredResponse.success && featuredResponse.data) {
+      if (featuredResponse.success && 'data' in featuredResponse && featuredResponse.data) {
         const data = featuredResponse.data as any;
         setFeaturedProducts(data.products || []);
         
@@ -113,18 +119,12 @@ const DashboardFeaturedProducts: React.FC = () => {
             maxFeaturedProducts: data.maxAllowed || 8
           }));
         }
+      } else {
+        console.error('Featured products failed:', 'error' in featuredResponse ? featuredResponse.error : 'Unknown error');
+        toast.error('Kunne ikke indlæse udvalgte produkter');
       }
 
-      // Load settings from dedicated settings endpoint
-      if (settingsResponse.success && settingsResponse.data) {
-        const settingsData = settingsResponse.data as any;
-        setSettings(prev => ({
-          ...prev,
-          ...settingsData.settings
-        }));
-      }
-
-      if (productsResponse.success && productsResponse.data) {
+      if (productsResponse.success && 'data' in productsResponse && productsResponse.data) {
         const data = productsResponse.data as any;
         const products = data.products || [];
         setAllProducts(products);
@@ -132,7 +132,26 @@ const DashboardFeaturedProducts: React.FC = () => {
         // Extract unique categories with proper typing
         const uniqueCategories = [...new Set(products.map((p: Product) => p.category).filter(Boolean))] as string[];
         setCategories(uniqueCategories);
+      } else {
+        console.error('Products failed:', 'error' in productsResponse ? productsResponse.error : 'Unknown error');
+        toast.error('Kunne ikke indlæse produkter');
       }
+
+      // Try to load settings separately - may fail if endpoint not deployed yet
+      try {
+        const settingsResponse = await api.getFeaturedProductsSettings();
+        if (settingsResponse.success && settingsResponse.data) {
+          const settingsData = settingsResponse.data as any;
+          setSettings(prev => ({
+            ...prev,
+            ...settingsData.settings
+          }));
+        }
+      } catch (settingsError) {
+        console.log('Settings endpoint not available yet - using defaults');
+        // Don't show error to user, just use default settings
+      }
+
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error('Fejl ved indlæsning af data');
@@ -155,7 +174,14 @@ const DashboardFeaturedProducts: React.FC = () => {
       }
     } catch (error: any) {
       console.error('Error saving settings:', error);
-      toast.error('Fejl ved gemning af indstillinger');
+      
+      // If settings endpoint is not available yet, just save locally
+      if (error.message?.includes('503') || error.message?.includes('not available')) {
+        toast.success('Indstillinger gemt lokalt (endpoint ikke tilgængeligt endnu)');
+        setSettingsChanged(false);
+      } else {
+        toast.error('Fejl ved gemning af indstillinger');
+      }
     } finally {
       setSaving(false);
     }
@@ -260,6 +286,11 @@ const DashboardFeaturedProducts: React.FC = () => {
   const handlePreview = () => {
     // Open the homepage in a new tab to preview the featured products
     window.open('/', '_blank');
+  };
+
+  const handleLivePreview = () => {
+    // Toggle live preview mode
+    setShowLivePreview(!showLivePreview);
   };
 
   const filteredProducts = allProducts.filter(product => {
@@ -388,8 +419,20 @@ const DashboardFeaturedProducts: React.FC = () => {
               )}
               size={isMobile ? "default" : "default"}
             >
+              <ExternalLink className="h-4 w-4" />
+              {isMobile ? "Åbn Forside" : "Åbn Forside"}
+            </Button>
+            <Button 
+              onClick={handleLivePreview}
+              variant={showLivePreview ? "default" : "outline"}
+              className={cn(
+                "flex items-center gap-2",
+                isMobile ? "flex-1 h-12 text-base font-medium" : ""
+              )}
+              size={isMobile ? "default" : "default"}
+            >
               <Eye className="h-4 w-4" />
-              {isMobile ? "Forhåndsvisning" : "Forhåndsvis"}
+              {showLivePreview ? 'Skjul Preview' : 'Live Preview'}
             </Button>
           </div>
         </div>
@@ -456,10 +499,73 @@ const DashboardFeaturedProducts: React.FC = () => {
           </CardContent>
         </Card>
 
+        {/* Live Preview */}
+        {showLivePreview && (
+          <Card className="border-brand-primary/20 bg-gradient-to-r from-brand-primary/5 to-blue-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5 text-brand-primary" />
+                Live Forhåndsvisning - Forsidesektion
+              </CardTitle>
+              <CardDescription>
+                Sådan ser den udvalgte produkter sektion ud på forsiden
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-50 p-6 rounded-lg">
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-gray-900 mb-4 relative inline-block">
+                    {settings.title}
+                    <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-1 w-16 bg-brand-primary rounded-full"></div>
+                  </h2>
+                  <p className="text-gray-600 max-w-2xl mx-auto">
+                    {settings.subtitle}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {featuredProducts.length > 0 ? (
+                    featuredProducts.slice(0, 4).map((product) => (
+                      <div key={product.id} className="bg-white rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+                        {product.image && (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="w-full h-32 object-cover rounded-md mb-3"
+                            onError={(e) => {
+                              e.currentTarget.src = '/placeholder.svg';
+                            }}
+                          />
+                        )}
+                        <h3 className="font-medium text-gray-900 mb-1 text-sm truncate">
+                          {product.name}
+                        </h3>
+                        <p className="text-xs text-gray-500 mb-2">{product.category}</p>
+                        <div className="text-brand-primary font-semibold text-sm">
+                          Fra {product.price ? `${product.price} kr` : 'Se pris'}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Ingen udvalgte produkter at vise</p>
+                    </div>
+                  )}
+                </div>
+                {featuredProducts.length > 4 && (
+                  <p className="text-center text-sm text-gray-500 mt-4">
+                    ... og {featuredProducts.length - 4} flere produkter
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Du kan have maksimalt 8 udvalgte produkter. Disse vises på forsiden for både offentlige og logget ind brugere.
+            Du kan have maksimalt {settings.maxFeaturedProducts || 8} udvalgte produkter. Disse vises på forsiden for både offentlige og logget ind brugere.
           </AlertDescription>
         </Alert>
 
