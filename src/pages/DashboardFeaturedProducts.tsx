@@ -344,17 +344,49 @@ const DashboardFeaturedProducts: React.FC = () => {
     try {
       setSaving(true);
       
-      const response = await api.addFeaturedProducts(Array.from(selectedProducts));
+      console.log('🚀 Adding products to featured list:', selectedProductIds);
+      
+      const response = await api.addFeaturedProducts(selectedProductIds);
 
       if (response.success) {
-        toast.success('Produkter tilføjet til udvalgte produkter');
+        console.log('✅ Backend confirmed products added successfully');
+        
+        // OPTIMISTIC UPDATE: Immediately add products to featured list
+        // This prevents the weird behavior where products don't show up
+        const nextFeaturedOrder = featuredProducts.length > 0 
+          ? Math.max(...featuredProducts.map(p => p.featuredOrder || 0)) + 1 
+          : 1;
+        
+        const newFeaturedProducts = selectedProductDetails.map((product, index) => ({
+          ...product,
+          featured: true,
+          featuredOrder: nextFeaturedOrder + index,
+          featuredAt: new Date().toISOString(),
+          isFeatured: true
+        }));
+        
+        // Update featured products state immediately
+        setFeaturedProducts(prev => [...prev, ...newFeaturedProducts]);
+        
+        // Clear selections
         setSelectedProducts(new Set());
-        await loadData(); // Reload data
+        
+        // Show success message
+        toast.success(`${selectedProductIds.length} produkter tilføjet til udvalgte produkter`);
+        
+        // Reload available products to remove the ones we just added
+        // Small delay to ensure database consistency
+        setTimeout(async () => {
+          console.log('🔄 Refreshing available products after adding featured products');
+          await loadProducts(true);
+        }, 500);
+        
       } else {
+        console.error('❌ Backend returned error:', response.error);
         toast.error(response.error || 'Fejl ved tilføjelse af produkter');
       }
     } catch (error: any) {
-      console.error('Error adding featured products:', error);
+      console.error('❌ Error adding featured products:', error);
       toast.error(error.response?.data?.error || 'Fejl ved tilføjelse af produkter');
     } finally {
       setSaving(false);
@@ -365,16 +397,33 @@ const DashboardFeaturedProducts: React.FC = () => {
     try {
       setSaving(true);
       
+      console.log('🗑️ Removing product from featured list:', productId);
+      
       const response = await api.removeFeaturedProduct(productId);
 
       if (response.success) {
-        toast.success('Produkt fjernet fra udvalgte produkter');
-        await loadData(); // Reload data
+        console.log('✅ Backend confirmed product removed successfully');
+        
+        // OPTIMISTIC UPDATE: Immediately remove product from featured list
+        const removedProduct = featuredProducts.find(p => p._id === productId);
+        setFeaturedProducts(prev => prev.filter(p => p._id !== productId));
+        
+        // Show success message
+        toast.success(`Produkt "${removedProduct?.produktnavn || 'Unknown'}" fjernet fra udvalgte produkter`);
+        
+        // Reload available products to add the removed product back
+        // Small delay to ensure database consistency
+        setTimeout(async () => {
+          console.log('🔄 Refreshing available products after removing featured product');
+          await loadProducts(true);
+        }, 500);
+        
       } else {
+        console.error('❌ Backend returned error:', response.error);
         toast.error(response.error || 'Fejl ved fjernelse af produkt');
       }
     } catch (error: any) {
-      console.error('Error removing featured product:', error);
+      console.error('❌ Error removing featured product:', error);
       toast.error(error.response?.data?.error || 'Fejl ved fjernelse af produkt');
     } finally {
       setSaving(false);
@@ -394,19 +443,28 @@ const DashboardFeaturedProducts: React.FC = () => {
     try {
       setSaving(true);
       
+      console.log('🔄 Reordering featured products:', { productId, direction, currentIndex, newIndex });
+      
       // Send array of product IDs in the new order (backend expects this format)
       const response = await api.updateFeaturedProducts(
         newOrder.map(product => product._id)
       );
 
       if (response.success) {
+        console.log('✅ Backend confirmed order updated successfully');
+        
+        // OPTIMISTIC UPDATE: Immediately update the order in state
+        setFeaturedProducts(newOrder);
+        
+        // Show success message
         toast.success('Produktrækkefølge opdateret');
-        await loadData(); // Reload data
+        
       } else {
+        console.error('❌ Backend returned error:', response.error);
         toast.error(response.error || 'Fejl ved opdatering af rækkefølge');
       }
     } catch (error: any) {
-      console.error('Error reordering products:', error);
+      console.error('❌ Error reordering products:', error);
       toast.error(error.response?.data?.error || 'Fejl ved opdatering af rækkefølge');
     } finally {
       setSaving(false);
