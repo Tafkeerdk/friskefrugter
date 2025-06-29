@@ -34,6 +34,7 @@ import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
 import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
 import DashboardFeaturedProducts from "./pages/DashboardFeaturedProducts";
 import DashboardHenvendelser from "./pages/DashboardHenvendelser";
+import DashboardApplications from "./pages/DashboardApplications";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
@@ -115,7 +116,7 @@ const App = () => (
               path="/admin/applications" 
               element={
                 <ProtectedRoute requireAdmin={true}>
-                  <Admin />
+                  <DashboardApplications />
                 </ProtectedRoute>
               } 
             />
