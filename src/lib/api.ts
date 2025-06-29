@@ -389,53 +389,59 @@ class ApiClient {
 
   // Helper method to get correct endpoint based on environment
   private getEndpoint(path: string): string {
+    // Parse URL to separate path from query string
+    const url = new URL(path, 'http://localhost'); // dummy base URL for parsing
+    const pathOnly = url.pathname;
+    const queryString = url.search; // includes the '?' if there are params
+    
     // In development, use Express routes directly
     if (import.meta.env.DEV) {
       return path;
     }
     
     // In production, route to appropriate Netlify functions
-    if (path.startsWith('/api/admin/featured-products/settings')) {
-      return '/.netlify/functions/admin-featured-products-settings';
+    // but preserve query string parameters
+    if (pathOnly.startsWith('/api/admin/featured-products/settings')) {
+      return `/.netlify/functions/admin-featured-products-settings${queryString}`;
     }
-    if (path.startsWith('/api/admin/featured-products')) {
-      return '/.netlify/functions/admin-featured-products';
+    if (pathOnly.startsWith('/api/admin/featured-products')) {
+      return `/.netlify/functions/admin-featured-products${queryString}`;
     }
-    if (path.startsWith('/api/featured-products-customer')) {
-      return '/.netlify/functions/featured-products-customer';
+    if (pathOnly.startsWith('/api/featured-products-customer')) {
+      return `/.netlify/functions/featured-products-customer${queryString}`;
     }
-    if (path.startsWith('/api/featured-products')) {
-      return '/.netlify/functions/featured-products';
+    if (pathOnly.startsWith('/api/featured-products')) {
+      return `/.netlify/functions/featured-products${queryString}`;
     }
-    if (path.startsWith('/api/auth/admin/notifications')) {
-      return '/.netlify/functions/admin-notifications';
+    if (pathOnly.startsWith('/api/auth/admin/notifications')) {
+      return `/.netlify/functions/admin-notifications${queryString}`;
     }
-    if (path.startsWith('/api/auth/admin/contacts')) {
-      return '/.netlify/functions/admin-contacts';
+    if (pathOnly.startsWith('/api/auth/admin/contacts')) {
+      return `/.netlify/functions/admin-contacts${queryString}`;
     }
-    if (path.startsWith('/api/auth/admin/discount-groups')) {
-      return '/.netlify/functions/admin-discount-groups';
+    if (pathOnly.startsWith('/api/auth/admin/discount-groups')) {
+      return `/.netlify/functions/admin-discount-groups${queryString}`;
     }
-    if (path.startsWith('/api/auth/admin/customers')) {
-      return '/.netlify/functions/admin-customers';
+    if (pathOnly.startsWith('/api/auth/admin/customers')) {
+      return `/.netlify/functions/admin-customers${queryString}`;
     }
-    if (path.startsWith('/api/auth/admin/unique-offers')) {
-      return '/.netlify/functions/admin-unique-offers';
+    if (pathOnly.startsWith('/api/auth/admin/unique-offers')) {
+      return `/.netlify/functions/admin-unique-offers${queryString}`;
     }
-    if (path.startsWith('/api/auth/customer/unique-offers')) {
-      return '/.netlify/functions/customer-unique-offers';
+    if (pathOnly.startsWith('/api/auth/customer/unique-offers')) {
+      return `/.netlify/functions/customer-unique-offers${queryString}`;
     }
-    if (path.startsWith('/api/products')) {
+    if (pathOnly.startsWith('/api/products')) {
       return path.replace('/api/products', '/.netlify/functions/products');
     }
-    if (path.startsWith('/api/categories')) {
+    if (pathOnly.startsWith('/api/categories')) {
       return path.replace('/api/categories', '/.netlify/functions/categories');
     }
-    if (path.startsWith('/api/units')) {
+    if (pathOnly.startsWith('/api/units')) {
       return path.replace('/api/units', '/.netlify/functions/units');
     }
-    if (path.startsWith('/api/auth/refresh')) {
-      return '/.netlify/functions/token-refresh';
+    if (pathOnly.startsWith('/api/auth/refresh')) {
+      return `/.netlify/functions/token-refresh${queryString}`;
     }
     
     // Default: use main API function

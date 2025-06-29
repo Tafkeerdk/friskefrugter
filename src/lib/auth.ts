@@ -8,75 +8,81 @@ console.log('🔧 Environment mode:', import.meta.env.DEV ? 'development' : 'pro
 
 // Helper function to get the correct endpoint based on environment
 const getEndpoint = (path: string): string => {
+  // Parse URL to separate path from query string
+  const url = new URL(path, 'http://localhost'); // dummy base URL for parsing
+  const pathOnly = url.pathname;
+  const queryString = url.search; // includes the '?' if there are params
+  
   // In development, use Express routes
   if (import.meta.env.DEV) {
     return path;
   }
   
   // In production, use Netlify function paths for specific endpoints
-  if (path.startsWith('/api/auth/admin/super')) {
-    return '/.netlify/functions/admin-login';
+  // but preserve query string parameters
+  if (pathOnly.startsWith('/api/auth/admin/super')) {
+    return `/.netlify/functions/admin-login${queryString}`;
   }
-  if (path.startsWith('/api/auth/admin/profile')) {
-    return '/.netlify/functions/admin-profile';
+  if (pathOnly.startsWith('/api/auth/admin/profile')) {
+    return `/.netlify/functions/admin-profile${queryString}`;
   }
-  if (path.startsWith('/api/auth/admin/verification')) {
-    return '/.netlify/functions/admin-verification';
+  if (pathOnly.startsWith('/api/auth/admin/verification')) {
+    return `/.netlify/functions/admin-verification${queryString}`;
   }
-  if (path.startsWith('/api/auth/admin/applications')) {
-    return '/.netlify/functions/admin-applications';
+  if (pathOnly.startsWith('/api/auth/admin/applications')) {
+    return `/.netlify/functions/admin-applications${queryString}`;
   }
-  if (path.startsWith('/api/auth/refresh')) {
-    return '/.netlify/functions/token-refresh';
+  if (pathOnly.startsWith('/api/auth/refresh')) {
+    return `/.netlify/functions/token-refresh${queryString}`;
   }
-  if (path.startsWith('/api/auth/customer/profile')) {
-    return '/.netlify/functions/customer-profile';
+  if (pathOnly.startsWith('/api/auth/customer/profile')) {
+    return `/.netlify/functions/customer-profile${queryString}`;
   }
-  if (path.startsWith('/api/auth/customer/apply')) {
-    return '/.netlify/functions/customer-application-create';
+  if (pathOnly.startsWith('/api/auth/customer/apply')) {
+    return `/.netlify/functions/customer-application-create${queryString}`;
   }
-  if (path.startsWith('/api/auth/customer/login')) {
-    return '/.netlify/functions/customer-login';
+  if (pathOnly.startsWith('/api/auth/customer/login')) {
+    return `/.netlify/functions/customer-login${queryString}`;
   }
-  if (path.startsWith('/api/auth/customer/verification')) {
-    return '/.netlify/functions/customer-verification';
+  if (pathOnly.startsWith('/api/auth/customer/verification')) {
+    return `/.netlify/functions/customer-verification${queryString}`;
   }
-  if (path.startsWith('/api/auth/customer/password-reset-request')) {
-    return '/.netlify/functions/customer-password-reset-request';
+  if (pathOnly.startsWith('/api/auth/customer/password-reset-request')) {
+    return `/.netlify/functions/customer-password-reset-request${queryString}`;
   }
-  if (path.startsWith('/api/auth/customer/password-reset-verify')) {
-    return '/.netlify/functions/customer-password-reset-verify';
+  if (pathOnly.startsWith('/api/auth/customer/password-reset-verify')) {
+    return `/.netlify/functions/customer-password-reset-verify${queryString}`;
   }
-  if (path.startsWith('/api/auth/customer/unique-offers')) {
-    return '/.netlify/functions/customer-unique-offers';
+  if (pathOnly.startsWith('/api/auth/customer/unique-offers')) {
+    return `/.netlify/functions/customer-unique-offers${queryString}`;
   }
   
   // Admin-specific endpoints for notifications and contacts
-  if (path.startsWith('/api/auth/admin/notifications')) {
-    return '/.netlify/functions/admin-notifications';
+  if (pathOnly.startsWith('/api/auth/admin/notifications')) {
+    return `/.netlify/functions/admin-notifications${queryString}`;
   }
-  if (path.startsWith('/api/auth/admin/contacts')) {
-    return '/.netlify/functions/admin-contacts';
+  if (pathOnly.startsWith('/api/auth/admin/contacts')) {
+    return `/.netlify/functions/admin-contacts${queryString}`;
   }
-  if (path.startsWith('/api/auth/admin/discount-groups')) {
-    return '/.netlify/functions/admin-discount-groups';
+  if (pathOnly.startsWith('/api/auth/admin/discount-groups')) {
+    return `/.netlify/functions/admin-discount-groups${queryString}`;
   }
-  if (path.startsWith('/api/auth/admin/customers')) {
-    return '/.netlify/functions/admin-customers';
+  if (pathOnly.startsWith('/api/auth/admin/customers')) {
+    return `/.netlify/functions/admin-customers${queryString}`;
   }
-  if (path.startsWith('/api/auth/admin/unique-offers')) {
-    return '/.netlify/functions/admin-unique-offers';
+  if (pathOnly.startsWith('/api/auth/admin/unique-offers')) {
+    return `/.netlify/functions/admin-unique-offers${queryString}`;
   }
   
   // Product and Unit endpoints - route to specific functions for better auth handling
-  if (path.startsWith('/api/products')) {
-    return '/.netlify/functions/products';
+  if (pathOnly.startsWith('/api/products')) {
+    return `/.netlify/functions/products${queryString}`;
   }
-  if (path.startsWith('/api/units')) {
-    return '/.netlify/functions/units';
+  if (pathOnly.startsWith('/api/units')) {
+    return `/.netlify/functions/units${queryString}`;
   }
-  if (path.startsWith('/api/categories')) {
-    return '/.netlify/functions/categories';
+  if (pathOnly.startsWith('/api/categories')) {
+    return `/.netlify/functions/categories${queryString}`;
   }
   
   // For other routes, use the main API function
