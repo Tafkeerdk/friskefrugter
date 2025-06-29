@@ -275,7 +275,7 @@ const DashboardFeaturedProducts: React.FC = () => {
 
       console.log('🔍 Loading products with params:', params);
 
-      const response = await api.searchFeaturedProductsAdmin(params);
+      const response = await api.getProducts(params);
 
       if (response.success && response.data) {
         const data = response.data as any;
@@ -566,8 +566,25 @@ const DashboardFeaturedProducts: React.FC = () => {
     setShowLivePreview(!showLivePreview);
   };
 
-  // Backend now handles all filtering - no need for frontend filtering
-  const filteredProducts = allProducts;
+  const filteredProducts = allProducts.filter(product => {
+    // CRITICAL: Only show active products that can be featured
+    if (!product.aktiv) return false;
+    
+    // Don't show products that are already featured  
+    const isAlreadyFeatured = featuredProducts.some(fp => fp._id === product._id);
+    if (isAlreadyFeatured) return false;
+
+    // Filter by search term
+    const matchesSearch = searchTerm === '' || 
+      product.produktnavn.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.varenummer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.eanNummer && product.eanNummer.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    // Filter by category
+    const matchesCategory = selectedCategory === 'all' || product.kategori?.navn === selectedCategory;
+
+    return matchesSearch && matchesCategory;
+  });
 
   const toggleProductSelection = (productId: string) => {
     const newSelection = new Set(selectedProducts);
