@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Mail, Phone, MapPin, CheckCircle, ArrowRight, User } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useToast } from "@/components/ui/use-toast";
 import { authService } from "@/lib/auth";
 
@@ -24,10 +24,10 @@ const Contact = () => {
     industry: "",
     message: "",
   });
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionTime] = useState(Date.now()); // For anti-bot verification
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -81,23 +81,10 @@ const Contact = () => {
 
       if (result.success) {
         console.log("✅ Contact form submitted successfully:", result);
-        setIsSubmitted(true);
         
-        toast({
-          title: "Tak for din henvendelse!",
-          description: "Vi har modtaget din besked og vil kontakte dig snart.",
-          variant: "default",
-        });
-
-        // Reset form data
-        setFormData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phone: "",
-          companyName: "",
-          industry: "",
-          message: "",
+        // Navigate to success page with contact data
+        navigate('/contact/success', {
+          state: { contactData: formData }
         });
       } else {
         throw new Error(result.error || 'Ukendt fejl opstod');
@@ -159,28 +146,7 @@ const Contact = () => {
               </div>
             </div>
 
-            {isSubmitted ? (
-              <Card className="shadow-md border-0">
-                <CardContent className="pt-6 pb-8">
-                  <div className="text-center">
-                                      <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-brand-gray-100 mb-4">
-                    <CheckCircle className="h-8 w-8 text-brand-primary" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Tak for din henvendelse!</h2>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Vi har modtaget din besked og vil kontakte dig hurtigst muligt på den angivne email eller telefonnummer.
-                    </p>
-                    <Button 
-                      onClick={() => setIsSubmitted(false)} 
-                      variant="outline"
-                      className="mx-auto"
-                    >
-                      Send en ny henvendelse
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="md:col-span-1">
                   <Card className="h-full">
@@ -351,7 +317,6 @@ const Contact = () => {
                   </Card>
                 </div>
               </div>
-            )}
 
             {/* B2B Info */}
             <div className="mt-12 bg-brand-gray-100 rounded-lg p-8">

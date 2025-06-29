@@ -24,6 +24,7 @@ import DashboardCategories from "./pages/DashboardCategories";
 import DashboardUnits from "./pages/DashboardUnits";
 import AdminProfile from "./pages/AdminProfile";
 import Contact from "./pages/Contact";
+import ContactSuccess from "./pages/ContactSuccess";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
 import FAQ from "./pages/FAQ";
@@ -56,6 +57,7 @@ const App = () => (
             <Route path="/products" element={<Products />} />
             <Route path="/products/:id" element={<ProductDetail />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/contact/success" element={<ContactSuccess />} />
             <Route path="/about" element={<About />} />
             <Route path="/faq" element={<FAQ />} />
             
