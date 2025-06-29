@@ -42,6 +42,27 @@ const Contact = () => {
     e.preventDefault();
     
     if (isSubmitting) return; // Prevent double submission
+
+    // Client-side validation
+    if (formData.message.trim().length < 10) {
+      toast({
+        title: "Besked for kort",
+        description: "Din besked skal være mindst 10 tegn lang.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Validate required fields
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.email.trim() || 
+        !formData.phone.trim() || !formData.companyName.trim() || !formData.industry || !formData.message.trim()) {
+      toast({
+        title: "Manglende information",
+        description: "Udfyld venligst alle felter.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsSubmitting(true);
 
@@ -283,12 +304,33 @@ const Contact = () => {
                           <Textarea 
                             id="message" 
                             name="message" 
-                            placeholder="Fortæl os om dine behov og hvordan vi kan hjælpe dig"
-                            className="min-h-[120px]"
+                            placeholder="Fortæl os om dine behov og hvordan vi kan hjælpe dig (minimum 10 tegn)"
+                            className={`min-h-[120px] ${
+                              formData.message.length > 0 && formData.message.length < 10 
+                                ? 'border-red-500 focus:border-red-500' 
+                                : formData.message.length >= 10 
+                                ? 'border-green-500 focus:border-green-500' 
+                                : ''
+                            }`}
                             value={formData.message}
                             onChange={handleChange}
                             required 
                           />
+                          <div className="flex justify-between items-center text-sm">
+                            <span className={`${
+                              formData.message.length < 10 
+                                ? 'text-red-500' 
+                                : 'text-green-600'
+                            }`}>
+                              {formData.message.length < 10 
+                                ? `Mindst ${10 - formData.message.length} tegn mere` 
+                                : '✓ Besked er lang nok'
+                              }
+                            </span>
+                            <span className="text-gray-500">
+                              {formData.message.length}/2000 tegn
+                            </span>
+                          </div>
                         </div>
                         <Button 
                           type="submit" 
