@@ -8,6 +8,13 @@ import { Alert, AlertDescription } from '../components/ui/alert';
 import { Textarea } from '../components/ui/textarea';
 import { Label } from '../components/ui/label';
 import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '../components/ui/dialog';
+import { 
   ArrowLeft, 
   CheckCircle, 
   XCircle, 
@@ -72,10 +79,10 @@ const DashboardApplicationDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Action states for approve/reject functionality
+  // Dialog and action states
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
-  const [showRejectionForm, setShowRejectionForm] = useState(false);
 
   useEffect(() => {
     if (id && adminUser) {
@@ -105,22 +112,25 @@ const DashboardApplicationDetail: React.FC = () => {
     }
   };
 
-  const handleApprove = async () => {
-    if (!application) return;
-    
+  const handleApprove = async (applicationId: string) => {
     try {
-      setActionLoading('approve');
-      const response = await authService.approveApplication(application.id);
+      setActionLoading(applicationId);
+      const response = await authService.approveApplication(applicationId);
       
       if (response.success) {
-        await loadApplication(); // Refresh data
+        // Close modal and reset state
+        setDialogOpen(false);
+        setRejectionReason('');
+        
+        // Refresh data
+        await loadApplication();
         
         // Show success message
         if (response.emailSent) {
           console.log('✅ Application approved and email sent successfully');
         }
       } else {
-        setError(response.message || 'Kunne ikke godkende ansøgning. Prøv igen.');
+        setError(response.message || 'Kunne ikke godkende ansøgning');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
@@ -130,22 +140,26 @@ const DashboardApplicationDetail: React.FC = () => {
     }
   };
 
-  const handleReject = async () => {
-    if (!application || !rejectionReason.trim()) {
-      setError('Afvisningsårsag er påkrævet');
+  const handleReject = async (applicationId: string, reason?: string) => {
+    const finalReason = reason || rejectionReason;
+    if (!finalReason.trim()) {
+      setError('Angiv venligst en årsag til afvisning');
       return;
     }
-    
+
     try {
-      setActionLoading('reject');
-      const response = await authService.rejectApplication(application.id, rejectionReason);
+      setActionLoading(applicationId);
+      const response = await authService.rejectApplication(applicationId, finalReason);
       
       if (response.success) {
-        await loadApplication(); // Refresh data
-        setShowRejectionForm(false);
+        // Close modal and reset state
+        setDialogOpen(false);
         setRejectionReason('');
+        
+        // Refresh data
+        await loadApplication();
       } else {
-        setError(response.message || 'Kunne ikke afvise ansøgning. Prøv igen.');
+        setError(response.message || 'Kunne ikke afvise ansøgning');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
@@ -253,6 +267,16 @@ const DashboardApplicationDetail: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               {getStatusBadge(application.status)}
+              {application.status === 'Afventer godkendelse' && (
+                <Button 
+                  onClick={() => setDialogOpen(true)}
+                  className="btn-brand-primary"
+                  size="sm"
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Se detaljer
+                </Button>
+              )}
             </div>
           </div>
 
@@ -436,88 +460,161 @@ const DashboardApplicationDetail: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Actions */}
-              {application.status === 'Afventer godkendelse' && (
-                <Card className="card-brand">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-brand-gray-900">
-                      <FileText className="h-5 w-5 text-brand-primary" />
-                      Handlinger
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <Button 
-                      onClick={handleApprove}
-                      disabled={!!actionLoading}
-                      className="w-full btn-brand-primary"
-                    >
-                      {actionLoading === 'approve' ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Godkend ansøgning
-                    </Button>
-                    
-                    {!showRejectionForm ? (
-                      <Button 
-                        onClick={() => setShowRejectionForm(true)}
-                        disabled={!!actionLoading}
-                        variant="outline"
-                        className="w-full border-brand-error text-brand-error hover:bg-brand-error hover:text-white"
-                      >
-                        <XCircle className="h-4 w-4 mr-2" />
-                        Afvis ansøgning
-                      </Button>
-                    ) : (
-                      <div className="space-y-3">
-                        <div>
-                          <Label htmlFor="rejectionReason" className="text-sm font-medium text-brand-gray-700">
-                            Afvisningsårsag *
-                          </Label>
-                          <Textarea
-                            id="rejectionReason"
-                            value={rejectionReason}
-                            onChange={(e) => setRejectionReason(e.target.value)}
-                            placeholder="Angiv årsag til afvisning..."
-                            className="input-brand mt-1"
-                            rows={3}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button 
-                            onClick={handleReject}
-                            disabled={!!actionLoading || !rejectionReason.trim()}
-                            className="flex-1 bg-brand-error hover:bg-brand-error/90 text-white"
-                            size="sm"
-                          >
-                            {actionLoading === 'reject' ? (
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            ) : (
-                              <XCircle className="h-4 w-4 mr-2" />
-                            )}
-                            Afvis
-                          </Button>
-                          <Button 
-                            onClick={() => {
-                              setShowRejectionForm(false);
-                              setRejectionReason('');
-                            }}
-                            disabled={!!actionLoading}
-                            variant="outline"
-                            size="sm"
-                          >
-                            Annuller
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
+
 
             </div>
           </div>
+
+          {/* Application Detail Dialog */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Ansøgningsdetaljer</DialogTitle>
+                <DialogDescription>
+                  Se detaljerede oplysninger om ansøgningen
+                </DialogDescription>
+              </DialogHeader>
+              {application && (
+                <div className="space-y-6">
+                  {/* Company Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-brand-gray-900">Virksomhedsoplysninger</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Virksomhedsnavn</Label>
+                          <p className="text-brand-gray-900">{application.companyName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">CVR-nummer</Label>
+                          <p className="font-mono text-brand-gray-900">{application.cvrNumber}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Adresse</Label>
+                          <p className="text-brand-gray-900">{formatAddress(application.address)}</p>
+                        </div>
+                        {!application.useRegisteredAddressForDelivery && application.deliveryAddress && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Leveringsadresse</Label>
+                            <p className="text-brand-gray-900">{formatAddress(application.deliveryAddress)}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-brand-gray-900">Kontaktoplysninger</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Kontaktperson</Label>
+                          <p className="text-brand-gray-900">{application.contactPersonName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Email</Label>
+                          <p className="text-brand-gray-900">{application.email}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Telefon</Label>
+                          <p className="text-brand-gray-900">{application.phone}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Status</Label>
+                          <div className="mt-1">
+                            {getStatusBadge(application.status)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CVR Data */}
+                  {application.cvrData && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-brand-gray-900 mb-3">CVR Data</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-brand-gray-50 rounded-lg">
+                        {application.cvrData.industry && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Branche</Label>
+                            <p className="text-brand-gray-900">{application.cvrData.industry}</p>
+                          </div>
+                        )}
+                        {application.cvrData.employees && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Medarbejdere</Label>
+                            <p className="text-brand-gray-900">{application.cvrData.employees}</p>
+                          </div>
+                        )}
+                        {application.cvrData.companyType && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Virksomhedstype</Label>
+                            <p className="text-brand-gray-900">{application.cvrData.companyType}</p>
+                          </div>
+                        )}
+                        {application.cvrData.foundedYear && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Grundlagt</Label>
+                            <p className="text-brand-gray-900">{application.cvrData.foundedYear}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejection Reason */}
+                  {application.rejectionReason && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-brand-gray-900 mb-3">Afvisningsårsag</h3>
+                      <div className="p-4 bg-brand-error/10 border border-brand-error/20 rounded-lg">
+                        <p className="text-brand-error">{application.rejectionReason}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {application.status === 'Afventer godkendelse' && (
+                    <div className="space-y-4 pt-4 border-t">
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => handleApprove(application.id)}
+                          disabled={actionLoading === application.id}
+                          className="btn-brand-primary"
+                        >
+                          {actionLoading === application.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Godkend ansøgning
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="rejection-reason">Afvisningsårsag</Label>
+                        <Textarea
+                          id="rejection-reason"
+                          placeholder="Angiv årsag til afvisning..."
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                        />
+                        <Button
+                          onClick={() => handleReject(application.id)}
+                          disabled={actionLoading === application.id || !rejectionReason.trim()}
+                          className="bg-brand-error hover:bg-brand-error/90 text-white"
+                        >
+                          {actionLoading === application.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <XCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Afvis ansøgning
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </DashboardLayout>
