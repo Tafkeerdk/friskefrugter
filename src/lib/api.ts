@@ -797,13 +797,9 @@ class ApiClient {
   // Featured Products API methods
   async getFeaturedProducts() {
     const endpoint = this.getEndpoint('/api/admin/featured-products');
-    // Add cache bypass for admin endpoints to avoid service worker issues
-    return this.request(endpoint, {
-      headers: {
-        'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
-    });
+    // Add timestamp to bypass cache without CORS-restricted headers
+    const cacheBuster = `?cb=${Date.now()}`;
+    return this.request(endpoint + cacheBuster);
   }
 
   async addFeaturedProducts(productIds: string[]) {
@@ -842,12 +838,9 @@ class ApiClient {
   async getFeaturedProductsSettings() {
     const endpoint = this.getEndpoint('/api/admin/featured-products/settings');
     try {
-      return await this.request(endpoint, {
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
+      // Add timestamp to bypass cache without CORS-restricted headers
+      const cacheBuster = `?cb=${Date.now()}`;
+      return await this.request(endpoint + cacheBuster);
     } catch (error) {
       // Gracefully handle if endpoint is not available yet
       console.warn('Featured products settings endpoint not available:', error);
