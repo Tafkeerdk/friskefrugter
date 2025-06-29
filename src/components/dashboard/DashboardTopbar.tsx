@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../../hooks/useAuth";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Bell, Search, ChevronDown, User, Settings, LogOut, X, Home, ExternalLink } from "lucide-react";
@@ -36,34 +36,76 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
   const isMobile = useIsMobile();
   const [searchValue, setSearchValue] = useState("");
   const [isSearchExpanded, setIsSearchExpanded] = useState(false);
-  const [notifications] = useState([
-    {
-      id: 1,
-      title: "Ny B2B ansøgning",
-      message: "Restaurant Noma har ansøgt om oprettelse",
-      time: "5 min siden",
-      unread: true,
-      type: "application"
-    },
-    {
-      id: 2,
-      title: "Lav lagerstatus",
-      message: "Økologiske æbler (3 kg tilbage)",
-      time: "22 min siden",
-      unread: true,
-      type: "inventory"
-    },
-    {
-      id: 3,
-      title: "Stor ordre modtaget",
-      message: "Café Sunshine - 15.000 kr",
-      time: "1 time siden",
-      unread: false,
-      type: "order"
-    }
-  ]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
 
   const unreadCount = notifications.filter(n => n.unread).length;
+
+  // Load notifications from API
+  useEffect(() => {
+    loadNotifications();
+  }, []);
+
+  const loadNotifications = async () => {
+    if (!user || isLoadingNotifications) return;
+    
+    setIsLoadingNotifications(true);
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) return;
+
+      const response = await fetch('/.netlify/functions/admin-notifications?limit=10', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setNotifications(data.notifications || []);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load notifications:', error);
+    } finally {
+      setIsLoadingNotifications(false);
+    }
+  };
+
+  const markNotificationAsRead = async (notificationId: string) => {
+    try {
+      const token = localStorage.getItem('admin_token');
+      if (!token) return;
+
+      const response = await fetch('/.netlify/functions/admin-notifications', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          notificationId,
+          action: 'mark_opened'
+        })
+      });
+
+      if (response.ok) {
+        // Update local state
+        setNotifications(prev => 
+          prev.map(notif => 
+            notif.id === notificationId 
+              ? { ...notif, unread: false }
+              : notif
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -213,26 +255,57 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {notifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="py-3 cursor-pointer">
-                    <div className="flex flex-col gap-1 w-full min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium text-sm truncate flex-1">
-                          {notification.title}
-                        </div>
-                        {notification.unread && (
-                          <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0"></div>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {notification.message}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {notification.time}
-                      </div>
+                {isLoadingNotifications ? (
+                  <DropdownMenuItem className="py-3 justify-center">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-primary"></div>
+                      <span className="text-sm">Indlæser notifikationer...</span>
                     </div>
                   </DropdownMenuItem>
-                ))}
+                ) : notifications.length === 0 ? (
+                  <DropdownMenuItem className="py-3 justify-center">
+                    <div className="text-sm text-muted-foreground">
+                      Ingen notifikationer
+                    </div>
+                  </DropdownMenuItem>
+                ) : (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem 
+                      key={notification.id} 
+                      className="py-3 cursor-pointer"
+                      onClick={() => {
+                        if (notification.unread) {
+                          markNotificationAsRead(notification.id);
+                        }
+                        if (notification.actionUrl) {
+                          navigate(notification.actionUrl);
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col gap-1 w-full min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium text-sm truncate flex-1">
+                            {notification.title}
+                          </div>
+                          {notification.unread && (
+                            <div className="h-2 w-2 rounded-full bg-brand-primary flex-shrink-0"></div>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {notification.message}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {notification.time}
+                        </div>
+                        {notification.requiresAction && (
+                          <div className="text-xs text-brand-primary font-medium mt-1">
+                            {notification.actionText || 'Se mere'}
+                          </div>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="justify-center font-medium text-sm cursor-pointer">
                   Vis alle notifikationer
@@ -400,26 +473,57 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                   )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {notifications.map((notification) => (
-                  <DropdownMenuItem key={notification.id} className="py-3 cursor-pointer">
-                    <div className="flex flex-col gap-1 w-full min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="font-medium text-sm truncate flex-1">
-                          {notification.title}
-                        </div>
-                        {notification.unread && (
-                          <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0"></div>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {notification.message}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {notification.time}
-                      </div>
+                {isLoadingNotifications ? (
+                  <DropdownMenuItem className="py-3 justify-center">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-primary"></div>
+                      <span className="text-sm">Indlæser notifikationer...</span>
                     </div>
                   </DropdownMenuItem>
-                ))}
+                ) : notifications.length === 0 ? (
+                  <DropdownMenuItem className="py-3 justify-center">
+                    <div className="text-sm text-muted-foreground">
+                      Ingen notifikationer
+                    </div>
+                  </DropdownMenuItem>
+                ) : (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem 
+                      key={notification.id} 
+                      className="py-3 cursor-pointer"
+                      onClick={() => {
+                        if (notification.unread) {
+                          markNotificationAsRead(notification.id);
+                        }
+                        if (notification.actionUrl) {
+                          navigate(notification.actionUrl);
+                        }
+                      }}
+                    >
+                      <div className="flex flex-col gap-1 w-full min-w-0">
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium text-sm truncate flex-1">
+                            {notification.title}
+                          </div>
+                          {notification.unread && (
+                            <div className="h-2 w-2 rounded-full bg-brand-primary flex-shrink-0"></div>
+                          )}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {notification.message}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {notification.time}
+                        </div>
+                        {notification.requiresAction && (
+                          <div className="text-xs text-brand-primary font-medium mt-1">
+                            {notification.actionText || 'Se mere'}
+                          </div>
+                        )}
+                      </div>
+                    </DropdownMenuItem>
+                  ))
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="justify-center font-medium text-sm cursor-pointer">
                   Vis alle notifikationer

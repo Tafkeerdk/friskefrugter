@@ -9,6 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Mail, Phone, MapPin, CheckCircle, ArrowRight, User } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useToast } from "@/components/ui/use-toast";
+import { authService } from "@/lib/auth";
 
 // Cache-busting: Force deployment with Multi Grønt branding - v2.0
 
@@ -23,6 +25,9 @@ const Contact = () => {
     message: "",
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionTime] = useState(Date.now()); // For anti-bot verification
+  const { toast } = useToast();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -33,10 +38,64 @@ const Contact = () => {
     setFormData(prev => ({ ...prev, industry: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form submitted:", formData);
-    setIsSubmitted(true);
+    
+    if (isSubmitting) return; // Prevent double submission
+    
+    setIsSubmitting(true);
+
+    try {
+      console.log("📧 Submitting contact form:", {
+        ...formData,
+        message: formData.message.substring(0, 50) + '...'
+      });
+
+      const response = await authService.apiClient.post('/.netlify/functions/contact-create', {
+        ...formData,
+        submissionTime
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        console.log("✅ Contact form submitted successfully:", result);
+        setIsSubmitted(true);
+        
+        toast({
+          title: "Tak for din henvendelse!",
+          description: "Vi har modtaget din besked og vil kontakte dig snart.",
+          variant: "default",
+        });
+
+        // Reset form data
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          phone: "",
+          companyName: "",
+          industry: "",
+          message: "",
+        });
+      } else {
+        throw new Error(result.error || 'Ukendt fejl opstod');
+      }
+    } catch (error) {
+      console.error("❌ Contact form submission failed:", error);
+      
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Der opstod en fejl ved afsendelse af din besked. Prøv igen senere.';
+
+      toast({
+        title: "Fejl ved afsendelse",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -231,8 +290,19 @@ const Contact = () => {
                             required 
                           />
                         </div>
-                        <Button type="submit" className="w-full md:w-auto">
-                          Send besked
+                        <Button 
+                          type="submit" 
+                          className="w-full md:w-auto btn-brand-primary" 
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Sender...
+                            </>
+                          ) : (
+                            'Send besked'
+                          )}
                         </Button>
                       </form>
                     </CardContent>
