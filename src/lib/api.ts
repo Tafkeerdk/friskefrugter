@@ -858,6 +858,30 @@ class ApiClient {
       body: JSON.stringify(settings)
     });
   }
+
+  // NEW: Admin featured products search - separate endpoint for better search results
+  async searchFeaturedProductsAdmin(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    kategori?: string;
+    excludeFeatured?: boolean;
+  } = {}) {
+    const searchParams = new URLSearchParams();
+    
+    // Always exclude featured products and only show active products
+    searchParams.append('aktiv', 'true');
+    searchParams.append('excludeFeatured', 'true');
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    const endpoint = this.getEndpoint(`/api/products?${searchParams.toString()}`);
+    return this.request(endpoint);
+  }
 }
 
 // Create and export API client instance

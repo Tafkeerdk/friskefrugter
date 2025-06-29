@@ -375,47 +375,59 @@ const Index = () => {
                 {settings.subtitle}
               </p>
             </div>
-            <div className={cn(
-              "grid gap-6",
-              isMobile 
-                ? "grid-cols-2" 
-                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8"
-            )}>
-              {loading ? (
-                // Loading skeleton
-                Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="animate-pulse">
-                    <div className="bg-gray-200 rounded-lg aspect-square mb-3"></div>
-                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                    <div className="bg-gray-200 h-3 rounded w-2/3"></div>
+            {/* CENTERED GRID WITH MAX 4 ITEMS PER ROW */}
+            <div className="flex justify-center">
+              <div className={cn(
+                "grid gap-6 w-full",
+                // MOBILE: 2 columns, max width to prevent stretching
+                isMobile 
+                  ? "grid-cols-2 max-w-lg" 
+                  // DESKTOP: Responsive grid that centers content
+                  : featuredProducts.length === 1 
+                    ? "grid-cols-1 max-w-sm"
+                    : featuredProducts.length === 2 
+                      ? "grid-cols-2 max-w-2xl"
+                      : featuredProducts.length === 3
+                        ? "grid-cols-3 max-w-4xl"
+                        : "grid-cols-4 max-w-6xl gap-8"
+              )}>
+                {loading ? (
+                  // Loading skeleton - responsive count
+                  Array.from({ length: isMobile ? 4 : 4 }).map((_, index) => (
+                    <div key={index} className="animate-pulse">
+                      <div className="bg-gray-200 rounded-lg aspect-square mb-3"></div>
+                      <div className="bg-gray-200 h-4 rounded mb-2"></div>
+                      <div className="bg-gray-200 h-3 rounded w-2/3"></div>
+                    </div>
+                  ))
+                ) : featuredProducts.length > 0 ? (
+                  // Show only first 4 products to maintain clean layout
+                  featuredProducts.slice(0, 4).map((product) => (
+                    <div key={product.id} className="flex justify-center">
+                      <ProductCard 
+                        id={product.id}
+                        name={product.name}
+                        image={product.image || '/placeholder.svg'}
+                        category={product.category}
+                        isLoggedIn={product.isLoggedIn}
+                        userType={product.userType as "customer" | "public"}
+                        price={product.price}
+                        customerPricing={product.customerPricing}
+                      />
+                    </div>
+                  ))
+                ) : (
+                  // No products fallback
+                  <div className="col-span-full text-center py-12">
+                    <p className="text-gray-500 mb-4">Ingen udvalgte produkter tilgængelige.</p>
+                    <Link to="/products">
+                      <Button variant="outline">
+                        Se alle produkter <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
                   </div>
-                ))
-              ) : featuredProducts.length > 0 ? (
-                featuredProducts.map((product) => (
-                  <div key={product.id}>
-                    <ProductCard 
-                      id={product.id}
-                      name={product.name}
-                      image={product.image || '/placeholder.svg'}
-                      category={product.category}
-                      isLoggedIn={product.isLoggedIn}
-                      userType={product.userType as "customer" | "public"}
-                      price={product.price}
-                      customerPricing={product.customerPricing}
-                    />
-                  </div>
-                ))
-              ) : (
-                // No products fallback
-                <div className="col-span-full text-center py-12">
-                  <p className="text-gray-500 mb-4">Ingen udvalgte produkter tilgængelige.</p>
-                  <Link to="/products">
-                    <Button variant="outline">
-                      Se alle produkter <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              )}
+                )}
+              </div>
             </div>
             <div className={cn("text-center flex justify-center", isMobile ? "mt-8" : "mt-12")}>
               <Link to="/products">
