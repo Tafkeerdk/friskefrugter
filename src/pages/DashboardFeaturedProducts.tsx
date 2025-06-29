@@ -352,7 +352,6 @@ const DashboardFeaturedProducts: React.FC = () => {
         console.log('✅ Backend confirmed products added successfully');
         
         // OPTIMISTIC UPDATE: Immediately add products to featured list
-        // This prevents the weird behavior where products don't show up
         const nextFeaturedOrder = featuredProducts.length > 0 
           ? Math.max(...featuredProducts.map(p => p.featuredOrder || 0)) + 1 
           : 1;
@@ -368,18 +367,19 @@ const DashboardFeaturedProducts: React.FC = () => {
         // Update featured products state immediately
         setFeaturedProducts(prev => [...prev, ...newFeaturedProducts]);
         
+        // Remove the added products from available products list immediately
+        setAllProducts(prev => prev.filter(p => !selectedProductIds.includes(p._id)));
+        
+        // Update total count
+        setTotalProducts(prev => prev - selectedProductIds.length);
+        
         // Clear selections
         setSelectedProducts(new Set());
         
         // Show success message
         toast.success(`${selectedProductIds.length} produkter tilføjet til udvalgte produkter`);
         
-        // Reload available products to remove the ones we just added
-        // Small delay to ensure database consistency
-        setTimeout(async () => {
-          console.log('🔄 Refreshing available products after adding featured products');
-          await loadProducts(true);
-        }, 500);
+        console.log('✅ Optimistic update completed - no page refresh needed');
         
       } else {
         console.error('❌ Backend returned error:', response.error);
@@ -408,15 +408,45 @@ const DashboardFeaturedProducts: React.FC = () => {
         const removedProduct = featuredProducts.find(p => p._id === productId);
         setFeaturedProducts(prev => prev.filter(p => p._id !== productId));
         
+        // Add the removed product back to available products list (if it matches current filters)
+        if (removedProduct) {
+          // Create a clean product object without featured fields
+          const cleanProduct: Product = {
+            _id: removedProduct._id,
+            produktnavn: removedProduct.produktnavn,
+            beskrivelse: (removedProduct as any).beskrivelse,
+            billeder: removedProduct.billeder,
+            kategori: removedProduct.kategori,
+            enhed: (removedProduct as any).enhed || { _id: '', value: '', label: '', isActive: true, sortOrder: 0 },
+            basispris: removedProduct.basispris,
+            varenummer: (removedProduct as any).varenummer || '',
+            eanNummer: (removedProduct as any).eanNummer,
+            featuredOrder: undefined,
+            isFeatured: false,
+            aktiv: true,
+            lagerstyring: (removedProduct as any).lagerstyring || { enabled: false },
+            createdAt: (removedProduct as any).createdAt || new Date().toISOString(),
+            updatedAt: (removedProduct as any).updatedAt || new Date().toISOString()
+          };
+          
+          // Only add back if it matches current search/category filters
+          const matchesSearch = searchTerm === '' || 
+            cleanProduct.produktnavn.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            cleanProduct.varenummer.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (cleanProduct.eanNummer && cleanProduct.eanNummer.toLowerCase().includes(searchTerm.toLowerCase()));
+          
+          const matchesCategory = selectedCategory === 'all' || cleanProduct.kategori?.navn === selectedCategory;
+          
+          if (matchesSearch && matchesCategory) {
+            setAllProducts(prev => [cleanProduct, ...prev]);
+            setTotalProducts(prev => prev + 1);
+          }
+        }
+        
         // Show success message
         toast.success(`Produkt "${removedProduct?.produktnavn || 'Unknown'}" fjernet fra udvalgte produkter`);
         
-        // Reload available products to add the removed product back
-        // Small delay to ensure database consistency
-        setTimeout(async () => {
-          console.log('🔄 Refreshing available products after removing featured product');
-          await loadProducts(true);
-        }, 500);
+        console.log('✅ Optimistic update completed - no page refresh needed');
         
       } else {
         console.error('❌ Backend returned error:', response.error);
