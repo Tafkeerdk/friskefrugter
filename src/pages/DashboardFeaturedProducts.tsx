@@ -108,6 +108,14 @@ const DashboardFeaturedProducts: React.FC = () => {
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showLivePreview, setShowLivePreview] = useState(false);
   
+  // Pagination state for available products
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const productsPerPage = 20;
+  
   // New state for title/subtitle settings
   const [settings, setSettings] = useState<FeaturedProductsSettings>({
     title: 'Udvalgte Produkter',
@@ -120,19 +128,37 @@ const DashboardFeaturedProducts: React.FC = () => {
     loadData();
   }, []);
 
+  // Reset pagination when search or category changes (with debouncing for search)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (currentPage > 1) {
+        setCurrentPage(1);
+        setAllProducts([]);
+        loadProducts(true);
+      } else {
+        loadProducts(true);
+      }
+    }, searchTerm ? 500 : 0); // 500ms debounce for search, immediate for category
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, selectedCategory]);
+
   const loadData = async () => {
     try {
       setLoading(true);
       
-      // Load featured products and all products - these should work
-      const [featuredResponse, productsResponse] = await Promise.all([
+      // Load featured products, initial products, and categories
+      const [featuredResponse, categoriesResponse] = await Promise.all([
         api.getFeaturedProducts().catch(err => {
           console.error('Featured products API failed:', err);
           return { success: false, error: 'Featured products endpoint failed' };
         }),
-        api.getProducts().catch(err => {
-          console.error('Products API failed:', err);
-          return { success: false, error: 'Products endpoint failed' };
+        api.getCategories({ 
+          activeOnly: true, 
+          includeProductCount: true 
+        }).catch(err => {
+          console.error('Categories API failed:', err);
+          return { success: false, error: 'Categories endpoint failed' };
         })
       ]);
 
@@ -153,18 +179,18 @@ const DashboardFeaturedProducts: React.FC = () => {
         toast.error('Kunne ikke indlæse udvalgte produkter');
       }
 
-      if (productsResponse.success && 'data' in productsResponse && productsResponse.data) {
-        const data = productsResponse.data as any;
-        const products = data.products || [];
-        setAllProducts(products);
-        
+      if (categoriesResponse.success && 'data' in categoriesResponse && categoriesResponse.data) {
+        const categoriesData = categoriesResponse.data as any;
         // Extract unique categories with proper typing
-        const uniqueCategories = [...new Set(products.map((p: Product) => p.kategori?.navn).filter(Boolean))] as string[];
+        const uniqueCategories = [...new Set(categoriesData.map((cat: any) => cat.navn).filter(Boolean))] as string[];
         setCategories(uniqueCategories);
       } else {
-        console.error('Products failed:', 'error' in productsResponse ? productsResponse.error : 'Unknown error');
-        toast.error('Kunne ikke indlæse produkter');
+        console.error('Categories failed:', 'error' in categoriesResponse ? categoriesResponse.error : 'Unknown error');
+        toast.error('Kunne ikke indlæse kategorier');
       }
+
+      // Load initial products
+      await loadProducts(true);
 
       // Try to load settings separately - may fail if endpoint not deployed yet
       try {
@@ -186,6 +212,83 @@ const DashboardFeaturedProducts: React.FC = () => {
       toast.error('Fejl ved indlæsning af data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProducts = async (reset = false) => {
+    try {
+      if (reset) {
+        setLoadingMore(false);
+      } else {
+        setLoadingMore(true);
+      }
+
+      const page = reset ? 1 : currentPage + 1;
+      
+      const params: any = {
+        page,
+        limit: productsPerPage,
+        aktiv: true // Only active products
+      };
+
+      // Add search filter
+      if (searchTerm.trim()) {
+        params.search = searchTerm.trim();
+      }
+
+      // Add category filter
+      if (selectedCategory !== 'all') {
+        // Find category ID from categories list - need to get full category data
+        const categoriesFullResponse = await api.getCategories({ activeOnly: true });
+        if (categoriesFullResponse.success && categoriesFullResponse.data) {
+          const categoryData = (categoriesFullResponse.data as any[]).find(cat => cat.navn === selectedCategory);
+          if (categoryData) {
+            params.kategori = categoryData._id;
+          }
+        }
+      }
+
+      console.log('🔍 Loading products with params:', params);
+
+      const response = await api.getProducts(params);
+
+      if (response.success && response.data) {
+        const data = response.data as any;
+        const newProducts = data.products || [];
+        const pagination = data.pagination || {};
+        
+        console.log(`📦 Loaded ${newProducts.length} products, page ${page}/${pagination.pages || 1}`);
+
+        if (reset) {
+          setAllProducts(newProducts);
+          setCurrentPage(1);
+        } else {
+          setAllProducts(prev => [...prev, ...newProducts]);
+          setCurrentPage(page);
+        }
+
+        setTotalPages(pagination.pages || 1);
+        setTotalProducts(pagination.total || 0);
+        setHasMore(page < (pagination.pages || 1));
+      } else {
+        console.error('Products failed:', 'error' in response ? response.error : 'Unknown error');
+        if (reset) {
+          toast.error('Kunne ikke indlæse produkter');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+      if (reset) {
+        toast.error('Fejl ved indlæsning af produkter');
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (hasMore && !loadingMore) {
+      loadProducts(false);
     }
   };
 
@@ -741,9 +844,15 @@ const DashboardFeaturedProducts: React.FC = () => {
               <CardTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5 text-blue-600" />
                 Tilgængelige Produkter
+                {totalProducts > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {totalProducts} total
+                  </Badge>
+                )}
               </CardTitle>
               <CardDescription>
                 Vælg produkter at tilføje til udvalgte produkter
+                {totalProducts > 0 && ` • ${totalProducts} produkter tilgængelige`}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -811,14 +920,44 @@ const DashboardFeaturedProducts: React.FC = () => {
                     );
                   })}
                   
-                  {filteredProducts.length === 0 && (
+                  {filteredProducts.length === 0 && !loadingMore && (
                     <div className="text-center py-8 text-muted-foreground">
                       <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
                       <p>Ingen produkter matchede din søgning</p>
                     </div>
                   )}
+
+                  {/* Loading more indicator */}
+                  {loadingMore && (
+                    <div className="flex items-center justify-center py-4">
+                      <RefreshCw className="h-4 w-4 animate-spin text-brand-primary mr-2" />
+                      <span className="text-sm text-muted-foreground">Indlæser flere produkter...</span>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
+
+              {/* Load More Button */}
+              {hasMore && !loadingMore && filteredProducts.length > 0 && (
+                <div className="mt-4 text-center">
+                  <Button
+                    onClick={handleLoadMore}
+                    variant="outline"
+                    className="w-full"
+                    disabled={loadingMore}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Indlæs flere produkter ({totalProducts - filteredProducts.length} tilbage)
+                  </Button>
+                </div>
+              )}
+
+              {/* Products summary */}
+              {totalProducts > 0 && (
+                <div className="mt-2 text-center text-sm text-muted-foreground">
+                  Viser {filteredProducts.length} af {totalProducts} produkter
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
