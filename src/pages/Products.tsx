@@ -155,10 +155,11 @@ const Products = () => {
     // 1. We have categories loaded
     // 2. We're NOT processing a URL search (prevents race condition)
     // 3. This isn't the initial load
-    if (categories.length > 0 && !isProcessingUrlSearch && !isLoading) {
+    // 4. Not currently loading or loading more
+    if (categories.length > 0 && !isProcessingUrlSearch && !isLoading && !isLoadingMore) {
       loadProducts(true); // Reset to page 1 when filters change
     }
-  }, [filters, isCustomerAuthenticated, categories.length, isProcessingUrlSearch, isLoading]);
+  }, [filters, isCustomerAuthenticated, categories.length, isProcessingUrlSearch]); // Removed isLoading to prevent infinite loop
 
   // Load initial data (categories and customer info)
   const loadInitialData = async () => {
@@ -318,7 +319,15 @@ const Products = () => {
         
         // Update customer info if provided from backend (for customer endpoints)
         if (response.data.customerInfo && isCustomerAuthenticated) {
-          setCustomerInfo(response.data.customerInfo);
+          // Only update if customer info has actually changed to prevent unnecessary re-renders
+          setCustomerInfo(prev => {
+            const newInfo = response.data.customerInfo;
+            // Simple comparison - update if it's different from current state
+            if (JSON.stringify(prev) !== JSON.stringify(newInfo)) {
+              return newInfo;
+            }
+            return prev;
+          });
         }
         
         // Auto-increment page for next load
