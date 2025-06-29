@@ -40,8 +40,8 @@ export const SearchResults = ({
       "absolute top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 max-h-[400px] overflow-y-auto z-50",
       // Desktop: same width as search input
       "md:left-0 md:right-0",
-      // Mobile: much wider than search input - extend beyond container
-      "left-[-50px] right-[-50px] min-w-[300px] max-w-[95vw] md:min-w-0 md:max-w-none"
+      // Mobile: MUCH wider than search input - extend far beyond container for full-width effect
+      "left-[-100px] right-[-100px] min-w-[350px] max-w-[90vw] md:min-w-0 md:max-w-none"
     )}>
       {/* Loading State */}
       {isLoading && (
