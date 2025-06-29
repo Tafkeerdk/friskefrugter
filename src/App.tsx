@@ -35,6 +35,7 @@ import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
 import DashboardFeaturedProducts from "./pages/DashboardFeaturedProducts";
 import DashboardHenvendelser from "./pages/DashboardHenvendelser";
 import DashboardApplications from "./pages/DashboardApplications";
+import DashboardNotifications from "./pages/DashboardNotifications";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
@@ -221,6 +222,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardHenvendelser />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/notifications" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardNotifications />
                 </ProtectedRoute>
               } 
             />

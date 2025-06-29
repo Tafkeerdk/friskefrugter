@@ -97,7 +97,7 @@ const DashboardHenvendelser: React.FC = () => {
       const response = await fetch(`/.netlify/functions/admin-contacts?${params}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
           'Content-Type': 'application/json',
           'X-PWA': 'true',
           'X-Display-Mode': 'browser',

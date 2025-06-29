@@ -159,6 +159,29 @@ const DashboardSidebar: React.FC = () => {
               
               <SidebarMenuItem>
                 <SidebarMenuButton 
+                  onClick={handleNavigation("/admin/notifications")}
+                  isActive={isActive("/admin/notifications")}
+                  className={cn(
+                    "transition-all duration-200 group",
+                    isMobile ? "h-10 text-sm" : "h-11",
+                    isActive("/admin/notifications") && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <Bell className={cn(
+                    "transition-all flex-shrink-0",
+                    isMobile ? "h-4 w-4" : "h-5 w-5"
+                  )} />
+                  <span className="truncate min-w-0 flex-1">
+                    {isMobile ? "Notifikationer" : "Se alle notifikationer"}
+                  </span>
+                  <div className="ml-auto flex items-center flex-shrink-0">
+                    <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
+                  </div>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
                   onClick={handleNavigation("/admin/henvendelser")}
                   isActive={isActive("/admin/henvendelser")}
                   className={cn(
