@@ -306,6 +306,19 @@ const Products = () => {
         const total = response.data.total || response.data.pagination?.total || 0;
         const totalPages = response.data.totalPages || response.data.pagination?.pages || 1;
         
+        // Debug logging for new pagination logic
+        console.log('📊 Frontend pagination processing:', {
+          productsReceived: newProducts.length,
+          total: total,
+          totalPages: totalPages,
+          currentPage: page,
+          responseStructure: {
+            hasDirectTotal: !!response.data.total,
+            hasPaginationObject: !!response.data.pagination,
+            paginationData: response.data.pagination
+          }
+        });
+        
         if (resetPagination) {
           setProducts(newProducts);
           setCurrentPage(1);
