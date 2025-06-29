@@ -1,41 +1,84 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Textarea } from '../components/ui/textarea';
+import { Checkbox } from '../components/ui/checkbox';
 import { 
-  Users, 
-  Calendar, 
-  Mail,
-  Phone,
-  Building,
-  Clock,
-  FileText,
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle 
+} from '../components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import { 
+  Loader2, 
+  AlertTriangle, 
   RefreshCw,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Eye,
+  Search,
   Check,
   X,
-  AlertTriangle,
-  Loader2,
-  Eye
+  Building,
+  MapPin,
+  Phone,
+  Mail,
+  User,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { authService } from '@/lib/auth';
-import { useNavigate } from 'react-router-dom';
+import { authService } from '../lib/auth';
 
 interface ApplicationData {
   _id: string;
+  id: string;
   companyName: string;
   cvrNumber: string;
   contactPersonName: string;
   email: string;
   phone: string;
-  address: string;
+  address?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  deliveryAddress?: {
+    street?: string;
+    city?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  useRegisteredAddressForDelivery?: boolean;
   status: string;
   appliedAt: string;
   reviewedAt?: string;
-  reviewedBy?: any;
+  reviewedBy?: {
+    name: string;
+    email: string;
+  };
   rejectionReason?: string;
+  cvrData?: {
+    companyType?: string;
+    industry?: string;
+    employees?: number;
+    foundedYear?: number;
+  };
 }
 
 interface ApplicationResponse {
@@ -56,7 +99,6 @@ interface ApplicationResponse {
 
 const DashboardApplications: React.FC = () => {
   const { adminUser } = useAuth();
-  const navigate = useNavigate();
   const [applications, setApplications] = useState<ApplicationData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +108,12 @@ const DashboardApplications: React.FC = () => {
     approved: 0,
     rejected: 0
   });
+  
+  // Dialog and action states
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedApplication, setSelectedApplication] = useState<ApplicationData | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
 
   const loadData = async () => {
     try {
@@ -103,31 +151,60 @@ const DashboardApplications: React.FC = () => {
 
   const handleApprove = async (applicationId: string) => {
     try {
+      setActionLoading(applicationId);
       const response = await authService.approveApplication(applicationId);
       
       if (response.success) {
-        await loadData(); // Refresh data
+        // Close modal and reset state
+        setDialogOpen(false);
+        setSelectedApplication(null);
+        setRejectionReason('');
+        
+        // Refresh data
+        await loadData();
+        
+        // Show success message
+        if (response.emailSent) {
+          console.log('✅ Application approved and email sent successfully');
+        }
       } else {
-        throw new Error('Failed to approve application');
+        setError(response.message || 'Kunne ikke godkende ansøgning');
       }
-    } catch (error) {
-      console.error('Failed to approve application:', error);
-      setError('Kunne ikke godkende ansøgning. Prøv igen.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleReject = async (applicationId: string, reason: string) => {
+  const handleReject = async (applicationId: string, reason?: string) => {
+    const finalReason = reason || rejectionReason;
+    if (!finalReason.trim()) {
+      setError('Angiv venligst en årsag til afvisning');
+      return;
+    }
+
     try {
-      const response = await authService.rejectApplication(applicationId, reason);
+      setActionLoading(applicationId);
+      const response = await authService.rejectApplication(applicationId, finalReason);
       
       if (response.success) {
-        await loadData(); // Refresh data
+        // Close modal and reset state
+        setDialogOpen(false);
+        setSelectedApplication(null);
+        setRejectionReason('');
+        
+        // Refresh data
+        await loadData();
       } else {
-        throw new Error('Failed to reject application');
+        setError(response.message || 'Kunne ikke afvise ansøgning');
       }
-    } catch (error) {
-      console.error('Failed to reject application:', error);
-      setError('Kunne ikke afvise ansøgning. Prøv igen.');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
+      setError(errorMessage);
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -158,6 +235,12 @@ const DashboardApplications: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const formatAddress = (address?: { street?: string; city?: string; postalCode?: string; country?: string }) => {
+    if (!address) return 'Ikke angivet';
+    const parts = [address.street, address.postalCode, address.city, address.country].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : 'Ikke angivet';
   };
 
   if (!adminUser) {
@@ -232,7 +315,7 @@ const DashboardApplications: React.FC = () => {
                   <CardTitle className="text-sm font-medium text-brand-gray-700">
                     Afventende ansøgninger
                   </CardTitle>
-                  <Users className="h-4 w-4 text-brand-warning" />
+                  <User className="h-4 w-4 text-brand-warning" />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-brand-warning">{pendingApplications.length}</div>
@@ -325,7 +408,10 @@ const DashboardApplications: React.FC = () => {
                             </div>
                             <div className="flex gap-2">
                               <Button 
-                                onClick={() => navigate(`/admin/applications/${application._id}`)}
+                                onClick={() => {
+                                  setSelectedApplication(application);
+                                  setDialogOpen(true);
+                                }}
                                 variant="outline"
                                 size="sm"
                                 className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
@@ -432,7 +518,10 @@ const DashboardApplications: React.FC = () => {
                                 <span>{formatDate(application.reviewedAt || application.appliedAt)}</span>
                               </div>
                               <Button 
-                                onClick={() => navigate(`/admin/applications/${application._id}`)}
+                                onClick={() => {
+                                  setSelectedApplication(application);
+                                  setDialogOpen(true);
+                                }}
                                 variant="outline"
                                 size="sm"
                                 className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
@@ -465,6 +554,157 @@ const DashboardApplications: React.FC = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* Application Detail Dialog */}
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Ansøgningsdetaljer</DialogTitle>
+                <DialogDescription>
+                  Se detaljerede oplysninger om ansøgningen
+                </DialogDescription>
+              </DialogHeader>
+              {selectedApplication && (
+                <div className="space-y-6">
+                  {/* Company Information */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-brand-gray-900">Virksomhedsoplysninger</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Virksomhedsnavn</Label>
+                          <p className="text-brand-gray-900">{selectedApplication.companyName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">CVR-nummer</Label>
+                          <p className="font-mono text-brand-gray-900">{selectedApplication.cvrNumber}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Adresse</Label>
+                          <p className="text-brand-gray-900">{formatAddress(selectedApplication.address)}</p>
+                        </div>
+                        {!selectedApplication.useRegisteredAddressForDelivery && selectedApplication.deliveryAddress && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Leveringsadresse</Label>
+                            <p className="text-brand-gray-900">{formatAddress(selectedApplication.deliveryAddress)}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold text-brand-gray-900">Kontaktoplysninger</h3>
+                      <div className="space-y-3">
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Kontaktperson</Label>
+                          <p className="text-brand-gray-900">{selectedApplication.contactPersonName}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Email</Label>
+                          <p className="text-brand-gray-900">{selectedApplication.email}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Telefon</Label>
+                          <p className="text-brand-gray-900">{selectedApplication.phone}</p>
+                        </div>
+                        <div>
+                          <Label className="text-sm font-medium text-brand-gray-700">Status</Label>
+                          <div className="mt-1">
+                            {getStatusBadge(selectedApplication.status)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CVR Data */}
+                  {selectedApplication.cvrData && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-brand-gray-900 mb-3">CVR Data</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-brand-gray-50 rounded-lg">
+                        {selectedApplication.cvrData.industry && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Branche</Label>
+                            <p className="text-brand-gray-900">{selectedApplication.cvrData.industry}</p>
+                          </div>
+                        )}
+                        {selectedApplication.cvrData.employees && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Medarbejdere</Label>
+                            <p className="text-brand-gray-900">{selectedApplication.cvrData.employees}</p>
+                          </div>
+                        )}
+                        {selectedApplication.cvrData.companyType && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Virksomhedstype</Label>
+                            <p className="text-brand-gray-900">{selectedApplication.cvrData.companyType}</p>
+                          </div>
+                        )}
+                        {selectedApplication.cvrData.foundedYear && (
+                          <div>
+                            <Label className="text-sm font-medium text-brand-gray-700">Grundlagt</Label>
+                            <p className="text-brand-gray-900">{selectedApplication.cvrData.foundedYear}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Rejection Reason */}
+                  {selectedApplication.rejectionReason && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-brand-gray-900 mb-3">Afvisningsårsag</h3>
+                      <div className="p-4 bg-brand-error/10 border border-brand-error/20 rounded-lg">
+                        <p className="text-brand-error">{selectedApplication.rejectionReason}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  {selectedApplication.status === 'Afventer godkendelse' && (
+                    <div className="space-y-4 pt-4 border-t">
+                      <div className="flex space-x-2">
+                        <Button
+                          onClick={() => handleApprove(selectedApplication.id || selectedApplication._id)}
+                          disabled={actionLoading === (selectedApplication.id || selectedApplication._id)}
+                          className="btn-brand-primary"
+                        >
+                          {actionLoading === (selectedApplication.id || selectedApplication._id) ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Godkend ansøgning
+                        </Button>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="rejection-reason">Afvisningsårsag</Label>
+                        <Textarea
+                          id="rejection-reason"
+                          placeholder="Angiv årsag til afvisning..."
+                          value={rejectionReason}
+                          onChange={(e) => setRejectionReason(e.target.value)}
+                        />
+                        <Button
+                          onClick={() => handleReject(selectedApplication.id || selectedApplication._id)}
+                          disabled={actionLoading === (selectedApplication.id || selectedApplication._id) || !rejectionReason.trim()}
+                          className="bg-brand-error hover:bg-brand-error/90 text-white"
+                        >
+                          {actionLoading === (selectedApplication.id || selectedApplication._id) ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : (
+                            <XCircle className="w-4 h-4 mr-2" />
+                          )}
+                          Afvis ansøgning
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </DashboardLayout>
