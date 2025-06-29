@@ -86,6 +86,9 @@ const Products = () => {
   const [totalProducts, setTotalProducts] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   
+  // Race condition fix: Track when processing URL search
+  const [isProcessingUrlSearch, setIsProcessingUrlSearch] = useState(false);
+  
   // Filters
   const [filters, setFilters] = useState<ProductFilters>({
     search: '',
@@ -101,37 +104,53 @@ const Products = () => {
   // Customer info for authenticated users
   const [customerInfo, setCustomerInfo] = useState<any>(null);
 
-  // **HANDLE URL SEARCH PARAMETERS FROM NAVBAR**
+  // **HANDLE URL SEARCH PARAMETERS FROM NAVBAR - FIXED RACE CONDITION**
   useEffect(() => {
     const urlSearch = searchParams.get('search');
     if (urlSearch && urlSearch.trim()) {
+      setIsProcessingUrlSearch(true); // Prevent other useEffect from interfering
       setFilters(prev => ({ ...prev, search: urlSearch.trim() }));
+      
       // Clear the URL parameter after setting the search
       const newParams = new URLSearchParams(searchParams);
       newParams.delete('search');
       setSearchParams(newParams, { replace: true });
       
-      // **IMMEDIATELY LOAD PRODUCTS WHEN SEARCH IS SET FROM URL**
-      // This ensures search results show immediately without waiting for categories
-      setTimeout(() => {
-        loadProducts(true);
-      }, 100);
+      // Load products with search term after categories are loaded
+      const loadSearchResults = async () => {
+        // Wait for categories if they're not loaded yet
+        if (categories.length === 0) {
+          // Wait a bit and try again, or load categories first
+          setTimeout(() => {
+            loadProducts(true).finally(() => {
+              setIsProcessingUrlSearch(false);
+            });
+          }, 200);
+        } else {
+          await loadProducts(true);
+          setIsProcessingUrlSearch(false);
+        }
+      };
+      
+      loadSearchResults();
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, categories.length]);
 
   // Load initial data
   useEffect(() => {
     loadInitialData();
   }, [isCustomerAuthenticated]);
 
-  // Load products when filters change (but not on initial search from URL)
+  // Load products when filters change - FIXED TO AVOID RACE CONDITION
   useEffect(() => {
-    // Only auto-load products if we have categories AND we're not processing a URL search
-    const urlSearch = searchParams.get('search');
-    if (categories.length > 0 && !urlSearch) {
+    // Only auto-load products if:
+    // 1. We have categories loaded
+    // 2. We're NOT processing a URL search (prevents race condition)
+    // 3. This isn't the initial load
+    if (categories.length > 0 && !isProcessingUrlSearch && !isLoading) {
       loadProducts(true); // Reset to page 1 when filters change
     }
-  }, [filters, isCustomerAuthenticated, categories]);
+  }, [filters, isCustomerAuthenticated, categories.length, isProcessingUrlSearch, isLoading]);
 
   // Load initial data (categories and customer info)
   const loadInitialData = async () => {
