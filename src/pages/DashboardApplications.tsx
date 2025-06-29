@@ -16,10 +16,12 @@ import {
   Check,
   X,
   AlertTriangle,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '@/lib/auth';
+import { useNavigate } from 'react-router-dom';
 
 interface ApplicationData {
   _id: string;
@@ -54,6 +56,7 @@ interface ApplicationResponse {
 
 const DashboardApplications: React.FC = () => {
   const { adminUser } = useAuth();
+  const navigate = useNavigate();
   const [applications, setApplications] = useState<ApplicationData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -322,6 +325,15 @@ const DashboardApplications: React.FC = () => {
                             </div>
                             <div className="flex gap-2">
                               <Button 
+                                onClick={() => navigate(`/admin/applications/${application._id}`)}
+                                variant="outline"
+                                size="sm"
+                                className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Se detaljer
+                              </Button>
+                              <Button 
                                 onClick={() => handleApprove(application._id)} 
                                 className="btn-brand-primary"
                                 size="sm"
@@ -419,6 +431,15 @@ const DashboardApplications: React.FC = () => {
                                 <Clock className="h-4 w-4" />
                                 <span>{formatDate(application.reviewedAt || application.appliedAt)}</span>
                               </div>
+                              <Button 
+                                onClick={() => navigate(`/admin/applications/${application._id}`)}
+                                variant="outline"
+                                size="sm"
+                                className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Se detaljer
+                              </Button>
                             </div>
                           </div>
                         </CardContent>

@@ -937,6 +937,18 @@ export const authService = {
     return response.json();
   },
 
+  // Get individual application by ID
+  async getApplication(id: string): Promise<{ success: boolean; application?: any; error?: string }> {
+    try {
+      const response = await apiClient.get(getEndpoint(`/api/auth/admin/applications?id=${id}`));
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to get application:', error);
+      return { success: false, error: 'Kunne ikke hente ansøgning' };
+    }
+  },
+
   async approveApplication(applicationId: string): Promise<ApplicationResponse> {
     const response = await apiClient.put(getEndpoint('/api/auth/admin/applications'), { 
       applicationId, 
@@ -1646,6 +1658,49 @@ export const authService = {
     const response = await apiClient.get(getEndpoint(endpoint));
     const data = await response.json();
     return data;
+  },
+
+  // Get individual contact by ID
+  async getContact(id: string): Promise<{ success: boolean; contact?: any; error?: string }> {
+    try {
+      const response = await apiClient.get(getEndpoint(`/api/auth/admin/contacts?id=${id}`));
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to get contact:', error);
+      return { success: false, error: 'Kunne ikke hente kontakt' };
+    }
+  },
+
+  // Update contact status
+  async updateContactStatus(contactId: string, status: string, internalNotes?: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.put(getEndpoint('/api/auth/admin/contacts'), {
+        contactId,
+        status,
+        internalNotes
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to update contact status:', error);
+      return { success: false, message: 'Kunne ikke opdatere kontakt status' };
+    }
+  },
+
+  // Mark contact as read
+  async markContactAsRead(contactId: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.put(getEndpoint('/api/auth/admin/contacts'), {
+        contactId,
+        action: 'mark_read'
+      });
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Failed to mark contact as read:', error);
+      return { success: false, message: 'Kunne ikke markere kontakt som læst' };
+    }
   },
 
   // Expose apiClient for direct use when needed

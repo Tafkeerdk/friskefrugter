@@ -35,7 +35,9 @@ import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
 import DashboardFeaturedProducts from "./pages/DashboardFeaturedProducts";
 import DashboardHenvendelser from "./pages/DashboardHenvendelser";
 import DashboardApplications from "./pages/DashboardApplications";
+import DashboardApplicationDetail from "./pages/DashboardApplicationDetail";
 import DashboardNotifications from "./pages/DashboardNotifications";
+import DashboardContactDetail from "./pages/DashboardContactDetail";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
@@ -118,6 +120,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardApplications />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/applications/:id" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardApplicationDetail />
                 </ProtectedRoute>
               } 
             />
@@ -222,6 +232,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardHenvendelser />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/henvendelser/:id" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardContactDetail />
                 </ProtectedRoute>
               } 
             />

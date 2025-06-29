@@ -1,36 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/dashboard/DashboardLayout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { 
-  Search, 
-  Mail, 
-  Phone, 
-  User, 
-  Building, 
-  MessageSquare, 
-  Clock, 
-  CheckCircle, 
   AlertCircle,
-  AlertTriangle,
   BarChart3,
+  Building,
   Calendar,
-  Filter,
-  Loader2,
-  Inbox,
-  Users,
-  TrendingUp,
+  CheckCircle,
+  Clock,
   Eye,
-  ExternalLink,
-  RefreshCw
+  Filter,
+  Inbox,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Phone,
+  Search,
+  TrendingUp,
+  User,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { authService } from '@/lib/auth';
+import { useNavigate } from 'react-router-dom';
 
 interface Contact {
   _id: string;
@@ -73,6 +70,7 @@ interface ContactResponse {
 
 const DashboardHenvendelser: React.FC = () => {
   const { adminUser } = useAuth();
+  const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [stats, setStats] = useState<ContactStats>({ total: 0, new: 0, thisMonth: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -82,7 +80,6 @@ const DashboardHenvendelser: React.FC = () => {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
 
   const fetchContacts = async () => {
     try {
@@ -398,137 +395,15 @@ const DashboardHenvendelser: React.FC = () => {
 
                       {/* Actions */}
                       <div className="flex flex-row lg:flex-col gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setSelectedContact(contact)}
-                              className="flex items-center gap-2"
-                            >
-                              <Eye className="h-4 w-4" />
-                              <span className="hidden sm:inline">Se detaljer</span>
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
-                              <DialogTitle className="text-brand-gray-900">
-                                Kontakt detaljer - {contact.firstName} {contact.lastName}
-                              </DialogTitle>
-                              <DialogDescription>
-                                Fuldstændige oplysninger om henvendelsen
-                              </DialogDescription>
-                            </DialogHeader>
-                            
-                            {selectedContact && (
-                              <div className="space-y-6">
-                                {/* Contact Information */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="space-y-3">
-                                    <h4 className="font-semibold text-brand-gray-900">Kontaktoplysninger</h4>
-                                    <div className="space-y-2 text-sm">
-                                      <div className="flex items-center gap-2">
-                                        <User className="h-4 w-4 text-brand-primary" />
-                                        <span>{selectedContact.firstName} {selectedContact.lastName}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <Mail className="h-4 w-4 text-brand-primary" />
-                                        <a href={`mailto:${selectedContact.email}`} className="text-brand-primary hover:underline">
-                                          {selectedContact.email}
-                                        </a>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <Phone className="h-4 w-4 text-brand-primary" />
-                                        <a href={`tel:${selectedContact.phone}`} className="text-brand-primary hover:underline">
-                                          {selectedContact.phone}
-                                        </a>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  
-                                  <div className="space-y-3">
-                                    <h4 className="font-semibold text-brand-gray-900">Virksomhedsoplysninger</h4>
-                                    <div className="space-y-2 text-sm">
-                                      <div className="flex items-center gap-2">
-                                        <Building className="h-4 w-4 text-brand-primary" />
-                                        <span>{selectedContact.companyName}</span>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <BarChart3 className="h-4 w-4 text-brand-primary" />
-                                        <span>{getIndustryLabel(selectedContact.industry)}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Status and Priority */}
-                                <div className="flex flex-wrap gap-4">
-                                  {getStatusBadge(selectedContact.status)}
-                                  {getPriorityBadge(selectedContact.priority)}
-                                  <Badge variant="outline" className="border-brand-gray-300">
-                                    {selectedContact.contactType.replace('_', ' ')}
-                                  </Badge>
-                                </div>
-
-                                {/* Message */}
-                                <div className="space-y-2">
-                                  <h4 className="font-semibold text-brand-gray-900">Besked</h4>
-                                  <div className="bg-brand-gray-50 p-4 rounded-lg">
-                                    <p className="text-sm text-brand-gray-700 whitespace-pre-wrap">
-                                      {selectedContact.message}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                {/* Timestamps */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-brand-gray-500">
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="h-3 w-3" />
-                                    <span>Modtaget: {formatDate(selectedContact.createdAt)}</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="h-3 w-3" />
-                                    <span>Opdateret: {formatDate(selectedContact.updatedAt)}</span>
-                                  </div>
-                                </div>
-
-                                {/* Email Status */}
-                                <div className="flex flex-wrap gap-2">
-                                  {selectedContact.confirmationEmailSent && (
-                                    <Badge className="bg-brand-success text-white border-0">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Bekræftelse sendt
-                                    </Badge>
-                                  )}
-                                  {selectedContact.adminNotificationSent && (
-                                    <Badge className="bg-brand-primary text-white border-0">
-                                      <CheckCircle className="h-3 w-3 mr-1" />
-                                      Admin notifikation sendt
-                                    </Badge>
-                                  )}
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex flex-wrap gap-2 pt-4 border-t border-brand-gray-200">
-                                  <Button 
-                                    className="btn-brand-primary"
-                                    onClick={() => window.open(`mailto:${selectedContact.email}?subject=Angående din henvendelse til Multi Grønt&body=Hej ${selectedContact.firstName},%0D%0A%0D%0ATak for din henvendelse til Multi Grønt.`, '_blank')}
-                                  >
-                                    <Mail className="h-4 w-4 mr-2" />
-                                    Svar på email
-                                  </Button>
-                                  <Button 
-                                    variant="outline"
-                                    onClick={() => window.open(`tel:${selectedContact.phone}`, '_blank')}
-                                  >
-                                    <Phone className="h-4 w-4 mr-2" />
-                                    Ring op
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                        <Button 
+                          onClick={() => navigate(`/admin/henvendelser/${contact._id}`)}
+                          variant="outline" 
+                          size="sm"
+                          className="border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          Se detaljer
+                        </Button>
 
                         <Button 
                           size="sm"
