@@ -26,9 +26,11 @@ import {
   Users,
   TrendingUp,
   Eye,
-  ExternalLink
+  ExternalLink,
+  RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { authService } from '@/lib/auth';
 
 interface Contact {
   _id: string;
@@ -87,33 +89,18 @@ const DashboardHenvendelser: React.FC = () => {
       setIsLoading(true);
       setError(null);
 
-      const params = new URLSearchParams({
-        limit: '20',
-        page: currentPage.toString(),
+      const response = await authService.getContacts({
+        limit: 20,
+        page: currentPage,
         status: statusFilter,
         search: search
       });
-
-      const response = await fetch(`/.netlify/functions/admin-contacts?${params}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
-          'Content-Type': 'application/json',
-          'X-PWA': 'true',
-          'X-Display-Mode': 'browser',
-          'X-Session-Type': 'admin'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: ContactResponse = await response.json();
       
-      if (data.success) {
-        setContacts(data.contacts);
-        setStats(data.statistics);
+      if (response.success) {
+        setContacts(response.contacts as Contact[]);
+        if (response.statistics) {
+          setStats(response.statistics);
+        }
       } else {
         throw new Error('Failed to fetch contacts');
       }

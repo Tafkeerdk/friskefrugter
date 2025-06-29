@@ -407,6 +407,24 @@ class ApiClient {
     if (path.startsWith('/api/featured-products')) {
       return '/.netlify/functions/featured-products';
     }
+    if (path.startsWith('/api/auth/admin/notifications')) {
+      return '/.netlify/functions/admin-notifications';
+    }
+    if (path.startsWith('/api/auth/admin/contacts')) {
+      return '/.netlify/functions/admin-contacts';
+    }
+    if (path.startsWith('/api/auth/admin/discount-groups')) {
+      return '/.netlify/functions/admin-discount-groups';
+    }
+    if (path.startsWith('/api/auth/admin/customers')) {
+      return '/.netlify/functions/admin-customers';
+    }
+    if (path.startsWith('/api/auth/admin/unique-offers')) {
+      return '/.netlify/functions/admin-unique-offers';
+    }
+    if (path.startsWith('/api/auth/customer/unique-offers')) {
+      return '/.netlify/functions/customer-unique-offers';
+    }
     if (path.startsWith('/api/products')) {
       return path.replace('/api/products', '/.netlify/functions/products');
     }

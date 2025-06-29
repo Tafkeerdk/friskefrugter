@@ -16,6 +16,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { authService } from '@/lib/auth';
 
 interface DashboardTopbarProps {
   title?: string;
@@ -58,22 +59,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
     
     setIsLoadingNotifications(true);
     try {
-      const token = localStorage.getItem('admin_token');
-      if (!token) return;
+      const response = await authService.getNotifications({ limit: 10 });
 
-      const response = await fetch('/.netlify/functions/admin-notifications?limit=10', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setNotifications(data.notifications || []);
-        }
+      if (response.success) {
+        setNotifications(response.notifications || []);
       }
     } catch (error) {
       console.error('Failed to load notifications:', error);
@@ -84,22 +73,9 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
 
   const markNotificationAsRead = async (notificationId: string) => {
     try {
-      const token = localStorage.getItem('admin_token');
-      if (!token) return;
+      const response = await authService.markNotificationAsRead(notificationId);
 
-      const response = await fetch('/.netlify/functions/admin-notifications', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          notificationId,
-          action: 'mark_opened'
-        })
-      });
-
-      if (response.ok) {
+      if (response.success) {
         // Update local state
         setNotifications(prev => 
           prev.map(notif => 
@@ -315,7 +291,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                   ))
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="justify-center font-medium text-sm cursor-pointer">
+                <DropdownMenuItem 
+                  className="justify-center font-medium text-sm cursor-pointer"
+                  onClick={() => navigate('/admin/notifications')}
+                >
                   Vis alle notifikationer
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -533,7 +512,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
                   ))
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="justify-center font-medium text-sm cursor-pointer">
+                <DropdownMenuItem 
+                  className="justify-center font-medium text-sm cursor-pointer"
+                  onClick={() => navigate('/admin/notifications')}
+                >
                   Vis alle notifikationer
                 </DropdownMenuItem>
               </DropdownMenuContent>

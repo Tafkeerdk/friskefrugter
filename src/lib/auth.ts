@@ -47,6 +47,26 @@ const getEndpoint = (path: string): string => {
   if (path.startsWith('/api/auth/customer/password-reset-verify')) {
     return '/.netlify/functions/customer-password-reset-verify';
   }
+  if (path.startsWith('/api/auth/customer/unique-offers')) {
+    return '/.netlify/functions/customer-unique-offers';
+  }
+  
+  // Admin-specific endpoints for notifications and contacts
+  if (path.startsWith('/api/auth/admin/notifications')) {
+    return '/.netlify/functions/admin-notifications';
+  }
+  if (path.startsWith('/api/auth/admin/contacts')) {
+    return '/.netlify/functions/admin-contacts';
+  }
+  if (path.startsWith('/api/auth/admin/discount-groups')) {
+    return '/.netlify/functions/admin-discount-groups';
+  }
+  if (path.startsWith('/api/auth/admin/customers')) {
+    return '/.netlify/functions/admin-customers';
+  }
+  if (path.startsWith('/api/auth/admin/unique-offers')) {
+    return '/.netlify/functions/admin-unique-offers';
+  }
   
   // Product and Unit endpoints - route to specific functions for better auth handling
   if (path.startsWith('/api/products')) {
@@ -918,7 +938,7 @@ export const authService = {
   },
 
   async approveApplication(applicationId: string): Promise<ApplicationResponse> {
-    const response = await apiClient.put(`/.netlify/functions/admin-applications`, { 
+    const response = await apiClient.put(getEndpoint('/api/auth/admin/applications'), { 
       applicationId, 
       action: 'approve' 
     });
@@ -926,7 +946,7 @@ export const authService = {
   },
 
   async rejectApplication(applicationId: string, reason: string): Promise<ApplicationResponse> {
-    const response = await apiClient.put(`/.netlify/functions/admin-applications`, { 
+    const response = await apiClient.put(getEndpoint('/api/auth/admin/applications'), { 
       applicationId, 
       action: 'reject', 
       rejectionReason: reason 
@@ -936,7 +956,7 @@ export const authService = {
 
   // Bulk operations for better admin efficiency
   async bulkApproveApplications(applicationIds: string[]): Promise<{ success: boolean; message: string; processedCount: number }> {
-    const response = await apiClient.post('/.netlify/functions/admin-applications', {
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/applications'), {
       applicationIds,
       action: 'approve'
     });
@@ -944,7 +964,7 @@ export const authService = {
   },
 
   async bulkRejectApplications(applicationIds: string[], reason: string): Promise<{ success: boolean; message: string; processedCount: number }> {
-    const response = await apiClient.post('/.netlify/functions/admin-applications', {
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/applications'), {
       applicationIds,
       action: 'reject',
       rejectionReason: reason
@@ -1284,7 +1304,7 @@ export const authService = {
 
   // Discount Groups Management
   async getDiscountGroups(): Promise<{ success: boolean; discountGroups: unknown[]; message?: string }> {
-    const response = await apiClient.get('/.netlify/functions/admin-discount-groups');
+    const response = await apiClient.get(getEndpoint('/api/auth/admin/discount-groups'));
     return response.json();
   },
 
@@ -1295,7 +1315,7 @@ export const authService = {
     color?: string;
     sortOrder?: number;
   }): Promise<{ success: boolean; message: string; discountGroup?: unknown }> {
-    const response = await apiClient.post('/.netlify/functions/admin-discount-groups', groupData);
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/discount-groups'), groupData);
     const result = await response.json();
     
     // Clear discount groups cache on successful creation
@@ -1314,7 +1334,7 @@ export const authService = {
     sortOrder?: number;
     isActive?: boolean;
   }): Promise<{ success: boolean; message: string; discountGroup?: unknown }> {
-    const response = await apiClient.put('/.netlify/functions/admin-discount-groups', {
+    const response = await apiClient.put(getEndpoint('/api/auth/admin/discount-groups'), {
       discountGroupId,
       ...groupData
     });
@@ -1329,7 +1349,7 @@ export const authService = {
   },
 
   async deleteDiscountGroup(discountGroupId: string): Promise<{ success: boolean; message: string; customerCount?: number }> {
-    const response = await apiClient.delete('/.netlify/functions/admin-discount-groups', { discountGroupId });
+    const response = await apiClient.delete(getEndpoint('/api/auth/admin/discount-groups'), { discountGroupId });
     const result = await response.json();
     
     // Clear discount groups cache on successful deletion
@@ -1347,12 +1367,12 @@ export const authService = {
     if (params?.limit) queryParams.set('limit', params.limit.toString());
     if (params?.search) queryParams.set('search', params.search);
     
-    const response = await apiClient.get(`/.netlify/functions/admin-customers?${queryParams.toString()}`);
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/customers')}?${queryParams.toString()}`);
     return response.json();
   },
 
   async deleteCustomer(customerId: string, options?: { sendEmail?: boolean; reason?: string }): Promise<{ success: boolean; message: string; emailSent?: boolean; emailError?: string }> {
-    const response = await apiClient.delete('/.netlify/functions/admin-customers', { 
+    const response = await apiClient.delete(getEndpoint('/api/auth/admin/customers'), { 
       customerId,
       sendEmail: options?.sendEmail || false,
       reason: options?.reason || ''
@@ -1361,7 +1381,7 @@ export const authService = {
   },
 
   async updateCustomerDiscountGroup(customerId: string, discountGroupId: string): Promise<{ success: boolean; message: string; customer?: any }> {
-    const response = await apiClient.put('/.netlify/functions/admin-customers', { 
+    const response = await apiClient.put(getEndpoint('/api/auth/admin/customers'), { 
       customerId,
       discountGroupId
     });
@@ -1389,17 +1409,17 @@ export const authService = {
     passwordOption: 'generate' | 'link';
     password?: string;
   }): Promise<{ success: boolean; message: string; customer?: any; passwordResetLink?: string }> {
-    const response = await apiClient.post('/.netlify/functions/admin-customers', customerData);
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/customers'), customerData);
     return response.json();
   },
 
   async getDiscountGroupCustomers(discountGroupId: string): Promise<{ success: boolean; customers: any[]; message?: string }> {
-    const response = await apiClient.get(`/.netlify/functions/admin-discount-groups?action=customers&discountGroupId=${discountGroupId}`);
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/discount-groups')}?action=customers&discountGroupId=${discountGroupId}`);
     return response.json();
   },
 
   async removeCustomerFromDiscountGroup(customerId: string, discountGroupId: string): Promise<{ success: boolean; message: string; customer?: any }> {
-    const response = await apiClient.delete('/.netlify/functions/admin-discount-groups', { 
+    const response = await apiClient.delete(getEndpoint('/api/auth/admin/discount-groups'), { 
       action: 'remove-customer',
       customerId,
       discountGroupId
@@ -1409,7 +1429,7 @@ export const authService = {
 
   // Add customer to discount group
   async addCustomerToDiscountGroup(customerId: string, discountGroupId: string): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.put('/.netlify/functions/admin-discount-groups', {
+    const response = await apiClient.put(getEndpoint('/api/auth/admin/discount-groups'), {
       action: 'add-customer',
       customerId,
       discountGroupId
@@ -1435,13 +1455,13 @@ export const authService = {
       searchParams.append('productIds', params.productIds.join(','));
     }
     
-    const response = await apiClient.get(`/.netlify/functions/products/customer-pricing?${searchParams.toString()}`);
+    const response = await apiClient.get(`${getEndpoint('/api/products')}/customer-pricing?${searchParams.toString()}`);
     return response.json();
   },
 
   // Get all customers (for adding to discount groups)
   async getAllCustomers(): Promise<{ success: boolean; customers?: any[]; message?: string }> {
-    const response = await apiClient.get('/.netlify/functions/admin-customers');
+    const response = await apiClient.get(getEndpoint('/api/auth/admin/customers'));
     return response.json();
   },
 
@@ -1463,29 +1483,29 @@ export const authService = {
     if (params?.showActiveOnly !== undefined) queryParams.append('showActiveOnly', params.showActiveOnly.toString());
     
     const queryString = queryParams.toString();
-    const endpoint = `/.netlify/functions/admin-unique-offers${queryString ? `?${queryString}` : ''}`;
+    const endpoint = `${getEndpoint('/api/auth/admin/unique-offers')}${queryString ? `?${queryString}` : ''}`;
     
     const response = await apiClient.get(endpoint);
     return response.json();
   },
 
   async getCustomerOffers(customerId: string): Promise<{ success: boolean; offers: any[]; message?: string }> {
-    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=customer-offers&customerId=${customerId}`);
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/unique-offers')}?action=customer-offers&customerId=${customerId}`);
     return response.json();
   },
 
   async getProductOffers(productId: string): Promise<{ success: boolean; offers: any[]; message?: string }> {
-    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=product-offers&productId=${productId}`);
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/unique-offers')}?action=product-offers&productId=${productId}`);
     return response.json();
   },
 
   async getCustomerOffersCount(customerId: string): Promise<{ success: boolean; count: number; message?: string }> {
-    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=customer-count&customerId=${customerId}`);
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/unique-offers')}?action=customer-count&customerId=${customerId}`);
     return response.json();
   },
 
   async getUniqueOffer(offerId: string): Promise<{ success: boolean; offer: any; message?: string }> {
-    const response = await apiClient.get(`/.netlify/functions/admin-unique-offers?action=single&offerId=${offerId}`);
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/unique-offers')}?action=single&offerId=${offerId}`);
     return response.json();
   },
 
@@ -1498,7 +1518,7 @@ export const authService = {
     validTo?: string;
     isUnlimited?: boolean;
   }): Promise<{ success: boolean; message?: string; error?: string; offer?: any }> {
-    const response = await apiClient.post('/.netlify/functions/admin-unique-offers', offerData);
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/unique-offers'), offerData);
     const result = await response.json();
     
     // Clear cache on successful creation
@@ -1519,7 +1539,7 @@ export const authService = {
     isActive?: boolean;
     isUnlimited?: boolean;
   }): Promise<{ success: boolean; message?: string; error?: string; offer?: any }> {
-    const response = await apiClient.put('/.netlify/functions/admin-unique-offers', {
+    const response = await apiClient.put(getEndpoint('/api/auth/admin/unique-offers'), {
       offerId,
       ...offerData
     });
@@ -1536,7 +1556,7 @@ export const authService = {
   },
 
   async deleteUniqueOffer(offerId: string, permanent: boolean = false): Promise<{ success: boolean; message: string }> {
-    const response = await apiClient.delete('/.netlify/functions/admin-unique-offers', {
+    const response = await apiClient.delete(getEndpoint('/api/auth/admin/unique-offers'), {
       offerId,
       permanent
     });
@@ -1558,8 +1578,74 @@ export const authService = {
 
   // Customer Unique Offers - Get offers for currently logged in customer
   async getMyUniqueOffers(): Promise<{ success: boolean; offers: any[]; count: number; message?: string }> {
-    const response = await apiClient.get('/.netlify/functions/customer-unique-offers');
-    return response.json();
+    const response = await apiClient.get(getEndpoint('/api/auth/customer/unique-offers'));
+    const data = await response.json();
+    return data;
+  },
+
+  // Admin Notifications Methods
+  async getNotifications(params?: { 
+    limit?: number; 
+    page?: number; 
+    unreadOnly?: boolean;
+  }): Promise<{ 
+    success: boolean; 
+    notifications: any[]; 
+    pagination?: any; 
+    statistics?: any; 
+    message?: string 
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.unreadOnly) queryParams.append('unreadOnly', params.unreadOnly.toString());
+    
+    const endpoint = `/api/auth/admin/notifications${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await apiClient.get(getEndpoint(endpoint));
+    const data = await response.json();
+    return data;
+  },
+
+  async markNotificationAsRead(notificationId: string): Promise<{ success: boolean; message?: string }> {
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/notifications'), {
+      notificationId,
+      action: 'mark_opened'
+    });
+    const data = await response.json();
+    return data;
+  },
+
+  async markAllNotificationsAsRead(): Promise<{ success: boolean; message?: string }> {
+    const response = await apiClient.put(getEndpoint('/api/auth/admin/notifications'), {
+      action: 'mark_all_opened'
+    });
+    const data = await response.json();
+    return data;
+  },
+
+  // Admin Contacts Methods
+  async getContacts(params?: { 
+    limit?: number; 
+    page?: number; 
+    status?: string;
+    search?: string;
+  }): Promise<{ 
+    success: boolean; 
+    contacts: any[]; 
+    statistics?: any; 
+    pagination?: any; 
+    message?: string 
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.status && params.status !== 'all') queryParams.append('status', params.status);
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const endpoint = `/api/auth/admin/contacts${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await apiClient.get(getEndpoint(endpoint));
+    const data = await response.json();
+    return data;
   },
 
   // Expose apiClient for direct use when needed

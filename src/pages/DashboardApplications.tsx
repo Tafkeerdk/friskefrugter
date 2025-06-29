@@ -19,6 +19,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { authService } from '@/lib/auth';
 
 interface ApplicationData {
   _id: string;
@@ -56,31 +57,30 @@ const DashboardApplications: React.FC = () => {
   const [applications, setApplications] = useState<ApplicationData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statistics, setStatistics] = useState({
+    total: 0,
+    pending: 0,
+    approved: 0,
+    rejected: 0
+  });
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch('/.netlify/functions/admin-applications', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
-          'Content-Type': 'application/json',
-          'X-PWA': 'true',
-          'X-Display-Mode': 'browser',
-          'X-Session-Type': 'admin'
-        }
+      const response = await authService.getApplications({
+        page: 1,
+        limit: 50,
+        sortBy: 'appliedAt',
+        sortOrder: 'desc'
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data: ApplicationResponse = await response.json();
       
-      if (data.success) {
-        setApplications(data.applications || []);
+      if (response.success) {
+        setApplications(response.applications as ApplicationData[]);
+        if (response.statistics) {
+          setStatistics(response.statistics);
+        }
       } else {
         throw new Error('Failed to fetch applications');
       }
@@ -100,22 +100,9 @@ const DashboardApplications: React.FC = () => {
 
   const handleApprove = async (applicationId: string) => {
     try {
-      const response = await fetch('/.netlify/functions/admin-applications', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
-          'Content-Type': 'application/json',
-          'X-PWA': 'true',
-          'X-Display-Mode': 'browser',
-          'X-Session-Type': 'admin'
-        },
-        body: JSON.stringify({
-          applicationId,
-          action: 'approve'
-        })
-      });
-
-      if (response.ok) {
+      const response = await authService.approveApplication(applicationId);
+      
+      if (response.success) {
         await loadData(); // Refresh data
       } else {
         throw new Error('Failed to approve application');
@@ -128,23 +115,9 @@ const DashboardApplications: React.FC = () => {
 
   const handleReject = async (applicationId: string, reason: string) => {
     try {
-      const response = await fetch('/.netlify/functions/admin-applications', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('admin_accessToken')}`,
-          'Content-Type': 'application/json',
-          'X-PWA': 'true',
-          'X-Display-Mode': 'browser',
-          'X-Session-Type': 'admin'
-        },
-        body: JSON.stringify({
-          applicationId,
-          action: 'reject',
-          rejectionReason: reason
-        })
-      });
-
-      if (response.ok) {
+      const response = await authService.rejectApplication(applicationId, reason);
+      
+      if (response.success) {
         await loadData(); // Refresh data
       } else {
         throw new Error('Failed to reject application');
