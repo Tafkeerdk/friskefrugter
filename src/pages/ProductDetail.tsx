@@ -25,6 +25,7 @@ import { ProductCard } from "@/components/products/ProductCard";
 import { ProductPricing, CustomerPricing } from "@/components/products/card/ProductPricing";
 import { useAuth } from "@/hooks/useAuth";
 import { api, handleApiError } from "@/lib/api";
+import { authService } from "@/lib/auth";
 
 // Types
 interface Unit {
@@ -248,15 +249,24 @@ const ProductDetail = () => {
     
     setIsAddingToCart(true);
     try {
-      // TODO: Implement add to cart functionality
-      // await api.addToCart(product._id, quantity);
-      
-      toast({
-        title: 'Tilføjet til kurv',
-        description: `${quantity} x ${product.produktnavn} er tilføjet til din kurv`,
-        duration: 3000,
-      });
+      const response = await authService.addToCart(product._id, quantity);
+      if (response.success) {
+        toast({
+          title: 'Tilføjet til kurv',
+          description: `${quantity} x ${product.produktnavn} er tilføjet til din kurv`,
+          duration: 3000,
+        });
+        setQuantity(1); // Reset quantity after successful add
+      } else {
+        toast({
+          title: 'Fejl',
+          description: response.message || 'Kunne ikke tilføje til kurv',
+          variant: 'destructive',
+          duration: 3000,
+        });
+      }
     } catch (error) {
+      console.error('Add to cart error:', error);
       toast({
         title: 'Fejl',
         description: 'Kunne ikke tilføje til kurv',

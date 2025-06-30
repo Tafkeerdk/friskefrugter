@@ -9,6 +9,7 @@ import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
 import { UserProfile } from "@/components/auth/UserProfile";
 import { api } from "@/lib/api";
+import { authService } from "@/lib/auth";
 
 // Types for real product data
 interface Product {
@@ -51,6 +52,7 @@ export function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [cartItemCount, setCartItemCount] = useState(0);
   const isMobile = useIsMobile();
   const { isInstalled } = usePWA();
   const { isCustomerAuthenticated, customerUser } = useAuth();
@@ -75,6 +77,27 @@ export function Navbar() {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Load cart count for authenticated customers
+  useEffect(() => {
+    const loadCartCount = async () => {
+      if (isCustomerAuthenticated && customerUser) {
+        try {
+          const cartResponse = await authService.getCart();
+          if (cartResponse.success && cartResponse.cart) {
+            setCartItemCount(cartResponse.cart.totalItems || 0);
+          }
+        } catch (error) {
+          console.warn('Failed to load cart count:', error);
+          setCartItemCount(0);
+        }
+      } else {
+        setCartItemCount(0);
+      }
+    };
+
+    loadCartCount();
+  }, [isCustomerAuthenticated, customerUser]);
 
   // **REAL API SEARCH WITH DEBOUNCING**
   useEffect(() => {
@@ -311,23 +334,27 @@ export function Navbar() {
             </div>
           )}
           
-          {/* Cart Button - Always visible */}
-          <Link to="/cart" className="relative">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className={cn(
-                "hover:bg-brand-gray-100 hover:text-brand-primary transition-all",
-                isMobile ? "h-9 w-9" : "h-10 w-10"
-              )}
-              aria-label="Shopping cart"
-            >
-              <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
-              <span className="absolute -top-1 -right-1 bg-brand-gray-1000 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
-                0
-              </span>
-            </Button>
-          </Link>
+          {/* Cart Button - Only for logged-in customers */}
+          {isCustomerAuthenticated && customerUser && (
+            <Link to="/cart" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className={cn(
+                  "hover:bg-brand-gray-100 hover:text-brand-primary transition-all",
+                  isMobile ? "h-9 w-9" : "h-10 w-10"
+                )}
+                aria-label="Shopping cart"
+              >
+                <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
+                {cartItemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-brand-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
+                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                  </span>
+                )}
+              </Button>
+            </Link>
+          )}
 
           {/* Customer Profile or Login Button - Hidden on mobile */}
           <div className="hidden sm:block">

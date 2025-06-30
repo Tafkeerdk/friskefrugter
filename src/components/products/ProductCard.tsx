@@ -7,6 +7,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ShoppingCart, Minus, Plus, Package, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { authService } from "@/lib/auth";
+import { useToast } from "@/hooks/use-toast";
 
 interface CustomerPricing {
   price: number;
@@ -53,7 +55,9 @@ export function ProductCard({
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isAddingToCart, setIsAddingToCart] = useState(false);
   const isMobile = useIsMobile();
+  const { toast } = useToast();
 
   const increaseQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -61,6 +65,38 @@ export function ProductCard({
 
   const decreaseQuantity = () => {
     setQuantity(prev => Math.max(0, prev - 1));
+  };
+
+  const handleAddToCart = async () => {
+    if (quantity === 0 || !isLoggedIn) return;
+    
+    setIsAddingToCart(true);
+    try {
+      const response = await authService.addToCart(id, quantity);
+      if (response.success) {
+        toast({
+          title: "Tilføjet til kurv",
+          description: `${quantity} x ${name} er tilføjet til din kurv`,
+          variant: "default",
+        });
+        setQuantity(0); // Reset quantity after successful add
+      } else {
+        toast({
+          title: "Fejl",
+          description: response.message || "Kunne ikke tilføje til kurv",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Add to cart error:', error);
+      toast({
+        title: "Fejl",
+        description: "Der opstod en fejl ved tilføjelse til kurv",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAddingToCart(false);
+    }
   };
 
   const handleImageLoad = () => {
@@ -347,15 +383,16 @@ export function ProductCard({
                 className={cn(
                   "w-full rounded-lg transition-all duration-200 font-semibold gap-2",
                   isMobile ? "h-10 text-sm" : "h-11 text-base",
-                  quantity === 0 
+                  quantity === 0 || isAddingToCart
                     ? "opacity-50 cursor-not-allowed bg-gray-400 text-gray-200" 
                     : "bg-brand-primary hover:bg-brand-primary-hover active:scale-[0.98] shadow-sm hover:shadow-md text-white"
                 )}
-                disabled={quantity === 0}
+                disabled={quantity === 0 || isAddingToCart}
+                onClick={handleAddToCart}
                 aria-label="Tilføj til kurv"
               >
                 <ShoppingCart className="h-4 w-4" />
-                {isMobile ? "Tilføj" : "Tilføj til kurv"}
+                {isAddingToCart ? "Tilføjer..." : (isMobile ? "Tilføj" : "Tilføj til kurv")}
               </Button>
 
               {/* **Total Price (Dynamic) - Only appears if quantity > 0** */}

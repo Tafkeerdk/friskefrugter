@@ -332,6 +332,26 @@ const DashboardSidebar: React.FC = () => {
               
               <SidebarMenuItem>
                 <SidebarMenuButton 
+                  onClick={handleNavigation("/admin/customer-carts")}
+                  isActive={isActive("/admin/customer-carts")}
+                  className={cn(
+                    "transition-all duration-200",
+                    isMobile ? "h-10 text-sm" : "h-11",
+                    isActive("/admin/customer-carts") && "bg-primary/10 text-primary font-medium"
+                  )}
+                >
+                  <ShoppingCart className={cn(
+                    "transition-all flex-shrink-0",
+                    isMobile ? "h-4 w-4" : "h-5 w-5"
+                  )} />
+                  <span className="truncate">
+                    {isMobile ? "Kunde Kurve" : "Kunde Kurve"}
+                  </span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              
+              <SidebarMenuItem>
+                <SidebarMenuButton 
                   onClick={handleNavigation("/admin/discount-groups")}
                   isActive={isActive("/admin/discount-groups")}
                   className={cn(

@@ -73,6 +73,12 @@ const getEndpoint = (path: string): string => {
   if (pathOnly.startsWith('/api/auth/admin/unique-offers')) {
     return `/.netlify/functions/admin-unique-offers${queryString}`;
   }
+  if (pathOnly.startsWith('/api/auth/admin/customer-carts')) {
+    return `/.netlify/functions/admin-customer-carts${queryString}`;
+  }
+  if (pathOnly.startsWith('/api/auth/customer/cart')) {
+    return `/.netlify/functions/customer-cart${queryString}`;
+  }
   
   // Product and Unit endpoints - route to specific functions for better auth handling
   if (pathOnly.startsWith('/api/products')) {
@@ -185,6 +191,85 @@ export interface ApplicationResponse {
   message: string;
   emailSent?: boolean;
   emailError?: string;
+}
+
+// Cart interfaces
+export interface CartItem {
+  _id: string;
+  product: {
+    _id: string;
+    produktnavn: string;
+    varenummer: string;
+    basispris: number;
+    billeder: any[];
+    enhed: any;
+    kategori: any;
+  };
+  quantity: number;
+  customerPricing: {
+    price: number;
+    originalPrice: number;
+    discountType: string;
+    discountLabel: string | null;
+    discountPercentage: number;
+    showStrikethrough: boolean;
+    offerDetails?: any;
+    saleDetails?: any;
+    groupDetails?: any;
+  };
+  itemTotal: number;
+  itemOriginalTotal: number;
+  itemSavings: number;
+  addedAt: string;
+  updatedAt: string;
+}
+
+export interface Cart {
+  items: CartItem[];
+  totalItems: number;
+  totalPrice: number;
+  totalOriginalPrice: number;
+  totalSavings: number;
+  updatedAt?: string;
+}
+
+export interface CartResponse {
+  success: boolean;
+  cart: Cart;
+  message?: string;
+}
+
+export interface CustomerCartSummary {
+  id: string;
+  customer: {
+    id: string;
+    companyName: string;
+    contactPersonName: string;
+    email: string;
+    discountGroup: any;
+  };
+  totalItems: number;
+  updatedAt: string;
+}
+
+export interface AdminCartResponse {
+  success: boolean;
+  customer?: {
+    id: string;
+    companyName: string;
+    contactPersonName: string;
+    email: string;
+    discountGroup: any;
+  };
+  cart?: Cart;
+  carts?: CustomerCartSummary[];
+  pagination?: {
+    currentPage: number;
+    totalPages: number;
+    totalCount: number;
+    pageSize: number;
+  };
+  message?: string;
 }
 
 // Session management utilities
@@ -1722,6 +1807,95 @@ export const authService = {
       console.error('Failed to mark contact as read:', error);
       return { success: false, message: 'Kunne ikke markere kontakt som læst' };
     }
+  },
+
+  // Customer Cart Management
+  async getCart(): Promise<CartResponse> {
+    const response = await apiClient.get(getEndpoint('/api/auth/customer/cart'));
+    const data = await response.json();
+    return data;
+  },
+
+  async addToCart(productId: string, quantity: number): Promise<{ success: boolean; message: string; totalItems?: number }> {
+    const response = await apiClient.post(getEndpoint('/api/auth/customer/cart'), {
+      productId,
+      quantity
+    });
+    const result = await response.json();
+    
+    // Clear cart cache on successful addition
+    if (result.success) {
+      requestCache.clearPattern('.*cart.*');
+    }
+    
+    return result;
+  },
+
+  async updateCartItem(productId: string, quantity: number): Promise<{ success: boolean; message: string; totalItems?: number }> {
+    const response = await apiClient.put(getEndpoint('/api/auth/customer/cart'), {
+      productId,
+      quantity
+    });
+    const result = await response.json();
+    
+    // Clear cart cache on successful update
+    if (result.success) {
+      requestCache.clearPattern('.*cart.*');
+    }
+    
+    return result;
+  },
+
+  async removeFromCart(productId: string): Promise<{ success: boolean; message: string; totalItems?: number }> {
+    const response = await apiClient.delete(`${getEndpoint('/api/auth/customer/cart')}?productId=${productId}`);
+    const result = await response.json();
+    
+    // Clear cart cache on successful removal
+    if (result.success) {
+      requestCache.clearPattern('.*cart.*');
+    }
+    
+    return result;
+  },
+
+  async clearCart(): Promise<{ success: boolean; message: string; totalItems?: number }> {
+    const response = await apiClient.delete(`${getEndpoint('/api/auth/customer/cart')}?clear=true`);
+    const result = await response.json();
+    
+    // Clear cart cache on successful clearing
+    if (result.success) {
+      requestCache.clearPattern('.*cart.*');
+    }
+    
+    return result;
+  },
+
+  // Admin Cart Management - View customer carts
+  async getCustomerCarts(params?: { 
+    page?: number; 
+    limit?: number; 
+    search?: string; 
+  }): Promise<AdminCartResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.search) queryParams.append('search', params.search);
+    
+    const endpoint = `${getEndpoint('/api/auth/admin/customer-carts')}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await apiClient.get(endpoint);
+    const data = await response.json();
+    return data;
+  },
+
+  async getCustomerCart(customerId: string): Promise<AdminCartResponse> {
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/customer-carts')}?customerId=${customerId}`);
+    const data = await response.json();
+    return data;
+  },
+
+  // Clear cart cache
+  async clearCartCache(): Promise<void> {
+    requestCache.clearPattern('.*cart.*');
   },
 
   // Expose apiClient for direct use when needed

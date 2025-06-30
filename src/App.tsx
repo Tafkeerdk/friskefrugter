@@ -19,6 +19,7 @@ import DashboardProducts from "./pages/DashboardProducts";
 import DashboardOrders from "./pages/DashboardOrders";
 import DashboardInvoices from "./pages/DashboardInvoices";
 import DashboardCustomers from "./pages/DashboardCustomers";
+import DashboardCustomerCarts from "./pages/DashboardCustomerCarts";
 import DashboardStatistics from "./pages/DashboardStatistics";
 import DashboardCategories from "./pages/DashboardCategories";
 import DashboardUnits from "./pages/DashboardUnits";
@@ -200,6 +201,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardCustomers />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/customer-carts" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardCustomerCarts />
                 </ProtectedRoute>
               } 
             />

@@ -1,334 +1,459 @@
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Loader2, ShoppingCart, Plus, Minus, Trash2, Package, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { authService, CartItem, Cart as CartType } from '@/lib/auth';
+import { useAuth } from '@/hooks/useAuth';
 
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Calendar, Minus, Plus, ShoppingCart, Trash2, Check } from "lucide-react";
-import { Link } from "react-router-dom";
-import { useState } from "react";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+interface CartPageState {
+  cart: CartType | null;
+  isLoading: boolean;
+  isUpdating: boolean;
+  error: string | null;
+}
 
-// Sample cart items
-const cartItems = [
-  {
-    id: "1",
-    name: "Økologiske Æbler",
-    image: "https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?auto=format&fit=crop&q=80&w=200",
-    price: 29.95,
-    quantity: 2,
-    packaging: "Kasse, 5 kg",
-  },
-  {
-    id: "5",
-    name: "Økologiske Tomater",
-    image: "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&q=80&w=200",
-    price: 24.95,
-    quantity: 3,
-    packaging: "Bakke, 2 kg",
-  },
-  {
-    id: "7",
-    name: "Økologisk Ost",
-    image: "https://images.unsplash.com/photo-1486297678162-eb2a19b0a32d?auto=format&fit=crop&q=80&w=200",
-    price: 59.95,
-    quantity: 1,
-    packaging: "Stk, 500 g",
-  },
-];
+const Cart: React.FC = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
+  
+  const [state, setState] = useState<CartPageState>({
+    cart: null,
+    isLoading: true,
+    isUpdating: false,
+    error: null
+  });
 
-const Cart = () => {
-  const [items, setItems] = useState(cartItems);
-  const [deliveryDate, setDeliveryDate] = useState("");
-  const [comment, setComment] = useState("");
-  const [isOrderComplete, setIsOrderComplete] = useState(false);
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthenticated || !user || user.userType !== 'customer') {
+      navigate('/login');
+      return;
+    }
+  }, [isAuthenticated, user, navigate]);
 
-  const updateQuantity = (id: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    setItems(items.map(item => 
-      item.id === id ? { ...item, quantity: newQuantity } : item
-    ));
+  const loadCart = async () => {
+    if (!isAuthenticated || !user || user.userType !== 'customer') {
+      return;
+    }
+
+    try {
+      setState(prev => ({ ...prev, isLoading: true, error: null }));
+      
+      const response = await authService.getCart();
+      
+      if (response.success) {
+        setState(prev => ({ 
+          ...prev, 
+          cart: response.cart, 
+          isLoading: false,
+          error: null
+        }));
+      } else {
+        setState(prev => ({ 
+          ...prev, 
+          error: 'Kunne ikke indlæse kurv', 
+          isLoading: false 
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to load cart:', error);
+      setState(prev => ({ 
+        ...prev, 
+        error: 'Der opstod en fejl ved indlæsning af kurv', 
+        isLoading: false 
+      }));
+    }
   };
 
-  const removeItem = (id: string) => {
-    setItems(items.filter(item => item.id !== id));
+  const updateQuantity = async (productId: string, newQuantity: number) => {
+    try {
+      setState(prev => ({ ...prev, isUpdating: true }));
+      
+      const response = await authService.updateCartItem(productId, newQuantity);
+      
+      if (response.success) {
+        await loadCart(); // Reload cart with updated pricing
+        toast({
+          title: "Kurv opdateret",
+          description: response.message,
+        });
+      } else {
+        toast({
+          title: "Fejl",
+          description: response.message || "Kunne ikke opdatere kurv",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update cart item:', error);
+      toast({
+        title: "Fejl",
+        description: "Der opstod en fejl ved opdatering af kurv",
+        variant: "destructive",
+      });
+    } finally {
+      setState(prev => ({ ...prev, isUpdating: false }));
+    }
   };
 
-  const calculateSubtotal = () => {
-    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const removeItem = async (productId: string) => {
+    try {
+      setState(prev => ({ ...prev, isUpdating: true }));
+      
+      const response = await authService.removeFromCart(productId);
+      
+      if (response.success) {
+        await loadCart(); // Reload cart
+        toast({
+          title: "Produkt fjernet",
+          description: response.message,
+        });
+      } else {
+        toast({
+          title: "Fejl",
+          description: response.message || "Kunne ikke fjerne produkt",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to remove cart item:', error);
+      toast({
+        title: "Fejl",
+        description: "Der opstod en fejl ved fjernelse af produkt",
+        variant: "destructive",
+      });
+    } finally {
+      setState(prev => ({ ...prev, isUpdating: false }));
+    }
   };
 
-  const calculateTotal = () => {
-    const subtotal = calculateSubtotal();
-    const shipping = 79;
-    return subtotal + shipping;
+  const clearEntireCart = async () => {
+    try {
+      setState(prev => ({ ...prev, isUpdating: true }));
+      
+      const response = await authService.clearCart();
+      
+      if (response.success) {
+        await loadCart(); // Reload cart
+        toast({
+          title: "Kurv tømt",
+          description: response.message,
+        });
+      } else {
+        toast({
+          title: "Fejl",
+          description: response.message || "Kunne ikke tømme kurv",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to clear cart:', error);
+      toast({
+        title: "Fejl",
+        description: "Der opstod en fejl ved tømning af kurv",
+        variant: "destructive",
+      });
+    } finally {
+      setState(prev => ({ ...prev, isUpdating: false }));
+    }
   };
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Order submitted:", { items, deliveryDate, comment });
-    setIsOrderComplete(true);
+  const formatPrice = (price: number): string => {
+    return new Intl.NumberFormat('da-DK', {
+      style: 'currency',
+      currency: 'DKK',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(price);
   };
 
-  if (isOrderComplete) {
+  const getDiscountBadgeColor = (discountType: string): string => {
+    switch (discountType) {
+      case 'unique_offer':
+        return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white';
+      case 'fast_udsalgspris':
+        return 'bg-gradient-to-r from-red-500 to-red-600 text-white';
+      case 'rabat_gruppe':
+        return 'bg-gradient-to-r from-blue-500 to-blue-600 text-white';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const renderCartItem = (item: CartItem) => {
+    const { product, quantity, customerPricing } = item;
+    const hasDiscount = customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price;
+
     return (
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-grow py-12 bg-gray-50">
-          <div className="container mx-auto px-4">
-            <div className="max-w-md mx-auto text-center">
-              <div className="bg-brand-gray-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-6">
-                <Check className="h-10 w-10 text-brand-primary" />
-              </div>
-              <h1 className="text-2xl font-bold text-gray-900 mb-4">Tak for din ordre!</h1>
-              <p className="text-gray-600 mb-6">
-                Din ordre er blevet registreret og vil blive behandlet hurtigst muligt.
-                Faktura sendes separat til din virksomhedsmail.
-              </p>
-              <div className="flex flex-col gap-4">
-                <Link to="/products">
-                  <Button className="w-full">
-                    Fortsæt shopping
+      <Card key={item._id} className="mb-4">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row gap-4">
+            {/* Product Image */}
+            <div className="flex-shrink-0">
+              {product.billeder && product.billeder.length > 0 ? (
+                <img
+                  src={product.billeder[0].url}
+                  alt={product.produktnavn}
+                  className="w-20 h-20 md:w-24 md:h-24 object-cover rounded-lg border"
+                />
+              ) : (
+                <div className="w-20 h-20 md:w-24 md:h-24 bg-gray-100 rounded-lg border flex items-center justify-center">
+                  <Package className="w-8 h-8 text-gray-400" />
+                </div>
+              )}
+            </div>
+
+            {/* Product Details */}
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                    {product.produktnavn}
+                  </h3>
+                  <p className="text-sm text-gray-500 mb-2">
+                    Varenr: {product.varenummer}
+                  </p>
+                  
+                  {/* Discount Badge */}
+                  {hasDiscount && (
+                    <Badge className={`${getDiscountBadgeColor(customerPricing.discountType)} mb-2`}>
+                      {customerPricing.discountLabel} ({customerPricing.discountPercentage}% rabat)
+                    </Badge>
+                  )}
+
+                  {/* Pricing */}
+                  <div className="flex items-center gap-2 mb-3">
+                    {hasDiscount && (
+                      <span className="text-sm text-gray-500 line-through">
+                        {formatPrice(customerPricing.originalPrice)}
+                      </span>
+                    )}
+                    <span className="text-lg font-bold text-gray-900">
+                      {formatPrice(customerPricing.price)}
+                    </span>
+                    {product.enhed && (
+                      <span className="text-sm text-gray-500">
+                        / {product.enhed.label || product.enhed.value}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col items-end gap-3">
+                  {/* Quantity Controls */}
+                  <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))}
+                      disabled={state.isUpdating || quantity <= 1}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </Button>
+                    <span className="px-3 py-1 text-sm font-medium min-w-[3rem] text-center">
+                      {quantity}
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => updateQuantity(product._id, Math.min(1000, quantity + 1))}
+                      disabled={state.isUpdating || quantity >= 1000}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  </div>
+
+                  {/* Remove Button */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeItem(product._id)}
+                    disabled={state.isUpdating}
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Fjern
                   </Button>
-                </Link>
-                <Link to="/dashboard">
-                  <Button variant="outline" className="w-full">
-                    Se dine ordrer
-                  </Button>
-                </Link>
+
+                  {/* Item Total */}
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-gray-900">
+                      {formatPrice(item.itemTotal)}
+                    </div>
+                    {item.itemSavings > 0 && (
+                      <div className="text-sm text-green-600">
+                        Besparelse: {formatPrice(item.itemSavings)}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </main>
-        <Footer />
+        </CardContent>
+      </Card>
+    );
+  };
+
+  useEffect(() => {
+    loadCart();
+  }, []);
+
+  if (state.isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-green-600" />
+            <p className="text-gray-600">Indlæser kurv...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
+  if (state.error) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive">
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const { cart } = state;
+  const isEmpty = !cart || cart.items.length === 0;
+
   return (
-    <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow py-8">
-        <div className="container mx-auto px-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 flex items-center">
-            <ShoppingCart className="mr-2 h-6 w-6" />
-            Din indkøbskurv
-          </h1>
-
-          {items.length > 0 ? (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              {/* Cart Items */}
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Produkter</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="hidden md:block">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead className="w-[80px]"></TableHead>
-                            <TableHead>Produkt</TableHead>
-                            <TableHead className="text-right">Pris</TableHead>
-                            <TableHead className="text-center">Antal</TableHead>
-                            <TableHead className="text-right">Subtotal</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {items.map((item) => (
-                            <TableRow key={item.id}>
-                              <TableCell className="p-2">
-                                <img 
-                                  src={item.image} 
-                                  alt={item.name} 
-                                  className="w-16 h-16 object-cover rounded-md"
-                                />
-                              </TableCell>
-                              <TableCell>
-                                <div>
-                                  <Link to={`/products/${item.id}`} className="font-medium text-gray-900 hover:text-brand-primary">
-                                    {item.name}
-                                  </Link>
-                                  <p className="text-sm text-gray-500">{item.packaging}</p>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right">{item.price.toFixed(2)} kr</TableCell>
-                              <TableCell>
-                                <div className="flex items-center justify-center gap-1">
-                                  <Button 
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                  >
-                                    <Minus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="w-10 text-center">{item.quantity}</span>
-                                  <Button 
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-8 w-8"
-                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-right font-medium">
-                                {(item.price * item.quantity).toFixed(2)} kr
-                              </TableCell>
-                              <TableCell>
-                                <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="text-gray-500 hover:text-red-500"
-                                  onClick={() => removeItem(item.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    </div>
-
-                    {/* Mobile Cart View */}
-                    <div className="md:hidden space-y-4">
-                      {items.map((item) => (
-                        <div key={item.id} className="flex gap-4 pb-4 border-b">
-                          <img 
-                            src={item.image} 
-                            alt={item.name} 
-                            className="w-20 h-20 object-cover rounded-md"
-                          />
-                          <div className="flex-1">
-                            <div className="flex justify-between">
-                              <Link to={`/products/${item.id}`} className="font-medium text-gray-900">
-                                {item.name}
-                              </Link>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-gray-500"
-                                onClick={() => removeItem(item.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                            <p className="text-sm text-gray-500">{item.packaging}</p>
-                            <p className="text-sm mb-2">{item.price.toFixed(2)} kr</p>
-                            <div className="flex items-center gap-1">
-                              <Button 
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="w-8 text-center">{item.quantity}</span>
-                              <Button 
-                                variant="outline"
-                                size="icon"
-                                className="h-7 w-7"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                              <span className="ml-auto font-medium">
-                                {(item.price * item.quantity).toFixed(2)} kr
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between">
-                    <Link to="/products">
-                      <Button variant="outline">Fortsæt shopping</Button>
-                    </Link>
-                  </CardFooter>
-                </Card>
-              </div>
-
-              {/* Order Summary */}
-              <div className="lg:col-span-1">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-xl">Ordredetaljer</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <form onSubmit={handleSubmitOrder} className="space-y-6">
-                      <div className="space-y-4">
-                        <div className="flex justify-between py-2 border-b">
-                          <span className="text-gray-600">Subtotal</span>
-                          <span className="font-medium">{calculateSubtotal().toFixed(2)} kr</span>
-                        </div>
-                        <div className="flex justify-between py-2 border-b">
-                          <span className="text-gray-600">Levering</span>
-                          <span className="font-medium">79,00 kr</span>
-                        </div>
-                        <div className="flex justify-between py-2 text-lg font-bold">
-                          <span>Total</span>
-                          <span>{calculateTotal().toFixed(2)} kr</span>
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="delivery-date" className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-brand-primary" /> 
-                            Leveringsdato
-                          </Label>
-                          <Input 
-                            id="delivery-date" 
-                            type="date" 
-                            value={deliveryDate}
-                            onChange={(e) => setDeliveryDate(e.target.value)}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="comment">Bemærkninger til ordren</Label>
-                          <Textarea 
-                            id="comment" 
-                            placeholder="Specielle instruktioner eller bemærkninger" 
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            className="min-h-[100px]"
-                          />
-                        </div>
-                      </div>
-
-                      <Button type="submit" className="w-full">
-                        Afgiv ordre
-                      </Button>
-                    </form>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-16">
-              <ShoppingCart className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h2 className="text-2xl font-medium text-gray-900 mb-2">Din kurv er tom</h2>
-              <p className="text-gray-600 mb-6">Du har ingen produkter i din indkøbskurv endnu.</p>
-              <Link to="/products">
-                <Button>
-                  Gå til produkter
-                </Button>
-              </Link>
-            </div>
-          )}
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate('/products')}
+          className="p-2"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Din Kurv</h1>
+          <p className="text-gray-600 mt-1">
+            {isEmpty ? 'Din kurv er tom' : `${cart.totalItems} vare${cart.totalItems !== 1 ? 'r' : ''} i kurven`}
+          </p>
         </div>
-      </main>
-      <Footer />
+      </div>
+
+      {isEmpty ? (
+        /* Empty Cart */
+        <div className="text-center py-16">
+          <ShoppingCart className="w-24 h-24 text-gray-300 mx-auto mb-6" />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Din kurv er tom
+          </h2>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            Tilføj produkter til din kurv for at få vist dem her. Fortsæt med at handle for at finde de produkter, du har brug for.
+          </p>
+          <Button asChild className="bg-green-600 hover:bg-green-700">
+            <Link to="/products">
+              Fortsæt med at handle
+            </Link>
+          </Button>
+        </div>
+      ) : (
+        /* Cart with Items */
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Cart Items */}
+          <div className="lg:col-span-2">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">
+                Kurv indhold
+              </h2>
+              <Button
+                variant="outline"
+                onClick={clearEntireCart}
+                disabled={state.isUpdating}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                Tøm kurv
+              </Button>
+            </div>
+
+            {cart.items.map(renderCartItem)}
+          </div>
+
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Kurv sammendrag</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between text-sm">
+                    <span>Antal varer:</span>
+                    <span>{cart.totalItems}</span>
+                  </div>
+                  
+                  {cart.totalSavings > 0 && (
+                    <>
+                      <div className="flex justify-between text-sm">
+                        <span>Oprindelig pris:</span>
+                        <span className="line-through text-gray-500">
+                          {formatPrice(cart.totalOriginalPrice)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm text-green-600">
+                        <span>Besparelse:</span>
+                        <span>-{formatPrice(cart.totalSavings)}</span>
+                      </div>
+                    </>
+                  )}
+                  
+                  <hr className="my-4" />
+                  
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total:</span>
+                    <span>{formatPrice(cart.totalPrice)}</span>
+                  </div>
+
+                  <Alert className="mt-4">
+                    <AlertDescription className="text-sm">
+                      Dette er en demo. Bestillingsfunktionalitet er ikke implementeret endnu.
+                    </AlertDescription>
+                  </Alert>
+
+                  <Button 
+                    className="w-full bg-green-600 hover:bg-green-700 mt-4" 
+                    disabled
+                  >
+                    Gå til bestilling (Kommer snart)
+                  </Button>
+
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    asChild
+                  >
+                    <Link to="/products">
+                      Fortsæt med at handle
+                    </Link>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
