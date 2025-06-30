@@ -205,11 +205,22 @@ const Cart: React.FC = () => {
   const renderCartItem = (item: CartItem) => {
     const { product, quantity, customerPricing } = item;
     const hasDiscount = customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price;
-    const getUnitDisplay = () => {
+                        const getUnitDisplay = () => {
       if (product.enhed && typeof product.enhed === 'object') {
         return product.enhed.label || product.enhed.value;
+      } else if (typeof product.enhed === 'string') {
+        return product.enhed;
       }
       return 'Stykker';
+    };
+
+    const getCategoryDisplay = () => {
+      if (product.kategori && typeof product.kategori === 'object') {
+        return product.kategori.navn || 'KATEGORI';
+      } else if (typeof product.kategori === 'string') {
+        return product.kategori;
+      }
+      return 'KATEGORI';
     };
 
     return (
@@ -289,30 +300,34 @@ const Cart: React.FC = () => {
                         variant="secondary" 
                         className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
                       >
-                        {product.kategori?.navn?.toUpperCase() || 'KATEGORI'}
+                        {getCategoryDisplay().toUpperCase()}
                       </Badge>
                     </div>
 
                     {/* Pricing Display - Same Logic as ProductCard */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        {/* Current Price */}
-                        <span className={cn(
-                          "font-bold text-gray-900",
-                          isMobile ? "text-base" : "text-lg"
-                        )}>
-                          {formatPrice(customerPricing.price)}
-                        </span>
-                        
-                        {/* Original Price with Strikethrough */}
-                        {hasDiscount && customerPricing.originalPrice && (
+                        {/* Original Price with Strikethrough - Show FIRST like products page */}
+                        {hasDiscount && customerPricing.originalPrice && customerPricing.originalPrice > customerPricing.price && (
                           <span className={cn(
-                            "text-gray-400 line-through font-medium",
-                            isMobile ? "text-sm" : "text-base"
+                            "text-gray-500 line-through font-medium",
+                            isMobile ? "text-sm" : "text-base",
+                            customerPricing.discountType === 'unique_offer' ? "text-gray-600" : ""
                           )}>
                             {formatPrice(customerPricing.originalPrice)}
                           </span>
                         )}
+                        
+                        {/* Current (Discounted) Price */}
+                        <span className={cn(
+                          "font-bold",
+                          customerPricing.discountType === 'unique_offer' 
+                            ? "text-purple-600" 
+                            : "text-brand-primary-dark",
+                          isMobile ? "text-base" : "text-lg"
+                        )}>
+                          {formatPrice(customerPricing.price)}
+                        </span>
                       </div>
                       
                       {/* Unit Information */}
