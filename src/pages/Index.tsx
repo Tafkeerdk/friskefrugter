@@ -69,20 +69,18 @@ const Index = () => {
           
           // Backend already returns properly structured data - use it directly
           setFeaturedProducts(data.products || []);
-        }
-
-        // Try to load settings (admin endpoint, may fail for public users)
-        try {
-          const settingsResponse = await api.getFeaturedProductsSettings();
-          if (settingsResponse.success && settingsResponse.data) {
-            const settingsData = settingsResponse.data as any;
-            if (settingsData.settings) {
-              setSettings(settingsData.settings);
-            }
+          
+          // Load settings from featured products response (available for both public and customer users)
+          if (data.settings) {
+            console.log('⚙️ Using dynamic settings from featured products response:', data.settings);
+            setSettings({
+              title: data.settings.title || 'Udvalgte produkter',
+              subtitle: data.settings.subtitle || 'Se et udvalg af vores mest populære produkter til din virksomhed.',
+              enabled: data.settings.enabled !== false
+            });
+          } else {
+            console.log('⚙️ No settings in response - using defaults');
           }
-        } catch (settingsError) {
-          // Settings loading failed - use defaults (normal for public users)
-          console.log('Could not load featured products settings (using defaults)');
         }
       } catch (error) {
         console.error('Error loading featured products:', error);
