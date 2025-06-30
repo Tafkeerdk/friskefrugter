@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
-import { LogOut, User, Settings, Shield } from 'lucide-react';
+import { LogOut, User, Settings, Shield, LayoutDashboard } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
@@ -45,6 +45,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
       navigate('/profile');
     } else if (isAdmin(displayUser)) {
       navigate('/admin/profile');
+    }
+  };
+
+  const handleDashboardClick = () => {
+    if (isCustomer(displayUser)) {
+      navigate('/dashboard');
+    } else if (isAdmin(displayUser)) {
+      navigate('/admin');
     }
   };
 
@@ -95,6 +103,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
           
           {isCustomer(displayUser) && (
             <>
+              <DropdownMenuItem onClick={handleDashboardClick}>
+                <LayoutDashboard className="mr-2 h-4 w-4" />
+                <span>Dashboard</span>
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleProfileClick}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profil</span>

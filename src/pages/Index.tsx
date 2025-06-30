@@ -6,7 +6,7 @@ import { Footer } from "@/components/layout/Footer";
 import { ContactOverlay } from "@/components/layout/ContactOverlay";
 import { ProductCard } from "@/components/products/ProductCard";
 import PWAInstallBanner from "@/components/ui/pwa-install-banner";
-import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock, User, RefreshCw } from "lucide-react";
+import { ArrowRight, CheckCircle, ChevronRight, Truck, CreditCard, Clock, User, RefreshCw, LayoutDashboard } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
@@ -159,17 +159,33 @@ const Index = () => {
                       Se produkter <ChevronRight className={cn(isMobile ? "ml-1 h-4 w-4" : "ml-1 h-5 w-5")} />
                     </Button>
                   </Link>
-                  <Link to="/login">
-                    <Button 
-                      variant="outline" 
-                      className={cn(
-                        "bg-white text-brand-primary hover:bg-brand-gray-100 hover:text-brand-primary-dark border-white shadow-lg transition-all duration-200 active:scale-95",
-                        isMobile ? "w-full py-3 px-6 text-base" : "text-lg py-6 px-8"
-                      )}
-                    >
-                      Log ind
-                    </Button>
-                  </Link>
+                  {isCustomerAuthenticated && customerUser ? (
+                    <Link to="/dashboard">
+                      <Button 
+                        variant="outline" 
+                        className={cn(
+                          "bg-white text-brand-primary hover:bg-brand-gray-100 hover:text-brand-primary-dark border-white shadow-lg transition-all duration-200 active:scale-95",
+                          isMobile ? "w-full py-3 px-6 text-base" : "text-lg py-6 px-8"
+                        )}
+                      >
+                        <LayoutDashboard className={cn(isMobile ? "mr-1 h-4 w-4" : "mr-2 h-5 w-5")} />
+                        Dashboard
+                      </Button>
+                    </Link>
+                  ) : (
+                    <Link to="/login">
+                      <Button 
+                        variant="outline" 
+                        className={cn(
+                          "bg-white text-brand-primary hover:bg-brand-gray-100 hover:text-brand-primary-dark border-white shadow-lg transition-all duration-200 active:scale-95",
+                          isMobile ? "w-full py-3 px-6 text-base" : "text-lg py-6 px-8"
+                        )}
+                      >
+                        <User className={cn(isMobile ? "mr-1 h-4 w-4" : "mr-2 h-5 w-5")} />
+                        Log ind
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
