@@ -2219,7 +2219,7 @@ export const authService = {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`${this.baseURL}${getEndpoint('/admin-order-status-update')}`, {
+      const response = await fetch(`${API_BASE_URL}${getEndpoint('/admin-order-status-update')}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2271,7 +2271,7 @@ export const authService = {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`${this.baseURL}${getEndpoint('/admin-order-rejection')}`, {
+      const response = await fetch(`${API_BASE_URL}${getEndpoint('/admin-order-rejection')}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
