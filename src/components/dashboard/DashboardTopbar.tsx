@@ -51,7 +51,18 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       loadNotifications();
     }, 30000); // Refresh every 30 seconds
     
-    return () => clearInterval(refreshInterval);
+    // Listen for notification updates from other components
+    const handleNotificationsUpdate = () => {
+      console.log('🔄 Topbar: Received notifications-updated event, refreshing...');
+      loadNotifications();
+    };
+    
+    window.addEventListener('notifications-updated', handleNotificationsUpdate);
+    
+    return () => {
+      clearInterval(refreshInterval);
+      window.removeEventListener('notifications-updated', handleNotificationsUpdate);
+    };
   }, []);
 
   const loadNotifications = async () => {
@@ -76,7 +87,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       const response = await authService.markNotificationAsRead(notificationId);
 
       if (response.success) {
-        // Update local state
+        // Update local state immediately
         setNotifications(prev => 
           prev.map(notif => 
             notif.id === notificationId 
@@ -84,6 +95,9 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
               : notif
           )
         );
+        
+        // Dispatch event to refresh other components
+        window.dispatchEvent(new CustomEvent('notifications-updated'));
       }
     } catch (error) {
       console.error('Failed to mark notification as read:', error);

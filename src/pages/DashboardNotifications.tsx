@@ -103,6 +103,22 @@ const DashboardNotifications: React.FC = () => {
     }
   }, [adminUser, filter]);
 
+  // Listen for notification updates from other components (e.g., topbar)
+  useEffect(() => {
+    const handleNotificationsUpdate = () => {
+      console.log('🔄 Notifications page: Received notifications-updated event, refreshing...');
+      if (adminUser) {
+        fetchNotifications();
+      }
+    };
+    
+    window.addEventListener('notifications-updated', handleNotificationsUpdate);
+    
+    return () => {
+      window.removeEventListener('notifications-updated', handleNotificationsUpdate);
+    };
+  }, [adminUser]);
+
   const markAsRead = async (notificationId: string) => {
     try {
       const response = await authService.markNotificationAsRead(notificationId);
@@ -118,6 +134,9 @@ const DashboardNotifications: React.FC = () => {
         );
         // Update stats
         setStats(prev => ({ ...prev, unread: Math.max(0, prev.unread - 1) }));
+        
+        // Dispatch event to refresh other components (topbar)
+        window.dispatchEvent(new CustomEvent('notifications-updated'));
       }
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
@@ -126,13 +145,37 @@ const DashboardNotifications: React.FC = () => {
 
   const markAllAsRead = async () => {
     try {
+      console.log('🔄 Marking all notifications as read...');
       const response = await authService.markAllNotificationsAsRead();
 
       if (response.success) {
-        await fetchNotifications(); // Refresh data
+        console.log('✅ All notifications marked as read:', {
+          processed: response.processed,
+          total: response.total,
+          message: response.message
+        });
+        
+        // Update local state immediately to show change
+        setNotifications(prev => 
+          prev.map(notif => ({ ...notif, isOpened: true }))
+        );
+        
+        // Update stats immediately
+        setStats(prev => ({ ...prev, unread: 0 }));
+        
+        // Refresh data from server to ensure consistency
+        await fetchNotifications();
+        
+        // Force refresh of topbar notifications by dispatching a custom event
+        window.dispatchEvent(new CustomEvent('notifications-updated'));
+        
+      } else {
+        console.error('❌ Failed to mark all notifications as read:', response.message);
+        setError(response.message || 'Kunne ikke markere alle notifikationer som læst');
       }
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      console.error('❌ Error marking all notifications as read:', error);
+      setError('Kunne ikke markere alle notifikationer som læst. Prøv igen.');
     }
   };
 

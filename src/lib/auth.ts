@@ -1633,12 +1633,27 @@ export const authService = {
     return data;
   },
 
-  async markAllNotificationsAsRead(): Promise<{ success: boolean; message?: string }> {
-    const response = await apiClient.put(getEndpoint('/api/auth/admin/notifications'), {
-      action: 'mark_all_opened'
-    });
-    const data = await response.json();
-    return data;
+  async markAllNotificationsAsRead(): Promise<{ success: boolean; message?: string; processed?: number; total?: number }> {
+    try {
+      const response = await apiClient.put(getEndpoint('/api/auth/admin/notifications'), {
+        action: 'mark_all_opened'
+      });
+      const data = await response.json();
+      
+      // Clear notifications cache to force refresh
+      if (data.success) {
+        requestCache.clearPattern('.*notifications.*');
+        requestCache.clearPattern('.*admin.*notifications.*');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Failed to mark all notifications as read:', error);
+      return { 
+        success: false, 
+        message: 'Kunne ikke markere alle notifikationer som læst' 
+      };
+    }
   },
 
   // Admin Contacts Methods
