@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, ShoppingCart, Plus, Minus, Trash2, Package, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -23,6 +24,7 @@ const Cart: React.FC = () => {
   const isMobile = useIsMobile();
   
   const [isUpdating, setIsUpdating] = useState(false);
+  const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
 
   // Check authentication
   useEffect(() => {
@@ -31,6 +33,17 @@ const Cart: React.FC = () => {
       return;
     }
   }, [isAuthenticated, user, navigate]);
+
+  // Initialize quantity inputs when cart loads
+  useEffect(() => {
+    if (cart?.items) {
+      const initialInputs: Record<string, string> = {};
+      cart.items.forEach(item => {
+        initialInputs[item.product._id] = item.quantity.toString();
+      });
+      setQuantityInputs(initialInputs);
+    }
+  }, [cart?.items]);
 
   const updateQuantity = async (productId: string, newQuantity: number) => {
     try {
@@ -43,6 +56,11 @@ const Cart: React.FC = () => {
           title: "Kurv opdateret",
           description: newQuantity > 0 ? "Antal opdateret" : "Produkt fjernet fra kurv",
         });
+        // Update the input field to reflect the new quantity
+        setQuantityInputs(prev => ({
+          ...prev,
+          [productId]: newQuantity.toString()
+        }));
       } else {
         toast({
           title: "Fejl",
@@ -59,6 +77,40 @@ const Cart: React.FC = () => {
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleQuantityInputChange = (productId: string, value: string) => {
+    // Allow only numbers and empty string (for clearing)
+    if (value === '' || (/^\d+$/.test(value) && parseInt(value) <= 1000)) {
+      setQuantityInputs(prev => ({
+        ...prev,
+        [productId]: value
+      }));
+    }
+  };
+
+  const handleQuantityInputBlur = (productId: string) => {
+    const inputValue = quantityInputs[productId];
+    const newQuantity = parseInt(inputValue) || 1;
+    const clampedQuantity = Math.max(1, Math.min(1000, newQuantity));
+    
+    // Update the input to show the clamped value
+    setQuantityInputs(prev => ({
+      ...prev,
+      [productId]: clampedQuantity.toString()
+    }));
+    
+    // Only update if quantity actually changed
+    const currentQuantity = cart?.items.find(item => item.product._id === productId)?.quantity || 1;
+    if (clampedQuantity !== currentQuantity) {
+      updateQuantity(productId, clampedQuantity);
+    }
+  };
+
+  const handleQuantityInputEnter = (productId: string, event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleQuantityInputBlur(productId);
     }
   };
 
@@ -181,10 +233,10 @@ const Cart: React.FC = () => {
         <Card className="mb-4 overflow-hidden">
           <CardContent className={cn("p-4", isMobile ? "p-3" : "p-6")}>
             <div className={cn("flex gap-4", isMobile ? "flex-col" : "flex-row")}>
-              {/* Product Image */}
+              {/* Product Image - IMPROVED PLACEHOLDER LIKE PRODUCTCARD */}
               <div className="flex-shrink-0">
                 <div className="relative">
-                  {product.billeder && product.billeder.length > 0 ? (
+                  {product.billeder && product.billeder.length > 0 && product.billeder[0].url ? (
                     <img
                       src={product.billeder[0].url}
                       alt={product.produktnavn}
@@ -192,15 +244,33 @@ const Cart: React.FC = () => {
                         "object-cover rounded-lg border border-gray-200",
                         isMobile ? "w-16 h-16" : "w-24 h-24"
                       )}
+                      onError={(e) => {
+                        // If image fails to load, replace with placeholder
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        const placeholder = target.nextElementSibling as HTMLElement;
+                        if (placeholder) placeholder.style.display = 'flex';
+                      }}
                     />
-                  ) : (
-                    <div className={cn(
-                      "bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center",
-                      isMobile ? "w-16 h-16" : "w-24 h-24"
+                  ) : null}
+                  
+                  {/* Placeholder - Always present as fallback */}
+                  <div 
+                    className={cn(
+                      "bg-gray-100 rounded-lg border border-gray-200 flex flex-col items-center justify-center",
+                      isMobile ? "w-16 h-16" : "w-24 h-24",
+                      product.billeder && product.billeder.length > 0 && product.billeder[0].url ? "absolute inset-0 hidden" : "flex"
+                    )}
+                    style={{ display: product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'none' : 'flex' }}
+                  >
+                    <Package className={cn("text-gray-400 mb-1", isMobile ? "w-4 h-4" : "w-6 h-6")} />
+                    <span className={cn(
+                      "text-gray-500 text-center leading-tight",
+                      isMobile ? "text-xs px-1" : "text-xs px-2"
                     )}>
-                      <Package className={cn("text-gray-400", isMobile ? "w-6 h-6" : "w-8 h-8")} />
-                    </div>
-                  )}
+                      Billede ikke tilgængeligt
+                    </span>
+                  </div>
 
                   {/* Discount Badge - Same as ProductCard */}
                   {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
@@ -257,11 +327,12 @@ const Cart: React.FC = () => {
                       </Badge>
                     </div>
 
-                    {/* Pricing Display - Same Logic as ProductCard */}
+                    {/* Pricing Display - FIXED TO MATCH PRODUCTCARD EXACTLY */}
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        {/* Original Price with Strikethrough - Show FIRST like products page */}
-                        {hasDiscount && customerPricing.originalPrice && customerPricing.originalPrice > customerPricing.price && (
+                        {/* FIXED: Original Price with Strikethrough - UNIQUE OFFERS ALWAYS SHOW BEFORE PRICE */}
+                        {((customerPricing.discountType === 'unique_offer' && customerPricing.originalPrice) || 
+                          (customerPricing.showStrikethrough && customerPricing.originalPrice)) && (
                           <span className={cn(
                             "text-gray-500 line-through font-medium",
                             isMobile ? "text-sm" : "text-base",
@@ -292,7 +363,7 @@ const Cart: React.FC = () => {
 
                   {/* Actions - Right Side */}
                   <div className={cn("flex gap-3", isMobile ? "flex-row items-center justify-between" : "flex-col items-end")}>
-                    {/* Quantity Controls */}
+                    {/* Quantity Controls - WITH INPUT FIELD */}
                     <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border">
                       <Button
                         variant="ghost"
@@ -303,9 +374,19 @@ const Cart: React.FC = () => {
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
-                      <span className="px-2 py-1 text-sm font-medium min-w-[2rem] text-center">
-                        {quantity}
-                      </span>
+                      
+                      {/* ADDED: Input field for quantity */}
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        value={quantityInputs[product._id] || quantity.toString()}
+                        onChange={(e) => handleQuantityInputChange(product._id, e.target.value)}
+                        onBlur={() => handleQuantityInputBlur(product._id)}
+                        onKeyDown={(e) => handleQuantityInputEnter(product._id, e)}
+                        disabled={isUpdating}
+                        className="h-8 w-12 text-center text-sm font-medium border-0 bg-transparent p-0 focus:ring-1 focus:ring-brand-primary"
+                      />
+                      
                       <Button
                         variant="ghost"
                         size="sm"
@@ -362,7 +443,7 @@ const Cart: React.FC = () => {
                 <div className="text-center">
                   <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-brand-primary" />
                   <p className="text-gray-600">Indlæser kurv...</p>
-                </div>
+              </div>
               </div>
             </div>
           </div>
@@ -400,13 +481,13 @@ const Cart: React.FC = () => {
           <div className="content-width">
             {/* Header */}
             <div className={cn("flex items-center gap-4 mb-8 py-6", isMobile ? "py-4" : "py-8")}>
-              <Button
-                variant="ghost"
+                                <Button 
+                                  variant="ghost" 
                 onClick={() => navigate('/products')}
                 className="p-2 hover:bg-brand-gray-100"
-              >
+                                >
                 <ArrowLeft className="w-5 h-5" />
-              </Button>
+                                </Button>
               <div>
                 <h1 className={cn("font-bold text-gray-900", isMobile ? "text-2xl" : "text-3xl")}>
                   Din Kurv
@@ -415,7 +496,7 @@ const Cart: React.FC = () => {
                   {isEmpty ? 'Din kurv er tom' : `${cart.totalItems} vare${cart.totalItems !== 1 ? 'r' : ''} i kurven`}
                 </p>
               </div>
-            </div>
+                    </div>
 
             {isEmpty ? (
               /* Empty Cart */
@@ -430,9 +511,9 @@ const Cart: React.FC = () => {
                 <Button asChild className="btn-brand-primary">
                   <Link to="/products">
                     Fortsæt med at handle
-                  </Link>
-                </Button>
-              </div>
+                              </Link>
+                              </Button>
+                            </div>
             ) : (
               /* Cart with Items */
               <div className={cn("grid gap-8", isMobile ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3")}>
@@ -442,27 +523,27 @@ const Cart: React.FC = () => {
                     <h2 className={cn("font-semibold text-gray-900", isMobile ? "text-lg" : "text-xl")}>
                       Kurv indhold
                     </h2>
-                    <Button
-                      variant="outline"
+                              <Button 
+                                variant="outline"
                       onClick={clearEntireCart}
                       disabled={isUpdating}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />
                       Tøm kurv
-                    </Button>
-                  </div>
+                              </Button>
+                            </div>
 
                   {cart.items.map(renderCartItem)}
-                </div>
+              </div>
 
-                {/* Order Summary */}
-                <div className="lg:col-span-1">
+              {/* Order Summary */}
+              <div className="lg:col-span-1">
                   <div className="sticky top-8">
                     <Card className="card-brand">
-                      <CardHeader>
+                  <CardHeader>
                         <CardTitle className="text-brand-primary-dark">Kurv sammendrag</CardTitle>
-                      </CardHeader>
+                  </CardHeader>
                       <CardContent className="space-y-4">
                         <div className="flex justify-between text-sm">
                           <span>Antal varer:</span>
@@ -476,11 +557,11 @@ const Cart: React.FC = () => {
                               <span className="line-through text-gray-500">
                                 {formatPrice(cart.totalOriginalPrice)}
                               </span>
-                            </div>
+                        </div>
                             <div className="flex justify-between text-sm text-brand-success font-medium">
                               <span>Besparelse:</span>
                               <span>-{formatPrice(cart.totalSavings)}</span>
-                            </div>
+                        </div>
                           </>
                         )}
                         
@@ -512,13 +593,13 @@ const Cart: React.FC = () => {
                           <Link to="/products">
                             Fortsæt med at handle
                           </Link>
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
+                      </Button>
+                  </CardContent>
+                </Card>
               </div>
-            )}
+            </div>
+            </div>
+          )}
           </div>
         </div>
       </main>

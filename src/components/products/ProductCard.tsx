@@ -278,8 +278,9 @@ export function ProductCard({
                     }).format(customerPricing.price)}
                   </span>
                   
-                  {/* **Original Price - Light gray, struck through** */}
-                  {customerPricing.showStrikethrough && customerPricing.originalPrice && (
+                  {/* **FIXED: Original Price - Light gray, struck through** */}
+                  {((customerPricing.discountType === 'unique_offer' && customerPricing.originalPrice) || 
+                    (customerPricing.showStrikethrough && customerPricing.originalPrice)) && (
                     <span className="text-sm text-gray-400 line-through font-medium">
                       {new Intl.NumberFormat('da-DK', {
                         style: 'currency',

@@ -26,6 +26,7 @@ import { ProductPricing, CustomerPricing } from "@/components/products/card/Prod
 import { useAuth } from "@/hooks/useAuth";
 import { api, handleApiError } from "@/lib/api";
 import { authService } from "@/lib/auth";
+import { cn } from "@/lib/utils";
 
 // Types
 interface Unit {
@@ -373,19 +374,38 @@ const ProductDetail = () => {
 
           {/* Product Details */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {/* Product Image */}
+            {/* Product Image - IMPROVED PLACEHOLDER LIKE PRODUCTCARD */}
             <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
-              {getPrimaryImage() ? (
-              <img 
-                  src={getPrimaryImage()} 
-                  alt={product.produktnavn} 
-                className="w-full h-auto object-cover"
-              />
-              ) : (
-                <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                  <Package className="h-24 w-24 text-gray-400" />
+              <div className="relative aspect-square">
+                {getPrimaryImage() ? (
+                  <img 
+                    src={getPrimaryImage()} 
+                    alt={product.produktnavn} 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // If image fails to load, replace with placeholder
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const placeholder = target.nextElementSibling as HTMLElement;
+                      if (placeholder) placeholder.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+                
+                {/* Placeholder - Always present as fallback */}
+                <div 
+                  className={cn(
+                    "absolute inset-0 bg-gray-100 flex flex-col items-center justify-center",
+                    getPrimaryImage() ? "hidden" : "flex"
+                  )}
+                  style={{ display: getPrimaryImage() ? 'none' : 'flex' }}
+                >
+                  <Package className="h-16 w-16 text-gray-400 mb-3" />
+                  <span className="text-gray-500 text-center text-sm px-4 leading-tight">
+                    Billede ikke tilgængeligt
+                  </span>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Product Info */}
@@ -405,27 +425,82 @@ const ProductDetail = () => {
                 <p className="text-sm text-gray-500 mb-4">Varenr: {product.varenummer}</p>
               )}
               
-              {/* Pricing Section */}
+              {/* Pricing Section - FIXED TO MATCH PRODUCTCARD EXACTLY */}
               {isAuthenticated ? (
                 <div className="mb-6">
-                                     {product.customerPricing ? (
-                     <ProductPricing
-                       customerPricing={product.customerPricing}
-                       position="detail"
-                       unit={getUnitDisplay()}
-                     />
-                   ) : (
-                     <>
-                       <div className="text-2xl font-bold text-gray-900">
-                         {new Intl.NumberFormat('da-DK', {
-                           style: 'currency',
-                           currency: 'DKK',
-                           minimumFractionDigits: 2
-                         }).format(product.basispris)}
-                       </div>
-                       <p className="text-sm text-gray-500 mt-1">Per {getUnitDisplay()}</p>
-                     </>
-                   )}
+                  {product.customerPricing ? (
+                    <div className="space-y-3">
+                      {/* Discount Badge - Same as ProductCard */}
+                      {product.customerPricing.discountType !== 'none' && product.customerPricing.discountLabel && (
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            className="text-sm font-medium px-3 py-1 text-white shadow-lg border-0"
+                            style={{
+                              backgroundColor: product.customerPricing.discountType === 'unique_offer' 
+                                ? '#9333EA' // Purple for unique offers
+                                : product.customerPricing.discountType === 'fast_udsalgspris'
+                                  ? '#DC2626' // Red for fast sales
+                                  : product.customerPricing.groupDetails?.groupColor || '#F59E0B' // Group color or fallback
+                            }}
+                          >
+                            {product.customerPricing.discountType === 'unique_offer' 
+                              ? 'Særlig tilbud'
+                              : product.customerPricing.discountLabel
+                            }
+                          </Badge>
+                          {product.customerPricing.discountPercentage > 0 && (
+                            <span className="text-sm font-medium text-brand-success">
+                              -{product.customerPricing.discountPercentage}%
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      
+                      {/* Price Display - EXACT SAME LOGIC AS PRODUCTCARD */}
+                      <div className="flex items-center gap-3">
+                        {/* FIXED: Original Price with Strikethrough - UNIQUE OFFERS ALWAYS SHOW BEFORE PRICE */}
+                        {((product.customerPricing.discountType === 'unique_offer' && product.customerPricing.originalPrice) || 
+                          (product.customerPricing.showStrikethrough && product.customerPricing.originalPrice)) && (
+                          <span className="text-xl text-gray-500 line-through font-medium">
+                            {new Intl.NumberFormat('da-DK', {
+                              style: 'currency',
+                              currency: 'DKK',
+                              minimumFractionDigits: 2
+                            }).format(product.customerPricing.originalPrice)}
+                          </span>
+                        )}
+                        
+                        {/* Current (Discounted) Price */}
+                        <span className={`text-3xl font-bold ${
+                          product.customerPricing.discountType === 'unique_offer' 
+                            ? 'text-purple-600' 
+                            : 'text-brand-primary-dark'
+                        }`}>
+                          {new Intl.NumberFormat('da-DK', {
+                            style: 'currency',
+                            currency: 'DKK',
+                            minimumFractionDigits: 2
+                          }).format(product.customerPricing.price)}
+                        </span>
+                      </div>
+                      
+                      {/* Unit Information */}
+                      <p className="text-sm text-gray-500">
+                        Per {getUnitDisplay()}
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-3xl font-bold text-brand-primary-dark">
+                        {new Intl.NumberFormat('da-DK', {
+                          style: 'currency',
+                          currency: 'DKK',
+                          minimumFractionDigits: 2
+                        }).format(product.basispris)}
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">Per {getUnitDisplay()}</p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="p-4 mb-6 bg-blue-50 rounded-lg border border-blue-200">

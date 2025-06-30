@@ -32,6 +32,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { authService, CustomerCartSummary, AdminCartResponse, CartItem } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
+import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CartState {
   carts: CustomerCartSummary[];
@@ -204,80 +206,159 @@ const DashboardCustomerCarts: React.FC = () => {
 
   const renderCartDetail = (item: CartItem) => {
     const { product, quantity, customerPricing } = item;
-    const hasDiscount = customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price;
+
+    const getUnitDisplay = () => {
+      if (product.enhed && typeof product.enhed === 'object') {
+        return product.enhed.label || product.enhed.value;
+      } else if (typeof product.enhed === 'string') {
+        return product.enhed;
+      }
+      return 'Stykker';
+    };
+
+    const getDiscountBadgeStyle = (customerPricing: any): object => {
+      if (customerPricing.discountType === 'unique_offer') {
+        return { backgroundColor: '#9333EA', color: 'white' }; // Purple for unique offers
+      } else if (customerPricing.discountType === 'fast_udsalgspris') {
+        return { backgroundColor: '#DC2626', color: 'white' }; // Red for fast sales  
+      } else if (customerPricing.discountType === 'rabat_gruppe') {
+        return { backgroundColor: customerPricing.groupDetails?.groupColor || '#F59E0B', color: 'white' }; // Group color or fallback
+      }
+      return { backgroundColor: '#6b7280', color: 'white' };
+    };
+
+    const getDiscountTooltipText = (discountType: string): string => {
+      switch (discountType) {
+        case 'unique_offer':
+          return 'Særligt tilbud kun til dig';
+        case 'fast_udsalgspris':
+          return 'Produkt på tilbud';
+        case 'rabat_gruppe':
+          return 'Rabatteret pris for din gruppe';
+        default:
+          return 'Rabat';
+      }
+    };
 
     return (
-      <div key={item._id} className="border rounded-lg p-4 mb-4">
-        <div className="flex gap-4">
-          {/* Product Image */}
-          <div className="flex-shrink-0">
-            {product.billeder && product.billeder.length > 0 ? (
-              <img
-                src={product.billeder[0].url}
-                alt={product.produktnavn}
-                className="w-16 h-16 object-cover rounded-lg border"
-              />
-            ) : (
-              <div className="w-16 h-16 bg-gray-100 rounded-lg border flex items-center justify-center">
-                <Package className="w-6 h-6 text-gray-400" />
-              </div>
-            )}
-          </div>
-
-          {/* Product Details */}
-          <div className="flex-1">
-            <div className="flex justify-between items-start">
-              <div>
-                <h4 className="font-medium text-gray-900 mb-1">
-                  {product.produktnavn}
-                </h4>
-                <p className="text-sm text-gray-500 mb-2">
-                  Varenr: {product.varenummer}
-                </p>
+      <TooltipProvider key={item._id}>
+        <div className="border rounded-lg p-4 mb-4">
+          <div className="flex gap-4">
+            {/* Product Image - IMPROVED PLACEHOLDER LIKE PRODUCTCARD */}
+            <div className="flex-shrink-0">
+              <div className="relative">
+                {product.billeder && product.billeder.length > 0 && product.billeder[0].url ? (
+                  <img
+                    src={product.billeder[0].url}
+                    alt={product.produktnavn}
+                    className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                    onError={(e) => {
+                      // If image fails to load, replace with placeholder
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      const placeholder = target.nextElementSibling as HTMLElement;
+                      if (placeholder) placeholder.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
                 
-                {/* Discount Badge */}
-                {hasDiscount && (
-                  <Badge className={`${getDiscountBadgeColor(customerPricing.discountType)} mb-2`}>
-                    {customerPricing.discountLabel} ({customerPricing.discountPercentage}% rabat)
-                  </Badge>
-                )}
-
-                {/* Pricing */}
-                <div className="flex items-center gap-2">
-                  {hasDiscount && (
-                    <span className="text-sm text-gray-500 line-through">
-                      {formatPrice(customerPricing.originalPrice)}
-                    </span>
-                  )}
-                  <span className="font-semibold text-gray-900">
-                    {formatPrice(customerPricing.price)}
+                {/* Placeholder - Always present as fallback */}
+                <div 
+                  className={`w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex flex-col items-center justify-center ${
+                    product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'absolute inset-0 hidden' : 'flex'
+                  }`}
+                  style={{ display: product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'none' : 'flex' }}
+                >
+                  <Package className="w-4 h-4 text-gray-400 mb-1" />
+                  <span className="text-xs text-gray-500 text-center px-1 leading-tight">
+                    Billede ikke tilgængeligt
                   </span>
-                  {product.enhed && (
-                    <span className="text-sm text-gray-500">
-                      / {product.enhed.label || product.enhed.value}
-                    </span>
-                  )}
                 </div>
-              </div>
 
-              {/* Quantity and Total */}
-              <div className="text-right">
-                <div className="text-sm text-gray-500 mb-1">
-                  Antal: {quantity}
-                </div>
-                <div className="font-semibold text-gray-900">
-                  {formatPrice(item.itemTotal)}
-                </div>
-                {item.itemSavings > 0 && (
-                  <div className="text-sm text-green-600">
-                    Besparelse: {formatPrice(item.itemSavings)}
+                {/* Discount Badge - Same as Cart/ProductCard */}
+                {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+                  <div className="absolute -top-1 -right-1 z-10">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge 
+                          className="text-xs font-medium px-2 py-1 cursor-help shadow-lg border-0"
+                          style={getDiscountBadgeStyle(customerPricing)}
+                        >
+                          {customerPricing.discountType === 'unique_offer' 
+                            ? 'Særlig tilbud'
+                            : customerPricing.discountLabel
+                          }
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">
+                          {getDiscountTooltipText(customerPricing.discountType)}
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Product Details */}
+            <div className="flex-1">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-gray-900 mb-1 line-clamp-2">
+                    {product.produktnavn}
+                  </h4>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Varenr: {product.varenummer}
+                  </p>
+
+                  {/* FIXED: Pricing Display - EXACT SAME LOGIC AS CUSTOMER CART */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      {/* FIXED: Original Price with Strikethrough - UNIQUE OFFERS ALWAYS SHOW BEFORE PRICE */}
+                      {((customerPricing.discountType === 'unique_offer' && customerPricing.originalPrice) || 
+                        (customerPricing.showStrikethrough && customerPricing.originalPrice)) && (
+                        <span className="text-sm text-gray-500 line-through font-medium">
+                          {formatPrice(customerPricing.originalPrice)}
+                        </span>
+                      )}
+                      
+                      {/* Current (Discounted) Price */}
+                      <span className={`font-bold text-base ${
+                        customerPricing.discountType === 'unique_offer' 
+                          ? 'text-purple-600' 
+                          : 'text-brand-primary-dark'
+                      }`}>
+                        {formatPrice(customerPricing.price)}
+                      </span>
+                    </div>
+                    
+                    {/* Unit Information */}
+                    <p className="text-xs text-gray-500">
+                      per {getUnitDisplay()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quantity and Total */}
+                <div className="text-right ml-4">
+                  <div className="text-sm text-gray-500 mb-1">
+                    Antal: {quantity}
+                  </div>
+                  <div className="font-bold text-gray-900 text-base">
+                    {formatPrice(item.itemTotal)}
+                  </div>
+                  {item.itemSavings > 0 && (
+                    <div className="text-sm text-brand-success font-medium">
+                      Besparelse: {formatPrice(item.itemSavings)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
+      </TooltipProvider>
     );
   };
 
@@ -299,7 +380,8 @@ const DashboardCustomerCarts: React.FC = () => {
   }
 
   return (
-    <div className="p-6">
+    <DashboardLayout>
+      <div className="dashboard-page-container">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Kunde Kurve</h1>
@@ -570,7 +652,8 @@ const DashboardCustomerCarts: React.FC = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 };
 
