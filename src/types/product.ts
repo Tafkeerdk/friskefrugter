@@ -167,4 +167,25 @@ export interface ImageUploadProgress {
   progress: number;
   status: 'uploading' | 'completed' | 'error';
   error?: string;
+}
+
+export interface OrderSummary {
+  _id: string;
+  orderNumber: string;
+  customer: {
+    companyName: string;
+    email: string;
+    contactPersonName: string;
+  };
+  status: string;
+  statusDisplay: string;
+  statusVariant: string;
+  totalAmount: number;
+  placedAt: string;
+  expectedDelivery?: string;
+  isInvoiced: boolean;
+  invoiceNumber?: string;
+  lastUpdated?: string;
+  rejectionReason?: string;
+  rejectedAt?: string;
 } 
