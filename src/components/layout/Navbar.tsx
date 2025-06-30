@@ -7,9 +7,9 @@ import { SearchResults } from "../search/SearchResults";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 import { UserProfile } from "@/components/auth/UserProfile";
 import { api } from "@/lib/api";
-import { authService } from "@/lib/auth";
 
 // Types for real product data
 interface Product {
@@ -52,10 +52,10 @@ export function Navbar() {
   const [searchResults, setSearchResults] = useState([]);
   const [showResults, setShowResults] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
-  const [cartItemCount, setCartItemCount] = useState(0);
   const isMobile = useIsMobile();
   const { isInstalled } = usePWA();
   const { isCustomerAuthenticated, customerUser } = useAuth();
+  const { cart } = useCart();
   const navigate = useNavigate();
   
   // Refs for debouncing and managing async requests
@@ -78,26 +78,7 @@ export function Navbar() {
     };
   }, []);
 
-  // Load cart count for authenticated customers
-  useEffect(() => {
-    const loadCartCount = async () => {
-      if (isCustomerAuthenticated && customerUser) {
-        try {
-          const cartResponse = await authService.getCart();
-          if (cartResponse.success && cartResponse.cart) {
-            setCartItemCount(cartResponse.cart.totalItems || 0);
-          }
-        } catch (error) {
-          console.warn('Failed to load cart count:', error);
-          setCartItemCount(0);
-        }
-      } else {
-        setCartItemCount(0);
-      }
-    };
 
-    loadCartCount();
-  }, [isCustomerAuthenticated, customerUser]);
 
   // **REAL API SEARCH WITH DEBOUNCING**
   useEffect(() => {
@@ -347,9 +328,9 @@ export function Navbar() {
                 aria-label="Shopping cart"
               >
                 <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
-                {cartItemCount > 0 && (
+                {cart && cart.totalItems > 0 && (
                   <span className="absolute -top-1 -right-1 bg-brand-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                    {cartItemCount > 99 ? '99+' : cartItemCount}
+                    {cart.totalItems > 99 ? '99+' : cart.totalItems}
                   </span>
                 )}
               </Button>

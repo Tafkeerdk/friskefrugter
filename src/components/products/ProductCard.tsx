@@ -7,7 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ShoppingCart, Minus, Plus, Package, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { authService } from "@/lib/auth";
+import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 
 interface CustomerPricing {
@@ -58,6 +58,7 @@ export function ProductCard({
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { addToCart } = useCart();
 
   const increaseQuantity = () => {
     setQuantity(prev => prev + 1);
@@ -72,8 +73,8 @@ export function ProductCard({
     
     setIsAddingToCart(true);
     try {
-      const response = await authService.addToCart(id, quantity);
-      if (response.success) {
+      const success = await addToCart(id, quantity);
+      if (success) {
         toast({
           title: "Tilføjet til kurv",
           description: `${quantity} x ${name} er tilføjet til din kurv`,
@@ -83,7 +84,7 @@ export function ProductCard({
       } else {
         toast({
           title: "Fejl",
-          description: response.message || "Kunne ikke tilføje til kurv",
+          description: "Kunne ikke tilføje til kurv",
           variant: "destructive",
         });
       }

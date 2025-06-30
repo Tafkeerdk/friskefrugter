@@ -7,32 +7,22 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { authService, CartItem, Cart as CartType } from '@/lib/auth';
+import { CartItem, Cart as CartType } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
+import { useCart } from '@/hooks/useCart';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
-interface CartPageState {
-  cart: CartType | null;
-  isLoading: boolean;
-  isUpdating: boolean;
-  error: string | null;
-}
-
 const Cart: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
+  const { cart, isLoading, error, updateCartItem, removeFromCart, clearCart } = useCart();
   const isMobile = useIsMobile();
   
-  const [state, setState] = useState<CartPageState>({
-    cart: null,
-    isLoading: true,
-    isUpdating: false,
-    error: null
-  });
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Check authentication
   useEffect(() => {
@@ -42,56 +32,21 @@ const Cart: React.FC = () => {
     }
   }, [isAuthenticated, user, navigate]);
 
-  const loadCart = async () => {
-    if (!isAuthenticated || !user || user.userType !== 'customer') {
-      return;
-    }
-
-    try {
-      setState(prev => ({ ...prev, isLoading: true, error: null }));
-      
-      const response = await authService.getCart();
-      
-      if (response.success) {
-        setState(prev => ({ 
-          ...prev, 
-          cart: response.cart, 
-          isLoading: false,
-          error: null
-        }));
-      } else {
-        setState(prev => ({ 
-          ...prev, 
-          error: 'Kunne ikke indlæse kurv', 
-          isLoading: false 
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to load cart:', error);
-      setState(prev => ({ 
-        ...prev, 
-        error: 'Der opstod en fejl ved indlæsning af kurv', 
-        isLoading: false 
-      }));
-    }
-  };
-
   const updateQuantity = async (productId: string, newQuantity: number) => {
     try {
-      setState(prev => ({ ...prev, isUpdating: true }));
+      setIsUpdating(true);
       
-      const response = await authService.updateCartItem(productId, newQuantity);
+      const success = await updateCartItem(productId, newQuantity);
       
-      if (response.success) {
-        await loadCart(); // Reload cart with updated pricing
+      if (success) {
         toast({
           title: "Kurv opdateret",
-          description: response.message,
+          description: newQuantity > 0 ? "Antal opdateret" : "Produkt fjernet fra kurv",
         });
       } else {
         toast({
           title: "Fejl",
-          description: response.message || "Kunne ikke opdatere kurv",
+          description: "Kunne ikke opdatere kurv",
           variant: "destructive",
         });
       }
@@ -103,26 +58,25 @@ const Cart: React.FC = () => {
         variant: "destructive",
       });
     } finally {
-      setState(prev => ({ ...prev, isUpdating: false }));
+      setIsUpdating(false);
     }
   };
 
   const removeItem = async (productId: string) => {
     try {
-      setState(prev => ({ ...prev, isUpdating: true }));
+      setIsUpdating(true);
       
-      const response = await authService.removeFromCart(productId);
+      const success = await removeFromCart(productId);
       
-      if (response.success) {
-        await loadCart(); // Reload cart
+      if (success) {
         toast({
           title: "Produkt fjernet",
-          description: response.message,
+          description: "Produktet er fjernet fra kurven",
         });
       } else {
         toast({
           title: "Fejl",
-          description: response.message || "Kunne ikke fjerne produkt",
+          description: "Kunne ikke fjerne produkt",
           variant: "destructive",
         });
       }
@@ -134,26 +88,25 @@ const Cart: React.FC = () => {
         variant: "destructive",
       });
     } finally {
-      setState(prev => ({ ...prev, isUpdating: false }));
+      setIsUpdating(false);
     }
   };
 
   const clearEntireCart = async () => {
     try {
-      setState(prev => ({ ...prev, isUpdating: true }));
+      setIsUpdating(true);
       
-      const response = await authService.clearCart();
+      const success = await clearCart();
       
-      if (response.success) {
-        await loadCart(); // Reload cart
+      if (success) {
         toast({
           title: "Kurv tømt",
-          description: response.message,
+          description: "Alle produkter er fjernet fra kurven",
         });
       } else {
         toast({
           title: "Fejl",
-          description: response.message || "Kunne ikke tømme kurv",
+          description: "Kunne ikke tømme kurv",
           variant: "destructive",
         });
       }
@@ -165,7 +118,7 @@ const Cart: React.FC = () => {
         variant: "destructive",
       });
     } finally {
-      setState(prev => ({ ...prev, isUpdating: false }));
+      setIsUpdating(false);
     }
   };
 
@@ -205,7 +158,7 @@ const Cart: React.FC = () => {
   const renderCartItem = (item: CartItem) => {
     const { product, quantity, customerPricing } = item;
     const hasDiscount = customerPricing.showStrikethrough && customerPricing.originalPrice > customerPricing.price;
-                        const getUnitDisplay = () => {
+    const getUnitDisplay = () => {
       if (product.enhed && typeof product.enhed === 'object') {
         return product.enhed.label || product.enhed.value;
       } else if (typeof product.enhed === 'string') {
@@ -345,7 +298,7 @@ const Cart: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))}
-                        disabled={state.isUpdating || quantity <= 1}
+                        disabled={isUpdating || quantity <= 1}
                         className="h-8 w-8 p-0 hover:bg-white"
                       >
                         <Minus className="w-4 h-4" />
@@ -357,7 +310,7 @@ const Cart: React.FC = () => {
                         variant="ghost"
                         size="sm"
                         onClick={() => updateQuantity(product._id, Math.min(1000, quantity + 1))}
-                        disabled={state.isUpdating || quantity >= 1000}
+                        disabled={isUpdating || quantity >= 1000}
                         className="h-8 w-8 p-0 hover:bg-white"
                       >
                         <Plus className="w-4 h-4" />
@@ -381,7 +334,7 @@ const Cart: React.FC = () => {
                         variant="outline"
                         size="sm"
                         onClick={() => removeItem(product._id)}
-                        disabled={state.isUpdating}
+                        disabled={isUpdating}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
@@ -398,11 +351,7 @@ const Cart: React.FC = () => {
     );
   };
 
-  useEffect(() => {
-    loadCart();
-  }, []);
-
-  if (state.isLoading) {
+  if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -423,7 +372,7 @@ const Cart: React.FC = () => {
     );
   }
 
-  if (state.error) {
+  if (error) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -431,7 +380,7 @@ const Cart: React.FC = () => {
           <div className="page-container">
             <div className="content-width">
               <Alert variant="destructive">
-                <AlertDescription>{state.error}</AlertDescription>
+                <AlertDescription>{error}</AlertDescription>
               </Alert>
             </div>
           </div>
@@ -441,7 +390,6 @@ const Cart: React.FC = () => {
     );
   }
 
-  const { cart } = state;
   const isEmpty = !cart || cart.items.length === 0;
 
   return (
@@ -497,7 +445,7 @@ const Cart: React.FC = () => {
                     <Button
                       variant="outline"
                       onClick={clearEntireCart}
-                      disabled={state.isUpdating}
+                      disabled={isUpdating}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
                     >
                       <Trash2 className="w-4 h-4 mr-2" />

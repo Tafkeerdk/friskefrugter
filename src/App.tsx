@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./hooks/useAuth";
+import { CartProvider } from "./hooks/useCart";
 import { ProtectedRoute } from "./components/auth";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import Index from "./pages/Index";
@@ -54,10 +55,11 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BrowserRouter>
-          {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
-          <ScrollToTop smooth={true} delay={0} />
-          <Routes>
+        <CartProvider>
+          <BrowserRouter>
+            {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
+            <ScrollToTop smooth={true} delay={0} />
+            <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<Products />} />
@@ -410,7 +412,8 @@ const App = () => (
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+          </BrowserRouter>
+        </CartProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
