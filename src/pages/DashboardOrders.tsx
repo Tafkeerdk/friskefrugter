@@ -13,9 +13,14 @@ import {
   Send,
   Receipt,
   Eye,
-  Plus
+  Plus,
+  ArrowRight,
+  ChevronRight,
+  FileText,
+  Zap,
+  TrendingUp
 } from "lucide-react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,9 +71,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authService } from "@/lib/auth";
 import { OrderNumberDisplay, OrderNumberCompact } from "@/components/ui/order-number-display";
+import { exportOrdersToPDF } from "@/lib/pdf-export";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrders } from "@/hooks/useOrders";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 import type { OrderSummary, Order, OrderStatistics } from "@/lib/auth";
 
 interface AdminOrderData {
@@ -82,10 +90,37 @@ interface AdminOrderData {
   statistics?: OrderStatistics;
 }
 
+// Status progression order
+const STATUS_PROGRESSION = [
+  'order_placed',
+  'order_confirmed', 
+  'in_transit',
+  'delivered',
+  'invoiced'
+] as const;
+
+const STATUS_LABELS = {
+  order_placed: 'Afgivet',
+  order_confirmed: 'Bekræftet',
+  in_transit: 'Pakket',
+  delivered: 'Leveret',
+  invoiced: 'Faktureret'
+} as const;
+
+const STATUS_COLORS = {
+  order_placed: 'bg-brand-gray-100 text-brand-gray-700 border-brand-gray-200',
+  order_confirmed: 'bg-blue-100 text-blue-700 border-blue-200',
+  in_transit: 'bg-yellow-100 text-yellow-700 border-yellow-200',
+  delivered: 'bg-brand-primary/10 text-brand-primary-dark border-brand-primary/20',
+  invoiced: 'bg-brand-success/10 text-brand-success border-brand-success/20'
+} as const;
+
 const DashboardOrders: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAdminAuthenticated } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   // Customer order state (from useOrders hook)
   const { 
@@ -108,9 +143,14 @@ const DashboardOrders: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<OrderSummary | null>(null);
+  const [orderDetailsDialogOpen, setOrderDetailsDialogOpen] = useState(false);
+  const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [bulkInvoiceDialogOpen, setBulkInvoiceDialogOpen] = useState(false);
   const [isProcessingInvoice, setIsProcessingInvoice] = useState(false);
+  const [isProcessingStatusUpdate, setIsProcessingStatusUpdate] = useState(false);
+  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [newStatus, setNewStatus] = useState<string>('');
 
   // Determine if we're in admin or customer context
   const isAdminContext = isAdminAuthenticated && location.pathname.includes('/admin');
@@ -163,6 +203,51 @@ const DashboardOrders: React.FC = () => {
       }
     } catch (error) {
       console.error('❌ Error loading order statistics:', error);
+    }
+  };
+
+  const handleOrderDetails = (order: OrderSummary) => {
+    setSelectedOrder(order);
+    setOrderDetailsDialogOpen(true);
+  };
+
+  const handleStatusUpdate = (order: OrderSummary, targetStatus: string) => {
+    setSelectedOrder(order);
+    setNewStatus(targetStatus);
+    setStatusUpdateDialogOpen(true);
+  };
+
+  const updateOrderStatus = async () => {
+    if (!selectedOrder || !newStatus) return;
+
+    try {
+      setIsProcessingStatusUpdate(true);
+      // TODO: Implement status update API call
+      // const response = await authService.updateOrderStatus(selectedOrder._id, newStatus);
+      
+      // For now, simulate success
+      toast({
+        title: "Status opdateret",
+        description: `Ordre ${selectedOrder.orderNumber} er nu markeret som ${STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}`,
+      });
+
+      // Update local state
+      setAdminOrders(prev => prev.map(order => 
+        order._id === selectedOrder._id 
+          ? { ...order, status: newStatus }
+          : order
+      ));
+
+      setStatusUpdateDialogOpen(false);
+      setSelectedOrder(null);
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke opdatere status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingStatusUpdate(false);
     }
   };
 
@@ -248,6 +333,42 @@ const DashboardOrders: React.FC = () => {
     }
   };
 
+  const handleExportPDF = async () => {
+    try {
+      setIsExportingPDF(true);
+      
+      // Generate PDF with order data - only export admin orders for now
+      if (!isAdminContext) {
+        toast({
+          title: "Ikke tilgængelig",
+          description: "PDF eksport er kun tilgængelig for administratorer",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      await exportOrdersToPDF({
+        orders: adminOrders,
+        includeImages: true,
+        includeTechnicalDetails: true,
+        filename: `multi-groent-ordrer-${new Date().toISOString().split('T')[0]}.pdf`
+      });
+      
+      toast({
+        title: "PDF genereret",
+        description: "Ordre PDF er klar til download med produktbilleder og tekniske detaljer",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke generere PDF",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExportingPDF(false);
+    }
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'order_placed':
@@ -301,7 +422,112 @@ const DashboardOrders: React.FC = () => {
       .slice(0, 2);
   };
 
-  // Using OrderNumberDisplay component for better formatting
+  const getCurrentStatusIndex = (status: string) => {
+    return STATUS_PROGRESSION.indexOf(status as any);
+  };
+
+  const getNextStatus = (currentStatus: string) => {
+    const currentIndex = getCurrentStatusIndex(currentStatus);
+    if (currentIndex >= 0 && currentIndex < STATUS_PROGRESSION.length - 1) {
+      return STATUS_PROGRESSION[currentIndex + 1];
+    }
+    return null;
+  };
+
+  // Status Progression Component
+  const StatusProgression: React.FC<{ order: OrderSummary }> = ({ order }) => {
+    const currentIndex = getCurrentStatusIndex(order.status);
+    
+    return (
+      <div className="flex items-center gap-2 py-3">
+        {STATUS_PROGRESSION.map((status, index) => {
+          const isComplete = index <= currentIndex;
+          const isCurrent = index === currentIndex;
+          const isNext = index === currentIndex + 1;
+          const canProgress = isNext && isAdminContext;
+          
+          return (
+            <React.Fragment key={status}>
+              <div 
+                className={cn(
+                  "relative flex items-center justify-center transition-all duration-300",
+                  "border-2 rounded-full text-xs font-medium",
+                  isMobile ? "w-8 h-8" : "w-10 h-10",
+                  isComplete 
+                    ? STATUS_COLORS[status] 
+                    : "bg-brand-gray-50 text-brand-gray-400 border-brand-gray-200",
+                  canProgress && "cursor-pointer hover:scale-110 hover:shadow-md",
+                  isCurrent && "ring-2 ring-brand-primary/30 shadow-md"
+                )}
+                onClick={() => canProgress && handleStatusUpdate(order, status)}
+                title={`${STATUS_LABELS[status]}${canProgress ? ' (Klik for at opdatere)' : ''}`}
+              >
+                {getStatusIcon(status)}
+                {isCurrent && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full animate-pulse" />
+                )}
+              </div>
+              
+              {index < STATUS_PROGRESSION.length - 1 && (
+                <div className={cn(
+                  "flex-1 h-0.5 transition-all duration-300",
+                  index < currentIndex 
+                    ? "bg-brand-primary" 
+                    : "bg-brand-gray-200"
+                )} />
+              )}
+            </React.Fragment>
+          );
+        })}
+      </div>
+    );
+  };
+
+  // Order Actions Component
+  const OrderActions: React.FC<{ order: OrderSummary }> = ({ order }) => {
+    const nextStatus = getNextStatus(order.status);
+    
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleOrderDetails(order)}
+          className="gap-1 hover:bg-brand-primary/10 hover:text-brand-primary transition-colors"
+        >
+          <Eye className="h-3 w-3" />
+          <span className="hidden sm:inline">Se detaljer</span>
+        </Button>
+        
+        {isAdminContext && nextStatus && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleStatusUpdate(order, nextStatus)}
+            className="gap-1 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+          >
+            <ArrowRight className="h-3 w-3" />
+            <span className="hidden sm:inline">Næste status</span>
+          </Button>
+        )}
+        
+        {isAdminContext && !order.isInvoiced && ['order_confirmed', 'in_transit', 'delivered'].includes(order.status) && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setSelectedOrder(order);
+              setInvoiceDialogOpen(true);
+            }}
+            className="gap-1 hover:bg-brand-success/10 hover:text-brand-success transition-colors"
+          >
+            <Send className="h-3 w-3" />
+            <span className="hidden sm:inline">Faktura</span>
+          </Button>
+        )}
+      </div>
+    );
+  };
 
   // Determine which data to display
   const displayOrders = isAdminContext ? adminOrders : customerOrders;
@@ -314,8 +540,8 @@ const DashboardOrders: React.FC = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center p-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Henter ordrer...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-primary mx-auto"></div>
+            <p className="mt-2 text-brand-gray-600">Henter ordrer...</p>
           </div>
         </div>
       </DashboardLayout>
@@ -328,16 +554,16 @@ const DashboardOrders: React.FC = () => {
         {/* Header Section */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-6 mb-6">
           <div className="flex-1 min-w-0">
-            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-brand-gray-900">
               {isAdminContext ? 'Ordrer' : 'Mine Ordrer'}
             </h2>
-            <p className="text-sm md:text-base text-muted-foreground mt-1">
+            <p className="text-sm md:text-base text-brand-gray-600 mt-1">
               {isAdminContext 
-                ? 'Administrer og følg kunders ordrer med faktura funktionalitet'
+                ? 'Administrer og følg kunders ordrer med animeret status progression'
                 : 'Se dine ordrer og følg deres status'
               }
-          </p>
-        </div>
+            </p>
+          </div>
           
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 lg:flex-shrink-0">
@@ -376,10 +602,19 @@ const DashboardOrders: React.FC = () => {
                     Send Fakturaer ({selectedOrders.length})
                   </Button>
                 )}
-          <Button variant="outline" className="gap-1">
-            <Download className="h-4 w-4" />
-                  <span className="hidden sm:inline">Eksporter</span>
-          </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleExportPDF}
+                  disabled={isExportingPDF}
+                  className="gap-1"
+                >
+                  {isExportingPDF ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-brand-primary" />
+                  ) : (
+                    <Download className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">Eksporter PDF</span>
+                </Button>
               </div>
             )}
           </div>
@@ -395,232 +630,234 @@ const DashboardOrders: React.FC = () => {
         {/* Orders Content */}
         <div className="content-width">
           {displayOrders.length === 0 ? (
-        <Card>
+            <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
-                  <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-lg font-medium text-muted-foreground">
+                  <Package className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-brand-gray-600">
                     {searchTerm ? 'Ingen ordrer matchede søgningen' : 'Ingen ordrer fundet'}
                   </p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-brand-gray-500 mt-1">
                     {searchTerm ? 'Prøv at ændre dine søgekriterier' : 
                      isAdminContext ? 'Der er ingen ordrer endnu' : 'Du har ikke afgivet nogen ordrer endnu'}
                   </p>
-            </div>
+                </div>
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-4">
-              {/* Desktop Table View */}
-              <Card className="hidden md:block">
-          <CardContent className="p-0">
-            <div className="rounded-md">
-                    <div className="grid grid-cols-7 items-center border-b px-4 py-3 font-medium text-sm">
-                      {isAdminContext && (
-                        <div className="flex items-center">
+            <div className="space-y-6">
+              {/* Order Cards with Status Progression */}
+              {displayOrders.map((order) => (
+                <Card key={order._id} className="overflow-hidden hover:shadow-md transition-shadow duration-200">
+                  <CardContent className="p-6">
+                    {/* Order Header */}
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+                      <div className="flex items-start gap-4">
+                        {isAdminContext && (
                           <Checkbox 
-                            checked={selectedOrders.length === displayOrders.length}
+                            checked={selectedOrders.includes(order._id)}
                             onCheckedChange={(checked) => {
                               if (checked) {
-                                setSelectedOrders(displayOrders.map(o => o._id));
+                                setSelectedOrders(prev => [...prev, order._id]);
                               } else {
-                                setSelectedOrders([]);
+                                setSelectedOrders(prev => prev.filter(id => id !== order._id));
                               }
                             }}
+                            className="mt-1"
                           />
-                        </div>
-                      )}
-                      <div className={isAdminContext ? 'col-span-1' : 'col-span-2'}>Ordrenr.</div>
-                      {isAdminContext && <div>Kunde</div>}
-                <div>Dato</div>
-                <div>Status</div>
-                <div>Beløb</div>
-                <div className="text-right">Handlinger</div>
-              </div>
-                    
-                    {displayOrders.map((order) => (
-                <div
-                        key={order._id}
-                        className="grid grid-cols-7 items-center border-b px-4 py-4 last:border-0 hover:bg-muted/50 transition-colors"
-                >
-                        {isAdminContext && (
-                          <div className="flex items-center">
-                            <Checkbox 
-                              checked={selectedOrders.includes(order._id)}
-                              onCheckedChange={(checked) => {
-                                if (checked) {
-                                  setSelectedOrders(prev => [...prev, order._id]);
-                                } else {
-                                  setSelectedOrders(prev => prev.filter(id => id !== order._id));
-                                }
-                              }}
-                            />
-                          </div>
                         )}
                         
-                        <div className={isAdminContext ? 'col-span-1' : 'col-span-2'}>
-                          <OrderNumberCompact 
-                            orderNumber={order.orderNumber}
-                            className="text-sm"
-                          />
-                        </div>
-                        
-                        {isAdminContext && (
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {getInitials(order.customer.companyName)}
-                      </AvatarFallback>
-                    </Avatar>
-                            <div className="min-w-0">
-                              <div className="font-medium truncate">{order.customer.companyName}</div>
-                              <div className="text-xs text-muted-foreground truncate">{order.customer.contactPersonName}</div>
-                            </div>
-                  </div>
-                        )}
-                        
-                        <div className="text-sm">{formatDate(order.placedAt)}</div>
-                        
-                  <div>
-                    <Badge
-                      variant={getStatusVariant(order.status)}
-                            className="rounded-full px-2.5 gap-1"
-                    >
-                            {getStatusIcon(order.statusDisplay)}
-                            {order.statusDisplay}
-                    </Badge>
-                  </div>
-                        
-                        <div className="font-medium">
-                          {order.totalAmount.toLocaleString('da-DK')} kr
-                        </div>
-                        
-                  <div className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Handlinger</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                              <DropdownMenuItem>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Se detaljer
-                              </DropdownMenuItem>
-                              
-                              {isAdminContext && (
-                                <>
-                                  <DropdownMenuItem>Opdater status</DropdownMenuItem>
-                                  {!order.isInvoiced && ['order_confirmed', 'in_transit', 'delivered'].includes(order.status) && (
-                                    <DropdownMenuItem 
-                                      onClick={() => {
-                                        setSelectedOrder(order);
-                                        setInvoiceDialogOpen(true);
-                                      }}
-                                    >
-                                      <Send className="h-4 w-4 mr-2" />
-                                      Send Faktura
-                                    </DropdownMenuItem>
-                                  )}
-                                  {order.isInvoiced && (
-                                    <DropdownMenuItem>
-                                      <Receipt className="h-4 w-4 mr-2" />
-                                      Se faktura #{order.invoiceNumber}
-                        </DropdownMenuItem>
-                                  )}
-                                </>
-                              )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-              {/* Mobile Card View */}
-              <div className="grid gap-4 md:hidden">
-                {displayOrders.map((order) => (
-                  <Card key={order._id}>
-                    <CardHeader className="p-4 pb-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="min-w-0">
-                            <OrderNumberCompact 
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-3 mb-2">
+                            <OrderNumberDisplay 
                               orderNumber={order.orderNumber}
-                              className="text-sm"
+                              variant="compact"
+                              showFullOnExpand={true}
                             />
-                          </div>
-                          <Badge
-                            variant={getStatusVariant(order.status)}
-                            className="rounded-full px-2 gap-1 text-xs flex-shrink-0"
-                          >
-                            {getStatusIcon(order.statusDisplay)}
-                            {order.statusDisplay}
-                          </Badge>
-                        </div>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem>Se detaljer</DropdownMenuItem>
-                            {isAdminContext && !order.isInvoiced && (
-                              <DropdownMenuItem 
-                                onClick={() => {
-                                  setSelectedOrder(order);
-                                  setInvoiceDialogOpen(true);
-                                }}
-                              >
-                                Send Faktura
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0">
-                      <div className="space-y-2">
-                        {isAdminContext && (
-                          <div className="flex items-center gap-2 text-sm">
-                            <Avatar className="h-6 w-6">
-                              <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                                {getInitials(order.customer.companyName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium">{order.customer.companyName}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-4 w-4" />
-                          <span>{formatDate(order.placedAt)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium text-lg">
-                            {order.totalAmount.toLocaleString('da-DK')} kr
-                          </span>
-                          {order.isInvoiced && (
-                            <Badge variant="outline">
-                              <Receipt className="h-3 w-3 mr-1" />
-                              #{order.invoiceNumber}
+                            <Badge
+                              variant={getStatusVariant(order.status)}
+                              className="gap-1"
+                            >
+                              {getStatusIcon(order.status)}
+                              {STATUS_LABELS[order.status as keyof typeof STATUS_LABELS]}
                             </Badge>
+                          </div>
+                          
+                          {isAdminContext && (
+                            <div className="flex items-center gap-2 text-sm text-brand-gray-600">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="bg-brand-primary/10 text-brand-primary text-xs">
+                                  {getInitials(order.customer.companyName)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium">{order.customer.companyName}</span>
+                              <span>•</span>
+                              <span>{order.customer.contactPersonName}</span>
+                            </div>
                           )}
+                          
+                          <div className="flex items-center gap-4 mt-2 text-sm text-brand-gray-500">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-4 w-4" />
+                              {formatDate(order.placedAt)}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <CreditCard className="h-4 w-4" />
+                              <span className="font-medium text-brand-gray-900">
+                                {order.totalAmount.toLocaleString('da-DK')} kr
+                              </span>
+                            </div>
+                            {order.isInvoiced && (
+                              <Badge variant="outline" className="text-xs">
+                                <Receipt className="h-3 w-3 mr-1" />
+                                #{order.invoiceNumber}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      
+                      <OrderActions order={order} />
+                    </div>
+
+                    {/* Status Progression */}
+                    <div className="border-t border-brand-gray-100 pt-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-medium text-brand-gray-700">Status progression</h4>
+                        <span className="text-xs text-brand-gray-500">
+                          {isAdminContext ? 'Klik på næste status for at opdatere' : 'Automatisk opdateret'}
+                        </span>
+                      </div>
+                      <StatusProgression order={order} />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* Order Details Dialog */}
+      <Dialog open={orderDetailsDialogOpen} onOpenChange={setOrderDetailsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-brand-primary" />
+              Ordre detaljer
+            </DialogTitle>
+            <DialogDescription>
+              Detaljeret visning af ordre {selectedOrder?.orderNumber}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Order Summary */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Ordre information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div>
+                      <Label className="text-sm text-brand-gray-600">Ordrenummer</Label>
+                      <OrderNumberDisplay 
+                        orderNumber={selectedOrder.orderNumber}
+                        variant="default"
+                        showFullOnExpand={true}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-sm text-brand-gray-600">Status</Label>
+                      <div className="mt-1">
+                        <Badge variant={getStatusVariant(selectedOrder.status)} className="gap-1">
+                          {getStatusIcon(selectedOrder.status)}
+                          {STATUS_LABELS[selectedOrder.status as keyof typeof STATUS_LABELS]}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-brand-gray-600">Dato</Label>
+                      <p className="text-sm">{formatDate(selectedOrder.placedAt)}</p>
+                    </div>
+                    <div>
+                      <Label className="text-sm text-brand-gray-600">Total beløb</Label>
+                      <p className="text-lg font-semibold text-brand-primary">
+                        {selectedOrder.totalAmount.toLocaleString('da-DK')} kr
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {isAdminContext && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Kunde information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div>
+                        <Label className="text-sm text-brand-gray-600">Virksomhed</Label>
+                        <p className="font-medium">{selectedOrder.customer.companyName}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-brand-gray-600">Kontaktperson</Label>
+                        <p>{selectedOrder.customer.contactPersonName}</p>
+                      </div>
+                      <div>
+                        <Label className="text-sm text-brand-gray-600">Email</Label>
+                        <p>{selectedOrder.customer.email}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Status Progression in Dialog */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Status progression</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <StatusProgression order={selectedOrder} />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Status Update Dialog */}
+      <AlertDialog open={statusUpdateDialogOpen} onOpenChange={setStatusUpdateDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Opdater ordre status</AlertDialogTitle>
+            <AlertDialogDescription>
+              Er du sikker på, at du vil opdatere ordre <strong>{selectedOrder?.orderNumber}</strong> til status: <strong>{STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessingStatusUpdate}>Annuller</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={updateOrderStatus}
+              disabled={isProcessingStatusUpdate}
+              className="bg-brand-primary hover:bg-brand-primary-hover"
+            >
+              {isProcessingStatusUpdate ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Opdaterer...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Opdater status
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Send Invoice Dialog */}
       <AlertDialog open={invoiceDialogOpen} onOpenChange={setInvoiceDialogOpen}>
