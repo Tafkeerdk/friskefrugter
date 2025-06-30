@@ -117,6 +117,40 @@ const CustomerOrders: React.FC = () => {
     });
   };
 
+  // Parse order number to extract readable components
+  const parseOrderNumber = (orderNum: string) => {
+    // Format: YYYYMMDD-HHMMSS-customerId-###
+    const parts = orderNum.split('-');
+    if (parts.length >= 4) {
+      const datePart = parts[0]; // YYYYMMDD
+      const timePart = parts[1]; // HHMMSS
+      const sequencePart = parts[parts.length - 1]; // ###
+      
+      // Parse date
+      const year = datePart.substring(0, 4);
+      const month = datePart.substring(4, 6);
+      const day = datePart.substring(6, 8);
+      
+      // Parse time
+      const hours = timePart.substring(0, 2);
+      const minutes = timePart.substring(2, 4);
+      
+      return {
+        shortDate: `${day}/${month}/${year}`,
+        time: `${hours}:${minutes}`,
+        sequence: sequencePart,
+        fullOrderNumber: orderNum
+      };
+    }
+    
+    return {
+      shortDate: null,
+      time: null,
+      sequence: null,
+      fullOrderNumber: orderNum
+    };
+  };
+
   // Filter orders based on search and status
   const filteredOrders = orders.filter(order => {
     const matchesSearch = !searchTerm || 
@@ -228,11 +262,21 @@ const CustomerOrders: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <div>
                         <CardTitle className="text-lg font-semibold">
-                          Ordre {order.orderNumber}
+                          Ordre #{parseOrderNumber(order.orderNumber).sequence}
                         </CardTitle>
-                        <CardDescription className="flex items-center gap-2 mt-1">
-                          <Calendar className="h-4 w-4" />
-                          {formatDate(order.placedAt)}
+                        <CardDescription className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4" />
+                            {formatDate(order.placedAt)}
+                          </div>
+                          <div className="font-mono text-xs text-brand-primary break-all">
+                            {order.orderNumber}
+                          </div>
+                          {parseOrderNumber(order.orderNumber).shortDate && (
+                            <div className="text-xs text-gray-500">
+                              Ordre fra {parseOrderNumber(order.orderNumber).shortDate} kl. {parseOrderNumber(order.orderNumber).time}
+                            </div>
+                          )}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-3">

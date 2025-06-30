@@ -300,6 +300,40 @@ const DashboardOrders: React.FC = () => {
       .slice(0, 2);
   };
 
+  // Parse order number to extract readable components
+  const parseOrderNumber = (orderNum: string) => {
+    // Format: YYYYMMDD-HHMMSS-customerId-###
+    const parts = orderNum.split('-');
+    if (parts.length >= 4) {
+      const datePart = parts[0]; // YYYYMMDD
+      const timePart = parts[1]; // HHMMSS
+      const sequencePart = parts[parts.length - 1]; // ###
+      
+      // Parse date
+      const year = datePart.substring(0, 4);
+      const month = datePart.substring(4, 6);
+      const day = datePart.substring(6, 8);
+      
+      // Parse time
+      const hours = timePart.substring(0, 2);
+      const minutes = timePart.substring(2, 4);
+      
+      return {
+        shortDate: `${day}/${month}/${year}`,
+        time: `${hours}:${minutes}`,
+        sequence: sequencePart,
+        fullOrderNumber: orderNum
+      };
+    }
+    
+    return {
+      shortDate: null,
+      time: null,
+      sequence: null,
+      fullOrderNumber: orderNum
+    };
+  };
+
   // Determine which data to display
   const displayOrders = isAdminContext ? adminOrders : customerOrders;
   const displayPagination = isAdminContext ? adminPagination : customerPagination;
@@ -333,8 +367,8 @@ const DashboardOrders: React.FC = () => {
                 ? 'Administrer og følg kunders ordrer med faktura funktionalitet'
                 : 'Se dine ordrer og følg deres status'
               }
-            </p>
-          </div>
+          </p>
+        </div>
           
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 lg:flex-shrink-0">
@@ -373,10 +407,10 @@ const DashboardOrders: React.FC = () => {
                     Send Fakturaer ({selectedOrders.length})
                   </Button>
                 )}
-                <Button variant="outline" className="gap-1">
-                  <Download className="h-4 w-4" />
+          <Button variant="outline" className="gap-1">
+            <Download className="h-4 w-4" />
                   <span className="hidden sm:inline">Eksporter</span>
-                </Button>
+          </Button>
               </div>
             )}
           </div>
@@ -392,7 +426,7 @@ const DashboardOrders: React.FC = () => {
         {/* Orders Content */}
         <div className="content-width">
           {displayOrders.length === 0 ? (
-            <Card>
+        <Card>
               <CardContent className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -403,15 +437,15 @@ const DashboardOrders: React.FC = () => {
                     {searchTerm ? 'Prøv at ændre dine søgekriterier' : 
                      isAdminContext ? 'Der er ingen ordrer endnu' : 'Du har ikke afgivet nogen ordrer endnu'}
                   </p>
-                </div>
+            </div>
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
               {/* Desktop Table View */}
               <Card className="hidden md:block">
-                <CardContent className="p-0">
-                  <div className="rounded-md">
+          <CardContent className="p-0">
+            <div className="rounded-md">
                     <div className="grid grid-cols-7 items-center border-b px-4 py-3 font-medium text-sm">
                       {isAdminContext && (
                         <div className="flex items-center">
@@ -429,17 +463,17 @@ const DashboardOrders: React.FC = () => {
                       )}
                       <div className={isAdminContext ? 'col-span-1' : 'col-span-2'}>Ordrenr.</div>
                       {isAdminContext && <div>Kunde</div>}
-                      <div>Dato</div>
-                      <div>Status</div>
-                      <div>Beløb</div>
-                      <div className="text-right">Handlinger</div>
-                    </div>
+                <div>Dato</div>
+                <div>Status</div>
+                <div>Beløb</div>
+                <div className="text-right">Handlinger</div>
+              </div>
                     
                     {displayOrders.map((order) => (
-                      <div
+                <div
                         key={order._id}
                         className="grid grid-cols-7 items-center border-b px-4 py-4 last:border-0 hover:bg-muted/50 transition-colors"
-                      >
+                >
                         {isAdminContext && (
                           <div className="flex items-center">
                             <Checkbox 
@@ -456,50 +490,55 @@ const DashboardOrders: React.FC = () => {
                         )}
                         
                         <div className={isAdminContext ? 'col-span-1' : 'col-span-2'}>
-                          <span className="font-medium">{order.orderNumber}</span>
-                        </div>
+                          <div className="font-medium text-sm">
+                            #{parseOrderNumber(order.orderNumber).sequence}
+                          </div>
+                          <div className="font-mono text-xs text-brand-primary break-all">
+                            {order.orderNumber}
+                          </div>
+                  </div>
                         
                         {isAdminContext && (
-                          <div className="flex items-center gap-2">
-                            <Avatar className="h-8 w-8">
+                  <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
                               <AvatarFallback className="bg-primary/10 text-primary text-xs">
                                 {getInitials(order.customer.companyName)}
-                              </AvatarFallback>
-                            </Avatar>
+                      </AvatarFallback>
+                    </Avatar>
                             <div className="min-w-0">
                               <div className="font-medium truncate">{order.customer.companyName}</div>
                               <div className="text-xs text-muted-foreground truncate">{order.customer.contactPersonName}</div>
                             </div>
-                          </div>
+                  </div>
                         )}
                         
                         <div className="text-sm">{formatDate(order.placedAt)}</div>
                         
-                        <div>
-                          <Badge
-                            variant={getStatusVariant(order.status)}
+                  <div>
+                    <Badge
+                      variant={getStatusVariant(order.status)}
                             className="rounded-full px-2.5 gap-1"
-                          >
+                    >
                             {getStatusIcon(order.statusDisplay)}
                             {order.statusDisplay}
-                          </Badge>
-                        </div>
+                    </Badge>
+                  </div>
                         
                         <div className="font-medium">
                           {order.totalAmount.toLocaleString('da-DK')} kr
                         </div>
                         
-                        <div className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
+                  <div className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Handlinger</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Handlinger</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Handlinger</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
                               <DropdownMenuItem>
                                 <Eye className="h-4 w-4 mr-2" />
                                 Se detaljer
@@ -523,18 +562,18 @@ const DashboardOrders: React.FC = () => {
                                     <DropdownMenuItem>
                                       <Receipt className="h-4 w-4 mr-2" />
                                       Se faktura #{order.invoiceNumber}
-                                    </DropdownMenuItem>
+                        </DropdownMenuItem>
                                   )}
                                 </>
                               )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                    ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
               {/* Mobile Card View */}
               <div className="grid gap-4 md:hidden">
@@ -543,10 +582,17 @@ const DashboardOrders: React.FC = () => {
                     <CardHeader className="p-4 pb-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">{order.orderNumber}</span>
+                          <div className="min-w-0">
+                            <div className="font-medium text-sm">
+                              #{parseOrderNumber(order.orderNumber).sequence}
+                            </div>
+                            <div className="font-mono text-xs text-brand-primary break-all">
+                              {order.orderNumber}
+                            </div>
+                          </div>
                           <Badge
                             variant={getStatusVariant(order.status)}
-                            className="rounded-full px-2 gap-1 text-xs"
+                            className="rounded-full px-2 gap-1 text-xs flex-shrink-0"
                           >
                             {getStatusIcon(order.statusDisplay)}
                             {order.statusDisplay}

@@ -199,8 +199,13 @@ const Cart: React.FC = () => {
           duration: 5000,
         });
 
-        // Navigate to order confirmation or orders page
-        navigate('/orders');
+        // Navigate to order success page with order details
+        const searchParams = new URLSearchParams({
+          orderNumber: result.order.orderNumber,
+          totalAmount: result.order.totalAmount.toString(),
+          totalItems: cart?.totalItems?.toString() || '0'
+        });
+        navigate(`/order/success?${searchParams.toString()}`);
       } else {
         toast({
           title: "Fejl ved bestilling",
@@ -647,7 +652,7 @@ const Cart: React.FC = () => {
                             <Label htmlFor="deliveryInstructions" className="text-sm font-medium text-gray-700">
                               Leveringsinstruktioner (valgfrit)
                             </Label>
-                            <Textarea
+                          <Textarea 
                               id="deliveryInstructions"
                               placeholder="Specielle instruktioner for levering..."
                               value={deliveryInstructions}
@@ -659,8 +664,8 @@ const Cart: React.FC = () => {
                             <p className="text-xs text-gray-500 mt-1">
                               {deliveryInstructions.length}/300 tegn
                             </p>
-                          </div>
                         </div>
+                      </div>
 
                         <Button 
                           className="w-full btn-brand-primary mt-6" 
@@ -675,7 +680,7 @@ const Cart: React.FC = () => {
                           ) : (
                             <>
                               <CheckCircle className="w-4 h-4 mr-2" />
-                              Afgiv ordre
+                        Afgiv ordre
                             </>
                           )}
                         </Button>

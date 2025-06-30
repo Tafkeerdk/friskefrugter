@@ -135,10 +135,10 @@ const Dashboard: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="text-lg md:text-2xl font-bold">{customerStats.totalOrders}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Siden du blev kunde
-                    </p>
+                <div className="text-lg md:text-2xl font-bold">{customerStats.totalOrders}</div>
+                <p className="text-xs text-muted-foreground">
+                  Siden du blev kunde
+                </p>
                   </>
                 )}
               </CardContent>
@@ -157,10 +157,10 @@ const Dashboard: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="text-lg md:text-2xl font-bold">{customerStats.monthlySpent.toLocaleString()} kr</div>
-                    <p className="text-xs text-muted-foreground">
-                      Denne måned
-                    </p>
+                <div className="text-lg md:text-2xl font-bold">{customerStats.monthlySpent.toLocaleString()} kr</div>
+                <p className="text-xs text-muted-foreground">
+                  Denne måned
+                </p>
                   </>
                 )}
               </CardContent>
@@ -179,10 +179,10 @@ const Dashboard: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="text-lg md:text-2xl font-bold">{customerStats.pendingOrders}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Bliver behandlet
-                    </p>
+                <div className="text-lg md:text-2xl font-bold">{customerStats.pendingOrders}</div>
+                <p className="text-xs text-muted-foreground">
+                  Bliver behandlet
+                </p>
                   </>
                 )}
               </CardContent>
@@ -201,15 +201,15 @@ const Dashboard: React.FC = () => {
                   </div>
                 ) : (
                   <>
-                    <div className="text-sm md:text-2xl font-bold">
+                <div className="text-sm md:text-2xl font-bold">
                       {customerStats.lastOrderDate 
                         ? new Date(customerStats.lastOrderDate).toLocaleDateString('da-DK')
                         : 'Ingen ordrer'
                       }
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Seneste aktivitet
-                    </p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Seneste aktivitet
+                </p>
                   </>
                 )}
               </CardContent>
@@ -402,36 +402,36 @@ const Dashboard: React.FC = () => {
                       </Link>
                     </div>
                   ) : (
-                    <div className="space-y-3 md:space-y-4">
-                      {recentOrders.map((order) => (
-                        <div key={order.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 md:gap-4">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-sm md:text-base">{order.id}</span>
-                              <Badge className={`text-xs ${getStatusColor(order.status)}`}>
-                                {order.status}
-                              </Badge>
-                            </div>
-                            <p className="text-xs md:text-sm text-gray-600">
-                              {new Date(order.date).toLocaleDateString('da-DK')}
-                            </p>
+                  <div className="space-y-3 md:space-y-4">
+                    {recentOrders.map((order) => (
+                      <div key={order.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 md:gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-sm md:text-base">{order.id}</span>
+                            <Badge className={`text-xs ${getStatusColor(order.status)}`}>
+                              {order.status}
+                            </Badge>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-sm md:text-base">{order.amount.toLocaleString()} kr</p>
-                          </div>
+                          <p className="text-xs md:text-sm text-gray-600">
+                            {new Date(order.date).toLocaleDateString('da-DK')}
+                          </p>
                         </div>
-                      ))}
-                    </div>
+                        <div className="text-right">
+                          <p className="font-bold text-sm md:text-base">{order.amount.toLocaleString()} kr</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                   )}
 
                   {recentOrders.length > 0 && (
-                    <div className="mt-4 pt-4 border-t">
-                      <Link to="/orders">
-                        <Button variant="outline" className="w-full">
-                          Se alle ordrer
-                        </Button>
-                      </Link>
-                    </div>
+                  <div className="mt-4 pt-4 border-t">
+                    <Link to="/orders">
+                      <Button variant="outline" className="w-full">
+                        Se alle ordrer
+                      </Button>
+                    </Link>
+                  </div>
                   )}
                 </CardContent>
               </Card>

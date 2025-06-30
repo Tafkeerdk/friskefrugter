@@ -44,6 +44,7 @@ import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
 import CustomerOrders from "./pages/CustomerOrders";
+import OrderSuccess from "./pages/OrderSuccess";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -318,6 +319,14 @@ const App = () => (
               element={
                 <ProtectedRoute requireCustomer={true}>
                   <CustomerOrders />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/order/success" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <OrderSuccess />
                 </ProtectedRoute>
               } 
             />
