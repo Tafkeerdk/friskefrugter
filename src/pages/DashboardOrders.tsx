@@ -90,7 +90,7 @@ interface AdminOrderData {
   statistics?: OrderStatistics;
 }
 
-// Status progression order
+// Status progression order (excluding rejected - it's a special action)
 const STATUS_PROGRESSION = [
   'order_placed',
   'order_confirmed', 
@@ -104,7 +104,8 @@ const STATUS_LABELS = {
   order_confirmed: 'Bekræftet',
   in_transit: 'Pakket',
   delivered: 'Leveret',
-  invoiced: 'Faktureret'
+  invoiced: 'Faktureret',
+  rejected: 'Afvist'
 } as const;
 
 const STATUS_COLORS = {
@@ -112,7 +113,8 @@ const STATUS_COLORS = {
   order_confirmed: 'bg-blue-100 text-blue-700 border-blue-200',
   in_transit: 'bg-yellow-100 text-yellow-700 border-yellow-200',
   delivered: 'bg-brand-primary/10 text-brand-primary-dark border-brand-primary/20',
-  invoiced: 'bg-brand-success/10 text-brand-success border-brand-success/20'
+  invoiced: 'bg-brand-success/10 text-brand-success border-brand-success/20',
+  rejected: 'bg-red-100 text-red-700 border-red-200'
 } as const;
 
 const DashboardOrders: React.FC = () => {
@@ -146,13 +148,16 @@ const DashboardOrders: React.FC = () => {
   const [orderDetailsDialogOpen, setOrderDetailsDialogOpen] = useState(false);
   const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
   const [statusJumpDialogOpen, setStatusJumpDialogOpen] = useState(false);
+  const [rejectOrderDialogOpen, setRejectOrderDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [bulkInvoiceDialogOpen, setBulkInvoiceDialogOpen] = useState(false);
   const [isProcessingInvoice, setIsProcessingInvoice] = useState(false);
   const [isProcessingStatusUpdate, setIsProcessingStatusUpdate] = useState(false);
+  const [isProcessingRejection, setIsProcessingRejection] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [newStatus, setNewStatus] = useState<string>('');
   const [skippedStatuses, setSkippedStatuses] = useState<string[]>([]);
+  const [rejectionReason, setRejectionReason] = useState<string>('');
 
   // Determine if we're in admin or customer context
   const isAdminContext = isAdminAuthenticated && location.pathname.includes('/admin');
@@ -275,6 +280,48 @@ const DashboardOrders: React.FC = () => {
       });
     } finally {
       setIsProcessingStatusUpdate(false);
+    }
+  };
+
+  const handleRejectOrder = (order: OrderSummary) => {
+    setSelectedOrder(order);
+    setRejectionReason('');
+    setRejectOrderDialogOpen(true);
+  };
+
+  const rejectOrder = async () => {
+    if (!selectedOrder || !rejectionReason.trim()) return;
+
+    try {
+      setIsProcessingRejection(true);
+      
+      // TODO: Implement order rejection API call
+      // const response = await authService.rejectOrder(selectedOrder._id, rejectionReason);
+      
+      // For now, simulate success
+      toast({
+        title: "Ordre afvist",
+        description: `Ordre ${selectedOrder.orderNumber} er blevet afvist. Kunden vil modtage en email med begrundelsen.`,
+      });
+
+      // Update local state
+      setAdminOrders(prev => prev.map(order => 
+        order._id === selectedOrder._id 
+          ? { ...order, status: 'rejected', rejectionReason: rejectionReason.trim() }
+          : order
+      ));
+
+      setRejectOrderDialogOpen(false);
+      setSelectedOrder(null);
+      setRejectionReason('');
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke afvise ordre",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessingRejection(false);
     }
   };
 
@@ -408,6 +455,8 @@ const DashboardOrders: React.FC = () => {
         return <Package className="h-4 w-4" />;
       case 'invoiced':
         return <Receipt className="h-4 w-4" />;
+      case 'rejected':
+        return <AlertTriangle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
@@ -425,6 +474,8 @@ const DashboardOrders: React.FC = () => {
         return 'default';
       case 'invoiced':
         return 'default';
+      case 'rejected':
+        return 'destructive';
       default:
         return 'outline';
     }
@@ -522,6 +573,7 @@ const DashboardOrders: React.FC = () => {
   // Order Actions Component
   const OrderActions: React.FC<{ order: OrderSummary }> = ({ order }) => {
     const nextStatus = getNextStatus(order.status);
+    const canReject = isAdminContext && !['rejected', 'invoiced'].includes(order.status);
     
     return (
       <div className="flex items-center gap-2">
@@ -535,7 +587,7 @@ const DashboardOrders: React.FC = () => {
           <span className="hidden sm:inline">Se detaljer</span>
         </Button>
         
-        {isAdminContext && nextStatus && (
+        {isAdminContext && nextStatus && order.status !== 'rejected' && (
           <Button
             variant="outline"
             size="sm"
@@ -544,6 +596,18 @@ const DashboardOrders: React.FC = () => {
           >
             <ArrowRight className="h-3 w-3" />
             <span className="hidden sm:inline">Næste status</span>
+          </Button>
+        )}
+        
+        {canReject && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleRejectOrder(order)}
+            className="gap-1 hover:bg-red-50 hover:text-red-600 transition-colors"
+          >
+            <AlertTriangle className="h-3 w-3" />
+            <span className="hidden sm:inline">Afvis</span>
           </Button>
         )}
         
@@ -615,6 +679,7 @@ const DashboardOrders: React.FC = () => {
                   <SelectItem value="in_transit">Pakket</SelectItem>
                   <SelectItem value="delivered">Leveret</SelectItem>
                   <SelectItem value="invoiced">Faktureret</SelectItem>
+                  <SelectItem value="rejected">Afvist</SelectItem>
                 </SelectContent>
               </Select>
               
@@ -743,12 +808,18 @@ const DashboardOrders: React.FC = () => {
                                 {order.totalAmount.toLocaleString('da-DK')} kr
                               </span>
                             </div>
-                            {order.isInvoiced && (
-                              <Badge variant="outline" className="text-xs">
-                                <Receipt className="h-3 w-3 mr-1" />
-                                #{order.invoiceNumber}
-                              </Badge>
-                            )}
+                                                 {order.isInvoiced && (
+                               <Badge variant="outline" className="text-xs">
+                                 <Receipt className="h-3 w-3 mr-1" />
+                                 #{order.invoiceNumber}
+                               </Badge>
+                             )}
+                             {order.status === 'rejected' && (
+                               <Badge variant="destructive" className="text-xs">
+                                 <AlertTriangle className="h-3 w-3 mr-1" />
+                                 Afvist
+                               </Badge>
+                             )}
                           </div>
                         </div>
                       </div>
@@ -756,16 +827,33 @@ const DashboardOrders: React.FC = () => {
                       <OrderActions order={order} />
                     </div>
 
-                    {/* Status Progression */}
-                    <div className="border-t border-brand-gray-100 pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-medium text-brand-gray-700">Status progression</h4>
-                        <span className="text-xs text-brand-gray-500">
-                          {isAdminContext ? 'Klik på enhver fremtidig status for at opdatere' : 'Automatisk opdateret'}
-                        </span>
+                    {/* Status Progression - Only show if not rejected */}
+                    {order.status !== 'rejected' && (
+                      <div className="border-t border-brand-gray-100 pt-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-medium text-brand-gray-700">Status progression</h4>
+                          <span className="text-xs text-brand-gray-500">
+                            {isAdminContext ? 'Klik på enhver fremtidig status for at opdatere' : 'Automatisk opdateret'}
+                          </span>
+                        </div>
+                        <StatusProgression order={order} />
                       </div>
-                      <StatusProgression order={order} />
-                    </div>
+                    )}
+
+                    {/* Rejection Info - Show if rejected */}
+                    {order.status === 'rejected' && (order as any).rejectionReason && (
+                      <div className="border-t border-brand-gray-100 pt-4">
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <AlertTriangle className="h-4 w-4 text-red-600" />
+                            <span className="font-medium text-red-800">Ordre afvist</span>
+                          </div>
+                          <p className="text-sm text-red-700">
+                            <strong>Årsag:</strong> {(order as any).rejectionReason}
+                          </p>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -949,6 +1037,70 @@ const DashboardOrders: React.FC = () => {
                 <>
                   <Zap className="h-4 w-4 mr-2" />
                   Ja, spring til status
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+                 </AlertDialogContent>
+       </AlertDialog>
+
+      {/* Reject Order Dialog */}
+      <AlertDialog open={rejectOrderDialogOpen} onOpenChange={setRejectOrderDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-red-700">
+              <AlertTriangle className="h-5 w-5" />
+              Afvis ordre
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  Er du sikker på, at du vil afvise ordre <strong>{selectedOrder?.orderNumber}</strong>?
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="rejection-reason" className="text-sm font-medium">
+                    Årsag til afvisning *
+                  </Label>
+                  <Textarea
+                    id="rejection-reason"
+                    placeholder="Beskriv årsagen til afvisning (bliver sendt til kunden)..."
+                    value={rejectionReason}
+                    onChange={(e) => setRejectionReason(e.target.value)}
+                    rows={4}
+                    className="w-full"
+                  />
+                  <p className="text-xs text-brand-gray-500">
+                    Denne besked vil blive sendt til kunden via email
+                  </p>
+                </div>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium text-sm">Vigtigt</span>
+                  </div>
+                  <p className="text-sm text-red-600 mt-1">
+                    Afviste ordrer kan ikke genaktiveres. Kunden vil modtage en email med afvisningsårsagen.
+                  </p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessingRejection}>Annuller</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={rejectOrder}
+              disabled={isProcessingRejection || !rejectionReason.trim()}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isProcessingRejection ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Afviser...
+                </>
+              ) : (
+                <>
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Afvis ordre
                 </>
               )}
             </AlertDialogAction>
