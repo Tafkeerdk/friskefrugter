@@ -674,7 +674,7 @@ const DashboardFeaturedProducts: React.FC = () => {
                   "text-muted-foreground",
                   isMobile ? "text-sm" : "text-base"
                 )}>
-                  {isMobile ? "Administrer forsidens produkter" : "Administrer de produkter der vises i 'Udvalgte produkter' sektionen på forsiden"}
+                  {isMobile ? "Administrer op til 8 forside produkter" : "Administrer op til 8 produkter der vises i 'Udvalgte produkter' sektionen på forsiden"}
                 </p>
               </div>
             </div>
@@ -795,9 +795,20 @@ const DashboardFeaturedProducts: React.FC = () => {
                     {settings.subtitle}
                   </p>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className={cn(
+                  "grid gap-4",
+                  featuredProducts.length === 1 
+                    ? "grid-cols-1 max-w-xs mx-auto"
+                    : featuredProducts.length === 2 
+                      ? "grid-cols-1 sm:grid-cols-2 max-w-md mx-auto"
+                      : featuredProducts.length === 3
+                        ? "grid-cols-1 sm:grid-cols-3 max-w-2xl mx-auto"
+                        : featuredProducts.length === 4
+                          ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"
+                          : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                )}>
                   {featuredProducts.length > 0 ? (
-                    featuredProducts.slice(0, 4).map((product) => {
+                    featuredProducts.map((product) => {
                       const primaryImage = product.billeder?.find(img => img.isPrimary)?.url || 
                                          product.billeder?.[0]?.url || 
                                          '/placeholder.svg';
@@ -829,9 +840,9 @@ const DashboardFeaturedProducts: React.FC = () => {
                     </div>
                   )}
                 </div>
-                {featuredProducts.length > 4 && (
-                  <p className="text-center text-sm text-gray-500 mt-4">
-                    ... og {featuredProducts.length - 4} flere produkter
+                {featuredProducts.length > 0 && (
+                  <p className="text-center text-sm text-gray-600 mt-4 font-medium">
+                    Viser alle {featuredProducts.length} udvalgte produkter
                   </p>
                 )}
               </div>

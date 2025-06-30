@@ -384,25 +384,29 @@ const Index = () => {
                 {settings.subtitle}
               </p>
             </div>
-            {/* CENTERED GRID WITH MAX 4 ITEMS PER ROW */}
+            {/* RESPONSIVE GRID FOR ALL FEATURED PRODUCTS (UP TO 8) */}
             <div className="flex justify-center">
               <div className={cn(
                 "grid w-full",
-                // MOBILE: 2 columns with better spacing
+                // MOBILE: Always 2 columns for clean mobile layout
                 isMobile 
-                  ? "grid-cols-2 gap-4 max-w-sm px-4" 
-                  // DESKTOP: Responsive grid that centers content
-                  : featuredProducts.length === 1 
-                    ? "grid-cols-1 max-w-sm gap-6"
-                    : featuredProducts.length === 2 
-                      ? "grid-cols-2 max-w-2xl gap-6"
+                  ? "grid-cols-2 gap-4 max-w-lg px-4" 
+                  // DESKTOP: Responsive grid for all featured products (up to 8)
+                  : featuredProducts.length === 1
+                    ? "grid-cols-1 max-w-sm gap-8"
+                    : featuredProducts.length === 2
+                      ? "grid-cols-2 max-w-2xl gap-8"
                       : featuredProducts.length === 3
-                        ? "grid-cols-3 max-w-4xl gap-6"
-                        : "grid-cols-4 max-w-6xl gap-8"
+                        ? "grid-cols-3 max-w-4xl gap-8"
+                        : featuredProducts.length === 4
+                          ? "grid-cols-4 max-w-6xl gap-8"
+                          : featuredProducts.length <= 6
+                            ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 max-w-5xl gap-6"
+                            : "grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 max-w-6xl gap-6"
               )}>
                 {loading ? (
-                  // Loading skeleton - responsive count
-                  Array.from({ length: isMobile ? 4 : 4 }).map((_, index) => (
+                  // Loading skeleton - show expected number
+                  Array.from({ length: isMobile ? 4 : 8 }).map((_, index) => (
                     <div key={index} className="animate-pulse">
                       <div className="bg-gray-200 rounded-lg aspect-[4/3] mb-3"></div>
                       <div className="bg-gray-200 h-4 rounded mb-2"></div>
@@ -410,8 +414,8 @@ const Index = () => {
                     </div>
                   ))
                 ) : featuredProducts.length > 0 ? (
-                  // Show only first 4 products to maintain clean layout
-                  featuredProducts.slice(0, 4).map((product) => (
+                  // Show ALL featured products (up to 8)
+                  featuredProducts.map((product) => (
                     <div key={product.id} className="flex justify-center">
                       <ProductCard 
                         id={product.id}
