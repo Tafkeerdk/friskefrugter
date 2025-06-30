@@ -417,6 +417,9 @@ export interface OrderSummary {
   expectedDelivery?: string;
   isInvoiced: boolean;
   invoiceNumber?: string;
+  lastUpdated?: string;
+  rejectionReason?: string;
+  rejectedAt?: string;
 }
 
 export interface OrderStatistics {
