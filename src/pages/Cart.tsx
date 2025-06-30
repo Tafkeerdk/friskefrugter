@@ -263,10 +263,10 @@ const Cart: React.FC = () => {
                     )}
                     style={{ display: product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'none' : 'flex' }}
                   >
-                    <Package className={cn("text-gray-400 mb-1", isMobile ? "w-4 h-4" : "w-6 h-6")} />
+                    <Package className={cn("text-gray-400", isMobile ? "w-3 h-3 mb-1" : "w-4 h-4 mb-1")} />
                     <span className={cn(
-                      "text-gray-500 text-center leading-tight",
-                      isMobile ? "text-xs px-1" : "text-xs px-2"
+                      "text-gray-500 text-center leading-none font-medium",
+                      isMobile ? "text-[8px] px-1" : "text-[10px] px-1"
                     )}>
                       Billede ikke tilgængeligt
                     </span>

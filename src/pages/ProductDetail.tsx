@@ -400,8 +400,8 @@ const ProductDetail = () => {
                   )}
                   style={{ display: getPrimaryImage() ? 'none' : 'flex' }}
                 >
-                  <Package className="h-16 w-16 text-gray-400 mb-3" />
-                  <span className="text-gray-500 text-center text-sm px-4 leading-tight">
+                  <Package className="h-12 w-12 text-gray-400 mb-2" />
+                  <span className="text-gray-500 text-center text-xs px-4 leading-tight font-medium">
                     Billede ikke tilgængeligt
                   </span>
                 </div>

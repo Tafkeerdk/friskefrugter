@@ -269,8 +269,8 @@ const DashboardCustomerCarts: React.FC = () => {
                   }`}
                   style={{ display: product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'none' : 'flex' }}
                 >
-                  <Package className="w-4 h-4 text-gray-400 mb-1" />
-                  <span className="text-xs text-gray-500 text-center px-1 leading-tight">
+                  <Package className="w-3 h-3 text-gray-400 mb-1" />
+                  <span className="text-[8px] text-gray-500 text-center px-1 leading-none font-medium">
                     Billede ikke tilgængeligt
                   </span>
                 </div>

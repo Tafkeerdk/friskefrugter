@@ -131,8 +131,8 @@ export function ProductCard({
     if (imageError || !image) {
       return (
         <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
-          <Package className="h-6 w-6 text-gray-400 mb-1" />
-          <span className="text-xs text-gray-500 text-center px-2 leading-tight">
+          <Package className="h-5 w-5 text-gray-400 mb-1" />
+          <span className="text-[10px] text-gray-500 text-center px-2 leading-none font-medium">
             Billede ikke tilgængeligt
           </span>
         </div>
