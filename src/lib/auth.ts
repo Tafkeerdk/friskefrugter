@@ -56,6 +56,12 @@ const getEndpoint = (path: string): string => {
   if (pathOnly.startsWith('/api/auth/customer/unique-offers')) {
     return `/.netlify/functions/customer-unique-offers${queryString}`;
   }
+  if (pathOnly.startsWith('/api/auth/customer/orders')) {
+    return `/.netlify/functions/customer-orders${queryString}`;
+  }
+  if (pathOnly.startsWith('/api/auth/customer/cart')) {
+    return `/.netlify/functions/customer-cart${queryString}`;
+  }
   
   // Admin-specific endpoints for notifications and contacts
   if (pathOnly.startsWith('/api/auth/admin/notifications')) {
@@ -73,11 +79,11 @@ const getEndpoint = (path: string): string => {
   if (pathOnly.startsWith('/api/auth/admin/unique-offers')) {
     return `/.netlify/functions/admin-unique-offers${queryString}`;
   }
+  if (pathOnly.startsWith('/api/auth/admin/orders')) {
+    return `/.netlify/functions/admin-orders${queryString}`;
+  }
   if (pathOnly.startsWith('/api/auth/admin/customer-carts')) {
     return `/.netlify/functions/admin-customer-carts${queryString}`;
-  }
-  if (pathOnly.startsWith('/api/auth/customer/cart')) {
-    return `/.netlify/functions/customer-cart${queryString}`;
   }
   
   // Product and Unit endpoints - route to specific functions for better auth handling
@@ -268,6 +274,227 @@ export interface AdminCartResponse {
     totalPages: number;
     totalCount: number;
     pageSize: number;
+  };
+  message?: string;
+}
+
+// Order interfaces
+export interface OrderItem {
+  _id: string;
+  product: {
+    _id: string;
+    produktnavn: string;
+    varenummer: string;
+    billeder: any[];
+  };
+  quantity: number;
+  staticPricing: {
+    price: number;
+    originalPrice: number;
+    discountType: string;
+    discountLabel: string | null;
+    discountPercentage: number;
+    discountAmount: number;
+  };
+  productSnapshot: {
+    produktnavn: string;
+    varenummer: string;
+    enhed?: {
+      value: string;
+      label: string;
+      description: string;
+    };
+    kategori?: {
+      navn: string;
+      beskrivelse: string;
+      slug: string;
+    };
+  };
+  itemTotal: number;
+  itemOriginalTotal: number;
+  itemSavings: number;
+}
+
+export interface Order {
+  _id: string;
+  orderNumber: string;
+  customer: {
+    _id: string;
+    companyName: string;
+    email: string;
+    contactPersonName: string;
+  };
+  items: OrderItem[];
+  orderTotals: {
+    totalItems: number;
+    subtotal: number;
+    totalSavings: number;
+    totalAmount: number;
+  };
+  status: 'order_placed' | 'order_confirmed' | 'in_transit' | 'delivered' | 'invoiced';
+  statusHistory: Array<{
+    status: string;
+    timestamp: string;
+    updatedBy?: {
+      _id: string;
+      navn: string;
+      email: string;
+    };
+    notes?: string;
+  }>;
+  delivery: {
+    expectedDelivery?: string;
+    deliveredAt?: string;
+    deliveryAddress?: {
+      street: string;
+      city: string;
+      postalCode: string;
+      country: string;
+    };
+    deliveryInstructions?: string;
+    courierInfo?: {
+      company?: string;
+      trackingNumber?: string;
+      trackingUrl?: string;
+    };
+  };
+  invoice: {
+    isInvoiced: boolean;
+    invoicedAt?: string;
+    invoicedBy?: string;
+    invoiceNumber?: string;
+    invoiceUrl?: string;
+    economicData?: {
+      invoiceId?: string;
+      customerNumber?: string;
+      paymentTerms?: number;
+      dueDate?: string;
+    };
+  };
+  customerSnapshot: {
+    companyName: string;
+    contactPersonName: string;
+    email: string;
+    phone?: string;
+    cvrNumber?: string;
+    discountGroup?: {
+      name: string;
+      discountPercentage: number;
+      color: string;
+    };
+    billingAddress?: {
+      street: string;
+      city: string;
+      postalCode: string;
+      country: string;
+    };
+  };
+  orderNotes?: string;
+  internalNotes?: string;
+  emailConfirmation: {
+    sent: boolean;
+    sentAt?: string;
+    emailAddress?: string;
+    emailId?: string;
+  };
+  placedAt: string;
+  updatedAt: string;
+}
+
+export interface OrderSummary {
+  _id: string;
+  orderNumber: string;
+  customer: {
+    companyName: string;
+    email: string;
+    contactPersonName: string;
+  };
+  status: string;
+  statusDisplay: string;
+  statusVariant: string;
+  totalAmount: number;
+  placedAt: string;
+  expectedDelivery?: string;
+  isInvoiced: boolean;
+  invoiceNumber?: string;
+}
+
+export interface OrderStatistics {
+  statuses: Array<{
+    status: string;
+    count: number;
+    variant: string;
+    totalAmount: number;
+  }>;
+  totalOrders: number;
+  totalRevenue: number;
+  recentOrders: Array<{
+    orderNumber: string;
+    customer: {
+      companyName: string;
+      email: string;
+      contactPersonName: string;
+    };
+    status: string;
+    amount: number;
+    placedAt: string;
+  }>;
+}
+
+export interface OrdersResponse {
+  success: boolean;
+  orders: OrderSummary[];
+  pagination: {
+    currentPage: number;
+    limit: number;
+    totalOrders: number;
+    totalPages: number;
+  };
+  message?: string;
+}
+
+export interface OrderResponse {
+  success: boolean;
+  order?: Order;
+  message?: string;
+}
+
+export interface OrderStatisticsResponse {
+  success: boolean;
+  statistics: OrderStatistics;
+  message?: string;
+}
+
+export interface PlaceOrderRequest {
+  orderNotes?: string;
+  deliveryAddress?: {
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  };
+  deliveryInstructions?: string;
+}
+
+export interface PlaceOrderResponse {
+  success: boolean;
+  message: string;
+  order: {
+    orderNumber: string;
+    status: string;
+    totalAmount: number;
+    placedAt: string;
+  };
+}
+
+export interface CustomerOrdersResponse {
+  success: boolean;
+  orders: Order[];
+  pagination: {
+    currentPage: number;
+    limit: number;
+    totalOrders: number;
+    totalPages: number;
   };
   message?: string;
 }
@@ -1896,6 +2123,166 @@ export const authService = {
   // Clear cart cache
   async clearCartCache(): Promise<void> {
     requestCache.clearPattern('.*cart.*');
+  },
+
+  // Order Management Methods
+
+  // Customer order methods
+  async placeOrder(orderData: PlaceOrderRequest): Promise<PlaceOrderResponse> {
+    const response = await apiClient.post(getEndpoint('/api/auth/customer/orders'), orderData);
+    const result = await response.json();
+    
+    // Clear cart cache on successful order
+    if (result.success) {
+      requestCache.clearPattern('.*cart.*');
+    }
+    
+    return result;
+  },
+
+  async getMyOrders(params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string; 
+  }): Promise<CustomerOrdersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.status) queryParams.append('status', params.status);
+
+    const endpoint = `${getEndpoint('/api/auth/customer/orders')}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await apiClient.get(endpoint);
+    const data = await response.json();
+    return data;
+  },
+
+  // Admin order methods
+  async getOrderStatistics(): Promise<OrderStatisticsResponse> {
+    const response = await apiClient.get(getEndpoint('/api/auth/admin/orders?statistics=true'));
+    const data = await response.json();
+    return data;
+  },
+
+  async getOrders(params?: { 
+    page?: number; 
+    limit?: number; 
+    status?: string; 
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
+  }): Promise<OrdersResponse> {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.status) queryParams.append('status', params.status);
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params?.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+
+    const endpoint = `${getEndpoint('/api/auth/admin/orders')}${queryParams.toString() ? '?' + queryParams.toString() : ''}`;
+    const response = await apiClient.get(endpoint);
+    const data = await response.json();
+    return data;
+  },
+
+  async getOrder(orderId: string): Promise<OrderResponse> {
+    const response = await apiClient.get(`${getEndpoint('/api/auth/admin/orders')}?orderId=${orderId}`);
+    const data = await response.json();
+    return data;
+  },
+
+  async updateOrderStatus(orderId: string, status: string, notes?: string): Promise<{ 
+    success: boolean; 
+    message: string; 
+    order?: OrderSummary 
+  }> {
+    const response = await apiClient.put(`${getEndpoint('/api/auth/admin/orders')}?orderId=${orderId}`, {
+      status,
+      notes
+    });
+    const result = await response.json();
+    
+    // Clear order cache on successful update
+    if (result.success) {
+      requestCache.clearPattern('.*orders.*');
+    }
+    
+    return result;
+  },
+
+  async updateOrderDelivery(orderId: string, deliveryInfo: {
+    expectedDelivery?: string;
+    deliveryInstructions?: string;
+    courierInfo?: {
+      company?: string;
+      trackingNumber?: string;
+      trackingUrl?: string;
+    };
+  }): Promise<{ success: boolean; message: string; delivery?: any }> {
+    const response = await apiClient.put(`${getEndpoint('/api/auth/admin/orders')}?orderId=${orderId}`, {
+      deliveryInfo
+    });
+    const result = await response.json();
+    
+    // Clear order cache on successful update
+    if (result.success) {
+      requestCache.clearPattern('.*orders.*');
+    }
+    
+    return result;
+  },
+
+  async sendInvoice(orderId: string): Promise<{ 
+    success: boolean; 
+    message: string; 
+    invoiceNumber?: string;
+    order?: OrderSummary;
+  }> {
+    const response = await apiClient.put(`${getEndpoint('/api/auth/admin/orders')}?orderId=${orderId}`, {
+      sendInvoice: true
+    });
+    const result = await response.json();
+    
+    // Clear order cache on successful invoice
+    if (result.success) {
+      requestCache.clearPattern('.*orders.*');
+    }
+    
+    return result;
+  },
+
+  async bulkSendInvoices(orderIds: string[]): Promise<{ 
+    success: boolean; 
+    message: string; 
+    results: Array<{
+      orderNumber: string;
+      success: boolean;
+      invoiceNumber?: string;
+      error?: string;
+    }>;
+    summary: {
+      total: number;
+      success: number;
+      errors: number;
+    };
+  }> {
+    const response = await apiClient.post(getEndpoint('/api/auth/admin/orders'), {
+      action: 'bulk_invoice',
+      orderIds
+    });
+    const result = await response.json();
+    
+    // Clear order cache on successful bulk operation
+    if (result.success) {
+      requestCache.clearPattern('.*orders.*');
+    }
+    
+    return result;
+  },
+
+  // Clear order cache
+  async clearOrderCache(): Promise<void> {
+    requestCache.clearPattern('.*orders.*');
   },
 
   // Expose apiClient for direct use when needed

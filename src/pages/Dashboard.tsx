@@ -1,5 +1,6 @@
 import React from "react";
 import { useAuth } from "../hooks/useAuth";
+import { useOrders } from "../hooks/useOrders";
 import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
@@ -24,6 +25,7 @@ import { Link } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
   const { user, isLoading } = useAuth();
+  const { orderStats, isLoadingStats, statsError } = useOrders();
 
   // Show loading while user data is being fetched
   if (isLoading || !user) {
@@ -68,19 +70,15 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // Mock data for customer dashboard
-  const customerStats = {
-    totalOrders: 24,
-    monthlySpent: 15750,
-    pendingOrders: 2,
-    lastOrderDate: "2024-01-15"
+  // Use real order data or fallback to defaults
+  const customerStats = orderStats || {
+    totalOrders: 0,
+    monthlySpent: 0,
+    pendingOrders: 0,
+    lastOrderDate: null
   };
 
-  const recentOrders = [
-    { id: "ORD-001", date: "2024-01-15", amount: 2340, status: "Leveret" },
-    { id: "ORD-002", date: "2024-01-12", amount: 1890, status: "Undervejs" },
-    { id: "ORD-003", date: "2024-01-08", amount: 3420, status: "Leveret" }
-  ];
+  const recentOrders = orderStats?.recentOrders || [];
 
   const getDiscountGroupStyle = (discountGroup: any) => {
     if (typeof discountGroup === 'object' && discountGroup?.color) {
@@ -130,10 +128,19 @@ const Dashboard: React.FC = () => {
                 <Package className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-lg md:text-2xl font-bold">{customerStats.totalOrders}</div>
-                <p className="text-xs text-muted-foreground">
-                  Siden du blev kunde
-                </p>
+                {isLoadingStats ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 md:h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20 mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-lg md:text-2xl font-bold">{customerStats.totalOrders}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Siden du blev kunde
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -143,10 +150,19 @@ const Dashboard: React.FC = () => {
                 <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-lg md:text-2xl font-bold">{customerStats.monthlySpent.toLocaleString()} kr</div>
-                <p className="text-xs text-muted-foreground">
-                  Denne måned
-                </p>
+                {isLoadingStats ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 md:h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-lg md:text-2xl font-bold">{customerStats.monthlySpent.toLocaleString()} kr</div>
+                    <p className="text-xs text-muted-foreground">
+                      Denne måned
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -156,10 +172,19 @@ const Dashboard: React.FC = () => {
                 <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-lg md:text-2xl font-bold">{customerStats.pendingOrders}</div>
-                <p className="text-xs text-muted-foreground">
-                  Bliver behandlet
-                </p>
+                {isLoadingStats ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 md:h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-20 mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-lg md:text-2xl font-bold">{customerStats.pendingOrders}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Bliver behandlet
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -169,12 +194,24 @@ const Dashboard: React.FC = () => {
                 <FileText className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-sm md:text-2xl font-bold">
-                  {new Date(customerStats.lastOrderDate).toLocaleDateString('da-DK')}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Seneste aktivitet
-                </p>
+                {isLoadingStats ? (
+                  <div className="animate-pulse">
+                    <div className="h-4 md:h-8 bg-gray-200 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-sm md:text-2xl font-bold">
+                      {customerStats.lastOrderDate 
+                        ? new Date(customerStats.lastOrderDate).toLocaleDateString('da-DK')
+                        : 'Ingen ordrer'
+                      }
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Seneste aktivitet
+                    </p>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -331,34 +368,71 @@ const Dashboard: React.FC = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3 md:space-y-4">
-                    {recentOrders.map((order) => (
-                      <div key={order.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 md:gap-4">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="font-medium text-sm md:text-base">{order.id}</span>
-                            <Badge className={`text-xs ${getStatusColor(order.status)}`}>
-                              {order.status}
-                            </Badge>
+                  {isLoadingStats ? (
+                    <div className="space-y-3 md:space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="animate-pulse p-3 md:p-4 bg-gray-50 rounded-lg">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                              <div className="h-3 bg-gray-200 rounded w-16"></div>
+                            </div>
+                            <div className="h-4 bg-gray-200 rounded w-16"></div>
                           </div>
-                          <p className="text-xs md:text-sm text-gray-600">
-                            {new Date(order.date).toLocaleDateString('da-DK')}
-                          </p>
                         </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm md:text-base">{order.amount.toLocaleString()} kr</p>
+                      ))}
+                    </div>
+                  ) : statsError ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500 text-sm">
+                        Kunne ikke indlæse seneste ordrer
+                      </p>
+                    </div>
+                  ) : recentOrders.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Package className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-500 text-sm mb-4">
+                        Du har endnu ikke afgivet nogen ordrer
+                      </p>
+                      <Link to="/products">
+                        <Button>
+                          <ShoppingCart className="mr-2 h-4 w-4" />
+                          Se produkter
+                        </Button>
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 md:space-y-4">
+                      {recentOrders.map((order) => (
+                        <div key={order.id} className="flex flex-col md:flex-row md:items-center justify-between p-3 md:p-4 bg-gray-50 rounded-lg gap-2 md:gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-sm md:text-base">{order.id}</span>
+                              <Badge className={`text-xs ${getStatusColor(order.status)}`}>
+                                {order.status}
+                              </Badge>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-600">
+                              {new Date(order.date).toLocaleDateString('da-DK')}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm md:text-base">{order.amount.toLocaleString()} kr</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
 
-                  <div className="mt-4 pt-4 border-t">
-                    <Link to="/orders">
-                      <Button variant="outline" className="w-full">
-                        Se alle ordrer
-                      </Button>
-                    </Link>
-                  </div>
+                  {recentOrders.length > 0 && (
+                    <div className="mt-4 pt-4 border-t">
+                      <Link to="/orders">
+                        <Button variant="outline" className="w-full">
+                          Se alle ordrer
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>

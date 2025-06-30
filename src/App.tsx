@@ -43,6 +43,7 @@ import DashboardContactDetail from "./pages/DashboardContactDetail";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
+import CustomerOrders from "./pages/CustomerOrders";
 
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
@@ -56,10 +57,10 @@ const App = () => (
       <Sonner />
       <AuthProvider>
         <CartProvider>
-          <BrowserRouter>
-            {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
-            <ScrollToTop smooth={true} delay={0} />
-            <Routes>
+        <BrowserRouter>
+          {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
+          <ScrollToTop smooth={true} delay={0} />
+          <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<Products />} />
@@ -313,6 +314,14 @@ const App = () => (
               } 
             />
             <Route 
+              path="/orders" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <CustomerOrders />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
               path="/customer/dashboard" 
               element={
                 <ProtectedRoute requireCustomer={true}>
@@ -412,7 +421,7 @@ const App = () => (
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-          </BrowserRouter>
+        </BrowserRouter>
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>

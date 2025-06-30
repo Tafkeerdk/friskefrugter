@@ -317,24 +317,24 @@ export function Navbar() {
           
           {/* Cart Button - Only for logged-in customers */}
           {isCustomerAuthenticated && customerUser && (
-            <Link to="/cart" className="relative">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className={cn(
-                  "hover:bg-brand-gray-100 hover:text-brand-primary transition-all",
-                  isMobile ? "h-9 w-9" : "h-10 w-10"
-                )}
-                aria-label="Shopping cart"
-              >
-                <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
+          <Link to="/cart" className="relative">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn(
+                "hover:bg-brand-gray-100 hover:text-brand-primary transition-all",
+                isMobile ? "h-9 w-9" : "h-10 w-10"
+              )}
+              aria-label="Shopping cart"
+            >
+              <ShoppingCart className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />
                 {cart && cart.totalItems > 0 && (
                   <span className="absolute -top-1 -right-1 bg-brand-primary text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
                     {cart.totalItems > 99 ? '99+' : cart.totalItems}
-                  </span>
+              </span>
                 )}
-              </Button>
-            </Link>
+            </Button>
+          </Link>
           )}
 
           {/* Customer Profile or Login Button - Hidden on mobile */}

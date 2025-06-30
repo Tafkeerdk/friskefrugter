@@ -252,11 +252,11 @@ const ProductDetail = () => {
     try {
       const response = await authService.addToCart(product._id, quantity);
       if (response.success) {
-        toast({
-          title: 'Tilføjet til kurv',
-          description: `${quantity} x ${product.produktnavn} er tilføjet til din kurv`,
-          duration: 3000,
-        });
+      toast({
+        title: 'Tilføjet til kurv',
+        description: `${quantity} x ${product.produktnavn} er tilføjet til din kurv`,
+        duration: 3000,
+      });
         setQuantity(1); // Reset quantity after successful add
       } else {
         toast({
@@ -377,10 +377,10 @@ const ProductDetail = () => {
             {/* Product Image - IMPROVED PLACEHOLDER LIKE PRODUCTCARD */}
             <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
               <div className="relative aspect-square">
-                {getPrimaryImage() ? (
-                  <img 
-                    src={getPrimaryImage()} 
-                    alt={product.produktnavn} 
+              {getPrimaryImage() ? (
+              <img 
+                  src={getPrimaryImage()} 
+                  alt={product.produktnavn} 
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       // If image fails to load, replace with placeholder
@@ -389,7 +389,7 @@ const ProductDetail = () => {
                       const placeholder = target.nextElementSibling as HTMLElement;
                       if (placeholder) placeholder.style.display = 'flex';
                     }}
-                  />
+              />
                 ) : null}
                 
                 {/* Placeholder - Always present as fallback */}
@@ -428,7 +428,7 @@ const ProductDetail = () => {
               {/* Pricing Section - FIXED TO MATCH PRODUCTCARD EXACTLY */}
               {isAuthenticated ? (
                 <div className="mb-6">
-                  {product.customerPricing ? (
+                                     {product.customerPricing ? (
                     <div className="space-y-3">
                       {/* Discount Badge - Same as ProductCard */}
                       {product.customerPricing.discountType !== 'none' && product.customerPricing.discountLabel && (
@@ -489,18 +489,18 @@ const ProductDetail = () => {
                         Per {getUnitDisplay()}
                       </p>
                     </div>
-                  ) : (
-                    <>
+                   ) : (
+                     <>
                       <div className="text-3xl font-bold text-brand-primary-dark">
-                        {new Intl.NumberFormat('da-DK', {
-                          style: 'currency',
-                          currency: 'DKK',
-                          minimumFractionDigits: 2
-                        }).format(product.basispris)}
-                      </div>
-                      <p className="text-sm text-gray-500 mt-1">Per {getUnitDisplay()}</p>
-                    </>
-                  )}
+                         {new Intl.NumberFormat('da-DK', {
+                           style: 'currency',
+                           currency: 'DKK',
+                           minimumFractionDigits: 2
+                         }).format(product.basispris)}
+                       </div>
+                       <p className="text-sm text-gray-500 mt-1">Per {getUnitDisplay()}</p>
+                     </>
+                   )}
                 </div>
               ) : (
                 <div className="p-4 mb-6 bg-blue-50 rounded-lg border border-blue-200">
