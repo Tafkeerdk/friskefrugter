@@ -2194,23 +2194,109 @@ export const authService = {
     return data;
   },
 
-  async updateOrderStatus(orderId: string, status: string, notes?: string): Promise<{ 
+  /**
+   * Update order status with email notifications (NEW API)
+   */
+  async updateOrderStatus(orderId: string, newStatus: string, options: {
+    skippedStatuses?: string[];
+    sendEmailNotification?: boolean;
+  } = {}): Promise<{ 
     success: boolean; 
     message: string; 
-    order?: OrderSummary 
-  }> {
-    const response = await apiClient.put(`${getEndpoint('/api/auth/admin/orders')}?orderId=${orderId}`, {
-      status,
-      notes
-    });
-    const result = await response.json();
-    
-    // Clear order cache on successful update
-    if (result.success) {
-      requestCache.clearPattern('.*orders.*');
+    order: {
+      _id: string;
+      orderNumber: string;
+      status: string;
+      previousStatus: string;
+      skippedStatuses: string[];
+      lastUpdated: string;
+      emailSent: boolean;
     }
-    
-    return result;
+  }> {
+    try {
+      const token = tokenManager.getAccessToken('admin');
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(`${this.baseURL}${getEndpoint('/admin-order-status-update')}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId,
+          newStatus,
+          skippedStatuses: options.skippedStatuses || []
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update order status');
+      }
+
+      // Clear order cache after successful update
+      requestCache.clearPattern('.*orders.*');
+
+      return data;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Reject order with reason and email notification (NEW API)
+   */
+  async rejectOrder(orderId: string, rejectionReason: string): Promise<{
+    success: boolean;
+    message: string;
+    order: {
+      _id: string;
+      orderNumber: string;
+      status: string;
+      previousStatus: string;
+      rejectionReason: string;
+      rejectedAt: string;
+      lastUpdated: string;
+      emailSent: boolean;
+    }
+  }> {
+    try {
+      const token = tokenManager.getAccessToken('admin');
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(`${this.baseURL}${getEndpoint('/admin-order-rejection')}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId,
+          rejectionReason
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to reject order');
+      }
+
+      // Clear order cache after successful rejection
+      requestCache.clearPattern('.*orders.*');
+
+      return data;
+    } catch (error) {
+      console.error('Error rejecting order:', error);
+      throw error;
+    }
   },
 
   async updateOrderDelivery(orderId: string, deliveryInfo: {
