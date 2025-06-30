@@ -899,10 +899,10 @@ const DashboardOrders: React.FC = () => {
       <AlertDialog open={statusJumpDialogOpen} onOpenChange={setStatusJumpDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Zap className="h-5 w-5 text-yellow-500" />
-              Spring til status
-            </AlertDialDialogTitle>
+                         <AlertDialogTitle className="flex items-center gap-2">
+               <Zap className="h-5 w-5 text-yellow-500" />
+               Spring til status
+             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3">
                 <p>
