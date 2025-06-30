@@ -230,69 +230,46 @@ const Cart: React.FC = () => {
 
     return (
       <TooltipProvider key={item._id}>
-        <Card className="mb-4 overflow-hidden">
-          <CardContent className={cn("p-4", isMobile ? "p-3" : "p-6")}>
-            <div className={cn("flex gap-4", isMobile ? "flex-col" : "flex-row")}>
-              {/* Product Image - IMPROVED PLACEHOLDER LIKE PRODUCTCARD */}
+        <Card className="mb-6 overflow-hidden shadow-sm border-gray-200">
+          <CardContent className={cn("p-6", isMobile ? "p-4" : "p-8")}>
+            <div className={cn("flex gap-6", isMobile ? "flex-col gap-4" : "flex-row")}>
+              {/* Product Image - CLEAN LAYOUT WITHOUT OVERLAPPING BADGE */}
               <div className="flex-shrink-0">
-                <div className="relative">
+                <div className={cn(
+                  "bg-gray-100 rounded-lg border border-gray-200 flex flex-col items-center justify-center",
+                  isMobile ? "w-20 h-20" : "w-28 h-28"
+                )}>
                   {product.billeder && product.billeder.length > 0 && product.billeder[0].url ? (
                     <img
                       src={product.billeder[0].url}
                       alt={product.produktnavn}
-                      className={cn(
-                        "object-cover rounded-lg border border-gray-200",
-                        isMobile ? "w-16 h-16" : "w-24 h-24"
-                      )}
+                      className="w-full h-full object-cover rounded-lg"
                       onError={(e) => {
-                        // If image fails to load, replace with placeholder
+                        // If image fails to load, show placeholder
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
-                        const placeholder = target.nextElementSibling as HTMLElement;
-                        if (placeholder) placeholder.style.display = 'flex';
+                        const container = target.parentElement;
+                        if (container) {
+                          container.innerHTML = `
+                            <div class="w-full h-full flex flex-col items-center justify-center">
+                              <svg class="w-6 h-6 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                              </svg>
+                              <span class="text-xs text-gray-500 text-center font-medium leading-tight">Billede ikke tilgængeligt</span>
+                            </div>
+                          `;
+                        }
                       }}
                     />
-                  ) : null}
-                  
-                  {/* Placeholder - Always present as fallback */}
-                  <div 
-                    className={cn(
-                      "bg-gray-100 rounded-lg border border-gray-200 flex flex-col items-center justify-center",
-                      isMobile ? "w-16 h-16" : "w-24 h-24",
-                      product.billeder && product.billeder.length > 0 && product.billeder[0].url ? "absolute inset-0 hidden" : "flex"
-                    )}
-                    style={{ display: product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'none' : 'flex' }}
-                  >
-                    <Package className={cn("text-gray-400", isMobile ? "w-3 h-3 mb-1" : "w-4 h-4 mb-1")} />
-                    <span className={cn(
-                      "text-gray-500 text-center leading-none font-medium",
-                      isMobile ? "text-[8px] px-1" : "text-[10px] px-1"
-                    )}>
-                      Billede ikke tilgængeligt
-                    </span>
-                  </div>
-
-                  {/* Discount Badge - Same as ProductCard */}
-                  {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
-                    <div className="absolute -top-1 -right-1 z-10">
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge 
-                            className="text-xs font-medium px-2 py-1 cursor-help shadow-lg border-0"
-                            style={getDiscountBadgeColor(customerPricing)}
-                          >
-                            {customerPricing.discountType === 'unique_offer' 
-                              ? 'Særlig tilbud'
-                              : customerPricing.discountLabel
-                            }
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="text-xs">
-                            {getDiscountTooltipText(customerPricing.discountType)}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center p-2">
+                      <Package className={cn("text-gray-400 mb-2", isMobile ? "w-5 h-5" : "w-6 h-6")} />
+                      <span className={cn(
+                        "text-gray-500 text-center leading-tight font-medium",
+                        isMobile ? "text-xs" : "text-sm"
+                      )}>
+                        Billede ikke tilgængeligt
+                      </span>
                     </div>
                   )}
                 </div>
@@ -302,29 +279,57 @@ const Cart: React.FC = () => {
               <div className="flex-1 min-w-0">
                 <div className={cn("flex gap-2", isMobile ? "flex-col" : "flex-row justify-between items-start")}>
                   <div className="flex-1 min-w-0">
-                    {/* Product Name */}
-                    <Link to={`/products/${product._id}`}>
-                      <h3 className={cn(
-                        "font-bold text-gray-900 hover:text-brand-primary transition-colors cursor-pointer line-clamp-2",
-                        isMobile ? "text-sm mb-1" : "text-lg mb-2"
-                      )}>
-                        {product.produktnavn}
-                      </h3>
-                    </Link>
+                    {/* Product Name with Discount Badge */}
+                    <div className="flex items-start gap-2 mb-3">
+                      <div className="flex-1 min-w-0">
+                        <Link to={`/products/${product._id}`}>
+                          <h3 className={cn(
+                            "font-bold text-gray-900 hover:text-brand-primary transition-colors cursor-pointer line-clamp-2",
+                            isMobile ? "text-sm" : "text-lg"
+                          )}>
+                            {product.produktnavn}
+                          </h3>
+                        </Link>
+                      </div>
+                      
+                      {/* Discount Badge - MOVED TO SIDE OF PRODUCT NAME */}
+                      {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Badge 
+                              className="text-xs font-medium px-2 py-1 cursor-help shadow-sm border-0 flex-shrink-0"
+                              style={getDiscountBadgeColor(customerPricing)}
+                            >
+                              {customerPricing.discountType === 'unique_offer' 
+                                ? 'Særlig tilbud'
+                                : customerPricing.discountLabel
+                              }
+                            </Badge>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="text-xs">
+                              {getDiscountTooltipText(customerPricing.discountType)}
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     
                     {/* Product Details */}
-                    <div className="space-y-1 mb-3">
+                    <div className="space-y-2 mb-4">
                       <p className="text-xs text-gray-500">
                         Varenr: {product.varenummer}
                       </p>
                       
                       {/* Category Badge */}
-                      <Badge 
-                        variant="secondary" 
-                        className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
-                      >
-                        {getCategoryDisplay().toUpperCase()}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge 
+                          variant="secondary" 
+                          className="bg-brand-primary/10 text-brand-primary-dark text-xs font-medium px-2 py-1 rounded-full w-fit"
+                        >
+                          {getCategoryDisplay().toUpperCase()}
+                        </Badge>
+                      </div>
                     </div>
 
                     {/* Pricing Display - FIXED TO MATCH PRODUCTCARD EXACTLY */}
@@ -362,15 +367,15 @@ const Cart: React.FC = () => {
                   </div>
 
                   {/* Actions - Right Side */}
-                  <div className={cn("flex gap-3", isMobile ? "flex-row items-center justify-between" : "flex-col items-end")}>
+                  <div className={cn("flex", isMobile ? "flex-col gap-4" : "flex-col items-end gap-4")}>
                     {/* Quantity Controls - WITH INPUT FIELD */}
-                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-1 border">
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))}
                         disabled={isUpdating || quantity <= 1}
-                        className="h-8 w-8 p-0 hover:bg-white"
+                        className="h-10 w-10 p-0 hover:bg-white rounded-md"
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
@@ -384,7 +389,7 @@ const Cart: React.FC = () => {
                         onBlur={() => handleQuantityInputBlur(product._id)}
                         onKeyDown={(e) => handleQuantityInputEnter(product._id, e)}
                         disabled={isUpdating}
-                        className="h-8 w-12 text-center text-sm font-medium border-0 bg-transparent p-0 focus:ring-1 focus:ring-brand-primary"
+                        className="h-10 w-16 text-center text-sm font-medium border-0 bg-white rounded-md shadow-sm focus:ring-2 focus:ring-brand-primary/20"
                       />
                       
                       <Button
@@ -392,20 +397,20 @@ const Cart: React.FC = () => {
                         size="sm"
                         onClick={() => updateQuantity(product._id, Math.min(1000, quantity + 1))}
                         disabled={isUpdating || quantity >= 1000}
-                        className="h-8 w-8 p-0 hover:bg-white"
+                        className="h-10 w-10 p-0 hover:bg-white rounded-md"
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
 
                     {/* Item Total and Remove Button */}
-                    <div className={cn("text-right", isMobile ? "flex flex-col items-end" : "space-y-2")}>
-                      <div className="space-y-1">
-                        <div className={cn("font-bold text-gray-900", isMobile ? "text-base" : "text-lg")}>
+                    <div className={cn("text-right", isMobile ? "flex flex-col items-center" : "flex flex-col items-end")}>
+                      <div className="space-y-2 mb-3">
+                        <div className={cn("font-bold text-gray-900", isMobile ? "text-lg" : "text-xl")}>
                           {formatPrice(item.itemTotal)}
                         </div>
                         {item.itemSavings > 0 && (
-                          <div className="text-xs text-brand-success font-medium">
+                          <div className="text-sm text-brand-success font-medium">
                             Besparelse: {formatPrice(item.itemSavings)}
                           </div>
                         )}
@@ -416,9 +421,9 @@ const Cart: React.FC = () => {
                         size="sm"
                         onClick={() => removeItem(product._id)}
                         disabled={isUpdating}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 px-4 py-2"
                       >
-                        <Trash2 className="w-4 h-4 mr-1" />
+                        <Trash2 className="w-4 h-4 mr-2" />
                         Fjern
                       </Button>
                     </div>

@@ -242,60 +242,39 @@ const DashboardCustomerCarts: React.FC = () => {
 
     return (
       <TooltipProvider key={item._id}>
-        <div className="border rounded-lg p-4 mb-4">
-          <div className="flex gap-4">
-            {/* Product Image - IMPROVED PLACEHOLDER LIKE PRODUCTCARD */}
+        <div className="border rounded-lg p-6 mb-6 shadow-sm bg-white">
+          <div className="flex gap-6">
+            {/* Product Image - CLEAN LAYOUT WITHOUT OVERLAPPING BADGE */}
             <div className="flex-shrink-0">
-              <div className="relative">
+              <div className="w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 flex flex-col items-center justify-center">
                 {product.billeder && product.billeder.length > 0 && product.billeder[0].url ? (
                   <img
                     src={product.billeder[0].url}
                     alt={product.produktnavn}
-                    className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                    className="w-full h-full object-cover rounded-lg"
                     onError={(e) => {
-                      // If image fails to load, replace with placeholder
+                      // If image fails to load, show placeholder
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
-                      const placeholder = target.nextElementSibling as HTMLElement;
-                      if (placeholder) placeholder.style.display = 'flex';
+                      const container = target.parentElement;
+                      if (container) {
+                        container.innerHTML = `
+                          <div class="w-full h-full flex flex-col items-center justify-center p-2">
+                            <svg class="w-5 h-5 text-gray-400 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
+                            </svg>
+                            <span class="text-xs text-gray-500 text-center font-medium leading-tight">Billede ikke tilgængeligt</span>
+                          </div>
+                        `;
+                      }
                     }}
                   />
-                ) : null}
-                
-                {/* Placeholder - Always present as fallback */}
-                <div 
-                  className={`w-16 h-16 bg-gray-100 rounded-lg border border-gray-200 flex flex-col items-center justify-center ${
-                    product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'absolute inset-0 hidden' : 'flex'
-                  }`}
-                  style={{ display: product.billeder && product.billeder.length > 0 && product.billeder[0].url ? 'none' : 'flex' }}
-                >
-                  <Package className="w-3 h-3 text-gray-400 mb-1" />
-                  <span className="text-[8px] text-gray-500 text-center px-1 leading-none font-medium">
-                    Billede ikke tilgængeligt
-                  </span>
-                </div>
-
-                {/* Discount Badge - Same as Cart/ProductCard */}
-                {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
-                  <div className="absolute -top-1 -right-1 z-10">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge 
-                          className="text-xs font-medium px-2 py-1 cursor-help shadow-lg border-0"
-                          style={getDiscountBadgeStyle(customerPricing)}
-                        >
-                          {customerPricing.discountType === 'unique_offer' 
-                            ? 'Særlig tilbud'
-                            : customerPricing.discountLabel
-                          }
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="text-xs">
-                          {getDiscountTooltipText(customerPricing.discountType)}
-                        </p>
-                      </TooltipContent>
-                    </Tooltip>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center p-2">
+                    <Package className="w-5 h-5 text-gray-400 mb-1" />
+                    <span className="text-xs text-gray-500 text-center font-medium leading-tight">
+                      Billede ikke tilgængeligt
+                    </span>
                   </div>
                 )}
               </div>
@@ -305,54 +284,88 @@ const DashboardCustomerCarts: React.FC = () => {
             <div className="flex-1">
               <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-gray-900 mb-1 line-clamp-2">
-                    {product.produktnavn}
-                  </h4>
-                  <p className="text-xs text-gray-500 mb-2">
-                    Varenr: {product.varenummer}
-                  </p>
-
-                  {/* FIXED: Pricing Display - EXACT SAME LOGIC AS CUSTOMER CART */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      {/* FIXED: Original Price with Strikethrough - UNIQUE OFFERS ALWAYS SHOW BEFORE PRICE */}
-                      {((customerPricing.discountType === 'unique_offer' && customerPricing.originalPrice) || 
-                        (customerPricing.showStrikethrough && customerPricing.originalPrice)) && (
-                        <span className="text-sm text-gray-500 line-through font-medium">
-                          {formatPrice(customerPricing.originalPrice)}
-                        </span>
-                      )}
-                      
-                      {/* Current (Discounted) Price */}
-                      <span className={`font-bold text-base ${
-                        customerPricing.discountType === 'unique_offer' 
-                          ? 'text-purple-600' 
-                          : 'text-brand-primary-dark'
-                      }`}>
-                        {formatPrice(customerPricing.price)}
-                      </span>
+                  {/* Product Name with Discount Badge */}
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-gray-900 line-clamp-2 text-lg">
+                        {product.produktnavn}
+                      </h4>
                     </div>
                     
-                    {/* Unit Information */}
-                    <p className="text-xs text-gray-500">
-                      per {getUnitDisplay()}
+                    {/* Discount Badge - MOVED TO SIDE OF PRODUCT NAME */}
+                    {customerPricing.discountType !== 'none' && customerPricing.discountLabel && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge 
+                            className="text-xs font-medium px-2 py-1 cursor-help shadow-sm border-0 flex-shrink-0"
+                            style={getDiscountBadgeStyle(customerPricing)}
+                          >
+                            {customerPricing.discountType === 'unique_offer' 
+                              ? 'Særlig tilbud'
+                              : customerPricing.discountLabel
+                            }
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="text-xs">
+                            {getDiscountTooltipText(customerPricing.discountType)}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                  
+                  <div className="space-y-3 mb-4">
+                    <p className="text-sm text-gray-500">
+                      Varenr: {product.varenummer}
                     </p>
+
+                    {/* FIXED: Pricing Display - EXACT SAME LOGIC AS CUSTOMER CART */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        {/* FIXED: Original Price with Strikethrough - UNIQUE OFFERS ALWAYS SHOW BEFORE PRICE */}
+                        {((customerPricing.discountType === 'unique_offer' && customerPricing.originalPrice) || 
+                          (customerPricing.showStrikethrough && customerPricing.originalPrice)) && (
+                          <span className="text-sm text-gray-500 line-through font-medium">
+                            {formatPrice(customerPricing.originalPrice)}
+                          </span>
+                        )}
+                        
+                        {/* Current (Discounted) Price */}
+                        <span className={`font-bold text-lg ${
+                          customerPricing.discountType === 'unique_offer' 
+                            ? 'text-purple-600' 
+                            : 'text-brand-primary-dark'
+                        }`}>
+                          {formatPrice(customerPricing.price)}
+                        </span>
+                      </div>
+                      
+                      {/* Unit Information */}
+                      <p className="text-sm text-gray-500">
+                        per {getUnitDisplay()}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
                 {/* Quantity and Total */}
-                <div className="text-right ml-4">
-                  <div className="text-sm text-gray-500 mb-1">
-                    Antal: {quantity}
-                  </div>
-                  <div className="font-bold text-gray-900 text-base">
-                    {formatPrice(item.itemTotal)}
-                  </div>
-                  {item.itemSavings > 0 && (
-                    <div className="text-sm text-brand-success font-medium">
-                      Besparelse: {formatPrice(item.itemSavings)}
+                <div className="text-right ml-6">
+                  <div className="space-y-3">
+                    <div>
+                      <div className="text-sm text-gray-500 mb-1">
+                        Antal: {quantity}
+                      </div>
+                      <div className="font-bold text-gray-900 text-xl">
+                        {formatPrice(item.itemTotal)}
+                      </div>
                     </div>
-                  )}
+                    {item.itemSavings > 0 && (
+                      <div className="text-sm text-brand-success font-medium bg-green-50 px-2 py-1 rounded">
+                        Besparelse: {formatPrice(item.itemSavings)}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
