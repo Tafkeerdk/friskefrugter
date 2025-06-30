@@ -22,7 +22,7 @@ const Cart: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, isAuthenticated } = useAuth();
-  const { cart, isLoading, error, updateCartItem, removeFromCart, clearCart } = useCart();
+  const { cart, isLoading, error, updateCartItem, removeFromCart, clearCart, refreshCart } = useCart();
   const isMobile = useIsMobile();
   
   const [isUpdating, setIsUpdating] = useState(false);
@@ -198,6 +198,9 @@ const Cart: React.FC = () => {
           description: `Din ordre ${result.order.orderNumber} er blevet afgivet. Du vil modtage en bekræftelse på email.`,
           duration: 5000,
         });
+
+        // Refresh cart to reflect that it's now empty (backend clears cart after order)
+        await refreshCart();
 
         // Navigate to order success page with order details
         const searchParams = new URLSearchParams({

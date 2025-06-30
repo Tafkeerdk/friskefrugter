@@ -65,6 +65,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authService } from "@/lib/auth";
+import { OrderNumberDisplay, OrderNumberCompact } from "@/components/ui/order-number-display";
 import { useAuth } from "@/hooks/useAuth";
 import { useOrders } from "@/hooks/useOrders";
 import { useToast } from "@/hooks/use-toast";
@@ -300,39 +301,7 @@ const DashboardOrders: React.FC = () => {
       .slice(0, 2);
   };
 
-  // Parse order number to extract readable components
-  const parseOrderNumber = (orderNum: string) => {
-    // Format: YYYYMMDD-HHMMSS-customerId-###
-    const parts = orderNum.split('-');
-    if (parts.length >= 4) {
-      const datePart = parts[0]; // YYYYMMDD
-      const timePart = parts[1]; // HHMMSS
-      const sequencePart = parts[parts.length - 1]; // ###
-      
-      // Parse date
-      const year = datePart.substring(0, 4);
-      const month = datePart.substring(4, 6);
-      const day = datePart.substring(6, 8);
-      
-      // Parse time
-      const hours = timePart.substring(0, 2);
-      const minutes = timePart.substring(2, 4);
-      
-      return {
-        shortDate: `${day}/${month}/${year}`,
-        time: `${hours}:${minutes}`,
-        sequence: sequencePart,
-        fullOrderNumber: orderNum
-      };
-    }
-    
-    return {
-      shortDate: null,
-      time: null,
-      sequence: null,
-      fullOrderNumber: orderNum
-    };
-  };
+  // Using OrderNumberDisplay component for better formatting
 
   // Determine which data to display
   const displayOrders = isAdminContext ? adminOrders : customerOrders;
@@ -490,13 +459,11 @@ const DashboardOrders: React.FC = () => {
                         )}
                         
                         <div className={isAdminContext ? 'col-span-1' : 'col-span-2'}>
-                          <div className="font-medium text-sm">
-                            #{parseOrderNumber(order.orderNumber).sequence}
-                          </div>
-                          <div className="font-mono text-xs text-brand-primary break-all">
-                            {order.orderNumber}
-                          </div>
-                  </div>
+                          <OrderNumberCompact 
+                            orderNumber={order.orderNumber}
+                            className="text-sm"
+                          />
+                        </div>
                         
                         {isAdminContext && (
                   <div className="flex items-center gap-2">
@@ -583,12 +550,10 @@ const DashboardOrders: React.FC = () => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className="min-w-0">
-                            <div className="font-medium text-sm">
-                              #{parseOrderNumber(order.orderNumber).sequence}
-                            </div>
-                            <div className="font-mono text-xs text-brand-primary break-all">
-                              {order.orderNumber}
-                            </div>
+                            <OrderNumberCompact 
+                              orderNumber={order.orderNumber}
+                              className="text-sm"
+                            />
                           </div>
                           <Badge
                             variant={getStatusVariant(order.status)}

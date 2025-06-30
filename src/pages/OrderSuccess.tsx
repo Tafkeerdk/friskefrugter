@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
+import { OrderNumberDisplay } from '@/components/ui/order-number-display';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -39,40 +40,7 @@ const OrderSuccess: React.FC = () => {
     }).format(numPrice);
   };
 
-  // Parse order number to extract date and time components
-  const parseOrderNumber = (orderNum: string) => {
-    // Format: YYYYMMDD-HHMMSS-customerId-###
-    const parts = orderNum.split('-');
-    if (parts.length >= 4) {
-      const datePart = parts[0]; // YYYYMMDD
-      const timePart = parts[1]; // HHMMSS
-      const sequencePart = parts[parts.length - 1]; // ###
-      
-      // Parse date
-      const year = datePart.substring(0, 4);
-      const month = datePart.substring(4, 6);
-      const day = datePart.substring(6, 8);
-      
-      // Parse time
-      const hours = timePart.substring(0, 2);
-      const minutes = timePart.substring(2, 4);
-      const seconds = timePart.substring(4, 6);
-      
-      return {
-        date: `${day}/${month}/${year}`,
-        time: `${hours}:${minutes}:${seconds}`,
-        sequence: sequencePart,
-        fullOrderNumber: orderNum
-      };
-    }
-    
-    return {
-      date: 'N/A',
-      time: 'N/A',
-      sequence: 'N/A',
-      fullOrderNumber: orderNum
-    };
-  };
+  // No need for manual parsing - using OrderNumberDisplay component
 
   if (!orderNumber) {
     return (
@@ -92,7 +60,7 @@ const OrderSuccess: React.FC = () => {
     );
   }
 
-  const orderInfo = parseOrderNumber(orderNumber);
+  // Using OrderNumberDisplay component instead of manual parsing
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -135,14 +103,12 @@ const OrderSuccess: React.FC = () => {
                     <h3 className="font-semibold text-brand-gray-700 text-sm uppercase tracking-wide">
                       Ordrenummer
                     </h3>
-                    <p className="font-mono text-lg font-bold text-brand-primary break-all">
-                      {orderInfo.fullOrderNumber}
-                    </p>
-                    <div className="text-xs text-brand-gray-500 space-y-1">
-                      <p>Dato: {orderInfo.date}</p>
-                      <p>Tid: {orderInfo.time}</p>
-                      <p>Sekvensnr: #{orderInfo.sequence}</p>
-                    </div>
+                    <OrderNumberDisplay 
+                      orderNumber={orderNumber} 
+                      variant="large"
+                      showFullOnExpand={true}
+                      className="mt-2"
+                    />
                   </div>
 
                   {/* Customer Info */}
@@ -208,7 +174,7 @@ const OrderSuccess: React.FC = () => {
                     <div>
                       <h4 className="font-semibold text-brand-gray-900">Email bekræftelse</h4>
                       <p className="text-brand-gray-600 text-sm">
-                        Du modtager en detaljeret ordrebekræftelse på din email med ordrenummer {orderInfo.fullOrderNumber}
+                        Du modtager en detaljeret ordrebekræftelse på din email med dit ordrenummer
                       </p>
                     </div>
                   </div>
