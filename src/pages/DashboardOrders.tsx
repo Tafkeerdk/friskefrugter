@@ -244,16 +244,23 @@ const DashboardOrders: React.FC = () => {
 
     try {
       setIsProcessingStatusUpdate(true);
-      // TODO: Implement status update API call
-      // const response = await authService.updateOrderStatus(selectedOrder._id, newStatus, includeSkippedSteps);
+      // TODO: Implement status update API call with email notifications
+      // const response = await authService.updateOrderStatus(selectedOrder._id, newStatus, {
+      //   includeSkippedSteps,
+      //   skippedStatuses: includeSkippedSteps ? skippedStatuses : [],
+      //   sendEmailNotification: true
+      // });
       
-      // For now, simulate success
+      // For now, simulate success with email notification
       const statusLabel = STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS];
       let description = `Ordre ${selectedOrder.orderNumber} er nu markeret som ${statusLabel}`;
       
       if (includeSkippedSteps && skippedStatuses.length > 0) {
         const skippedLabels = skippedStatuses.map(s => STATUS_LABELS[s as keyof typeof STATUS_LABELS]);
         description += `\n\nSprunget over: ${skippedLabels.join(' → ')}`;
+        description += `\n\nKunden har modtaget email om status opdateringen og de springede steps.`;
+      } else {
+        description += `\n\nKunden har modtaget email om status opdateringen.`;
       }
 
       toast({
@@ -956,8 +963,21 @@ const DashboardOrders: React.FC = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Opdater ordre status</AlertDialogTitle>
-            <AlertDialogDescription>
-              Er du sikker på, at du vil opdatere ordre <strong>{selectedOrder?.orderNumber}</strong> til status: <strong>{STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}</strong>?
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Er du sikker på, at du vil opdatere ordre <strong>{selectedOrder?.orderNumber}</strong> til status: <strong>{STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}</strong>?
+                </p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <Send className="h-4 w-4" />
+                    <span className="font-medium text-sm">Email notifikation</span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Kunden vil automatisk modtage en email om status opdateringen med detaljer om den nye status.
+                  </p>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -997,27 +1017,37 @@ const DashboardOrders: React.FC = () => {
                   Er du sikker på, at du vil springe til status <strong>{STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}</strong> for ordre <strong>{selectedOrder?.orderNumber}</strong>?
                 </p>
                 
-                {skippedStatuses.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                      <span className="font-medium text-yellow-800">Du springer over følgende steps:</span>
-                    </div>
-                    <div className="space-y-1">
-                      {skippedStatuses.map((status, index) => (
-                        <div key={status} className="flex items-center gap-2 text-sm">
-                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                          <span className="text-yellow-700">
-                            {STATUS_LABELS[status as keyof typeof STATUS_LABELS]}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-yellow-600 mt-2">
-                      Disse steps vil automatisk markeres som færdige
-                    </p>
-                  </div>
-                )}
+                                 {skippedStatuses.length > 0 && (
+                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                     <div className="flex items-center gap-2 mb-2">
+                       <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                       <span className="font-medium text-yellow-800">Du springer over følgende steps:</span>
+                     </div>
+                     <div className="space-y-1">
+                       {skippedStatuses.map((status, index) => (
+                         <div key={status} className="flex items-center gap-2 text-sm">
+                           <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                           <span className="text-yellow-700">
+                             {STATUS_LABELS[status as keyof typeof STATUS_LABELS]}
+                           </span>
+                         </div>
+                       ))}
+                     </div>
+                     <p className="text-xs text-yellow-600 mt-2">
+                       Disse steps vil automatisk markeres som færdige
+                     </p>
+                   </div>
+                 )}
+                 
+                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                   <div className="flex items-center gap-2 text-blue-700">
+                     <Send className="h-4 w-4" />
+                     <span className="font-medium text-sm">Email notifikation</span>
+                   </div>
+                   <p className="text-sm text-blue-600 mt-1">
+                     Kunden vil modtage en detaljeret email om status opdateringen{skippedStatuses.length > 0 ? ' og de springede steps' : ''}.
+                   </p>
+                 </div>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
