@@ -145,12 +145,14 @@ const DashboardOrders: React.FC = () => {
   const [selectedOrder, setSelectedOrder] = useState<OrderSummary | null>(null);
   const [orderDetailsDialogOpen, setOrderDetailsDialogOpen] = useState(false);
   const [statusUpdateDialogOpen, setStatusUpdateDialogOpen] = useState(false);
+  const [statusJumpDialogOpen, setStatusJumpDialogOpen] = useState(false);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
   const [bulkInvoiceDialogOpen, setBulkInvoiceDialogOpen] = useState(false);
   const [isProcessingInvoice, setIsProcessingInvoice] = useState(false);
   const [isProcessingStatusUpdate, setIsProcessingStatusUpdate] = useState(false);
   const [isExportingPDF, setIsExportingPDF] = useState(false);
   const [newStatus, setNewStatus] = useState<string>('');
+  const [skippedStatuses, setSkippedStatuses] = useState<string[]>([]);
 
   // Determine if we're in admin or customer context
   const isAdminContext = isAdminAuthenticated && location.pathname.includes('/admin');
@@ -212,23 +214,46 @@ const DashboardOrders: React.FC = () => {
   };
 
   const handleStatusUpdate = (order: OrderSummary, targetStatus: string) => {
-    setSelectedOrder(order);
-    setNewStatus(targetStatus);
-    setStatusUpdateDialogOpen(true);
+    const currentIndex = getCurrentStatusIndex(order.status);
+    const targetIndex = getCurrentStatusIndex(targetStatus);
+    
+    // If jumping to next status, use simple update
+    if (targetIndex === currentIndex + 1) {
+      setSelectedOrder(order);
+      setNewStatus(targetStatus);
+      setSkippedStatuses([]);
+      setStatusUpdateDialogOpen(true);
+    } 
+    // If jumping multiple steps, show jump confirmation
+    else if (targetIndex > currentIndex + 1) {
+      const skipped = STATUS_PROGRESSION.slice(currentIndex + 1, targetIndex);
+      setSelectedOrder(order);
+      setNewStatus(targetStatus);
+      setSkippedStatuses(skipped);
+      setStatusJumpDialogOpen(true);
+    }
   };
 
-  const updateOrderStatus = async () => {
+  const updateOrderStatus = async (includeSkippedSteps: boolean = false) => {
     if (!selectedOrder || !newStatus) return;
 
     try {
       setIsProcessingStatusUpdate(true);
       // TODO: Implement status update API call
-      // const response = await authService.updateOrderStatus(selectedOrder._id, newStatus);
+      // const response = await authService.updateOrderStatus(selectedOrder._id, newStatus, includeSkippedSteps);
       
       // For now, simulate success
+      const statusLabel = STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS];
+      let description = `Ordre ${selectedOrder.orderNumber} er nu markeret som ${statusLabel}`;
+      
+      if (includeSkippedSteps && skippedStatuses.length > 0) {
+        const skippedLabels = skippedStatuses.map(s => STATUS_LABELS[s as keyof typeof STATUS_LABELS]);
+        description += `\n\nSprunget over: ${skippedLabels.join(' → ')}`;
+      }
+
       toast({
         title: "Status opdateret",
-        description: `Ordre ${selectedOrder.orderNumber} er nu markeret som ${STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}`,
+        description,
       });
 
       // Update local state
@@ -239,7 +264,9 @@ const DashboardOrders: React.FC = () => {
       ));
 
       setStatusUpdateDialogOpen(false);
+      setStatusJumpDialogOpen(false);
       setSelectedOrder(null);
+      setSkippedStatuses([]);
     } catch (error: any) {
       toast({
         title: "Fejl",
@@ -443,8 +470,9 @@ const DashboardOrders: React.FC = () => {
         {STATUS_PROGRESSION.map((status, index) => {
           const isComplete = index <= currentIndex;
           const isCurrent = index === currentIndex;
+          const canProgress = index > currentIndex && isAdminContext; // Can click any future status
           const isNext = index === currentIndex + 1;
-          const canProgress = isNext && isAdminContext;
+          const willSkipSteps = index > currentIndex + 1;
           
           return (
             <React.Fragment key={status}>
@@ -457,14 +485,22 @@ const DashboardOrders: React.FC = () => {
                     ? STATUS_COLORS[status] 
                     : "bg-brand-gray-50 text-brand-gray-400 border-brand-gray-200",
                   canProgress && "cursor-pointer hover:scale-110 hover:shadow-md",
-                  isCurrent && "ring-2 ring-brand-primary/30 shadow-md"
+                  isCurrent && "ring-2 ring-brand-primary/30 shadow-md",
+                  willSkipSteps && canProgress && "hover:ring-2 hover:ring-yellow-300"
                 )}
                 onClick={() => canProgress && handleStatusUpdate(order, status)}
-                title={`${STATUS_LABELS[status]}${canProgress ? ' (Klik for at opdatere)' : ''}`}
+                title={
+                  canProgress 
+                    ? `${STATUS_LABELS[status]} ${isNext ? '(Næste)' : '(Spring til)'}`
+                    : STATUS_LABELS[status]
+                }
               >
                 {getStatusIcon(status)}
                 {isCurrent && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full animate-pulse" />
+                )}
+                {willSkipSteps && canProgress && (
+                  <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" />
                 )}
               </div>
               
@@ -725,7 +761,7 @@ const DashboardOrders: React.FC = () => {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-medium text-brand-gray-700">Status progression</h4>
                         <span className="text-xs text-brand-gray-500">
-                          {isAdminContext ? 'Klik på næste status for at opdatere' : 'Automatisk opdateret'}
+                          {isAdminContext ? 'Klik på enhver fremtidig status for at opdatere' : 'Automatisk opdateret'}
                         </span>
                       </div>
                       <StatusProgression order={order} />
@@ -827,7 +863,7 @@ const DashboardOrders: React.FC = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Status Update Dialog */}
+      {/* Status Update Dialog (Next Step) */}
       <AlertDialog open={statusUpdateDialogOpen} onOpenChange={setStatusUpdateDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -839,7 +875,7 @@ const DashboardOrders: React.FC = () => {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isProcessingStatusUpdate}>Annuller</AlertDialogCancel>
             <AlertDialogAction
-              onClick={updateOrderStatus}
+              onClick={() => updateOrderStatus(false)}
               disabled={isProcessingStatusUpdate}
               className="bg-brand-primary hover:bg-brand-primary-hover"
             >
@@ -852,6 +888,67 @@ const DashboardOrders: React.FC = () => {
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Opdater status
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Status Jump Dialog (Skip Steps) */}
+      <AlertDialog open={statusJumpDialogOpen} onOpenChange={setStatusJumpDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5 text-yellow-500" />
+              Spring til status
+            </AlertDialDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Er du sikker på, at du vil springe til status <strong>{STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS]}</strong> for ordre <strong>{selectedOrder?.orderNumber}</strong>?
+                </p>
+                
+                {skippedStatuses.length > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium text-yellow-800">Du springer over følgende steps:</span>
+                    </div>
+                    <div className="space-y-1">
+                      {skippedStatuses.map((status, index) => (
+                        <div key={status} className="flex items-center gap-2 text-sm">
+                          <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                          <span className="text-yellow-700">
+                            {STATUS_LABELS[status as keyof typeof STATUS_LABELS]}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-yellow-600 mt-2">
+                      Disse steps vil automatisk markeres som færdige
+                    </p>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessingStatusUpdate}>Annuller</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => updateOrderStatus(true)}
+              disabled={isProcessingStatusUpdate}
+              className="bg-yellow-500 hover:bg-yellow-600 text-white"
+            >
+              {isProcessingStatusUpdate ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Springer...
+                </>
+              ) : (
+                <>
+                  <Zap className="h-4 w-4 mr-2" />
+                  Ja, spring til status
                 </>
               )}
             </AlertDialogAction>
