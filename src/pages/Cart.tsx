@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, ShoppingCart, Plus, Minus, Trash2, Package, ArrowLeft } from 'lucide-react';
+import { Loader2, ShoppingCart, Plus, Minus, Trash2, Package, ArrowLeft, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { CartItem, Cart as CartType } from '@/lib/auth';
+import { CartItem, Cart as CartType, authService, PlaceOrderRequest } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
 import { Navbar } from '@/components/layout/Navbar';
@@ -25,6 +27,9 @@ const Cart: React.FC = () => {
   
   const [isUpdating, setIsUpdating] = useState(false);
   const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [orderNotes, setOrderNotes] = useState('');
+  const [deliveryInstructions, setDeliveryInstructions] = useState('');
 
   // Check authentication
   useEffect(() => {
@@ -171,6 +176,47 @@ const Cart: React.FC = () => {
       });
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const placeOrder = async () => {
+    try {
+      setIsPlacingOrder(true);
+
+      // Prepare order data
+      const orderData: PlaceOrderRequest = {
+        orderNotes: orderNotes.trim() || undefined,
+        deliveryInstructions: deliveryInstructions.trim() || undefined
+      };
+
+      // Place the order
+      const result = await authService.placeOrder(orderData);
+
+      if (result.success) {
+        toast({
+          title: "Ordre afgivet!",
+          description: `Din ordre ${result.order.orderNumber} er blevet afgivet. Du vil modtage en bekræftelse på email.`,
+          duration: 5000,
+        });
+
+        // Navigate to order confirmation or orders page
+        navigate('/orders');
+      } else {
+        toast({
+          title: "Fejl ved bestilling",
+          description: result.message || "Der opstod en fejl ved afgivelse af ordren",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Failed to place order:', error);
+      toast({
+        title: "Fejl ved bestilling",
+        description: "Der opstod en uventet fejl. Prøv venligst igen.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsPlacingOrder(false);
     }
   };
 
@@ -577,22 +623,66 @@ const Cart: React.FC = () => {
                           <span className="text-brand-primary-dark">{formatPrice(cart.totalPrice)}</span>
                         </div>
 
-                        <Alert className="mt-4 border-brand-gray-200 bg-brand-gray-50">
-                          <AlertDescription className="text-sm text-brand-gray-700">
-                            Dette er en demo. Bestillingsfunktionalitet er ikke implementeret endnu.
-                          </AlertDescription>
-                        </Alert>
+                        {/* Order Notes */}
+                        <div className="space-y-3 mt-4">
+                          <div>
+                            <Label htmlFor="orderNotes" className="text-sm font-medium text-gray-700">
+                              Bemærkninger til ordren (valgfrit)
+                            </Label>
+                            <Textarea
+                              id="orderNotes"
+                              placeholder="Særlige ønsker eller bemærkninger til din ordre..."
+                              value={orderNotes}
+                              onChange={(e) => setOrderNotes(e.target.value)}
+                              className="mt-1 resize-none"
+                              rows={3}
+                              maxLength={500}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              {orderNotes.length}/500 tegn
+                            </p>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="deliveryInstructions" className="text-sm font-medium text-gray-700">
+                              Leveringsinstruktioner (valgfrit)
+                            </Label>
+                            <Textarea
+                              id="deliveryInstructions"
+                              placeholder="Specielle instruktioner for levering..."
+                              value={deliveryInstructions}
+                              onChange={(e) => setDeliveryInstructions(e.target.value)}
+                              className="mt-1 resize-none"
+                              rows={2}
+                              maxLength={300}
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              {deliveryInstructions.length}/300 tegn
+                            </p>
+                          </div>
+                        </div>
 
                         <Button 
-                          className="w-full btn-brand-primary mt-4" 
-                          disabled
+                          className="w-full btn-brand-primary mt-6" 
+                          onClick={placeOrder}
+                          disabled={isPlacingOrder || isUpdating}
                         >
-                          Gå til bestilling (Kommer snart)
+                          {isPlacingOrder ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Afgiver ordre...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Afgiv ordre
+                            </>
+                          )}
                         </Button>
 
                         <Button 
                           variant="outline" 
-                          className="w-full"
+                          className="w-full mt-3"
                           asChild
                         >
                           <Link to="/products">
