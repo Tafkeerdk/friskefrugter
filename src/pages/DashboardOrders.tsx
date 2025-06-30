@@ -244,14 +244,13 @@ const DashboardOrders: React.FC = () => {
 
     try {
       setIsProcessingStatusUpdate(true);
-      // TODO: Implement status update API call with email notifications
-      // const response = await authService.updateOrderStatus(selectedOrder._id, newStatus, {
-      //   includeSkippedSteps,
-      //   skippedStatuses: includeSkippedSteps ? skippedStatuses : [],
-      //   sendEmailNotification: true
-      // });
       
-      // For now, simulate success with email notification
+      // Call backend API with email notifications
+      const response = await authService.updateOrderStatus(selectedOrder._id, newStatus, {
+        skippedStatuses: includeSkippedSteps ? skippedStatuses : [],
+        sendEmailNotification: true
+      });
+      
       const statusLabel = STATUS_LABELS[newStatus as keyof typeof STATUS_LABELS];
       let description = `Ordre ${selectedOrder.orderNumber} er nu markeret som ${statusLabel}`;
       
@@ -268,10 +267,10 @@ const DashboardOrders: React.FC = () => {
         description,
       });
 
-      // Update local state
+      // Update local state with the response data
       setAdminOrders(prev => prev.map(order => 
         order._id === selectedOrder._id 
-          ? { ...order, status: newStatus }
+          ? { ...order, status: newStatus, lastUpdated: response.order.lastUpdated }
           : order
       ));
 
@@ -302,19 +301,24 @@ const DashboardOrders: React.FC = () => {
     try {
       setIsProcessingRejection(true);
       
-      // TODO: Implement order rejection API call
-      // const response = await authService.rejectOrder(selectedOrder._id, rejectionReason);
+      // Call backend API with email notification
+      const response = await authService.rejectOrder(selectedOrder._id, rejectionReason.trim());
       
-      // For now, simulate success
       toast({
         title: "Ordre afvist",
-        description: `Ordre ${selectedOrder.orderNumber} er blevet afvist. Kunden vil modtage en email med begrundelsen.`,
+        description: `Ordre ${selectedOrder.orderNumber} er blevet afvist. Kunden har modtaget en email med begrundelsen.`,
       });
 
-      // Update local state
+      // Update local state with the response data
       setAdminOrders(prev => prev.map(order => 
         order._id === selectedOrder._id 
-          ? { ...order, status: 'rejected', rejectionReason: rejectionReason.trim() }
+          ? { 
+              ...order, 
+              status: 'rejected', 
+              rejectionReason: response.order.rejectionReason,
+              rejectedAt: response.order.rejectedAt,
+              lastUpdated: response.order.lastUpdated
+            }
           : order
       ));
 
