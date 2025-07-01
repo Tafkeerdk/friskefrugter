@@ -86,7 +86,7 @@ export function Footer() {
                   "text-brand-primary flex-shrink-0 mt-0.5",
                   isMobile ? "h-4 w-4 mr-2" : "h-5 w-5 mr-2"
                 )} />
-                <span className="leading-relaxed">Grøntvej 123, 2300 København S</span>
+                <span className="leading-relaxed">Litauen Alle 13, 2630 Taastrup</span>
               </li>
               <li className={cn(
                 "flex items-center",

@@ -159,8 +159,8 @@ const Contact = () => {
                         <MapPin className="h-5 w-5 text-brand-primary mt-0.5 mr-3" />
                         <div>
                           <h3 className="font-medium text-gray-900">Adresse</h3>
-                          <p className="text-gray-600">Grøntvej 123</p>
-                          <p className="text-gray-600">2300 København</p>
+                          <p className="text-gray-600">Litauen Alle 13</p>
+                          <p className="text-gray-600">2630 Taastrup</p>
                         </div>
                       </div>
                       <div className="flex items-start">
@@ -176,6 +176,42 @@ const Contact = () => {
                         <div>
                           <h3 className="font-medium text-gray-900">Email</h3>
                           <p className="text-gray-600">info@multigront.dk</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Google Maps Section */}
+                  <Card className="shadow-sm mt-6">
+                    <CardHeader>
+                      <CardTitle className="text-xl">Find os her</CardTitle>
+                      <CardDescription>Litauen Alle 13, 2630 Taastrup</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      <div className="w-full h-64 md:h-80 rounded-lg overflow-hidden">
+                        <iframe
+                          src="https://maps.google.com/maps?q=Litauen+Alle+13,+2630+Taastrup,+Denmark&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          allowFullScreen={true}
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          title="Multi Grønt Location - Litauen Alle 13, 2630 Taastrup"
+                        ></iframe>
+                      </div>
+                      <div className="p-4 bg-brand-gray-50 border-t">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-brand-gray-600">Litauen Alle 13, 2630 Taastrup</span>
+                          <a 
+                            href="https://www.google.com/maps/dir/?api=1&destination=Litauen+Alle+13,+2630+Taastrup,+Denmark"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-brand-primary hover:text-brand-primary-dark font-medium flex items-center gap-1 transition-colors"
+                          >
+                            <MapPin className="h-4 w-4" />
+                            Se rute
+                          </a>
                         </div>
                       </div>
                     </CardContent>
