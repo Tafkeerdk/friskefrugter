@@ -92,6 +92,14 @@ const getEndpoint = (path: string): string => {
     return `/.netlify/functions/admin-statistics${queryString}`;
   }
   
+  // Admin order management endpoints
+  if (pathOnly.startsWith('/admin-order-status-update')) {
+    return `/.netlify/functions/admin-order-status-update${queryString}`;
+  }
+  if (pathOnly.startsWith('/admin-order-rejection')) {
+    return `/.netlify/functions/admin-order-rejection${queryString}`;
+  }
+  
   // Visitor tracking endpoint
   if (pathOnly.startsWith('/visitor-tracking')) {
     return `/.netlify/functions/visitor-tracking${queryString}`;
@@ -2254,39 +2262,22 @@ export const authService = {
       emailSent: boolean;
     }
   }> {
-    try {
-      const token = tokenManager.getAccessToken('admin');
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch(`${API_BASE_URL}${getEndpoint('/admin-order-status-update')}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          orderId,
-          newStatus,
-          skippedStatuses: options.skippedStatuses || []
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to update order status');
-      }
-
-      // Clear order cache after successful update
-      requestCache.clearPattern('.*orders.*');
-
-      return data;
-    } catch (error) {
-      console.error('Error updating order status:', error);
-      throw error;
+    const response = await apiClient.post(getEndpoint('/admin-order-status-update'), {
+      orderId,
+      newStatus,
+      skippedStatuses: options.skippedStatuses || []
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update order status');
     }
+
+    // Clear order cache after successful update
+    requestCache.clearPattern('.*orders.*');
+
+    return data;
   },
 
   /**
@@ -2306,38 +2297,21 @@ export const authService = {
       emailSent: boolean;
     }
   }> {
-    try {
-      const token = tokenManager.getAccessToken('admin');
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
-
-      const response = await fetch(`${API_BASE_URL}${getEndpoint('/admin-order-rejection')}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          orderId,
-          rejectionReason
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Failed to reject order');
-      }
-
-      // Clear order cache after successful rejection
-      requestCache.clearPattern('.*orders.*');
-
-      return data;
-    } catch (error) {
-      console.error('Error rejecting order:', error);
-      throw error;
+    const response = await apiClient.post(getEndpoint('/admin-order-rejection'), {
+      orderId,
+      rejectionReason
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to reject order');
     }
+
+    // Clear order cache after successful rejection
+    requestCache.clearPattern('.*orders.*');
+
+    return data;
   },
 
   async updateOrderDelivery(orderId: string, deliveryInfo: {
