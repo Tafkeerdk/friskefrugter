@@ -248,6 +248,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       setProductSearch('');
       setCustomerSearch('');
       setSelectedCategory('');
+      console.log('🔍 UniqueOffer reset - clearing selectedDiscountGroup');
       setSelectedDiscountGroup('');
     }
   }, [isOpen, preselectedProduct, loadAllData]);
@@ -838,16 +839,23 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             value={selectedDiscountGroup || "all"}
             onChange={(e) => {
               const value = e.target.value;
-              setSelectedDiscountGroup(value === "all" ? "" : value);
+              console.log('🔍 UniqueOffer dropdown onChange - raw value:', value);
+              console.log('🔍 UniqueOffer dropdown onChange - value === "all":', value === "all");
+              const newSelectedValue = value === "all" ? "" : value;
+              console.log('🔍 UniqueOffer dropdown onChange - setting selectedDiscountGroup to:', newSelectedValue);
+              setSelectedDiscountGroup(newSelectedValue);
             }}
             className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
           >
             <option value="all">Alle rabatgrupper</option>
-            {discountGroups.length > 0 ? discountGroups.map(group => (
-              <option key={group._id} value={group._id}>
-                {group.name}
-              </option>
-            )) : (
+            {discountGroups.length > 0 ? discountGroups.map(group => {
+              console.log('🔍 UniqueOffer dropdown option - group:', group);
+              return (
+                <option key={group._id} value={group._id}>
+                  {group.name}
+                </option>
+              );
+            }) : (
               <option value="loading" disabled>Indlæser rabatgrupper...</option>
             )}
           </select>
