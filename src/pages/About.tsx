@@ -353,7 +353,7 @@ export default function About() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-                <div className="animate-fade-in-left">
+                <div className="animate-fade-in-left mx-auto lg:mx-0 w-full max-w-md lg:max-w-none">
                   <div className="bg-brand-gray-50 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
                     <h3 className="text-2xl font-bold text-brand-primary-dark mb-6">
                       Multi Grønt A/S
@@ -442,7 +442,7 @@ export default function About() {
                     </Button>
                   </Link>
                   <Link to="/contact">
-                    <Button className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-brand-primary px-8 py-3 transform hover:scale-105 transition-all duration-300 font-semibold !text-white">
+                    <Button className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-brand-primary px-8 py-3 transform hover:scale-105 transition-all duration-300 font-semibold">
                       Kontakt os
                     </Button>
                   </Link>
