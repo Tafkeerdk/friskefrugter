@@ -67,7 +67,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { api, handleApiError } from '@/lib/api';
-import { authService } from '@/lib/auth';
+import { authService, tokenManager } from '@/lib/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -325,9 +325,13 @@ const DashboardProducts: React.FC = () => {
         }
       });
 
-      const token = authService.getUser('admin') ? 
-        localStorage.getItem('admin_access_token') : 
-        localStorage.getItem('customer_access_token');
+      // Use the proper tokenManager method to get the admin token
+      const adminUser = authService.getUser('admin');
+      if (!adminUser) {
+        throw new Error('Admin user not found - please log in again');
+      }
+      
+      const token = tokenManager.getAccessToken('admin');
 
       if (!token) {
         throw new Error('No authentication token available');
