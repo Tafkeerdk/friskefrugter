@@ -85,6 +85,12 @@ const getEndpoint = (path: string): string => {
   if (pathOnly.startsWith('/api/auth/admin/customer-carts')) {
     return `/.netlify/functions/admin-customer-carts${queryString}`;
   }
+  if (pathOnly.startsWith('/api/auth/admin/statistics-detailed')) {
+    return `/.netlify/functions/admin-statistics-detailed${queryString}`;
+  }
+  if (pathOnly.startsWith('/api/auth/admin/statistics')) {
+    return `/.netlify/functions/admin-statistics${queryString}`;
+  }
   
   // Product and Unit endpoints - route to specific functions for better auth handling
   if (pathOnly.startsWith('/api/products')) {
@@ -2372,6 +2378,143 @@ export const authService = {
   // Clear order cache
   async clearOrderCache(): Promise<void> {
     requestCache.clearPattern('.*orders.*');
+  },
+
+  // Statistics Management Methods
+
+  // Get dashboard statistics (for main admin dashboard)
+  async getDashboardStatistics(): Promise<{
+    success: boolean;
+    statistics?: {
+      dashboardStats: Array<{
+        title: string;
+        value: string;
+        description: string;
+        icon: string;
+        trend: {
+          value: number;
+          isPositive: boolean;
+        };
+      }>;
+      salesChartData: Array<{
+        name: string;
+        sales: number;
+        orders: number;
+        date?: string;
+      }>;
+      popularProducts: Array<{
+        id: string;
+        name: string;
+        image: string;
+        sales: number;
+        status: string;
+      }>;
+      orderStatuses: Array<{
+        status: string;
+        count: number;
+        variant: string;
+      }>;
+      recentActivities: Array<{
+        id: string;
+        type: string;
+        title: string;
+        description: string;
+        time: string;
+        amount?: number;
+      }>;
+    };
+    message?: string;
+  }> {
+    const response = await apiClient.get(getEndpoint('/api/auth/admin/statistics'));
+    const data = await response.json();
+    return data;
+  },
+
+  // Get detailed statistics (for admin statistics page)
+  async getDetailedStatistics(period: 'today' | 'week' | 'month' | 'year' = 'month'): Promise<{
+    success: boolean;
+    statistics?: {
+      period: string;
+      startDate: string;
+      endDate: string;
+      overview: {
+        totalRevenue: number;
+        revenueGrowth: number;
+        totalOrders: number;
+        orderGrowth: number;
+        newCustomers: number;
+        customerGrowth: number;
+        averageOrderValue: number;
+        totalSavings: number;
+      };
+      orders: {
+        byStatus: Array<{
+          status: string;
+          count: number;
+          revenue: number;
+          percentage: number;
+        }>;
+        total: number;
+      };
+      revenue: {
+        current: number;
+        previous: number;
+        growth: number;
+        byDiscountGroup: Array<{
+          _id: string;
+          revenue: number;
+          orders: number;
+          averageOrderValue: number;
+        }>;
+      };
+      customers: {
+        new: number;
+        total: number;
+        active: number;
+        byDiscountGroup: Array<{
+          _id: string;
+          count: number;
+        }>;
+      };
+      products: {
+        totalProducts: number;
+        activeProducts: number;
+        lowStockProducts: number;
+        outOfStockProducts: number;
+      };
+      topProducts: Array<{
+        id: string;
+        name: string;
+        quantitySold: number;
+        revenue: number;
+        timesOrdered: number;
+        averageQuantityPerOrder: number;
+      }>;
+      applications: {
+        current: Array<{ _id: string; count: number }>;
+        total: Array<{ _id: string; count: number }>;
+      };
+      contacts: {
+        current: Array<{ _id: string; count: number }>;
+        total: Array<{ _id: string; count: number }>;
+      };
+      salesChart: Array<{
+        name: string;
+        sales: number;
+        orders: number;
+        date?: string;
+      }>;
+    };
+    message?: string;
+  }> {
+    const response = await apiClient.get(getEndpoint(`/api/auth/admin/statistics-detailed?period=${period}`));
+    const data = await response.json();
+    return data;
+  },
+
+  // Clear statistics cache
+  async clearStatisticsCache(): Promise<void> {
+    requestCache.clearPattern('.*statistics.*');
   },
 
   // Expose apiClient for direct use when needed
