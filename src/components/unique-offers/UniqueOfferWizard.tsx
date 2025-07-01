@@ -72,6 +72,7 @@ interface Category {
 
 interface DiscountGroup {
   _id: string;
+  id?: string;
   name: string;
   discountPercentage: number;
 }
@@ -190,8 +191,6 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         const customersData = customersResponse.value;
         if (customersData.success) {
           const customerList = customersData.customers?.filter((c: Customer) => c.isActive) || [];
-          console.log('🔍 UniqueOffer: Loaded customers:', customerList.length);
-          console.log('🔍 UniqueOffer: Sample customer data:', customerList.slice(0, 2));
           setCustomers(customerList);
         }
       }
@@ -210,8 +209,6 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         const discountGroupsData = discountGroupsResponse.value;
         if (discountGroupsData.success) {
           const groups = (discountGroupsData.discountGroups as DiscountGroup[]) || [];
-          console.log('🔍 UniqueOffer: Loaded discount groups:', groups.length);
-          console.log('🔍 UniqueOffer: Discount groups data:', groups);
           setDiscountGroups(groups);
         }
       }
@@ -248,7 +245,6 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       setProductSearch('');
       setCustomerSearch('');
       setSelectedCategory('');
-      console.log('🔍 UniqueOffer reset - clearing selectedDiscountGroup');
       setSelectedDiscountGroup('');
     }
   }, [isOpen, preselectedProduct, loadAllData]);
@@ -493,25 +489,24 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   const filteredCustomers = useMemo(() => {
     if (!customers.length) return [];
     
-    console.log('🔍 UniqueOffer filtering - Total customers:', customers.length);
-    console.log('🔍 UniqueOffer filtering - selectedDiscountGroup:', selectedDiscountGroup);
-    console.log('🔍 UniqueOffer filtering - customerSearch:', customerSearch);
-    
     const filtered = customers.filter(customer => {
       const matchesSearch = !customerSearch ||
         customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
         customer.contactPersonName.toLowerCase().includes(customerSearch.toLowerCase());
       
+      // Fix: Handle the actual discount group structure from backend and potential cache issues
       const matchesGroup = !selectedDiscountGroup || 
         selectedDiscountGroup === 'all' || 
-        (customer.discountGroup && (customer.discountGroup._id === selectedDiscountGroup || customer.discountGroup.id === selectedDiscountGroup));
-      
-      console.log(`🔍 Customer ${customer.companyName}: search=${matchesSearch}, group=${matchesGroup}, discountGroup:`, customer.discountGroup);
+        (customer.discountGroup && (
+          // Try matching by ID first
+          customer.discountGroup._id === selectedDiscountGroup || 
+          customer.discountGroup.id === selectedDiscountGroup ||
+          // Fallback: Try matching by name (in case dropdown sends name due to cache issues)
+          customer.discountGroup.name === selectedDiscountGroup
+        ));
       
       return matchesSearch && matchesGroup;
     });
-
-    console.log('🔍 UniqueOffer filtering - Filtered customers:', filtered.length);
 
     // Sort customers by discount group, then by company name
     return filtered.sort((a, b) => {
@@ -839,19 +834,15 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             value={selectedDiscountGroup || "all"}
             onChange={(e) => {
               const value = e.target.value;
-              console.log('🔍 UniqueOffer dropdown onChange - raw value:', value);
-              console.log('🔍 UniqueOffer dropdown onChange - value === "all":', value === "all");
-              const newSelectedValue = value === "all" ? "" : value;
-              console.log('🔍 UniqueOffer dropdown onChange - setting selectedDiscountGroup to:', newSelectedValue);
-              setSelectedDiscountGroup(newSelectedValue);
+              setSelectedDiscountGroup(value === "all" ? "" : value);
             }}
             className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 appearance-none"
           >
             <option value="all">Alle rabatgrupper</option>
             {discountGroups.length > 0 ? discountGroups.map(group => {
-              console.log('🔍 UniqueOffer dropdown option - group:', group);
+              const groupId = group._id || group.id;
               return (
-                <option key={group._id} value={group._id}>
+                <option key={groupId} value={groupId}>
                   {group.name}
                 </option>
               );
@@ -900,7 +891,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                       });
                       if (selectedCustomer?.discountGroup) {
                         const discountGroupId = selectedCustomer.discountGroup._id || selectedCustomer.discountGroup.id;
-                        const discountGroup = discountGroups.find(g => g._id === discountGroupId);
+                        const discountGroup = discountGroups.find(g => (g._id || g.id) === discountGroupId);
                         if (discountGroup && discountGroup.discountPercentage > 0) {
                           const discountAmount = (product.basispris * discountGroup.discountPercentage) / 100;
                           const discountedPrice = product.basispris - discountAmount;
