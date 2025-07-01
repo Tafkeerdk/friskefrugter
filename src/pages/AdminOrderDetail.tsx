@@ -430,10 +430,10 @@ const AdminOrderDetail: React.FC = () => {
                             />
                           ) : null}
                           <div className={cn(
-                            "w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200",
+                            "w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-sm",
                             item.product.billeder && item.product.billeder.length > 0 ? "hidden" : ""
                           )}>
-                            <Box className="h-10 w-10 text-gray-500" />
+                            <Package className="h-6 w-6 text-gray-400" />
                           </div>
                         </div>
                         <div className="flex-1">
