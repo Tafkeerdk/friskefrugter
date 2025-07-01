@@ -339,6 +339,89 @@ export default function About() {
           </div>
         </section>
 
+        {/* Location Section - CONTAINED WIDTH with Google Maps */}
+        <section className="py-16 bg-white overflow-hidden">
+          <div className="page-container">
+            <div className="content-width">
+              <div className="text-center mb-12">
+                <h2 className="text-3xl font-bold text-brand-primary-dark mb-4 animate-fade-in-up">
+                  Find os her
+                </h2>
+                <p className="text-lg text-brand-gray-600 max-w-2xl mx-auto animate-fade-in-up delay-200">
+                  Besøg os på vores hovedkontor i Taastrup for personlig service og rådgivning.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+                <div className="animate-fade-in-left">
+                  <div className="bg-brand-gray-50 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
+                    <h3 className="text-2xl font-bold text-brand-primary-dark mb-6">
+                      Multi Grønt A/S
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-start gap-3">
+                        <MapPin className="h-6 w-6 text-brand-primary mt-1 animate-pulse-subtle" />
+                        <div>
+                          <h4 className="font-semibold text-brand-gray-900 mb-1">Adresse</h4>
+                          <p className="text-brand-gray-600 leading-relaxed">
+                            Litauen Alle 13<br />
+                            2630 Taastrup<br />
+                            Danmark
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                        <Clock className="h-6 w-6 text-brand-primary mt-1" />
+                        <div>
+                          <h4 className="font-semibold text-brand-gray-900 mb-1">Åbningstider</h4>
+                          <p className="text-brand-gray-600 leading-relaxed">
+                            Mandag - Fredag: 8:00 - 16:00<br />
+                            Weekend: Efter aftale
+                          </p>
+                        </div>
+                      </div>
+                      <div className="pt-4">
+                        <a 
+                          href="https://www.google.com/maps/dir/?api=1&destination=Litauen+Alle+13,+2630+Taastrup,+Denmark"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 bg-brand-primary text-white px-6 py-3 rounded-lg hover:bg-brand-primary-hover transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl font-semibold"
+                        >
+                          <MapPin className="h-5 w-5" />
+                          Se rute i Google Maps
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="animate-fade-in-right">
+                  <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-brand-gray-200 hover:shadow-xl transition-shadow duration-500">
+                    <div className="w-full h-80 lg:h-96">
+                      <iframe
+                        src="https://www.google.com/maps/embed/v1/place?key=AIzaSyCRbpCfIVaGS2crcItlLIuwRMn7fcjFZ_E&q=Litauen+Alle+13,+2630+Taastrup,+Denmark&zoom=16&maptype=roadmap"
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
+                        allowFullScreen={true}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title="Multi Grønt A/S - Litauen Alle 13, 2630 Taastrup"
+                      ></iframe>
+                    </div>
+                    <div className="p-4 bg-brand-gray-50 border-t">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-brand-gray-600 font-medium">Multi Grønt A/S</span>
+                        <span className="text-brand-gray-500">Litauen Alle 13, 2630 Taastrup</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Call to Action - CONTAINED WIDTH with Enhanced Animation */}
         <section className="py-16 bg-brand-primary overflow-hidden relative">
           <div className="absolute inset-0 bg-gradient-to-r from-brand-primary to-brand-primary-light animate-pulse-subtle"></div>

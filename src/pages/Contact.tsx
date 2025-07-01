@@ -190,7 +190,7 @@ const Contact = () => {
                     <CardContent className="p-0">
                       <div className="w-full h-64 md:h-80 rounded-lg overflow-hidden">
                         <iframe
-                          src="https://maps.google.com/maps?q=Litauen+Alle+13,+2630+Taastrup,+Denmark&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                          src="https://www.google.com/maps/embed/v1/place?key=AIzaSyCRbpCfIVaGS2crcItlLIuwRMn7fcjFZ_E&q=Litauen+Alle+13,+2630+Taastrup,+Denmark&zoom=16&maptype=roadmap"
                           width="100%"
                           height="100%"
                           style={{ border: 0 }}
