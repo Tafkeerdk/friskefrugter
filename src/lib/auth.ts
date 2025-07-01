@@ -97,6 +97,11 @@ const getEndpoint = (path: string): string => {
     return `/.netlify/functions/visitor-tracking${queryString}`;
   }
   
+  // Admin-specific product endpoints with enhanced filtering
+  if (pathOnly.startsWith('/api/admin/products')) {
+    return `/.netlify/functions/admin-products${queryString}`;
+  }
+  
   // Product and Unit endpoints - route to specific functions for better auth handling
   if (pathOnly.startsWith('/api/products')) {
     return `/.netlify/functions/products${queryString}`;

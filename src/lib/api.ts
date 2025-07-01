@@ -443,6 +443,10 @@ class ApiClient {
     if (pathOnly.startsWith('/api/auth/admin/customer-carts')) {
       return `/.netlify/functions/admin-customer-carts${queryString}`;
     }
+    // Admin-specific product endpoints with enhanced filtering
+    if (pathOnly.startsWith('/api/admin/products')) {
+      return `/.netlify/functions/admin-products${queryString}`;
+    }
     if (pathOnly.startsWith('/api/products')) {
       return path.replace('/api/products', '/.netlify/functions/products');
     }
