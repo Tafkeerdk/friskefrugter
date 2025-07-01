@@ -49,7 +49,7 @@ export default function About() {
               alt="Fresh organic vegetables for wholesale" 
               className="absolute inset-0 w-full h-full object-cover transform hover:scale-105 transition-transform duration-1000"
               loading="lazy"
-            />
+          />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-black/40 z-10" />
             <div className="absolute inset-0 page-container h-full flex items-center z-20">
               <div className="content-width">
@@ -316,7 +316,7 @@ export default function About() {
                       </h3>
                       <p className="text-brand-gray-600">
                         Alle produkter gennemgår streng kvalitetskontrol før levering.
-                      </p>
+                </p>
                     </div>
               </div>
 

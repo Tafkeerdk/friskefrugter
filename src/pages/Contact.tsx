@@ -358,7 +358,7 @@ const Contact = () => {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+              </div>
 
             {/* B2B Info */}
             <div className="mt-12 bg-brand-gray-100 rounded-lg p-8">

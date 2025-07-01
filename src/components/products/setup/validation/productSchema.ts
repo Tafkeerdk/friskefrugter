@@ -181,7 +181,7 @@ const billedeSchema = z.object({
   }
   // Only validate if there's actual data
   if (data.file || data.url || data.isExisting) {
-    return (data.isExisting && data.url) || (!data.isExisting && data.file);
+  return (data.isExisting && data.url) || (!data.isExisting && data.file);
   }
   return true; // Default to allowing empty
 }, {

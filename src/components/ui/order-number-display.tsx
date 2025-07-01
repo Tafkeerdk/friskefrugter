@@ -38,8 +38,8 @@ export function OrderNumberDisplay({
   return (
     <div className={cn(styles.container, className)}>
       <span className={cn(variantStyles)}>
-        {parsed.sequenceNumber}
-      </span>
+          {parsed.sequenceNumber}
+        </span>
     </div>
   );
 }

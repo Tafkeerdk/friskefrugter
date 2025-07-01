@@ -43,7 +43,7 @@ export function formatOrderNumber(orderNumber: string, variant: 'full' | 'compac
   const parsed = parseOrderNumber(orderNumber);
   
   // For simple format, all variants return the same thing
-  return parsed.sequenceNumber;
+      return parsed.sequenceNumber;
 }
 
 /**
@@ -73,11 +73,11 @@ export function getOrderNumberStyles(isMobile: boolean = false) {
     sequence: isMobile
       ? "text-lg font-bold text-brand-primary"
       : "text-xl font-bold text-brand-primary",
-      
+    
     compact: isMobile
       ? "text-base font-bold text-brand-primary"
       : "text-lg font-bold text-brand-primary",
-      
+    
     large: isMobile
       ? "text-xl font-bold text-brand-primary"
       : "text-3xl font-bold text-brand-primary"

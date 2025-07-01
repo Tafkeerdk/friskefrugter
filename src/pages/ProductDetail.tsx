@@ -24,6 +24,7 @@ import { Link, useParams, useNavigate } from "react-router-dom";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductPricing, CustomerPricing } from "@/components/products/card/ProductPricing";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 import { api, handleApiError } from "@/lib/api";
 import { authService } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -71,6 +72,7 @@ const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { addToCart } = useCart();
   const { toast } = useToast();
   
   // State management
@@ -250,18 +252,18 @@ const ProductDetail = () => {
     
     setIsAddingToCart(true);
     try {
-      const response = await authService.addToCart(product._id, quantity);
-      if (response.success) {
-      toast({
-        title: 'Tilføjet til kurv',
-        description: `${quantity} x ${product.produktnavn} er tilføjet til din kurv`,
-        duration: 3000,
-      });
+      const success = await addToCart(product._id, quantity);
+      if (success) {
+        toast({
+          title: 'Tilføjet til kurv',
+          description: `${quantity} x ${product.produktnavn} er tilføjet til din kurv`,
+          duration: 3000,
+        });
         setQuantity(1); // Reset quantity after successful add
       } else {
         toast({
           title: 'Fejl',
-          description: response.message || 'Kunne ikke tilføje til kurv',
+          description: 'Kunne ikke tilføje til kurv',
           variant: 'destructive',
           duration: 3000,
         });

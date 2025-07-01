@@ -1803,6 +1803,29 @@ export const authService = {
     return response.json();
   },
 
+  // Admin-specific products endpoint with enhanced filtering and search
+  async getAdminProducts(params: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    kategori?: string;
+    aktiv?: boolean;
+    lagerstyring?: boolean;
+    sortBy?: string;
+    sortOrder?: string;
+  } = {}): Promise<{ success: boolean; data?: any; error?: string }> {
+    const searchParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, value.toString());
+      }
+    });
+    
+    const response = await apiClient.get(`${getEndpoint('/api/admin/products')}?${searchParams.toString()}`);
+    return response.json();
+  },
+
   // Get all customers (for adding to discount groups)
   async getAllCustomers(): Promise<{ success: boolean; customers?: any[]; message?: string }> {
     const response = await apiClient.get(getEndpoint('/api/auth/admin/customers'));

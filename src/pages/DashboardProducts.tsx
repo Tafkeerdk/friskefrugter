@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useDebounce } from '@/hooks/useDebounce';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,6 +65,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { api, handleApiError } from '@/lib/api';
+import { authService } from '@/lib/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -240,6 +242,9 @@ const DashboardProducts: React.FC = () => {
 
   // Track image validity for each product
   const [productImageStates, setProductImageStates] = useState<Record<string, boolean>>({});
+  
+  // Debounced search for backend filtering
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   // Helper function to update product image state
   const updateProductImageState = (productId: string, hasValidImage: boolean) => {
@@ -249,25 +254,20 @@ const DashboardProducts: React.FC = () => {
     }));
   };
 
-  // Debounced search term to prevent race conditions
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
-  
-  // Debounce search term changes
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-    }, 300); // 300ms debounce delay
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
+  // Debounced search term to prevent race conditions - now using useDebounce hook
 
   // Load data on component mount and when filters change (with debounced search)
   useEffect(() => {
     loadProducts();
     loadCategories();
   }, [currentPage, selectedCategory, statusFilter, debouncedSearchTerm]);
+
+  // Reset to page 1 when filters change (but not when page changes)
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [selectedCategory, statusFilter, debouncedSearchTerm]);
 
   // Update URL params when filters change (with debounced search)
   useEffect(() => {
@@ -291,27 +291,22 @@ const DashboardProducts: React.FC = () => {
       if (statusFilter === 'active') params.aktiv = true;
       if (statusFilter === 'inactive') params.aktiv = false;
 
-      const response = await api.getProducts(params);
+      const response = await authService.getAdminProducts(params);
       
       if (response.success && response.data) {
         const data = response.data as any;
-        const products = data.products || data || [];
+        const products = data.products || [];
         
-        console.log('📋 Products loaded from backend:', products.map((product: any) => ({
-          id: product._id,
-          name: product.produktnavn,
-          images: product.billeder?.map((img: any, index: number) => ({
-            index,
-            _id: img._id,
-            filename: img.filename,
-            isPrimary: img.isPrimary,
-            url: img.url ? img.url.substring(0, 50) + '...' : 'no url'
-          })) || []
-        })));
+        console.log('📋 Admin products loaded from backend:', {
+          productsCount: products.length,
+          totalPages: data.pagination?.totalPages || 1,
+          totalProducts: data.pagination?.total || 0,
+          stats: data.stats
+        });
         
         setProducts(products);
-        setTotalPages(data.totalPages || 1);
-        setTotalProducts(data.total || 0);
+        setTotalPages(data.pagination?.totalPages || 1);
+        setTotalProducts(data.pagination?.total || 0);
       }
     } catch (error) {
       const apiError = handleApiError(error);
@@ -407,14 +402,8 @@ const DashboardProducts: React.FC = () => {
     return { status: 'available', text: 'På lager', variant: 'default' as const };
   };
 
-  const filteredProducts = products.filter(product => {
-    const matchesSearch = !debouncedSearchTerm || 
-      product.produktnavn.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-      product.eanNummer.includes(debouncedSearchTerm) ||
-      (product.beskrivelse && product.beskrivelse.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
-    
-    return matchesSearch;
-  });
+  // Products are now filtered on backend - no frontend filtering needed
+  const filteredProducts = products;
 
   // Mobile filter section component
   const renderMobileFilters = () => (
@@ -622,8 +611,41 @@ const DashboardProducts: React.FC = () => {
         {/* Products Display */}
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-muted-foreground">Indlæser produkter...</p>
+            </div>
           </div>
+        ) : filteredProducts.length === 0 ? (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <Package className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Ingen produkter fundet</h3>
+              <p className="text-muted-foreground mb-6 max-w-md">
+                {debouncedSearchTerm || selectedCategory !== 'all' || statusFilter !== 'all' 
+                  ? "Ingen produkter matcher dine søgekriterier. Prøv at justere filtrene." 
+                  : "Der er endnu ikke tilføjet produkter. Tilføj dit første produkt for at komme i gang."}
+              </p>
+              <div className="flex gap-2">
+                {(debouncedSearchTerm || selectedCategory !== 'all' || statusFilter !== 'all') && (
+                  <Button 
+                    variant="outline" 
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory('all');
+                      setStatusFilter('all');
+                    }}
+                  >
+                    Ryd filtre
+                  </Button>
+                )}
+                <Button onClick={() => navigate('/admin/products/new')}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Tilføj produkt
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <>
             {/* Cards View */}

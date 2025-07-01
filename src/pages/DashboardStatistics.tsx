@@ -103,16 +103,16 @@ const DashboardStatistics: React.FC = () => {
 
   // Loading state
   if (loading) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-8">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">Statistik</h2>
-            <p className="text-muted-foreground">
-              Overblik over salg og brugeraktivitet.
-            </p>
-          </div>
-          
+  return (
+    <DashboardLayout>
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Statistik</h2>
+          <p className="text-muted-foreground">
+            Overblik over salg og brugeraktivitet.
+          </p>
+        </div>
+
           <div className="flex items-center justify-center py-16">
             <div className="text-center">
               <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
@@ -179,28 +179,28 @@ const DashboardStatistics: React.FC = () => {
 
         {statistics && (
           <>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                title="Total Omsætning"
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Total Omsætning"
                 value={formatCurrency(statistics.overview.totalRevenue)}
                 trend={{ 
                   value: statistics.overview.revenueGrowth ?? -100, 
                   isPositive: statistics.overview.revenueGrowth > 0 
                 }}
-                icon={<BarChart3 className="h-4 w-4" />}
+            icon={<BarChart3 className="h-4 w-4" />}
                 description="Denne måned"
-              />
-              <StatCard
+          />
+          <StatCard
                 title="Ordrer"
                 value={statistics.overview.totalOrders.toString()}
                 trend={{ 
                   value: statistics.overview.orderGrowth ?? -100, 
                   isPositive: statistics.overview.orderGrowth > 0 
                 }}
-                icon={<TrendingUp className="h-4 w-4" />}
+            icon={<TrendingUp className="h-4 w-4" />}
                 description="Ordrer denne måned"
-              />
-              <StatCard
+          />
+          <StatCard
                 title="Besøgende"
                 value={(statistics.overview.totalVisitors || 0).toString()}
                 trend={{ 
@@ -209,23 +209,23 @@ const DashboardStatistics: React.FC = () => {
                 }}
                 icon={<Activity className="h-4 w-4" />}
                 description="Besøgende denne måned"
-              />
-              <StatCard
+          />
+          <StatCard
                 title="Nye kunder"
                 value={statistics.overview.newCustomers.toString()}
                 trend={{ 
                   value: statistics.overview.customerGrowth ?? -100, 
                   isPositive: statistics.overview.customerGrowth > 0 
                 }}
-                icon={<Users className="h-4 w-4" />}
+            icon={<Users className="h-4 w-4" />}
                 description="Nye kunder denne måned"
-              />
-            </div>
+          />
+        </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <ChartCard
-                title="Omsætning"
-                description="Månedlig omsætning"
+        <div className="grid gap-4 md:grid-cols-2">
+          <ChartCard
+            title="Omsætning"
+            description="Månedlig omsætning"
                 data={statistics.salesChart && Array.isArray(statistics.salesChart) ? 
                   statistics.salesChart.map(item => ({
                     name: item.name || 'Ukendt',
@@ -237,8 +237,8 @@ const DashboardStatistics: React.FC = () => {
                     { name: 'Ingen data', revenue: 0, orders: 0 }
                   ]
                 }
-                type="bar"
-                dataKey="revenue"
+            type="bar"
+            dataKey="revenue"
                 formatYAxis={(value) => {
                   if (value === 0) return '0';
                   return `${Math.round(value / 1000)}k`;
@@ -252,18 +252,18 @@ const DashboardStatistics: React.FC = () => {
                   }
                   return [value.toString(), name];
                 }}
-              />
-              <ChartCard
-                title="Besøgende"
-                description="Månedlige besøgende"
+          />
+          <ChartCard
+            title="Besøgende"
+            description="Månedlige besøgende"
                 data={statistics.visitors?.monthlyChart && Array.isArray(statistics.visitors.monthlyChart) ? 
                   statistics.visitors.monthlyChart : 
                   [
                     { name: 'Ingen data', visitors: 0, pageViews: 0 }
                   ]
                 }
-                type="line"
-                dataKey="visitors"
+            type="line"
+            dataKey="visitors"
                 formatTooltip={(value, name) => {
                   if (name === 'visitors') {
                     return [`${value} besøgende`, 'Besøgende'];
@@ -273,8 +273,8 @@ const DashboardStatistics: React.FC = () => {
                   }
                   return [value.toString(), name];
                 }}
-              />
-            </div>
+          />
+        </div>
           </>
         )}
       </div>

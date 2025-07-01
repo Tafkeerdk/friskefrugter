@@ -67,15 +67,15 @@ const StatCard: React.FC<StatCardProps> = ({
                   </span>
                 ) : (
                   <>
-                    <span className={cn(
-                      "font-medium",
+                <span className={cn(
+                  "font-medium",
                       trend.value > 0 ? "text-green-600" : trend.value < 0 ? "text-red-600" : "text-muted-foreground"
-                    )}>
+                )}>
                       {trend.value > 0 ? "+" : ""}{Math.round(trend.value)}%
-                    </span>
-                    <span className="ml-1 text-muted-foreground">
+                </span>
+                <span className="ml-1 text-muted-foreground">
                       {isMobile ? "v. periode" : "siden sidste periode"}
-                    </span>
+                </span>
                   </>
                 )}
               </div>

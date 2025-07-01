@@ -61,9 +61,9 @@ const AppContent = () => {
 
   return (
     <>
-      {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
-      <ScrollToTop smooth={true} delay={0} />
-      <Routes>
+          {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
+          <ScrollToTop smooth={true} delay={0} />
+          <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<Products />} />
@@ -445,7 +445,7 @@ const App = () => (
         <CartProvider>
           <BrowserRouter>
             <AppContent />
-          </BrowserRouter>
+        </BrowserRouter>
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>

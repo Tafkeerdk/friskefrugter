@@ -116,21 +116,21 @@ const Admin: React.FC = () => {
           ) : (
             // Actual statistics data
             statistics?.dashboardStats.map((stat, index) => {
-              const IconComponent = stat.icon;
-              return (
-                <StatCard
-                  key={index}
-                  title={stat.title}
-                  value={stat.value}
-                  description={stat.description}
-                  icon={<IconComponent className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />}
-                  trend={stat.trend}
-                  className={cn(
-                    "h-full border-l-4 border-l-blue-500 hover:shadow-md transition-shadow",
-                    isMobile ? "min-h-[120px]" : ""
-                  )}
-                />
-              );
+            const IconComponent = stat.icon;
+            return (
+              <StatCard
+                key={index}
+                title={stat.title}
+                value={stat.value}
+                description={stat.description}
+                icon={<IconComponent className={cn(isMobile ? "h-4 w-4" : "h-5 w-5")} />}
+                trend={stat.trend}
+                className={cn(
+                  "h-full border-l-4 border-l-blue-500 hover:shadow-md transition-shadow",
+                  isMobile ? "min-h-[120px]" : ""
+                )}
+              />
+            );
             })
           )}
         </div>
@@ -188,18 +188,18 @@ const Admin: React.FC = () => {
             </>
           ) : (
             <>
-              <ChartCard
-                title={isMobile ? "B2B Omsætning" : "B2B Omsætning denne uge"}
-                description={isMobile ? "Daglig omsætning" : "Daglig B2B omsætning fordelt på ugedage"}
+          <ChartCard
+            title={isMobile ? "B2B Omsætning" : "B2B Omsætning denne uge"}
+            description={isMobile ? "Daglig omsætning" : "Daglig B2B omsætning fordelt på ugedage"}
                 data={statistics?.salesChartData || []}
-                type="line"
-                dataKey="sales"
-                className={cn(isMobile ? "" : "lg:col-span-4")}
-              />
-              <PopularProductsCard
+            type="line"
+            dataKey="sales"
+            className={cn(isMobile ? "" : "lg:col-span-4")}
+          />
+          <PopularProductsCard
                 products={statistics?.popularProducts || []}
-                className={cn(isMobile ? "mt-0" : "lg:col-span-3")}
-              />
+            className={cn(isMobile ? "mt-0" : "lg:col-span-3")}
+          />
             </>
           )}
         </div>
