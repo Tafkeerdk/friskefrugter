@@ -56,12 +56,12 @@ export default function About() {
                 <div className={`max-w-2xl transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
                   <h1 className="text-3xl md:text-5xl font-bold text-white mb-6 animate-pulse-subtle">
                     Din pålidelige partner i friske råvarer
-                  </h1>
+              </h1>
                   <p className={`text-lg md:text-xl text-white/90 mb-8 leading-relaxed transform transition-all duration-1000 delay-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
                     Multi Grønt leverer friske grøntsager og frugter til professionelle køkkener, restauranter og cateringvirksomheder i hele Danmark.
-                  </p>
+              </p>
                   <div className={`flex flex-col sm:flex-row gap-4 transform transition-all duration-1000 delay-500 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
-                    <Link to="/contact">
+                <Link to="/contact">
                       <Button className="btn-brand-hero transform hover:scale-105 hover:shadow-xl transition-all duration-300 animate-bounce-subtle">
                         Kontakt os <ChevronRight className="ml-2 h-5 w-5 animate-pulse" />
                       </Button>
@@ -69,19 +69,19 @@ export default function About() {
                     <Link to="/apply">
                       <Button variant="outline" className="bg-white text-brand-primary hover:bg-brand-primary hover:text-white border-white transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl">
                         Bliv kunde
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
+                  </Button>
+                </Link>
               </div>
             </div>
+          </div>
+        </div>
           </div>
         </section>
 
         {/* Company Overview - CONTAINED WIDTH with Stagger Animations */}
         <section className="py-16 overflow-hidden">
           <div className="page-container">
-            <div className="content-width">
+          <div className="content-width">
               <div className={`max-w-3xl mx-auto text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'}`}>
                 <h2 className="text-3xl md:text-4xl font-bold text-brand-primary-dark mb-6 relative">
                   Om Multi Grønt
@@ -111,7 +111,7 @@ export default function About() {
                 <div className={`text-center bg-brand-gray-50 rounded-xl p-8 transform hover:scale-105 hover:shadow-lg transition-all duration-500 hover:-translate-y-2 delay-400 ${isVisible ? 'animate-fade-in-up' : 'opacity-0'}`}>
                   <div className="text-4xl font-bold text-brand-primary mb-2 animate-pulse-subtle">
                     {counters.support}/7
-                  </div>
+            </div>
                   <div className="text-brand-gray-600">Kundeservice</div>
                 </div>
               </div>
@@ -222,8 +222,8 @@ export default function About() {
                 </div>
                 <div className="animate-fade-in-right">
                   <img 
-                    src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80" 
-                    alt="Fresh vegetables and fruits for professional kitchens" 
+                    src="https://images.unsplash.com/photo-1506976785307-8732e854ad03?auto=format&fit=crop&w=800&q=80" 
+                    alt="Fresh vegetables in delivery box for professional kitchens" 
                     className="rounded-xl shadow-lg w-full h-auto transform hover:scale-105 transition-transform duration-700 hover:shadow-2xl"
                     loading="lazy"
                   />
@@ -318,7 +318,7 @@ export default function About() {
                         Alle produkter gennemgår streng kvalitetskontrol før levering.
                       </p>
                     </div>
-                  </div>
+              </div>
 
                   <div className="flex gap-4 group hover:bg-brand-gray-50 p-4 rounded-lg transition-all duration-300 animate-fade-in-right delay-300">
                     <div className="flex-shrink-0">
@@ -391,8 +391,8 @@ export default function About() {
                           Se rute i Google Maps
                         </a>
                       </div>
-                    </div>
-                  </div>
+              </div>
+            </div>
                 </div>
 
                 <div className="animate-fade-in-right">
