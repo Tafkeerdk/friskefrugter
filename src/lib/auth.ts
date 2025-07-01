@@ -2244,7 +2244,7 @@ export const authService = {
   },
 
   /**
-   * Update order status with email notifications (NEW API)
+   * Update order status with email notifications (NEW API) - ADMIN ONLY
    */
   async updateOrderStatus(orderId: string, newStatus: string, options: {
     skippedStatuses?: string[];
@@ -2262,10 +2262,23 @@ export const authService = {
       emailSent: boolean;
     }
   }> {
-    const response = await apiClient.post(getEndpoint('/admin-order-status-update'), {
-      orderId,
-      newStatus,
-      skippedStatuses: options.skippedStatuses || []
+    // CRITICAL: Always use admin token for order status updates
+    const adminToken = tokenManager.getAccessToken('admin');
+    if (!adminToken) {
+      throw new Error('Admin authentication required for order status updates');
+    }
+
+    const response = await fetch(`${API_BASE_URL}${getEndpoint('/admin-order-status-update')}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        orderId,
+        newStatus,
+        skippedStatuses: options.skippedStatuses || []
+      })
     });
     
     const data = await response.json();
@@ -2281,7 +2294,7 @@ export const authService = {
   },
 
   /**
-   * Reject order with reason and email notification (NEW API)
+   * Reject order with reason and email notification (NEW API) - ADMIN ONLY
    */
   async rejectOrder(orderId: string, rejectionReason: string): Promise<{
     success: boolean;
@@ -2297,9 +2310,22 @@ export const authService = {
       emailSent: boolean;
     }
   }> {
-    const response = await apiClient.post(getEndpoint('/admin-order-rejection'), {
-      orderId,
-      rejectionReason
+    // CRITICAL: Always use admin token for order rejection
+    const adminToken = tokenManager.getAccessToken('admin');
+    if (!adminToken) {
+      throw new Error('Admin authentication required for order rejection');
+    }
+
+    const response = await fetch(`${API_BASE_URL}${getEndpoint('/admin-order-rejection')}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${adminToken}`
+      },
+      body: JSON.stringify({
+        orderId,
+        rejectionReason
+      })
     });
     
     const data = await response.json();

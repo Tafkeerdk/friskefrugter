@@ -214,8 +214,14 @@ const DashboardOrders: React.FC = () => {
   };
 
   const handleOrderDetails = (order: OrderSummary) => {
-    setSelectedOrder(order);
-    setOrderDetailsDialogOpen(true);
+    if (isAdminContext) {
+      // Navigate to dedicated admin order detail page
+      navigate(`/admin/orders/${order._id}`);
+    } else {
+      // For customers, show modal dialog (existing behavior)
+      setSelectedOrder(order);
+      setOrderDetailsDialogOpen(true);
+    }
   };
 
   const handleStatusUpdate = (order: OrderSummary, targetStatus: string) => {

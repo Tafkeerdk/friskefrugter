@@ -12,6 +12,7 @@ import Products from "./pages/Products";
 import ProductDetail from "./pages/ProductDetail";
 import Login from "./pages/Login";
 import AdminLogin from "./pages/AdminLogin";
+import AdminOrderDetail from "./pages/AdminOrderDetail";
 import Admin from "./pages/Admin";
 import Apply from "./pages/Apply";
 import Cart from "./pages/Cart";
@@ -191,6 +192,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <DashboardOrders />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/orders/:orderId" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <AdminOrderDetail />
                 </ProtectedRoute>
               } 
             />
