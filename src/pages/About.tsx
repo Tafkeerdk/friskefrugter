@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Leaf, Truck, Clock, Shield, ChevronRight, Users, Star, Award, Target } from "lucide-react";
+import { Leaf, Truck, Clock, Shield, ChevronRight, Users, Star, Award, Target, MapPin } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
