@@ -2522,12 +2522,18 @@ export const authService = {
     requestCache.clearPattern('.*statistics.*');
   },
 
-  // Track visitor (public endpoint)
+  // Track visitor (public endpoint) - Rate limited to prevent excessive calls
   async trackVisitor(page: string = '/'): Promise<void> {
     try {
       // Don't track admin pages or dev pages
       if (page.includes('/admin') || page.includes('/dev') || page.includes('/super')) {
         return;
+      }
+
+      // Rate limiting: Only track once per page per session to prevent spam
+      const sessionKey = `visitor_tracked_${page}`;
+      if (sessionStorage.getItem(sessionKey)) {
+        return; // Already tracked this page in this session
       }
 
       const endpoint = getEndpoint('/visitor-tracking');
@@ -2543,6 +2549,8 @@ export const authService = {
       if (response.ok) {
         const data = await response.json();
         console.log('👁️ Visitor tracked:', data);
+        // Mark this page as tracked for this session
+        sessionStorage.setItem(sessionKey, 'true');
       } else {
         console.warn('⚠️ Visitor tracking failed (non-critical)');
       }
