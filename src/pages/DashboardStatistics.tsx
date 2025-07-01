@@ -74,7 +74,11 @@ const DashboardStatistics: React.FC = () => {
       
       if (response.success && response.statistics) {
         console.log('📊 Statistics received:', response.statistics);
-        console.log('📈 Sales chart data:', response.statistics.salesChart);
+        console.log('📈 Growth values:', {
+          revenueGrowth: response.statistics.overview.revenueGrowth,
+          orderGrowth: response.statistics.overview.orderGrowth,
+          customerGrowth: response.statistics.overview.customerGrowth
+        });
         setStatistics(response.statistics);
       } else {
         throw new Error(response.message || 'Kunne ikke hente statistikker');
@@ -180,18 +184,18 @@ const DashboardStatistics: React.FC = () => {
                 title="Total Omsætning"
                 value={formatCurrency(statistics.overview.totalRevenue)}
                 trend={{ 
-                  value: statistics.overview.revenueGrowth, 
-                  isPositive: statistics.overview.revenueGrowth >= 0 
+                  value: statistics.overview.revenueGrowth ?? -100, 
+                  isPositive: statistics.overview.revenueGrowth > 0 
                 }}
                 icon={<BarChart3 className="h-4 w-4" />}
                 description="Denne måned"
               />
               <StatCard
-                title="Salg i dag"
+                title="Ordrer"
                 value={statistics.overview.totalOrders.toString()}
                 trend={{ 
-                  value: statistics.overview.orderGrowth, 
-                  isPositive: statistics.overview.orderGrowth >= 0 
+                  value: statistics.overview.orderGrowth ?? -100, 
+                  isPositive: statistics.overview.orderGrowth > 0 
                 }}
                 icon={<TrendingUp className="h-4 w-4" />}
                 description="Ordrer denne måned"
@@ -200,8 +204,8 @@ const DashboardStatistics: React.FC = () => {
                 title="Besøgende"
                 value={(statistics.overview.totalVisitors || 0).toString()}
                 trend={{ 
-                  value: statistics.overview.visitorGrowth || -100, 
-                  isPositive: (statistics.overview.visitorGrowth || -100) >= 0 
+                  value: statistics.overview.visitorGrowth ?? -100, 
+                  isPositive: (statistics.overview.visitorGrowth || 0) > 0 
                 }}
                 icon={<Activity className="h-4 w-4" />}
                 description="Besøgende denne måned"
@@ -210,8 +214,8 @@ const DashboardStatistics: React.FC = () => {
                 title="Nye kunder"
                 value={statistics.overview.newCustomers.toString()}
                 trend={{ 
-                  value: statistics.overview.customerGrowth, 
-                  isPositive: statistics.overview.customerGrowth >= 0 
+                  value: statistics.overview.customerGrowth ?? -100, 
+                  isPositive: statistics.overview.customerGrowth > 0 
                 }}
                 icon={<Users className="h-4 w-4" />}
                 description="Nye kunder denne måned"

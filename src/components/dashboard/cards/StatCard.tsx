@@ -61,7 +61,7 @@ const StatCard: React.FC<StatCardProps> = ({
                 "mt-2 flex items-center",
                 isMobile ? "text-xs" : "text-xs"
               )}>
-                {trend.value === -100 ? (
+                {trend.value === -100 || trend.value === null || trend.value === undefined ? (
                   <span className="font-medium text-muted-foreground">
                     Ingen data at sammenligne med
                   </span>
@@ -71,7 +71,7 @@ const StatCard: React.FC<StatCardProps> = ({
                       "font-medium",
                       trend.value > 0 ? "text-green-600" : trend.value < 0 ? "text-red-600" : "text-muted-foreground"
                     )}>
-                      {trend.value > 0 ? "+" : ""}{trend.value}%
+                      {trend.value > 0 ? "+" : ""}{Math.round(trend.value)}%
                     </span>
                     <span className="ml-1 text-muted-foreground">
                       {isMobile ? "v. periode" : "siden sidste periode"}
