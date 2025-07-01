@@ -52,13 +52,16 @@ interface Product {
 
 interface Customer {
   _id: string;
+  id?: string;
   companyName: string;
   contactPersonName: string;
   email: string;
   isActive: boolean;
   discountGroup?: {
-    _id: string;
+    _id?: string;
+    id?: string;
     name: string;
+    discountPercentage?: number;
   };
 }
 
@@ -386,7 +389,10 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   };
 
   const getSelectedCustomer = () => {
-    return customers.find(c => (c._id || (c as any).id) === offerData.customerId);
+    return customers.find(c => {
+      const customerId = c._id || c.id;
+      return customerId === offerData.customerId;
+    });
   };
 
   // State for customer pricing
@@ -497,7 +503,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
       
       const matchesGroup = !selectedDiscountGroup || 
         selectedDiscountGroup === 'all' || 
-        customer.discountGroup?._id === selectedDiscountGroup;
+        (customer.discountGroup && (customer.discountGroup._id === selectedDiscountGroup || customer.discountGroup.id === selectedDiscountGroup));
       
       console.log(`🔍 Customer ${customer.companyName}: search=${matchesSearch}, group=${matchesGroup}, discountGroup:`, customer.discountGroup);
       
@@ -873,16 +879,20 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 key={customer._id}
                 type="button"
                 onClick={() => {
-                  const customerId = customer._id || (customer as any).id;
+                  const customerId = customer._id || customer.id;
                   setOfferData(prev => ({ ...prev, customerId }));
                   
                   // If already in details step and price is empty or standard price, update with customer price
                   if (currentStep === 'details') {
                     const product = getSelectedProduct();
                     if (product) {
-                      const selectedCustomer = customers.find(c => (c._id || (c as any).id) === customerId);
+                      const selectedCustomer = customers.find(c => {
+                        const cId = c._id || c.id;
+                        return cId === customerId;
+                      });
                       if (selectedCustomer?.discountGroup) {
-                        const discountGroup = discountGroups.find(g => g._id === selectedCustomer.discountGroup._id);
+                        const discountGroupId = selectedCustomer.discountGroup._id || selectedCustomer.discountGroup.id;
+                        const discountGroup = discountGroups.find(g => g._id === discountGroupId);
                         if (discountGroup && discountGroup.discountPercentage > 0) {
                           const discountAmount = (product.basispris * discountGroup.discountPercentage) / 100;
                           const discountedPrice = product.basispris - discountAmount;
@@ -902,13 +912,13 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                 }}
                 className={cn(
                   "w-full p-4 text-left hover:bg-brand-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
-                  offerData.customerId === (customer._id || (customer as any).id) && "bg-brand-primary/10 border-l-4 border-brand-primary"
+                  offerData.customerId === (customer._id || customer.id) && "bg-brand-primary/10 border-l-4 border-brand-primary"
                 )}
               >
                 <div className="flex items-center gap-4">
                   <div className={cn(
                     "p-3 rounded-lg",
-                    offerData.customerId === (customer._id || (customer as any).id) ? "bg-brand-primary text-white" : "bg-brand-gray-100 text-brand-gray-600"
+                    offerData.customerId === (customer._id || customer.id) ? "bg-brand-primary text-white" : "bg-brand-gray-100 text-brand-gray-600"
                   )}>
                     <Building2 className="h-5 w-5" />
                   </div>
@@ -925,7 +935,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
                       </Badge>
                     )}
                   </div>
-                  {offerData.customerId === (customer._id || (customer as any).id) && (
+                  {offerData.customerId === (customer._id || customer.id) && (
                     <CheckCircle2 className="h-5 w-5 text-brand-primary" />
                   )}
                 </div>
