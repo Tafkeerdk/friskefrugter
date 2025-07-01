@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { usePWA } from "@/hooks/usePWA";
 import { useAuth } from "@/hooks/useAuth";
 import { api } from "@/lib/api";
+import { authService } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 interface FeaturedProduct {
@@ -93,6 +94,11 @@ const Index = () => {
 
     loadFeaturedProducts();
   }, [isCustomerAuthenticated, customerUser]);
+
+  // Track visitor for analytics
+  useEffect(() => {
+    authService.trackVisitor('/');
+  }, []);
 
   return (
     <div className="flex flex-col min-h-screen">

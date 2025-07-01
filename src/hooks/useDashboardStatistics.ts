@@ -6,6 +6,7 @@ import {
   DollarSign,
   Users,
   TrendingUp,
+  Banknote,
 } from "lucide-react";
 
 interface DashboardStat {
@@ -57,10 +58,10 @@ interface DashboardStatistics {
   recentActivities: RecentActivity[];
 }
 
-// Icon mapping for dashboard stats
+// Icon mapping for dashboard stats (using Danish-appropriate icons)
 const iconMapping = {
   'ShoppingCart': ShoppingCart,
-  'DollarSign': DollarSign,
+  'DollarSign': Banknote, // Use Banknote icon for Danish currency
   'Users': Users,
   'TrendingUp': TrendingUp,
 };
@@ -114,43 +115,43 @@ export const useDashboardStatistics = () => {
       console.error('Error fetching dashboard statistics:', error);
       setError(error.message || 'Fejl ved indlæsning af statistikker');
       
-      // Provide fallback data to prevent UI crashes
-      setStatistics({
-        dashboardStats: [
-          {
-            title: "Dagens ordrer",
-            value: "0",
-            description: "Ordrer modtaget i dag",
-            icon: ShoppingCart,
-            trend: { value: 0, isPositive: true },
-          },
-          {
-            title: "Ugens omsætning",
-            value: "0 kr",
-            description: "Samlet salg denne uge",
-            icon: DollarSign,
-            trend: { value: 0, isPositive: true },
-          },
-          {
-            title: "Nye kunder",
-            value: "0",
-            description: "Nye kunder denne uge",
-            icon: Users,
-            trend: { value: 0, isPositive: true },
-          },
-          {
-            title: "Vækst i salg",
-            value: "0%",
-            description: "Sammenlignet med sidste måned",
-            icon: TrendingUp,
-            trend: { value: 0, isPositive: true },
-          },
-        ],
-        salesChartData: [],
-        popularProducts: [],
-        orderStatuses: [],
-        recentActivities: []
-      });
+              // Provide fallback data to prevent UI crashes (for new systems)
+        setStatistics({
+          dashboardStats: [
+            {
+              title: "Dagens ordrer",
+              value: "0",
+              description: "Ordrer modtaget i dag",
+              icon: ShoppingCart,
+              trend: { value: 0, isPositive: true },
+            },
+            {
+              title: "Ugens omsætning",
+              value: "0 kr",
+              description: "Samlet salg denne uge",
+              icon: Banknote, // Use Banknote for Danish currency
+              trend: { value: 0, isPositive: true },
+            },
+            {
+              title: "Nye kunder",
+              value: "0",
+              description: "Nye kunder denne uge",
+              icon: Users,
+              trend: { value: 0, isPositive: true },
+            },
+            {
+              title: "Vækst i salg",
+              value: "0%",
+              description: "Nyt system - ingen sammenligning endnu",
+              icon: TrendingUp,
+              trend: { value: 0, isPositive: true },
+            },
+          ],
+          salesChartData: [],
+          popularProducts: [],
+          orderStatuses: [],
+          recentActivities: []
+        });
       
       toast({
         title: "Advarsel",

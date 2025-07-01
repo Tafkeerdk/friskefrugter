@@ -49,19 +49,21 @@ import OrderSuccess from "./pages/OrderSuccess";
 // Developer-only components
 import { SecureDeveloperRoute } from './components/dev/SecureDeveloperRoute';
 
+// Visitor tracking
+import { useVisitorTracking } from './hooks/useVisitorTracking';
+
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <CartProvider>
-        <BrowserRouter>
-          {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
-          <ScrollToTop smooth={true} delay={0} />
-          <Routes>
+// Main App component with visitor tracking
+const AppContent = () => {
+  // Track visitor page views for analytics
+  useVisitorTracking();
+
+  return (
+    <>
+      {/* 🚀 SCROLL TO TOP FIX - Automatically scrolls to top on all route changes */}
+      <ScrollToTop smooth={true} delay={0} />
+      <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<Products />} />
@@ -430,7 +432,20 @@ const App = () => (
             {/* 404 route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </BrowserRouter>
+    </>
+  );
+};
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <AuthProvider>
+        <CartProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
         </CartProvider>
       </AuthProvider>
     </TooltipProvider>

@@ -2517,6 +2517,34 @@ export const authService = {
     requestCache.clearPattern('.*statistics.*');
   },
 
+  // Track visitor (public endpoint)
+  async trackVisitor(page: string = '/'): Promise<void> {
+    try {
+      // Don't track admin pages or dev pages
+      if (page.includes('/admin') || page.includes('/dev') || page.includes('/super')) {
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/visitor-tracking`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ page })
+      });
+
+      // Don't throw errors for visitor tracking - it's non-critical
+      if (response.ok) {
+        const data = await response.json();
+        console.log('👁️ Visitor tracked:', data);
+      } else {
+        console.warn('⚠️ Visitor tracking failed (non-critical)');
+      }
+    } catch (error) {
+      console.warn('⚠️ Visitor tracking error (non-critical):', error);
+    }
+  },
+
   // Expose apiClient for direct use when needed
   apiClient
 };
