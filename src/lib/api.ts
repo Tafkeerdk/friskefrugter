@@ -451,7 +451,9 @@ class ApiClient {
       return path.replace('/api/products', '/.netlify/functions/products');
     }
     if (pathOnly.startsWith('/api/categories')) {
-      return path.replace('/api/categories', '/.netlify/functions/categories');
+      // Preserve the full path after /api/categories for proper routing
+      const categoryPath = pathOnly.replace('/api/categories', '');
+      return `/.netlify/functions/categories${categoryPath}${queryString}`;
     }
     if (pathOnly.startsWith('/api/units')) {
       return path.replace('/api/units', '/.netlify/functions/units');

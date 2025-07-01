@@ -110,7 +110,9 @@ const getEndpoint = (path: string): string => {
     return `/.netlify/functions/units${queryString}`;
   }
   if (pathOnly.startsWith('/api/categories')) {
-    return `/.netlify/functions/categories${queryString}`;
+    // Preserve the full path after /api/categories for proper routing
+    const categoryPath = pathOnly.replace('/api/categories', '');
+    return `/.netlify/functions/categories${categoryPath}${queryString}`;
   }
   
   // For other routes, use the main API function
