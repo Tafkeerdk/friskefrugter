@@ -7,12 +7,14 @@ interface OrderNumberDisplayProps {
   orderNumber: string;
   className?: string;
   variant?: 'default' | 'compact' | 'large';
+  showFullOnExpand?: boolean; // Legacy prop - now ignored since we use simple format
 }
 
 export function OrderNumberDisplay({ 
   orderNumber, 
   className,
-  variant = 'default'
+  variant = 'default',
+  showFullOnExpand // Legacy prop - ignored in simple format
 }: OrderNumberDisplayProps) {
   const isMobile = useIsMobile();
   const parsed = parseOrderNumber(orderNumber);
