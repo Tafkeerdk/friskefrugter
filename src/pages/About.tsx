@@ -442,7 +442,7 @@ export default function About() {
                     </Button>
                   </Link>
                   <Link to="/contact">
-                    <Button variant="outline" className="border-2 border-white text-white hover:bg-white hover:text-brand-primary px-8 py-3 transform hover:scale-105 transition-all duration-300 font-semibold">
+                    <Button className="border-2 border-white bg-transparent text-white hover:bg-white hover:text-brand-primary px-8 py-3 transform hover:scale-105 transition-all duration-300 font-semibold !text-white">
                       Kontakt os
                     </Button>
                   </Link>
