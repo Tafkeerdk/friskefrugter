@@ -18,7 +18,9 @@ import {
   CheckCircle,
   AlertCircle,
   Star,
-  Package
+  Package,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ProductCard } from "@/components/products/ProductCard";
@@ -28,6 +30,7 @@ import { useCart } from "@/hooks/useCart";
 import { api, handleApiError } from "@/lib/api";
 import { authService } from "@/lib/auth";
 import { cn } from "@/lib/utils";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Types
 interface Unit {
@@ -82,6 +85,10 @@ const ProductDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  
+  // Image gallery states
+  const [isImageGalleryOpen, setIsImageGalleryOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Load product data
   useEffect(() => {
@@ -288,6 +295,24 @@ const ProductDetail = () => {
     return primary?.url || product.billeder[0]?.url || '';
   };
 
+  // Image gallery functions
+  const openImageGallery = (startIndex: number = 0) => {
+    setCurrentImageIndex(startIndex);
+    setIsImageGalleryOpen(true);
+  };
+
+  const nextImage = () => {
+    if (product?.billeder?.length) {
+      setCurrentImageIndex((prev) => (prev + 1) % product.billeder.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (product?.billeder?.length) {
+      setCurrentImageIndex((prev) => (prev - 1 + product.billeder.length) % product.billeder.length);
+    }
+  };
+
   // Get unit display value
   const getUnitDisplay = () => {
     if (!product?.enhed) return '';
@@ -376,38 +401,127 @@ const ProductDetail = () => {
 
           {/* Product Details */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {/* Product Image - IMPROVED PLACEHOLDER LIKE PRODUCTCARD */}
-            <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
-              <div className="relative aspect-square">
-              {getPrimaryImage() ? (
-              <img 
-                  src={getPrimaryImage()} 
-                  alt={product.produktnavn} 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // If image fails to load, replace with placeholder
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      const placeholder = target.nextElementSibling as HTMLElement;
-                      if (placeholder) placeholder.style.display = 'flex';
-                    }}
-              />
-                ) : null}
-                
-                {/* Placeholder - Always present as fallback */}
-                <div 
-                  className={cn(
-                    "absolute inset-0 bg-gray-100 flex flex-col items-center justify-center",
-                    getPrimaryImage() ? "hidden" : "flex"
+            {/* Product Images Section - ENHANCED WITH MULTIPLE IMAGE SUPPORT */}
+            <div className="space-y-4">
+              {/* Main Image Display */}
+              <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+                <div className="relative aspect-square">
+                  {product?.billeder?.length > 0 ? (
+                    <>
+                      <img 
+                        src={product.billeder[currentImageIndex]?.url || getPrimaryImage()} 
+                        alt={product.produktnavn} 
+                        className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
+                        onClick={() => openImageGallery(currentImageIndex)}
+                        onError={(e) => {
+                          // If image fails to load, replace with placeholder
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const placeholder = target.nextElementSibling as HTMLElement;
+                          if (placeholder) placeholder.style.display = 'flex';
+                        }}
+                      />
+                      {/* Fallback placeholder for broken images */}
+                      <div 
+                        className="absolute inset-0 bg-gray-100 flex flex-col items-center justify-center"
+                        style={{ display: 'none' }}
+                      >
+                        <Package className="h-12 w-12 text-gray-400 mb-2" />
+                        <span className="text-gray-500 text-center text-xs px-4 leading-tight font-medium">
+                          Billede ikke tilgængeligt
+                        </span>
+                      </div>
+                      
+                      {/* Image counter badge for multiple images */}
+                      {product.billeder.length > 1 && (
+                        <div className="absolute top-4 right-4 bg-black/70 text-white px-2 py-1 rounded-lg text-sm font-medium">
+                          {currentImageIndex + 1} / {product.billeder.length}
+                        </div>
+                      )}
+                      
+                      {/* Navigation arrows for multiple images */}
+                      {product.billeder.length > 1 && (
+                        <>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              prevImage();
+                            }}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="icon"
+                            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              nextImage();
+                            }}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    /* No images placeholder */
+                    <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
+                      <Package className="h-12 w-12 text-gray-400 mb-2" />
+                      <span className="text-gray-500 text-center text-xs px-4 leading-tight font-medium">
+                        Billede ikke tilgængeligt
+                      </span>
+                    </div>
                   )}
-                  style={{ display: getPrimaryImage() ? 'none' : 'flex' }}
-                >
-                  <Package className="h-12 w-12 text-gray-400 mb-2" />
-                  <span className="text-gray-500 text-center text-xs px-4 leading-tight font-medium">
-                    Billede ikke tilgængeligt
-                  </span>
                 </div>
               </div>
+
+              {/* Image Thumbnails - Only show if multiple images */}
+              {product?.billeder?.length > 1 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {product.billeder.map((image, index) => (
+                    <div
+                      key={image._id || index}
+                      className={cn(
+                        "relative aspect-square rounded-lg overflow-hidden border-2 cursor-pointer transition-all duration-200",
+                        currentImageIndex === index 
+                          ? "border-brand-primary ring-2 ring-brand-primary/20" 
+                          : "border-gray-200 hover:border-brand-primary/50"
+                      )}
+                      onClick={() => setCurrentImageIndex(index)}
+                    >
+                      <img
+                        src={image.url}
+                        alt={`${product.produktnavn} billede ${index + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const placeholder = target.nextElementSibling as HTMLElement;
+                          if (placeholder) placeholder.style.display = 'flex';
+                        }}
+                      />
+                      {/* Thumbnail placeholder */}
+                      <div 
+                        className="absolute inset-0 bg-gray-100 flex items-center justify-center"
+                        style={{ display: 'none' }}
+                      >
+                        <Package className="h-4 w-4 text-gray-400" />
+                      </div>
+                      
+                      {/* Primary image indicator */}
+                      {image.isPrimary && (
+                        <div className="absolute top-1 right-1 bg-brand-primary text-white rounded-full p-1">
+                          <Star className="h-3 w-3 fill-current" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Product Info */}
@@ -737,6 +851,49 @@ const ProductDetail = () => {
             </div>
           </div>
           )}
+
+          {/* Image Gallery Dialog */}
+          <Dialog open={isImageGalleryOpen} onOpenChange={setIsImageGalleryOpen}>
+            <DialogContent className="max-w-4xl">
+              <DialogHeader>
+                <DialogTitle>{product?.produktnavn} - Billeder</DialogTitle>
+              </DialogHeader>
+              <div className="relative">
+                {product?.billeder?.length > 0 && (
+                  <>
+                    <img
+                      src={product.billeder[currentImageIndex]?.url}
+                      alt={`${product.produktnavn} billede ${currentImageIndex + 1}`}
+                      className="w-full object-contain rounded-lg max-h-[70vh]"
+                    />
+                    {product.billeder.length > 1 && (
+                      <>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute left-2 top-1/2 transform -translate-y-1/2"
+                          onClick={prevImage}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="icon"
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                          onClick={nextImage}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                          {currentImageIndex + 1} / {product.billeder.length}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </main>
       <Footer />
