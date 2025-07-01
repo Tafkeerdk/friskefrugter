@@ -550,10 +550,10 @@ const DashboardOrders: React.FC = () => {
                   "border-2 rounded-full text-xs font-medium",
                   isMobile ? "w-8 h-8" : "w-10 h-10",
                   isComplete 
-                    ? STATUS_COLORS[status] 
-                    : "bg-brand-gray-50 text-brand-gray-400 border-brand-gray-200",
+                    ? "bg-blue-600 text-white border-blue-600" 
+                    : "bg-gray-50 text-gray-400 border-gray-200",
                   canProgress && "cursor-pointer hover:scale-110 hover:shadow-md",
-                  isCurrent && "ring-2 ring-brand-primary/30 shadow-md",
+                  isCurrent && "ring-2 ring-blue-300 shadow-md",
                   willSkipSteps && canProgress && "hover:ring-2 hover:ring-yellow-300"
                 )}
                 onClick={() => canProgress && handleStatusUpdate(order, status)}
@@ -565,7 +565,7 @@ const DashboardOrders: React.FC = () => {
               >
                 {getStatusIcon(status)}
                 {isCurrent && (
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full animate-pulse" />
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full animate-pulse" />
                 )}
                 {willSkipSteps && canProgress && (
                   <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" />
@@ -576,8 +576,8 @@ const DashboardOrders: React.FC = () => {
                 <div className={cn(
                   "flex-1 h-0.5 transition-all duration-300",
                   index < currentIndex 
-                    ? "bg-brand-primary" 
-                    : "bg-brand-gray-200"
+                    ? "bg-blue-600" 
+                    : "bg-gray-200"
                 )} />
               )}
             </React.Fragment>

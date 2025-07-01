@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Package, User, Calendar, MapPin, Banknote, FileText, Clock, AlertTriangle, CheckCircle, Truck, Send, ArrowRight, Receipt } from 'lucide-react';
+import { ArrowLeft, Package, User, Calendar, MapPin, Banknote, FileText, Clock, AlertTriangle, CheckCircle, Truck, Send, ArrowRight, Receipt, Box } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -430,10 +430,10 @@ const AdminOrderDetail: React.FC = () => {
                             />
                           ) : null}
                           <div className={cn(
-                            "w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center",
+                            "w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200",
                             item.product.billeder && item.product.billeder.length > 0 ? "hidden" : ""
                           )}>
-                            <Package className="h-6 w-6 text-gray-400" />
+                            <Box className="h-10 w-10 text-gray-500" />
                           </div>
                         </div>
                         <div className="flex-1">
