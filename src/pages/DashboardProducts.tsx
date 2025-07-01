@@ -46,7 +46,9 @@ import {
   List,
   SlidersHorizontal,
   ShoppingCart,
-  Zap
+  Zap,
+  RotateCcw,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -127,16 +129,15 @@ const ProductImage: React.FC<{
   const handleImageError = () => {
     setImageError(true);
     setImageLoading(false);
-    onImageStateChange?.(false); // Image failed to load
+    onImageStateChange?.(false);
   };
 
   const handleImageLoad = () => {
     setImageLoading(false);
     setImageError(false);
-    onImageStateChange?.(true); // Image loaded successfully
+    onImageStateChange?.(true);
   };
 
-  // Notify parent when component mounts with no src or initial error state
   React.useEffect(() => {
     if (!src || imageError) {
       onImageStateChange?.(false);
@@ -189,7 +190,7 @@ const ProductImage: React.FC<{
           "absolute inset-0 flex items-center justify-center bg-gray-100 animate-pulse",
           sizeClasses[size]
         )}>
-          <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
         </div>
       )}
       <img
@@ -225,7 +226,7 @@ const DashboardProducts: React.FC = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [galleryProductName, setGalleryProductName] = useState('');
   
-  // Filter states
+  // Filter states with better initialization
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('kategori') || 'all');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'all');
@@ -238,13 +239,13 @@ const DashboardProducts: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
-  const itemsPerPage = isMobile ? 12 : 20; // Fewer items on mobile for better performance
+  const itemsPerPage = isMobile ? 12 : 20;
 
   // Track image validity for each product
   const [productImageStates, setProductImageStates] = useState<Record<string, boolean>>({});
   
-  // Debounced search for backend filtering
-  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  // Debounced search for backend filtering - improved with proper delay
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
   // Helper function to update product image state
   const updateProductImageState = (productId: string, hasValidImage: boolean) => {
@@ -254,12 +255,25 @@ const DashboardProducts: React.FC = () => {
     }));
   };
 
-  // Debounced search term to prevent race conditions - now using useDebounce hook
+  // Helper function to clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setSelectedCategory('all');
+    setStatusFilter('all');
+    setCurrentPage(1);
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = useMemo(() => {
+    return debouncedSearchTerm !== '' || selectedCategory !== 'all' || statusFilter !== 'all';
+  }, [debouncedSearchTerm, selectedCategory, statusFilter]);
 
   // Load data on component mount and when filters change (with debounced search)
   useEffect(() => {
     loadProducts();
-    loadCategories();
+    if (categories.length === 0) {
+      loadCategories();
+    }
   }, [currentPage, selectedCategory, statusFilter, debouncedSearchTerm]);
 
   // Reset to page 1 when filters change (but not when page changes)
@@ -296,13 +310,6 @@ const DashboardProducts: React.FC = () => {
       if (response.success && response.data) {
         const data = response.data as any;
         const products = data.products || [];
-        
-        console.log('📋 Admin products loaded from backend:', {
-          productsCount: products.length,
-          totalPages: data.pagination?.totalPages || 1,
-          totalProducts: data.pagination?.total || 0,
-          stats: data.stats
-        });
         
         setProducts(products);
         setTotalPages(data.pagination?.totalPages || 1);
@@ -397,15 +404,12 @@ const DashboardProducts: React.FC = () => {
   };
 
   const getStockStatus = (product: Product) => {
-    // Since inventory management is not implemented, all products show "På lager"
-    // This is because they are wholesale products and availability is managed externally
     return { status: 'available', text: 'På lager', variant: 'default' as const };
   };
 
-  // Products are now filtered on backend - no frontend filtering needed
   const filteredProducts = products;
 
-  // Mobile filter section component
+  // Enhanced mobile filter section component with clear button
   const renderMobileFilters = () => (
     <Collapsible open={isFilterOpen} onOpenChange={setIsFilterOpen}>
       <CollapsibleTrigger asChild>
@@ -416,7 +420,9 @@ const DashboardProducts: React.FC = () => {
         >
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="h-4 w-4" />
-            <span className="text-sm font-medium">Filtre og søgning</span>
+            <span className="text-sm font-medium">
+              Filtre og søgning {hasActiveFilters && `(${[debouncedSearchTerm, selectedCategory !== 'all' ? 'kategori' : '', statusFilter !== 'all' ? 'status' : ''].filter(Boolean).length})`}
+            </span>
           </div>
           {isFilterOpen ? <X className="h-4 w-4" /> : <Filter className="h-4 w-4" />}
         </Button>
@@ -428,8 +434,18 @@ const DashboardProducts: React.FC = () => {
             placeholder="Søg produkter..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-12 text-base"
+            className="pl-10 pr-10 h-12 text-base"
           />
+          {searchTerm && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+              onClick={() => setSearchTerm('')}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         <div className="grid grid-cols-1 gap-3">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -456,6 +472,16 @@ const DashboardProducts: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+        {hasActiveFilters && (
+          <Button 
+            variant="outline" 
+            onClick={clearAllFilters}
+            className="w-full h-12"
+          >
+            <RotateCcw className="h-4 w-4 mr-2" />
+            Ryd alle filtre
+          </Button>
+        )}
       </CollapsibleContent>
     </Collapsible>
   );
@@ -508,6 +534,11 @@ const DashboardProducts: React.FC = () => {
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5" />
                 Filtrering og søgning
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-auto">
+                    {[debouncedSearchTerm, selectedCategory !== 'all' ? 'kategori' : '', statusFilter !== 'all' ? 'status' : ''].filter(Boolean).length} aktive filtre
+                  </Badge>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -518,8 +549,18 @@ const DashboardProducts: React.FC = () => {
                     placeholder="Søg efter produktnavn, EAN eller beskrivelse..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                   />
+                  {searchTerm && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                      onClick={() => setSearchTerm('')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -545,6 +586,16 @@ const DashboardProducts: React.FC = () => {
                       <SelectItem value="inactive">Inaktive</SelectItem>
                     </SelectContent>
                   </Select>
+                  {hasActiveFilters && (
+                    <Button 
+                      variant="outline" 
+                      onClick={clearAllFilters}
+                      className="flex items-center gap-2"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Ryd filtre
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -599,11 +650,12 @@ const DashboardProducts: React.FC = () => {
             )}
           </div>
           
-          {/* Results Count */}
+          {/* Results Count with loading indicator */}
           <div className={cn(
-            "text-muted-foreground",
+            "text-muted-foreground flex items-center gap-2",
             isMobile ? "text-sm w-full text-center" : "text-sm"
           )}>
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
             {totalProducts} produkt(er) fundet
           </div>
         </div>
@@ -612,7 +664,7 @@ const DashboardProducts: React.FC = () => {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="flex flex-col items-center gap-4">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
               <p className="text-muted-foreground">Indlæser produkter...</p>
             </div>
           </div>
@@ -622,20 +674,17 @@ const DashboardProducts: React.FC = () => {
               <Package className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">Ingen produkter fundet</h3>
               <p className="text-muted-foreground mb-6 max-w-md">
-                {debouncedSearchTerm || selectedCategory !== 'all' || statusFilter !== 'all' 
+                {hasActiveFilters
                   ? "Ingen produkter matcher dine søgekriterier. Prøv at justere filtrene." 
                   : "Der er endnu ikke tilføjet produkter. Tilføj dit første produkt for at komme i gang."}
               </p>
               <div className="flex gap-2">
-                {(debouncedSearchTerm || selectedCategory !== 'all' || statusFilter !== 'all') && (
+                {hasActiveFilters && (
                   <Button 
                     variant="outline" 
-                    onClick={() => {
-                      setSearchTerm('');
-                      setSelectedCategory('all');
-                      setStatusFilter('all');
-                    }}
+                    onClick={clearAllFilters}
                   >
+                    <RotateCcw className="h-4 w-4 mr-2" />
                     Ryd filtre
                   </Button>
                 )}
@@ -660,17 +709,6 @@ const DashboardProducts: React.FC = () => {
                   const stockInfo = getStockStatus(product);
                   const primaryImage = product.billeder.find(img => img.isPrimary) || product.billeder[0];
                   
-                  // Debug logging
-                  if (product.produktnavn.includes('Champignon') || product.produktnavn.includes('Artiskokker')) {
-                    console.log('Product debug:', {
-                      name: product.produktnavn,
-                      imagesCount: product.billeder.length,
-                      images: product.billeder,
-                      primaryImage: primaryImage,
-                      hasUrl: primaryImage?.url ? 'YES' : 'NO'
-                    });
-                  }
-                  
                   return (
                     <Card key={product._id} className="overflow-hidden h-full hover:shadow-lg transition-shadow">
                       <div 
@@ -683,11 +721,7 @@ const DashboardProducts: React.FC = () => {
                           const imageIsValid = productImageStates[product._id];
                           const hasImages = product.billeder.length > 0;
                           
-                          console.log('Card image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Image valid:', imageIsValid, 'Has images:', hasImages);
-                          
-                          // If no images OR image failed to load, go to edit page
                           if (!hasImages || imageIsValid === false) {
-                            console.log('🔄 Navigating to edit page - no images or image failed to load');
                             toast({
                               title: 'Åbner redigeringsside',
                               description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
@@ -695,7 +729,6 @@ const DashboardProducts: React.FC = () => {
                             });
                             navigate(`/admin/products/edit/${product._id}`);
                           } else {
-                            console.log('🖼️ Opening image gallery - valid image detected');
                             openImageGallery(product, 0);
                           }
                         }}
@@ -791,26 +824,6 @@ const DashboardProducts: React.FC = () => {
                     </Card>
                   );
                 })}
-                {filteredProducts.length === 0 && (
-                  <div className="col-span-full text-center py-12">
-                    <Package className={cn(
-                      "mx-auto text-muted-foreground mb-4",
-                      isMobile ? "h-8 w-8" : "h-12 w-12"
-                    )} />
-                    <h3 className={cn(
-                      "font-medium",
-                      isMobile ? "text-base" : "text-lg"
-                    )}>
-                      Ingen produkter fundet
-                    </h3>
-                    <p className={cn(
-                      "text-muted-foreground",
-                      isMobile ? "text-sm" : "text-base"
-                    )}>
-                      Prøv at justere dine søgekriterier eller tilføj et nyt produkt.
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 
@@ -843,11 +856,7 @@ const DashboardProducts: React.FC = () => {
                                   const imageIsValid = productImageStates[product._id];
                                   const hasImages = product.billeder.length > 0;
                                   
-                                  console.log('Mobile list image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Image valid:', imageIsValid, 'Has images:', hasImages);
-                                  
-                                  // If no images OR image failed to load, go to edit page
                                   if (!hasImages || imageIsValid === false) {
-                                    console.log('🔄 Mobile: Navigating to edit page - no images or image failed to load');
                                     toast({
                                       title: 'Åbner redigeringsside',
                                       description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
@@ -855,7 +864,6 @@ const DashboardProducts: React.FC = () => {
                                     });
                                     navigate(`/admin/products/edit/${product._id}`);
                                   } else {
-                                    console.log('🖼️ Mobile: Opening image gallery - valid image detected');
                                     openImageGallery(product, 0);
                                   }
                                 }}
@@ -949,11 +957,7 @@ const DashboardProducts: React.FC = () => {
                                         const imageIsValid = productImageStates[product._id];
                                         const hasImages = product.billeder.length > 0;
                                         
-                                        console.log('Desktop table image clicked:', product.produktnavn, 'Images:', product.billeder.length, 'Image valid:', imageIsValid, 'Has images:', hasImages);
-                                        
-                                        // If no images OR image failed to load, go to edit page
                                         if (!hasImages || imageIsValid === false) {
-                                          console.log('🔄 Desktop: Navigating to edit page - no images or image failed to load');
                                           toast({
                                             title: 'Åbner redigeringsside',
                                             description: `Åbner redigeringsside for "${product.produktnavn}" hvor du kan uploade billeder`,
@@ -961,7 +965,6 @@ const DashboardProducts: React.FC = () => {
                                           });
                                           navigate(`/admin/products/edit/${product._id}`);
                                         } else {
-                                          console.log('🖼️ Desktop: Opening image gallery - valid image detected');
                                           openImageGallery(product, 0);
                                         }
                                       }}
