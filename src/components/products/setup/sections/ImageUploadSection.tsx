@@ -326,7 +326,7 @@ export const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
             Produktbilleder
           </CardTitle>
           <CardDescription>
-            Upload 1-3 billeder af produktet (JPEG, PNG, WebP - maks. 5MB hver)
+            Upload 1-3 billeder af produktet (valgfrit - JPEG, PNG, WebP - maks. 5MB hver)
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -337,7 +337,6 @@ export const ImageUploadSection: React.FC<ImageUploadSectionProps> = ({
               <FormItem>
                 <FormLabel className="flex items-center gap-2">
                   Billeder
-                  <span className="text-red-500">*</span>
                   <Badge variant="outline" className="ml-2">
                     {field.value?.length || 0}/3
                   </Badge>
