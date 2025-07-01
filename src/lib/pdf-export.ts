@@ -62,14 +62,12 @@ function generateOrdersHTML(
   
   const orderRows = orders.map(order => {
     const parsed = parseOrderNumber(order.orderNumber);
+    const orderDate = new Date(order.placedAt);
     
     return `
       <tr class="order-row">
         <td class="order-number">
-          <div class="sequence-number">#${parsed.sequenceNumber}</div>
-          ${includeTechnicalDetails ? `
-            <div class="technical-number">${order.orderNumber}</div>
-          ` : ''}
+          <div class="sequence-number">${parsed.sequenceNumber}</div>
         </td>
         <td class="customer-info">
           <div class="company-name">${order.customer.companyName}</div>
@@ -77,8 +75,8 @@ function generateOrdersHTML(
           <div class="email">${order.customer.email}</div>
         </td>
         <td class="order-date">
-          <div class="formatted-date">${parsed.formattedDate}</div>
-          <div class="formatted-time">${parsed.formattedTime}</div>
+          <div class="formatted-date">${orderDate.toLocaleDateString('da-DK')}</div>
+          <div class="formatted-time">${orderDate.toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</div>
         </td>
         <td class="status">
           <div class="status-badge status-${order.status}">
