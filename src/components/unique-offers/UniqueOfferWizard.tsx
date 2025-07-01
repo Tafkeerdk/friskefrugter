@@ -187,6 +187,8 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         const customersData = customersResponse.value;
         if (customersData.success) {
           const customerList = customersData.customers?.filter((c: Customer) => c.isActive) || [];
+          console.log('🔍 UniqueOffer: Loaded customers:', customerList.length);
+          console.log('🔍 UniqueOffer: Sample customer data:', customerList.slice(0, 2));
           setCustomers(customerList);
         }
       }
@@ -205,6 +207,8 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         const discountGroupsData = discountGroupsResponse.value;
         if (discountGroupsData.success) {
           const groups = (discountGroupsData.discountGroups as DiscountGroup[]) || [];
+          console.log('🔍 UniqueOffer: Loaded discount groups:', groups.length);
+          console.log('🔍 UniqueOffer: Discount groups data:', groups);
           setDiscountGroups(groups);
         }
       }
@@ -482,6 +486,10 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   const filteredCustomers = useMemo(() => {
     if (!customers.length) return [];
     
+    console.log('🔍 UniqueOffer filtering - Total customers:', customers.length);
+    console.log('🔍 UniqueOffer filtering - selectedDiscountGroup:', selectedDiscountGroup);
+    console.log('🔍 UniqueOffer filtering - customerSearch:', customerSearch);
+    
     const filtered = customers.filter(customer => {
       const matchesSearch = !customerSearch ||
         customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
@@ -491,8 +499,12 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         selectedDiscountGroup === 'all' || 
         customer.discountGroup?._id === selectedDiscountGroup;
       
+      console.log(`🔍 Customer ${customer.companyName}: search=${matchesSearch}, group=${matchesGroup}, discountGroup:`, customer.discountGroup);
+      
       return matchesSearch && matchesGroup;
     });
+
+    console.log('🔍 UniqueOffer filtering - Filtered customers:', filtered.length);
 
     // Sort customers by discount group, then by company name
     return filtered.sort((a, b) => {
