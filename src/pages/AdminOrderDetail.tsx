@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Package, User, Calendar, MapPin, DollarSign, FileText, Clock, AlertTriangle, CheckCircle, Truck, Send } from 'lucide-react';
+import { ArrowLeft, Package, User, Calendar, MapPin, Banknote, FileText, Clock, AlertTriangle, CheckCircle, Truck, Send, ArrowRight, Receipt } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,8 @@ const STATUS_COLORS = {
   'rejected': 'bg-red-100 text-red-800'
 } as const;
 
+const STATUS_PROGRESSION = ['order_placed', 'order_confirmed', 'in_transit', 'delivered', 'invoiced'] as const;
+
 const AdminOrderDetail: React.FC = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
@@ -40,6 +42,7 @@ const AdminOrderDetail: React.FC = () => {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
   useEffect(() => {
     if (!isAdminAuthenticated) {
@@ -93,6 +96,149 @@ const AdminOrderDetail: React.FC = () => {
       hour: '2-digit',
       minute: '2-digit'
     }).format(new Date(date));
+  };
+
+  const handleStatusUpdate = async (targetStatus: string) => {
+    if (!order || isUpdatingStatus) return;
+
+    try {
+      setIsUpdatingStatus(true);
+      
+      const currentIndex = STATUS_PROGRESSION.indexOf(order.status as any);
+      const targetIndex = STATUS_PROGRESSION.indexOf(targetStatus as any);
+      const skippedStatuses = targetIndex > currentIndex + 1 
+        ? STATUS_PROGRESSION.slice(currentIndex + 1, targetIndex)
+        : [];
+
+      const response = await authService.updateOrderStatus(order._id, targetStatus, {
+        skippedStatuses,
+        sendEmailNotification: true
+      });
+
+      if (response.success) {
+        setOrder(prev => prev ? {
+          ...prev,
+          status: targetStatus as Order['status'],
+          statusHistory: [
+            ...(prev.statusHistory || []),
+            {
+              status: targetStatus,
+              timestamp: new Date().toISOString(),
+              notes: `Status opdateret til ${STATUS_LABELS[targetStatus as keyof typeof STATUS_LABELS]}`
+            }
+          ]
+        } : null);
+
+        toast({
+          title: "Status opdateret",
+          description: `Ordre ${order.orderNumber} er nu markeret som ${STATUS_LABELS[targetStatus as keyof typeof STATUS_LABELS]}`,
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke opdatere status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const getCurrentStatusIndex = (status: string) => {
+    return STATUS_PROGRESSION.indexOf(status as any);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'order_placed':
+        return <Clock className="h-4 w-4" />;
+      case 'order_confirmed':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'in_transit':
+        return <Truck className="h-4 w-4" />;
+      case 'delivered':
+        return <Package className="h-4 w-4" />;
+      case 'invoiced':
+        return <Receipt className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  // Status Progression Component
+  const StatusProgression: React.FC = () => {
+    if (!order) return null;
+    
+    const currentIndex = getCurrentStatusIndex(order.status);
+    
+    return (
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ArrowRight className="h-5 w-5" />
+            Status progression
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 py-3">
+            {STATUS_PROGRESSION.map((status, index) => {
+              const isComplete = index <= currentIndex;
+              const isCurrent = index === currentIndex;
+              const canProgress = index > currentIndex && !isUpdatingStatus;
+              const isNext = index === currentIndex + 1;
+              const willSkipSteps = index > currentIndex + 1;
+              
+              return (
+                <React.Fragment key={status}>
+                  <div 
+                    className={cn(
+                      "relative flex items-center justify-center transition-all duration-300",
+                      "border-2 rounded-full text-xs font-medium w-10 h-10",
+                      isComplete 
+                        ? "bg-blue-600 text-white border-blue-600" 
+                        : "bg-gray-50 text-gray-400 border-gray-200",
+                      canProgress && "cursor-pointer hover:scale-110 hover:shadow-md",
+                      isCurrent && "ring-2 ring-blue-300 shadow-md",
+                      willSkipSteps && canProgress && "hover:ring-2 hover:ring-yellow-300"
+                    )}
+                    onClick={() => canProgress && handleStatusUpdate(status)}
+                    title={
+                      canProgress 
+                        ? `${STATUS_LABELS[status]} ${isNext ? '(Næste)' : '(Spring til)'}`
+                        : STATUS_LABELS[status]
+                    }
+                  >
+                    {getStatusIcon(status)}
+                    {isCurrent && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full animate-pulse" />
+                    )}
+                    {willSkipSteps && canProgress && (
+                      <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" />
+                    )}
+                    {isUpdatingStatus && canProgress && (
+                      <div className="absolute inset-0 bg-gray-200 rounded-full animate-pulse" />
+                    )}
+                  </div>
+                  
+                  {index < STATUS_PROGRESSION.length - 1 && (
+                    <div className={cn(
+                      "flex-1 h-0.5 transition-all duration-300",
+                      index < currentIndex 
+                        ? "bg-blue-600" 
+                        : "bg-gray-200"
+                    )} />
+                  )}
+                </React.Fragment>
+              );
+            })}
+          </div>
+          <div className="text-xs text-gray-500 mt-2">
+            Klik på en status for at opdatere ordren. Kunden vil modtage email om ændringen.
+          </div>
+        </CardContent>
+      </Card>
+    );
   };
 
   if (isLoading) {
@@ -194,7 +340,7 @@ const AdminOrderDetail: React.FC = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-green-600" />
+                  <Banknote className="h-5 w-5 text-green-600" />
                   <div>
                     <p className="text-sm font-medium text-gray-600">Total</p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -222,7 +368,7 @@ const AdminOrderDetail: React.FC = () => {
             <Card>
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-orange-600" />
+                  <Banknote className="h-5 w-5 text-orange-600" />
                   <div>
                     <p className="text-sm font-medium text-gray-600">Besparelse</p>
                     <p className="text-2xl font-bold text-gray-900">
@@ -252,6 +398,9 @@ const AdminOrderDetail: React.FC = () => {
             </Card>
           </div>
 
+          {/* Status Progression */}
+          <StatusProgression />
+
           {/* Main Content */}
           <div className="grid gap-6 lg:grid-cols-3">
             {/* Left Column - Order Items & Customer */}
@@ -268,13 +417,25 @@ const AdminOrderDetail: React.FC = () => {
                   <div className="space-y-4">
                     {order.items.map((item, index) => (
                       <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
-                        {item.product.billeder && item.product.billeder.length > 0 && (
-                          <img
-                            src={item.product.billeder[0].url}
-                            alt={item.product.produktnavn}
-                            className="w-16 h-16 object-cover rounded-lg"
-                          />
-                        )}
+                        <div className="w-16 h-16 flex-shrink-0">
+                          {item.product.billeder && item.product.billeder.length > 0 ? (
+                            <img
+                              src={item.product.billeder[0].url}
+                              alt={item.product.produktnavn}
+                              className="w-16 h-16 object-cover rounded-lg"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.nextElementSibling!.classList.remove('hidden');
+                              }}
+                            />
+                          ) : null}
+                          <div className={cn(
+                            "w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center",
+                            item.product.billeder && item.product.billeder.length > 0 ? "hidden" : ""
+                          )}>
+                            <Package className="h-6 w-6 text-gray-400" />
+                          </div>
+                        </div>
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
                             {item.product.produktnavn}
@@ -424,35 +585,44 @@ const AdminOrderDetail: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {order.delivery.expectedDelivery && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Forventet levering:</p>
-                        <p className="text-gray-900">
+                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Calendar className="h-4 w-4 text-blue-600" />
+                          <p className="text-sm font-medium text-blue-900">Forventet levering:</p>
+                        </div>
+                        <p className="text-blue-800 font-medium">
                           {formatDate(order.delivery.expectedDelivery)}
                         </p>
                       </div>
                     )}
                     
                     {order.delivery.deliveryAddress && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Leveringsadresse:</p>
-                        <div className="text-gray-900">
-                          <p>{order.delivery.deliveryAddress.street}</p>
-                          <p>
+                      <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <MapPin className="h-4 w-4 text-green-600" />
+                          <p className="text-sm font-medium text-green-900">Leveringsadresse:</p>
+                        </div>
+                        <div className="text-green-800 font-medium space-y-1">
+                          <p className="text-base">{order.delivery.deliveryAddress.street}</p>
+                          <p className="text-base">
                             {order.delivery.deliveryAddress.postalCode} {order.delivery.deliveryAddress.city}
                           </p>
-                          <p>{order.delivery.deliveryAddress.country}</p>
+                          <p className="text-sm">{order.delivery.deliveryAddress.country}</p>
                         </div>
                       </div>
                     )}
 
                     {order.delivery.courierInfo && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Fragtfirma:</p>
-                        <p className="text-gray-900">{order.delivery.courierInfo.company}</p>
+                      <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Truck className="h-4 w-4 text-purple-600" />
+                          <p className="text-sm font-medium text-purple-900">Fragtfirma:</p>
+                        </div>
+                        <p className="text-purple-800 font-medium">{order.delivery.courierInfo.company}</p>
                         {order.delivery.courierInfo.trackingNumber && (
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-purple-700 mt-1">
                             Sporings nr: {order.delivery.courierInfo.trackingNumber}
                           </p>
                         )}
@@ -460,9 +630,19 @@ const AdminOrderDetail: React.FC = () => {
                     )}
 
                     {order.delivery.deliveryInstructions && (
-                      <div>
-                        <p className="text-sm font-medium text-gray-600">Leveringsinstruktioner:</p>
-                        <p className="text-gray-900">{order.delivery.deliveryInstructions}</p>
+                      <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <div className="flex items-center gap-2 mb-1">
+                          <FileText className="h-4 w-4 text-yellow-600" />
+                          <p className="text-sm font-medium text-yellow-900">Leveringsinstruktioner:</p>
+                        </div>
+                        <p className="text-yellow-800">{order.delivery.deliveryInstructions}</p>
+                      </div>
+                    )}
+
+                    {!order.delivery.deliveryAddress && !order.delivery.expectedDelivery && !order.delivery.courierInfo && !order.delivery.deliveryInstructions && (
+                      <div className="text-center py-4 text-gray-500">
+                        <Truck className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">Ingen leveringsoplysninger tilgængelige</p>
                       </div>
                     )}
                   </div>
