@@ -16,11 +16,11 @@ export default function About() {
             <img 
               src="https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=2000&q=80" 
               alt="Fresh organic vegetables for wholesale" 
-              className="w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover"
               loading="lazy"
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30" />
-            <div className="page-container h-full flex items-center relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-black/60 to-black/30 z-10" />
+            <div className="absolute inset-0 page-container h-full flex items-center z-20">
               <div className="content-width">
                 <div className="max-w-2xl">
                   <h1 className="text-3xl md:text-5xl font-bold text-white mb-6">
@@ -184,8 +184,8 @@ export default function About() {
                 </div>
                 <div>
                   <img 
-                    src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=800&q=80" 
-                    alt="Professional kitchen receiving fresh produce delivery" 
+                    src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=800&q=80" 
+                    alt="Fresh vegetables and fruits for professional kitchens" 
                     className="rounded-xl shadow-lg w-full h-auto"
                     loading="lazy"
                   />
