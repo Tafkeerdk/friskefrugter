@@ -73,6 +73,8 @@ const DashboardStatistics: React.FC = () => {
       const response = await authService.getDetailedStatistics('month');
       
       if (response.success && response.statistics) {
+        console.log('📊 Statistics received:', response.statistics);
+        console.log('📈 Sales chart data:', response.statistics.salesChart);
         setStatistics(response.statistics);
       } else {
         throw new Error(response.message || 'Kunne ikke hente statistikker');
@@ -178,7 +180,7 @@ const DashboardStatistics: React.FC = () => {
                 title="Total Omsætning"
                 value={formatCurrency(statistics.overview.totalRevenue)}
                 trend={{ 
-                  value: Math.abs(statistics.overview.revenueGrowth), 
+                  value: statistics.overview.revenueGrowth, 
                   isPositive: statistics.overview.revenueGrowth >= 0 
                 }}
                 icon={<BarChart3 className="h-4 w-4" />}
@@ -188,7 +190,7 @@ const DashboardStatistics: React.FC = () => {
                 title="Salg i dag"
                 value={statistics.overview.totalOrders.toString()}
                 trend={{ 
-                  value: Math.abs(statistics.overview.orderGrowth), 
+                  value: statistics.overview.orderGrowth, 
                   isPositive: statistics.overview.orderGrowth >= 0 
                 }}
                 icon={<TrendingUp className="h-4 w-4" />}
@@ -198,8 +200,8 @@ const DashboardStatistics: React.FC = () => {
                 title="Besøgende"
                 value={(statistics.overview.totalVisitors || 0).toString()}
                 trend={{ 
-                  value: Math.abs(statistics.overview.visitorGrowth || 0), 
-                  isPositive: (statistics.overview.visitorGrowth || 0) >= 0 
+                  value: statistics.overview.visitorGrowth || -100, 
+                  isPositive: (statistics.overview.visitorGrowth || -100) >= 0 
                 }}
                 icon={<Activity className="h-4 w-4" />}
                 description="Besøgende denne måned"
@@ -208,7 +210,7 @@ const DashboardStatistics: React.FC = () => {
                 title="Nye kunder"
                 value={statistics.overview.newCustomers.toString()}
                 trend={{ 
-                  value: Math.abs(statistics.overview.customerGrowth), 
+                  value: statistics.overview.customerGrowth, 
                   isPositive: statistics.overview.customerGrowth >= 0 
                 }}
                 icon={<Users className="h-4 w-4" />}
@@ -220,19 +222,53 @@ const DashboardStatistics: React.FC = () => {
               <ChartCard
                 title="Omsætning"
                 description="Månedlig omsætning"
-                data={statistics.salesChart.map(item => ({
-                  name: item.name,
-                  revenue: item.sales
-                }))}
+                data={statistics.salesChart && Array.isArray(statistics.salesChart) ? 
+                  statistics.salesChart.map(item => ({
+                    name: item.name || 'Ukendt',
+                    revenue: Math.round(item.sales || 0),
+                    orders: item.orders || 0
+                  })) : 
+                  // Fallback data to show the chart structure
+                  [
+                    { name: 'Ingen data', revenue: 0, orders: 0 }
+                  ]
+                }
                 type="bar"
                 dataKey="revenue"
+                formatYAxis={(value) => {
+                  if (value === 0) return '0';
+                  return `${Math.round(value / 1000)}k`;
+                }}
+                formatTooltip={(value, name) => {
+                  if (name === 'revenue') {
+                    return [formatCurrency(value), 'Omsætning'];
+                  }
+                  if (name === 'orders') {
+                    return [`${value} ordrer`, 'Ordrer'];
+                  }
+                  return [value.toString(), name];
+                }}
               />
               <ChartCard
                 title="Besøgende"
                 description="Månedlige besøgende"
-                data={statistics.visitors?.monthlyChart || []}
+                data={statistics.visitors?.monthlyChart && Array.isArray(statistics.visitors.monthlyChart) ? 
+                  statistics.visitors.monthlyChart : 
+                  [
+                    { name: 'Ingen data', visitors: 0, pageViews: 0 }
+                  ]
+                }
                 type="line"
                 dataKey="visitors"
+                formatTooltip={(value, name) => {
+                  if (name === 'visitors') {
+                    return [`${value} besøgende`, 'Besøgende'];
+                  }
+                  if (name === 'pageViews') {
+                    return [`${value} sidevisninger`, 'Sidevisninger'];
+                  }
+                  return [value.toString(), name];
+                }}
               />
             </div>
           </>

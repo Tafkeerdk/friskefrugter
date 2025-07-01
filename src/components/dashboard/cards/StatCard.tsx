@@ -61,15 +61,23 @@ const StatCard: React.FC<StatCardProps> = ({
                 "mt-2 flex items-center",
                 isMobile ? "text-xs" : "text-xs"
               )}>
-                <span className={cn(
-                  "font-medium",
-                  trend.isPositive ? "text-brand-primary" : "text-red-600"
-                )}>
-                  {trend.isPositive ? "+" : ""}{trend.value}%
-                </span>
-                <span className="ml-1 text-muted-foreground">
-                  {isMobile ? "v. uge" : "siden sidste uge"}
-                </span>
+                {trend.value === -100 ? (
+                  <span className="font-medium text-muted-foreground">
+                    Ingen data at sammenligne med
+                  </span>
+                ) : (
+                  <>
+                    <span className={cn(
+                      "font-medium",
+                      trend.value > 0 ? "text-green-600" : trend.value < 0 ? "text-red-600" : "text-muted-foreground"
+                    )}>
+                      {trend.value > 0 ? "+" : ""}{trend.value}%
+                    </span>
+                    <span className="ml-1 text-muted-foreground">
+                      {isMobile ? "v. periode" : "siden sidste periode"}
+                    </span>
+                  </>
+                )}
               </div>
             )}
           </div>

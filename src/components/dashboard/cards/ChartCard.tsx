@@ -11,6 +11,8 @@ interface ChartCardProps {
   type: "line" | "bar";
   dataKey: string;
   className?: string;
+  formatTooltip?: (value: any, name: string, props: any) => [string, string];
+  formatYAxis?: (value: any) => string;
 }
 
 const ChartCard: React.FC<ChartCardProps> = ({
@@ -20,8 +22,15 @@ const ChartCard: React.FC<ChartCardProps> = ({
   type,
   dataKey,
   className,
+  formatTooltip,
+  formatYAxis,
 }) => {
   const isMobile = useIsMobile();
+  
+  // Ensure data is valid
+  const chartData = Array.isArray(data) && data.length > 0 ? data : [
+    { name: 'Ingen data', [dataKey]: 0 }
+  ];
 
   return (
     <Card className={cn(
@@ -57,7 +66,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
           <ResponsiveContainer width="100%" height="100%">
             {type === "line" ? (
               <LineChart 
-                data={data}
+                data={chartData}
                 margin={
                   isMobile 
                     ? { top: 5, right: 5, left: 5, bottom: 5 }
@@ -81,6 +90,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
                   tick={{ fontSize: isMobile ? 10 : 12 }}
                   axisLine={false}
                   tickLine={false}
+                  tickFormatter={formatYAxis}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -89,6 +99,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
                     borderRadius: '8px',
                     fontSize: isMobile ? '12px' : '14px'
                   }}
+                  formatter={formatTooltip}
                 />
                 <Line
                   type="monotone"
@@ -101,7 +112,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
               </LineChart>
             ) : (
               <BarChart 
-                data={data}
+                data={chartData}
                 margin={
                   isMobile 
                     ? { top: 5, right: 5, left: 5, bottom: 5 }
@@ -125,6 +136,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
                   tick={{ fontSize: isMobile ? 10 : 12 }}
                   axisLine={false}
                   tickLine={false}
+                  tickFormatter={formatYAxis}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -133,6 +145,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
                     borderRadius: '8px',
                     fontSize: isMobile ? '12px' : '14px'
                   }}
+                  formatter={formatTooltip}
                 />
                 <Bar
                   dataKey={dataKey}
