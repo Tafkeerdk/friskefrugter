@@ -92,6 +92,11 @@ const getEndpoint = (path: string): string => {
     return `/.netlify/functions/admin-statistics${queryString}`;
   }
   
+  // Visitor tracking endpoint
+  if (pathOnly.startsWith('/visitor-tracking')) {
+    return `/.netlify/functions/visitor-tracking${queryString}`;
+  }
+  
   // Product and Unit endpoints - route to specific functions for better auth handling
   if (pathOnly.startsWith('/api/products')) {
     return `/.netlify/functions/products${queryString}`;
@@ -2525,7 +2530,8 @@ export const authService = {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/visitor-tracking`, {
+      const endpoint = getEndpoint('/visitor-tracking');
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
