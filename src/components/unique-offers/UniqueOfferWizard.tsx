@@ -482,7 +482,7 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
   const filteredCustomers = useMemo(() => {
     if (!customers.length) return [];
     
-    return customers.filter(customer => {
+    const filtered = customers.filter(customer => {
       const matchesSearch = !customerSearch ||
         customer.companyName.toLowerCase().includes(customerSearch.toLowerCase()) ||
         customer.contactPersonName.toLowerCase().includes(customerSearch.toLowerCase());
@@ -492,6 +492,25 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
         customer.discountGroup?._id === selectedDiscountGroup;
       
       return matchesSearch && matchesGroup;
+    });
+
+    // Sort customers by discount group, then by company name
+    return filtered.sort((a, b) => {
+      // First, sort by discount group presence (customers with discount groups first)
+      const aHasGroup = !!a.discountGroup;
+      const bHasGroup = !!b.discountGroup;
+      
+      if (aHasGroup && !bHasGroup) return -1;
+      if (!aHasGroup && bHasGroup) return 1;
+      
+      // If both have groups, sort by discount group name
+      if (aHasGroup && bHasGroup) {
+        const groupCompare = (a.discountGroup?.name || '').localeCompare(b.discountGroup?.name || '');
+        if (groupCompare !== 0) return groupCompare;
+      }
+      
+      // Finally, sort by company name
+      return a.companyName.localeCompare(b.companyName);
     });
   }, [customers, customerSearch, selectedDiscountGroup]);
 

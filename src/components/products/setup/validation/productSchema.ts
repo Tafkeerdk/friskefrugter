@@ -175,12 +175,15 @@ const billedeSchema = z.object({
   // Indicates if this is an existing image or new upload
   isExisting: z.boolean().optional()
 }).refine((data) => {
-  // Images are completely optional - no validation required if empty
+  // Images are completely optional - always allow empty/undefined images
   if (!data.file && !data.url && !data.isExisting) {
-    return true; // Allow empty images
+    return true; // Allow completely empty images
   }
-  // If image data exists, validate it
-  return (data.isExisting && data.url) || (!data.isExisting && data.file);
+  // Only validate if there's actual data
+  if (data.file || data.url || data.isExisting) {
+    return (data.isExisting && data.url) || (!data.isExisting && data.file);
+  }
+  return true; // Default to allowing empty
 }, {
   message: 'Billede skal enten være en eksisterende fil eller en ny upload',
   path: ['file']
@@ -206,7 +209,7 @@ const billedeSchema = z.object({
   path: ['file']
 });
 
-// Main product setup schema
+// Main product setup schema - images are completely optional
 export const productSetupSchema = z.object({
   produktnavn: produktnavnSchema,
   varenummer: varenummerSchema,
@@ -220,7 +223,16 @@ export const productSetupSchema = z.object({
   billeder: z.array(billedeSchema)
     .max(3, 'Maksimalt 3 billeder er tilladt')
     .optional()
-    .default([]),
+    .default([])
+    .transform((images) => {
+      // Filter out any empty/invalid images to ensure clean data
+      if (!images || !Array.isArray(images)) return [];
+      return images.filter(img => 
+        (img.file && !img.isExisting) || 
+        (img.url && img.isExisting) ||
+        (img._id && img.url)
+      );
+    }),
   aktiv: z.boolean().default(true)
 }).refine((data) => {
   // If discount is enabled with beforePrice, beforePrice must be higher than basispris
@@ -233,7 +245,7 @@ export const productSetupSchema = z.object({
   path: ['discount', 'beforePrice']
 });
 
-// Edit mode schema - billeder field is optional for updates
+// Edit mode schema - billeder field is completely optional for updates
 export const productEditSchema = z.object({
   produktnavn: produktnavnSchema,
   varenummer: varenummerSchema,
@@ -247,7 +259,16 @@ export const productEditSchema = z.object({
   billeder: z.array(billedeSchema)
     .max(3, 'Maksimalt 3 billeder er tilladt')
     .optional()
-    .default([]),
+    .default([])
+    .transform((images) => {
+      // Filter out any empty/invalid images to ensure clean data
+      if (!images || !Array.isArray(images)) return [];
+      return images.filter(img => 
+        (img.file && !img.isExisting) || 
+        (img.url && img.isExisting) ||
+        (img._id && img.url)
+      );
+    }),
   aktiv: z.boolean().default(true)
 }).refine((data) => {
   // If discount is enabled with beforePrice, beforePrice must be higher than basispris

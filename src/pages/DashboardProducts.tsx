@@ -249,20 +249,34 @@ const DashboardProducts: React.FC = () => {
     }));
   };
 
-  // Load data on component mount and when filters change
+  // Debounced search term to prevent race conditions
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState(searchTerm);
+  
+  // Debounce search term changes
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300); // 300ms debounce delay
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
+
+  // Load data on component mount and when filters change (with debounced search)
   useEffect(() => {
     loadProducts();
     loadCategories();
-  }, [currentPage, selectedCategory, statusFilter, searchTerm]);
+  }, [currentPage, selectedCategory, statusFilter, debouncedSearchTerm]);
 
-  // Update URL params when filters change
+  // Update URL params when filters change (with debounced search)
   useEffect(() => {
     const params = new URLSearchParams();
-    if (searchTerm) params.set('search', searchTerm);
+    if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
     if (selectedCategory !== 'all') params.set('kategori', selectedCategory);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     setSearchParams(params);
-  }, [searchTerm, selectedCategory, statusFilter, setSearchParams]);
+  }, [debouncedSearchTerm, selectedCategory, statusFilter, setSearchParams]);
 
   const loadProducts = async () => {
     try {
@@ -272,7 +286,7 @@ const DashboardProducts: React.FC = () => {
         limit: itemsPerPage,
       };
 
-      if (searchTerm) params.search = searchTerm;
+      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
       if (selectedCategory !== 'all') params.kategori = selectedCategory;
       if (statusFilter === 'active') params.aktiv = true;
       if (statusFilter === 'inactive') params.aktiv = false;
@@ -394,10 +408,10 @@ const DashboardProducts: React.FC = () => {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = !searchTerm || 
-      product.produktnavn.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.eanNummer.includes(searchTerm) ||
-      (product.beskrivelse && product.beskrivelse.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = !debouncedSearchTerm || 
+      product.produktnavn.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+      product.eanNummer.includes(debouncedSearchTerm) ||
+      (product.beskrivelse && product.beskrivelse.toLowerCase().includes(debouncedSearchTerm.toLowerCase()));
     
     return matchesSearch;
   });

@@ -75,6 +75,13 @@ interface Product {
     isActive: boolean;
     sortOrder: number;
   };
+  billeder?: Array<{
+    _id?: string;
+    url: string;
+    filename?: string;
+    isPrimary?: boolean;
+    altText?: string;
+  }>;
   aktiv: boolean;
   lagerstyring: {
     enabled: boolean;
@@ -574,6 +581,7 @@ const DashboardCategories: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Billede</TableHead>
                       <TableHead>Produktnavn</TableHead>
                       <TableHead>Pris</TableHead>
                       <TableHead>Enhed</TableHead>
@@ -584,9 +592,34 @@ const DashboardCategories: React.FC = () => {
                   <TableBody>
                     {categoryProducts.map((product) => (
                       <TableRow key={product._id}>
+                        <TableCell>
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center">
+                            {product.billeder && product.billeder.length > 0 ? (
+                              <img
+                                src={product.billeder.find(img => img.isPrimary)?.url || product.billeder[0]?.url}
+                                alt={product.produktnavn}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg></div>';
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <Package className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="font-medium">{product.produktnavn}</TableCell>
                         <TableCell>{formatPrice(product.basispris)}</TableCell>
-                        <TableCell>{product.enhed.label}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">
+                            {product.enhed?.label || product.enhed?.value || 'Ikke angivet'}
+                          </Badge>
+                        </TableCell>
                         <TableCell>
                           {product.lagerstyring.enabled ? (
                             <Badge variant="outline">
