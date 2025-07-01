@@ -486,6 +486,21 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
     });
   }, [products, productSearch, selectedCategory]);
 
+  // Filter categories to only show those that have active products
+  const categoriesWithProducts = useMemo(() => {
+    if (!categories.length || !products.length) return [];
+    
+    // Get unique category IDs from active products
+    const productCategoryIds = new Set(
+      products
+        .filter(product => product.aktiv && product.kategori?._id)
+        .map(product => product.kategori!._id)
+    );
+    
+    // Return only categories that have products
+    return categories.filter(category => productCategoryIds.has(category._id));
+  }, [categories, products]);
+
   const filteredCustomers = useMemo(() => {
     if (!customers.length) return [];
     
@@ -620,8 +635,8 @@ const UniqueOfferWizard: React.FC<UniqueOfferWizardProps> = ({
             <option value="all">Alle kategorier</option>
             {loadingCategories ? (
               <option value="loading" disabled>Indlæser kategorier...</option>
-            ) : categories.length > 0 ? (
-              categories.map(category => (
+            ) : categoriesWithProducts.length > 0 ? (
+              categoriesWithProducts.map(category => (
                 <option key={category._id} value={category._id}>
                   {category.navn}
                 </option>
