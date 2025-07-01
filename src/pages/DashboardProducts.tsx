@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useDebounce } from '@/hooks/useDebounce';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -244,8 +244,18 @@ const DashboardProducts: React.FC = () => {
   // Track image validity for each product
   const [productImageStates, setProductImageStates] = useState<Record<string, boolean>>({});
   
-  // Debounced search for backend filtering - improved with proper delay
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  // Request management - CRITICAL for preventing race conditions
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const lastRequestIdRef = useRef<string>('');
+  const isRequestInFlightRef = useRef<boolean>(false);
+  
+  // Debounced search for backend filtering with proper delay
+  const debouncedSearchTerm = useDebounce(searchTerm, 700); // Increased to 700ms
+  
+  // Track if we're waiting for debounce (user is still typing)
+  const isSearchPending = useMemo(() => {
+    return searchTerm !== debouncedSearchTerm;
+  }, [searchTerm, debouncedSearchTerm]);
 
   // Helper function to update product image state
   const updateProductImageState = (productId: string, hasValidImage: boolean) => {
@@ -268,13 +278,141 @@ const DashboardProducts: React.FC = () => {
     return debouncedSearchTerm !== '' || selectedCategory !== 'all' || statusFilter !== 'all';
   }, [debouncedSearchTerm, selectedCategory, statusFilter]);
 
-  // Load data on component mount and when filters change (with debounced search)
+  // Generate request ID for tracking
+  const generateRequestId = () => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  };
+
+  // Enhanced loadProducts with proper request management
+  const loadProducts = useCallback(async (forceLoad = false) => {
+    // Prevent concurrent requests unless forced
+    if (isRequestInFlightRef.current && !forceLoad) {
+      return;
+    }
+
+    try {
+      // Cancel any existing request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+
+      // Create new abort controller for this request
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      
+      // Generate unique request ID
+      const requestId = generateRequestId();
+      lastRequestIdRef.current = requestId;
+      
+      isRequestInFlightRef.current = true;
+      setLoading(true);
+
+      const params: any = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+
+      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
+      if (selectedCategory !== 'all') params.kategori = selectedCategory;
+      if (statusFilter === 'active') params.aktiv = true;
+      if (statusFilter === 'inactive') params.aktiv = false;
+
+      // Use fetch directly with abort signal for better request management
+      const searchParams = new URLSearchParams();
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          searchParams.append(key, value.toString());
+        }
+      });
+
+      const token = authService.getUser('admin') ? 
+        localStorage.getItem('admin_access_token') : 
+        localStorage.getItem('customer_access_token');
+
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const apiResponse = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-products?${searchParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Session-Type': 'browser',
+          'X-PWA': 'false',
+          'X-Display-Mode': 'browser'
+        },
+        signal: abortController.signal
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error(`HTTP error! status: ${apiResponse.status}`);
+      }
+
+      const response = await apiResponse.json();
+      
+      // Check if this is still the latest request
+      if (lastRequestIdRef.current !== requestId || abortController.signal.aborted) {
+        return; // Ignore outdated response
+      }
+      
+      if (response.success && response.data) {
+        const data = response.data as any;
+        const products = data.products || [];
+        
+        setProducts(products);
+        setTotalPages(data.pagination?.totalPages || 1);
+        setTotalProducts(data.pagination?.total || 0);
+      }
+    } catch (error: any) {
+      // Ignore abort errors (they're expected when cancelling requests)
+      if (error.name === 'AbortError' || error.message?.includes('abort')) {
+        // Optionally show a subtle indication that search was cancelled
+        if (debouncedSearchTerm && debouncedSearchTerm.length > 2) {
+          console.log('🚫 Search request cancelled for:', debouncedSearchTerm);
+        }
+        return;
+      }
+      
+      const apiError = handleApiError(error);
+      toast({
+        title: 'Fejl',
+        description: apiError.message,
+        variant: 'destructive',
+        duration: 5000,
+      });
+    } finally {
+      isRequestInFlightRef.current = false;
+      setLoading(false);
+    }
+  }, [currentPage, itemsPerPage, debouncedSearchTerm, selectedCategory, statusFilter, toast]);
+
+  const loadCategories = async () => {
+    try {
+      const response = await api.getCategories({ 
+        includeProductCount: true,
+        activeOnly: true 
+      });
+      
+      if (response.success && response.data) {
+        setCategories(response.data as Category[]);
+      }
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
+
+  // Load data with proper dependency management
   useEffect(() => {
     loadProducts();
+  }, [loadProducts]);
+
+  // Load categories only once
+  useEffect(() => {
     if (categories.length === 0) {
       loadCategories();
     }
-  }, [currentPage, selectedCategory, statusFilter, debouncedSearchTerm]);
+  }, [categories.length]);
 
   // Reset to page 1 when filters change (but not when page changes)
   useEffect(() => {
@@ -292,56 +430,14 @@ const DashboardProducts: React.FC = () => {
     setSearchParams(params);
   }, [debouncedSearchTerm, selectedCategory, statusFilter, setSearchParams]);
 
-  const loadProducts = async () => {
-    try {
-      setLoading(true);
-      const params: any = {
-        page: currentPage,
-        limit: itemsPerPage,
-      };
-
-      if (debouncedSearchTerm) params.search = debouncedSearchTerm;
-      if (selectedCategory !== 'all') params.kategori = selectedCategory;
-      if (statusFilter === 'active') params.aktiv = true;
-      if (statusFilter === 'inactive') params.aktiv = false;
-
-      const response = await authService.getAdminProducts(params);
-      
-      if (response.success && response.data) {
-        const data = response.data as any;
-        const products = data.products || [];
-        
-        setProducts(products);
-        setTotalPages(data.pagination?.totalPages || 1);
-        setTotalProducts(data.pagination?.total || 0);
+  // Cleanup effect to cancel requests on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
       }
-    } catch (error) {
-      const apiError = handleApiError(error);
-      toast({
-        title: 'Fejl',
-        description: apiError.message,
-        variant: 'destructive',
-        duration: 5000,
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadCategories = async () => {
-    try {
-      const response = await api.getCategories({ 
-        includeProductCount: true,
-        activeOnly: true 
-      });
-      
-      if (response.success && response.data) {
-        setCategories(response.data as Category[]);
-      }
-    } catch (error) {
-      console.error('Failed to load categories:', error);
-    }
-  };
+    };
+  }, []);
 
   const handleDeleteProduct = async () => {
     if (!selectedProduct) return;
@@ -358,7 +454,8 @@ const DashboardProducts: React.FC = () => {
         
         setIsDeleteDialogOpen(false);
         setSelectedProduct(null);
-        loadProducts();
+        // Force reload after delete
+        loadProducts(true);
       }
     } catch (error) {
       const apiError = handleApiError(error);
@@ -429,12 +526,19 @@ const DashboardProducts: React.FC = () => {
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 pb-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          {isSearchPending ? (
+            <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-500 h-4 w-4 animate-spin" />
+          ) : (
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          )}
           <Input
             placeholder="Søg produkter..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 pr-10 h-12 text-base"
+            className={cn(
+              "pl-10 pr-10 h-12 text-base",
+              isSearchPending && "border-amber-300 dark:border-amber-600"
+            )}
           />
           {searchTerm && (
             <Button
@@ -544,12 +648,19 @@ const DashboardProducts: React.FC = () => {
             <CardContent className="space-y-4">
               <div className="flex flex-col gap-4 md:flex-row md:items-center">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  {isSearchPending ? (
+                    <Loader2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-amber-500 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  )}
                   <Input
                     placeholder="Søg efter produktnavn, EAN eller beskrivelse..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-10"
+                    className={cn(
+                      "pl-10 pr-10",
+                      isSearchPending && "border-amber-300 dark:border-amber-600"
+                    )}
                   />
                   {searchTerm && (
                     <Button
@@ -655,8 +766,16 @@ const DashboardProducts: React.FC = () => {
             "text-muted-foreground flex items-center gap-2",
             isMobile ? "text-sm w-full text-center" : "text-sm"
           )}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {totalProducts} produkt(er) fundet
+            {(loading || isSearchPending) && (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            )}
+            {isSearchPending ? (
+              <span className="text-amber-600 dark:text-amber-400">Søger...</span>
+            ) : loading ? (
+              <span>Indlæser...</span>
+            ) : (
+              <span>{totalProducts} produkt(er) fundet</span>
+            )}
           </div>
         </div>
 
