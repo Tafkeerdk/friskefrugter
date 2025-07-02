@@ -7,6 +7,25 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { authService, type Order } from '@/lib/auth';
@@ -43,6 +62,14 @@ const AdminOrderDetail: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  
+  // Delivery date modal state
+  const [deliveryDateDialogOpen, setDeliveryDateDialogOpen] = useState(false);
+  const [targetStatus, setTargetStatus] = useState<string>('');
+  const [skippedStatuses, setSkippedStatuses] = useState<string[]>([]);
+  const [deliveryDate, setDeliveryDate] = useState<string>('tomorrow');
+  const [deliveryTime, setDeliveryTime] = useState<string>('09:00-12:00');
+  const [customDeliveryDate, setCustomDeliveryDate] = useState<string>('');
 
   useEffect(() => {
     if (!isAdminAuthenticated) {
@@ -98,46 +125,151 @@ const AdminOrderDetail: React.FC = () => {
     }).format(new Date(date));
   };
 
-  const handleStatusUpdate = async (targetStatus: string) => {
+  const handleStatusUpdate = async (status: string) => {
     if (!order || isUpdatingStatus) return;
 
+    const currentIndex = STATUS_PROGRESSION.indexOf(order.status as any);
+    const targetIndex = STATUS_PROGRESSION.indexOf(status as any);
+    const skipStatuses = targetIndex > currentIndex + 1 
+      ? STATUS_PROGRESSION.slice(currentIndex + 1, targetIndex)
+      : [];
+
+    // Special handling for "in_transit" (Pakket) status - requires delivery date
+    if (status === 'in_transit') {
+      setTargetStatus(status);
+      setSkippedStatuses(skipStatuses);
+      setDeliveryDate('tomorrow');
+      setDeliveryTime('09:00-12:00');
+      setCustomDeliveryDate('');
+      setDeliveryDateDialogOpen(true);
+      return;
+    }
+
+    // For other statuses, update directly
     try {
       setIsUpdatingStatus(true);
-      
-      const currentIndex = STATUS_PROGRESSION.indexOf(order.status as any);
-      const targetIndex = STATUS_PROGRESSION.indexOf(targetStatus as any);
-      const skippedStatuses = targetIndex > currentIndex + 1 
-        ? STATUS_PROGRESSION.slice(currentIndex + 1, targetIndex)
-        : [];
 
-      const response = await authService.updateOrderStatus(order._id, targetStatus, {
-        skippedStatuses,
+      const response = await authService.updateOrderStatus(order._id, status, {
+        skippedStatuses: skipStatuses,
         sendEmailNotification: true
       });
 
       if (response.success) {
         setOrder(prev => prev ? {
           ...prev,
-          status: targetStatus as Order['status'],
+          status: status as Order['status'],
           statusHistory: [
             ...(prev.statusHistory || []),
             {
-              status: targetStatus,
+              status: status,
               timestamp: new Date().toISOString(),
-              notes: `Status opdateret til ${STATUS_LABELS[targetStatus as keyof typeof STATUS_LABELS]}`
+              notes: `Status opdateret til ${STATUS_LABELS[status as keyof typeof STATUS_LABELS]}`
             }
           ]
         } : null);
 
         toast({
           title: "Status opdateret",
-          description: `Ordre ${order.orderNumber} er nu markeret som ${STATUS_LABELS[targetStatus as keyof typeof STATUS_LABELS]}`,
+          description: `Ordre ${order.orderNumber} er nu markeret som ${STATUS_LABELS[status as keyof typeof STATUS_LABELS]}`,
         });
       }
     } catch (error: any) {
       toast({
         title: "Fejl",
         description: error.message || "Kunne ikke opdatere status",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const updateOrderStatusWithDelivery = async () => {
+    if (!order || !targetStatus) return;
+
+    // Validate delivery information
+    if (deliveryDate === 'custom' && !customDeliveryDate) {
+      toast({
+        title: "Fejl",
+        description: "Vælg venligst en leveringsdato",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUpdatingStatus(true);
+      
+      // Calculate actual delivery date
+      let actualDeliveryDate: Date;
+      if (deliveryDate === 'today') {
+        actualDeliveryDate = new Date();
+      } else if (deliveryDate === 'tomorrow') {
+        actualDeliveryDate = new Date();
+        actualDeliveryDate.setDate(actualDeliveryDate.getDate() + 1);
+      } else if (deliveryDate === 'day_after_tomorrow') {
+        actualDeliveryDate = new Date();
+        actualDeliveryDate.setDate(actualDeliveryDate.getDate() + 2);
+      } else if (deliveryDate === 'custom' && customDeliveryDate) {
+        actualDeliveryDate = new Date(customDeliveryDate);
+      } else {
+        throw new Error('Invalid delivery date selection');
+      }
+
+      // Call backend API with delivery information
+      const response = await authService.updateOrderStatus(order._id, targetStatus, {
+        skippedStatuses: skippedStatuses || [],
+        sendEmailNotification: true,
+        deliveryInfo: {
+          expectedDelivery: actualDeliveryDate.toISOString(),
+          deliveryTimeSlot: deliveryTime,
+          deliveryDate: deliveryDate
+        }
+      });
+
+      if (response.success) {
+        setOrder(prev => prev ? {
+          ...prev,
+          status: targetStatus as Order['status'],
+          delivery: {
+            ...prev.delivery,
+            expectedDelivery: actualDeliveryDate.toISOString(),
+            deliveryTimeSlot: deliveryTime
+          },
+          statusHistory: [
+            ...(prev.statusHistory || []),
+            {
+              status: targetStatus,
+              timestamp: new Date().toISOString(),
+              notes: `Status opdateret til ${STATUS_LABELS[targetStatus as keyof typeof STATUS_LABELS]} med leveringsdato`
+            }
+          ]
+        } : null);
+        
+        // Format delivery info for display
+        const deliveryDateStr = actualDeliveryDate.toLocaleDateString('da-DK', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+        toast({
+          title: "Status opdateret med leveringsdato",
+          description: `Ordre ${order.orderNumber} er nu ${STATUS_LABELS[targetStatus as keyof typeof STATUS_LABELS]}. Leveringsdato: ${deliveryDateStr}, ${deliveryTime}`,
+        });
+
+        setDeliveryDateDialogOpen(false);
+        setTargetStatus('');
+        setSkippedStatuses([]);
+        setDeliveryDate('tomorrow');
+        setDeliveryTime('09:00-12:00');
+        setCustomDeliveryDate('');
+      }
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke opdatere status med leveringsdato",
         variant: "destructive",
       });
     } finally {
@@ -729,6 +861,118 @@ const AdminOrderDetail: React.FC = () => {
         </div>
       </div>
       <Footer />
+
+      {/* Delivery Date Dialog for "Pakket" Status */}
+      <AlertDialog open={deliveryDateDialogOpen} onOpenChange={setDeliveryDateDialogOpen}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-blue-600" />
+              Leveringsdato og tid
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  Indstil leveringsdato og tidsinterval for ordre <strong>{order?.orderNumber}</strong>
+                </p>
+                
+                {skippedStatuses.length > 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                      <span className="font-medium text-yellow-800">Springede steps:</span>
+                    </div>
+                    <div className="text-sm text-yellow-700">
+                      {skippedStatuses.map(status => STATUS_LABELS[status as keyof typeof STATUS_LABELS]).join(' → ')}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery-date" className="text-sm font-medium">
+                      Leveringsdato *
+                    </Label>
+                    <Select value={deliveryDate} onValueChange={setDeliveryDate}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vælg leveringsdato" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="today">I dag</SelectItem>
+                        <SelectItem value="tomorrow">I morgen (standard)</SelectItem>
+                        <SelectItem value="day_after_tomorrow">I overmorgen</SelectItem>
+                        <SelectItem value="custom">Vælg specifik dato</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {deliveryDate === 'custom' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-date" className="text-sm font-medium">
+                        Specifik dato *
+                      </Label>
+                      <Input
+                        id="custom-date"
+                        type="date"
+                        value={customDeliveryDate}
+                        onChange={(e) => setCustomDeliveryDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery-time" className="text-sm font-medium">
+                      Tidsinterval *
+                    </Label>
+                    <Select value={deliveryTime} onValueChange={setDeliveryTime}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Vælg tidsinterval" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="09:00-12:00">09:00-12:00 (standard)</SelectItem>
+                        <SelectItem value="12:00-16:00">12:00-16:00</SelectItem>
+                        <SelectItem value="16:00-20:00">16:00-20:00</SelectItem>
+                        <SelectItem value="09:00-20:00">Hele dagen (09:00-20:00)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <Send className="h-4 w-4" />
+                    <span className="font-medium text-sm">Email notifikation</span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Kunden vil modtage en email med leveringsinformation og opdateret status.
+                  </p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingStatus}>Annuller</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={updateOrderStatusWithDelivery}
+              disabled={isUpdatingStatus || (deliveryDate === 'custom' && !customDeliveryDate)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isUpdatingStatus ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Opdaterer...
+                </>
+              ) : (
+                <>
+                  <Truck className="h-4 w-4 mr-2" />
+                  Opdater med leveringsdato
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

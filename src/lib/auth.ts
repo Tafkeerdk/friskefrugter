@@ -446,6 +446,16 @@ export interface OrderSummary {
   totalAmount: number;
   placedAt: string;
   expectedDelivery?: string;
+  delivery?: {
+    expectedDelivery?: string;
+    deliveredAt?: string;
+    deliveryTimeSlot?: string;
+    estimatedRange?: {
+      earliest: string;
+      latest: string;
+      updatedAt: string;
+    };
+  };
   isInvoiced: boolean;
   invoiceNumber?: string;
   lastUpdated?: string;
@@ -2254,6 +2264,11 @@ export const authService = {
   async updateOrderStatus(orderId: string, newStatus: string, options: {
     skippedStatuses?: string[];
     sendEmailNotification?: boolean;
+    deliveryInfo?: {
+      expectedDelivery?: string;
+      deliveryTimeSlot?: string;
+      deliveryDate?: string;
+    };
   } = {}): Promise<{ 
     success: boolean; 
     message: string; 
