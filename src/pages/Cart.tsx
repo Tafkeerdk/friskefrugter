@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 const Cart: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isCustomerAuthenticated, isLoading: authLoading } = useAuth();
   const { cart, isLoading, error, updateCartItem, removeFromCart, clearCart, refreshCart } = useCart();
   const isMobile = useIsMobile();
   
@@ -35,13 +35,22 @@ const Cart: React.FC = () => {
   // **CRITICAL FIX: 500ms DEBOUNCED AUTO-UPDATE FOR ALL QUANTITY INPUTS**
   const debouncedQuantityInputs = useDebounce(quantityInputs, 500);
 
-  // Check authentication
+  // **CRITICAL AUTH FIX: Check authentication when auth state is ready**
   useEffect(() => {
-    if (!isAuthenticated || !user || user.userType !== 'customer') {
-      navigate('/login');
-      return;
+    if (!authLoading) {
+      console.log('🔄 AUTH STATE READY - Checking cart authentication...', { 
+        authLoading, 
+        isCustomerAuthenticated, 
+        userType: user?.userType 
+      });
+      
+      if (!isCustomerAuthenticated || !user || user.userType !== 'customer') {
+        console.log('🚪 Not authenticated customer - redirecting to login');
+        navigate('/login');
+        return;
+      }
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isCustomerAuthenticated, authLoading, user, navigate]);
 
   // Initialize quantity inputs when cart loads
   useEffect(() => {
@@ -71,6 +80,17 @@ const Cart: React.FC = () => {
       }
     });
   }, [debouncedQuantityInputs, cart?.items]);
+
+  // **CRITICAL FIX: Direct button quantity updates that bypass debouncing**
+  const increaseQuantityDirect = async (productId: string, currentQuantity: number) => {
+    const newQuantity = Math.min(1000, currentQuantity + 1);
+    await updateQuantity(productId, newQuantity);
+  };
+
+  const decreaseQuantityDirect = async (productId: string, currentQuantity: number) => {
+    const newQuantity = Math.max(1, currentQuantity - 1);
+    await updateQuantity(productId, newQuantity);
+  };
 
   const updateQuantity = async (productId: string, newQuantity: number) => {
     try {
@@ -426,7 +446,7 @@ const Cart: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => updateQuantity(product._id, Math.max(1, quantity - 1))}
+                        onClick={() => decreaseQuantityDirect(product._id, quantity)}
                         disabled={isUpdating || quantity <= 1}
                         className="h-10 w-10 p-0 hover:bg-white rounded-md"
                       >
@@ -447,7 +467,7 @@ const Cart: React.FC = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => updateQuantity(product._id, Math.min(1000, quantity + 1))}
+                        onClick={() => increaseQuantityDirect(product._id, quantity)}
                         disabled={isUpdating || quantity >= 1000}
                         className="h-10 w-10 p-0 hover:bg-white rounded-md"
                       >
