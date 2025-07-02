@@ -69,7 +69,7 @@ interface ProductFilters {
 }
 
 const Products = () => {
-  const { user, isAuthenticated, isCustomerAuthenticated } = useAuth();
+  const { user, isAuthenticated, isCustomerAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -144,10 +144,17 @@ const Products = () => {
     }
   }, [searchParams, setSearchParams, categories.length]);
 
-  // Load initial data
+  // **CRITICAL AUTH FIX: Load initial data when auth state is ready**
   useEffect(() => {
-    loadInitialData();
-  }, [isCustomerAuthenticated]);
+    if (!authLoading) {
+      console.log('🔄 AUTH STATE READY - Loading initial data...', { 
+        authLoading, 
+        isCustomerAuthenticated, 
+        userType: user?.userType 
+      });
+      loadInitialData();
+    }
+  }, [isCustomerAuthenticated, authLoading, user?.userType]);
 
   // Load products when filters change - FIXED TO AVOID RACE CONDITION & MULTIPLE CALLS
   useEffect(() => {
@@ -156,7 +163,8 @@ const Products = () => {
     // 2. We're NOT processing a URL search (prevents race condition)
     // 3. This isn't the initial load
     // 4. Not currently loading or loading more
-    if (categories.length > 0 && !isProcessingUrlSearch && !isLoading && !isLoadingMore) {
+    // 5. Auth is ready
+    if (categories.length > 0 && !isProcessingUrlSearch && !isLoading && !isLoadingMore && !authLoading) {
       // CRITICAL: Reset all pagination state BEFORE making API call
       setProducts([]);           // Clear products immediately
       setTotalProducts(0);       // Reset count immediately
@@ -167,7 +175,7 @@ const Products = () => {
       console.log('🔄 Filter change detected - resetting state and loading products');
       loadProducts(true); // Reset to page 1 when filters change
     }
-  }, [filters, isCustomerAuthenticated, categories.length, isProcessingUrlSearch]); // Removed isLoading to prevent infinite loop
+  }, [filters, isCustomerAuthenticated, categories.length, isProcessingUrlSearch, authLoading]);
 
   // Load initial data (categories and customer info)
   const loadInitialData = async () => {
@@ -183,9 +191,10 @@ const Products = () => {
         setCategories(categoriesResponse.data as Category[]);
       }
       
-      // Load customer info if authenticated as customer (not admin)
+      // **CRITICAL FIX: Load customer info if authenticated as customer (not admin)**
       if (isCustomerAuthenticated && user && user.userType === 'customer') {
         try {
+          console.log('🔄 Loading customer profile for authenticated customer...');
           const customerResponse = await authService.getCustomerProfile();
           if (customerResponse.success && customerResponse.customer) {
             // Ensure discount group is properly structured
@@ -204,6 +213,7 @@ const Products = () => {
               };
             }
             setCustomerInfo(customerData);
+            console.log('✅ Customer profile loaded with discount group:', customerData.discountGroup);
           }
         } catch (error) {
           console.warn('Could not load customer profile:', error);
@@ -278,7 +288,10 @@ const Products = () => {
       
       let response;
       
+      // **CRITICAL FIX: Use isCustomerAuthenticated and user type check**
       if (isCustomerAuthenticated && user && user.userType === 'customer') {
+        console.log('💰 Loading CUSTOMER products with pricing and advanced filters');
+        
         // Customer endpoint with advanced filtering
         if (filters.priceRange.min > 0 || filters.priceRange.max < 10000) {
           params.minPrice = filters.priceRange.min;
@@ -309,6 +322,7 @@ const Products = () => {
         
         response = await api.getCustomerProducts(params);
       } else {
+        console.log('📦 Loading PUBLIC products (not authenticated customer)');
         // Public endpoint with limited filtering (used for both non-authenticated users and admins)
         response = await api.getPublicProducts(params);
       }
@@ -473,13 +487,15 @@ const Products = () => {
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900">
               Vores Produkter
             </h1>
-              {isAuthenticated && (
+              {/* **CRITICAL FIX: Use isCustomerAuthenticated** */}
+              {isCustomerAuthenticated && user?.userType === 'customer' && (
                 <Badge variant="default" className="bg-brand-primary">
                   B2B Kunde
                 </Badge>
               )}
             </div>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              {/* **CRITICAL FIX: Use isCustomerAuthenticated** */}
               {isCustomerAuthenticated && user?.userType === 'customer'
                 ? "Professionelle priser og tilbud til din virksomhed"
                 : "Friske råvarer af højeste kvalitet - Log ind for at se priser"
@@ -488,6 +504,7 @@ const Products = () => {
           </div>
 
           {/* Filters */}
+          {/* **CRITICAL FIX: Use isCustomerAuthenticated** */}
           {isCustomerAuthenticated && user?.userType === 'customer' ? (
             <CustomerProductFilters
               search={filters.search}
@@ -511,7 +528,8 @@ const Products = () => {
               onClearFilters={clearFilters}
               categories={categories}
               customerInfo={customerInfo}
-              isLoading={isLoading}
+              isLoading={isLoading || authLoading}
+              className="mb-8"
             />
           ) : (
             <PublicProductFilters
@@ -634,12 +652,13 @@ const Products = () => {
                   id={product._id}
                   name={product.produktnavn}
                   image={getProductImageUrl(product)}
-                  category={product.kategori?.navn || 'Ukategoriserad'}
+                  category={product.kategori.navn}
                   unit={product.enhed}
+                  /* **CRITICAL FIX: Use isCustomerAuthenticated** */
                   isLoggedIn={isCustomerAuthenticated && user?.userType === 'customer'}
                   userType={isCustomerAuthenticated && user?.userType === 'customer' ? 'customer' : 'public'}
-                  price={!(isCustomerAuthenticated && user?.userType === 'customer') ? undefined : product.basispris}
-                  customerPricing={product.customerPricing as any}
+                  price={!isCustomerAuthenticated || user?.userType !== 'customer' ? undefined : product.basispris}
+                  customerPricing={product.customerPricing}
                 />
               ))}
             </div>

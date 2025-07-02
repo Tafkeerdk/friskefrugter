@@ -76,7 +76,7 @@ interface Product {
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isCustomerAuthenticated, isLoading: authLoading } = useAuth();
   const { addToCart } = useCart();
   const { toast } = useToast();
   
@@ -113,19 +113,25 @@ const ProductDetail = () => {
     }
   }, [debouncedQuantityInput, quantity]);
 
-  // Load product data
+  // **CRITICAL AUTH FIX: Load product data when auth state is ready and changes**
   useEffect(() => {
-    if (id) {
-      // Force reload on mount if no product data exists (handles force refresh)
+    if (id && !authLoading) {
+      console.log('🔄 AUTH STATE READY - Loading product data...', { 
+        id, 
+        authLoading, 
+        isCustomerAuthenticated, 
+        userType: user?.userType 
+      });
+      // Force reload when auth state changes (handles force refresh)
       const shouldForceRefresh = !product && !!id;
       loadProductData(shouldForceRefresh);
     }
-  }, [id, isAuthenticated]);
+  }, [id, isCustomerAuthenticated, authLoading, user?.userType]);
   
   // Handle force refresh - refetch data when component mounts without product
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && !product && id) {
+      if (document.visibilityState === 'visible' && !product && id && !authLoading) {
         console.log('🔄 Page became visible without product data, refetching...');
         loadProductData(true);
       }
@@ -133,7 +139,7 @@ const ProductDetail = () => {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [product, id]);
+  }, [product, id, authLoading]);
 
      const loadProductData = async (forceRefresh = false) => {
      if (!id) return;
@@ -142,9 +148,17 @@ const ProductDetail = () => {
        setIsLoading(true);
        setError(null);
        
-       console.log('🔄 Loading product data...', { id, isAuthenticated, forceRefresh });
+       console.log('🔄 Loading product data...', { 
+         id, 
+         isCustomerAuthenticated, 
+         userType: user?.userType,
+         authLoading,
+         forceRefresh 
+       });
        
-       if (!isAuthenticated) {
+       // **CRITICAL FIX: Use isCustomerAuthenticated instead of isAuthenticated**
+       if (!isCustomerAuthenticated || user?.userType !== 'customer') {
+         console.log('📦 Loading PUBLIC product data (not authenticated customer)');
          // For public users, use public endpoint
          const publicResponse = await api.getProduct(id);
          if (publicResponse.success && publicResponse.data) {
@@ -170,7 +184,8 @@ const ProductDetail = () => {
            setError('Produktet blev ikke fundet');
          }
        } else {
-         // For authenticated users, try multiple approaches for robust data fetching
+         console.log('💰 Loading CUSTOMER product data with pricing');
+         // For authenticated CUSTOMER users, try multiple approaches for robust data fetching
          let productData = null;
          
          try {
@@ -184,12 +199,11 @@ const ProductDetail = () => {
              const products = (customerResponse.data as any).products;
              console.log('🔍 Looking for product ID:', id);
              console.log('📦 Available product IDs:', products.map((p: Product) => p._id).slice(0, 10));
-             console.log('🔍 First product enhed:', products[0]?.enhed);
              productData = products.find((p: Product) => p._id === id);
              
              if (productData) {
-               console.log('✅ Found product in customer list:', productData.produktnavn);
-               console.log('🔧 Product enhed:', productData.enhed);
+               console.log('✅ Found product in customer list with pricing:', productData.produktnavn);
+               console.log('💰 Customer pricing:', productData.customerPricing);
              }
            }
          } catch (customerError) {
@@ -203,9 +217,9 @@ const ProductDetail = () => {
              const singleProductResponse = await api.getProduct(id);
              if (singleProductResponse.success && singleProductResponse.data) {
                const fallbackData = singleProductResponse.data as Product;
-               console.log('📦 Fallback product enhed:', fallbackData.enhed);
+               console.log('📦 Fallback product loaded');
                
-               // For authenticated users, create basic customer pricing structure
+               // For authenticated customer users, create basic customer pricing structure
                productData = {
                  ...fallbackData,
                  customerPricing: {
@@ -217,7 +231,7 @@ const ProductDetail = () => {
                    showStrikethrough: false
                  }
                };
-               console.log('✅ Fallback product loaded:', productData.produktnavn);
+               console.log('✅ Fallback product loaded with basic pricing:', productData.produktnavn);
              }
            } catch (fallbackError) {
              console.error('❌ Fallback product fetch failed:', fallbackError);
@@ -254,7 +268,8 @@ const ProductDetail = () => {
 
   const loadRelatedProducts = async (categoryId: string) => {
     try {
-      const response = isAuthenticated 
+      // **CRITICAL FIX: Use isCustomerAuthenticated instead of isAuthenticated**
+      const response = (isCustomerAuthenticated && user?.userType === 'customer')
         ? await api.getCustomerProducts({ kategori: categoryId, limit: 6 })
         : await api.getPublicProducts({ kategori: categoryId, limit: 6 });
       
@@ -289,7 +304,8 @@ const ProductDetail = () => {
   };
 
   const handleAddToCart = async () => {
-    if (!product || !isAuthenticated) return;
+    // **CRITICAL FIX: Use isCustomerAuthenticated instead of isAuthenticated**
+    if (!product || !isCustomerAuthenticated || user?.userType !== 'customer') return;
     
     setIsAddingToCart(true);
     try {
@@ -372,7 +388,8 @@ const ProductDetail = () => {
     }
   };
 
-  if (isLoading) {
+  // **CRITICAL FIX: Show loading state during auth initialization**
+  if (authLoading || isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         <Navbar />
@@ -562,7 +579,7 @@ const ProductDetail = () => {
             <div className="flex flex-col">
               <div className="flex items-center gap-2 mb-2">
                 <Badge variant="secondary">{product.kategori.navn}</Badge>
-                {isAuthenticated && (
+                {isCustomerAuthenticated && (
                   <Badge variant="default" className="bg-brand-primary">
                     B2B Kunde
                   </Badge>
@@ -576,9 +593,9 @@ const ProductDetail = () => {
               )}
               
               {/* Pricing Section - FIXED TO MATCH PRODUCTCARD EXACTLY */}
-              {isAuthenticated ? (
+              {(isCustomerAuthenticated && user?.userType === 'customer') ? (
                 <div className="mb-6">
-                                     {product.customerPricing ? (
+                  {product.customerPricing ? (
                     <div className="space-y-3">
                       {/* Discount Badge - Same as ProductCard */}
                       {product.customerPricing.discountType !== 'none' && product.customerPricing.discountLabel && (
@@ -714,7 +731,7 @@ const ProductDetail = () => {
               </div>
 
               {/* Add to Cart Section */}
-              {isAuthenticated ? (
+              {isCustomerAuthenticated && user?.userType === 'customer' ? (
                 <div className="mt-auto">
                   {/* **SAME ROW: Quantity Selector + Add to Cart Button** */}
                   <div className="flex items-center gap-3 mb-4">
@@ -887,9 +904,9 @@ const ProductDetail = () => {
                     name={relatedProduct.produktnavn}
                     image={relatedProduct.billeder?.find(img => img.isPrimary)?.url || relatedProduct.billeder?.[0]?.url || ''}
                     category={relatedProduct.kategori.navn}
-                    isLoggedIn={isAuthenticated}
-                    userType={isAuthenticated ? 'customer' : 'public'}
-                    price={!isAuthenticated ? undefined : relatedProduct.basispris}
+                    isLoggedIn={isCustomerAuthenticated}
+                    userType={isCustomerAuthenticated ? 'customer' : 'public'}
+                    price={!isCustomerAuthenticated ? undefined : relatedProduct.basispris}
                     customerPricing={relatedProduct.customerPricing as any}
                   />
               ))}
