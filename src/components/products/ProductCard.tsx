@@ -59,55 +59,47 @@ export function ProductCard({
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
-  const [inputChangedManually, setInputChangedManually] = useState(false);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { addToCart } = useCart();
 
-  // **CRITICAL FIX: 500ms DEBOUNCED AUTO-UPDATE ONLY FOR MANUAL INPUT CHANGES**
+  // **FIXED: Simplified debouncing only for input field changes**
   const debouncedQuantityInput = useDebounce(quantityInput, 500);
 
-  // Update quantityInput when quantity changes programmatically (from buttons)
+  // **FIXED: Simple sync - quantity drives quantityInput for button clicks**
   React.useEffect(() => {
-    if (!inputChangedManually) {
-      setQuantityInput(quantity.toString());
-    }
-  }, [quantity, inputChangedManually]);
+    setQuantityInput(quantity.toString());
+  }, [quantity]);
 
-  // **AUTOMATIC UPDATE: Only process debounced input if it was manually changed**
+  // **FIXED: Only process debounced input changes, not button changes**
   React.useEffect(() => {
-    if (inputChangedManually) {
-      const newQuantity = parseInt(debouncedQuantityInput) || 0;
-      const clampedQuantity = Math.max(0, Math.min(1000, newQuantity));
-      
-      if (clampedQuantity !== quantity) {
-        setQuantity(clampedQuantity);
-        setQuantityInput(clampedQuantity.toString());
-      }
-      
-      // Reset manual flag after processing
-      setInputChangedManually(false);
+    const numValue = parseInt(debouncedQuantityInput) || 0;
+    const clampedValue = Math.max(0, Math.min(1000, numValue));
+    
+    // Only update if the input was manually changed (not from button click)
+    if (clampedValue !== quantity && debouncedQuantityInput !== quantity.toString()) {
+      setQuantity(clampedValue);
     }
-  }, [debouncedQuantityInput, inputChangedManually]);
+  }, [debouncedQuantityInput]);
 
-  // **CRITICAL FIX: Button handlers update quantity immediately without debouncing**
+  // **FIXED: Direct button handlers without complex flag system**
   const increaseQuantity = () => {
     const newQuantity = quantity + 1;
     setQuantity(newQuantity);
-    setInputChangedManually(false); // Ensure this is from button, not manual input
+    // quantityInput will be updated by the useEffect above
   };
 
   const decreaseQuantity = () => {
     const newQuantity = Math.max(0, quantity - 1);
     setQuantity(newQuantity);
-    setInputChangedManually(false); // Ensure this is from button, not manual input
+    // quantityInput will be updated by the useEffect above
   };
 
   const handleQuantityInputChange = (value: string) => {
     // Allow only numbers and empty string (for clearing)
     if (value === '' || (/^\d+$/.test(value) && parseInt(value) <= 1000)) {
       setQuantityInput(value);
-      setInputChangedManually(true); // Mark as manual input change
+      // Debouncing will handle the quantity update
     }
   };
 
