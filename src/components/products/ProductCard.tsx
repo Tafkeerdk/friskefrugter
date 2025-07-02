@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ShoppingCart, Minus, Plus, Package, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -52,6 +53,7 @@ export function ProductCard({
   userType = 'public' 
 }: ProductCardProps) {
   const [quantity, setQuantity] = useState(0);
+  const [quantityInput, setQuantityInput] = useState("0");
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -60,12 +62,42 @@ export function ProductCard({
   const { toast } = useToast();
   const { addToCart } = useCart();
 
+  // Update quantityInput when quantity changes programmatically
+  React.useEffect(() => {
+    setQuantityInput(quantity.toString());
+  }, [quantity]);
+
   const increaseQuantity = () => {
-    setQuantity(prev => prev + 1);
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    setQuantityInput(newQuantity.toString());
   };
 
   const decreaseQuantity = () => {
-    setQuantity(prev => Math.max(0, prev - 1));
+    const newQuantity = Math.max(0, quantity - 1);
+    setQuantity(newQuantity);
+    setQuantityInput(newQuantity.toString());
+  };
+
+  const handleQuantityInputChange = (value: string) => {
+    // Allow only numbers and empty string (for clearing)
+    if (value === '' || (/^\d+$/.test(value) && parseInt(value) <= 1000)) {
+      setQuantityInput(value);
+    }
+  };
+
+  const handleQuantityInputBlur = () => {
+    const newQuantity = parseInt(quantityInput) || 0;
+    const clampedQuantity = Math.max(0, Math.min(1000, newQuantity));
+    
+    setQuantity(clampedQuantity);
+    setQuantityInput(clampedQuantity.toString());
+  };
+
+  const handleQuantityInputEnter = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleQuantityInputBlur();
+    }
   };
 
   const handleAddToCart = async () => {
@@ -342,14 +374,14 @@ export function ProductCard({
         <div className="mt-auto pt-3 border-t border-gray-100">
           {isLoggedIn ? (
             <div className="space-y-3">
-              {/* **Quantity Selector - Horizontal layout with larger touch targets** */}
-              <div className="flex items-center justify-center gap-4">
+              {/* **Quantity Selector - Horizontal layout with INPUT FIELD** */}
+              <div className="flex items-center justify-center gap-2">
                 <Button 
                   variant="outline" 
                   size="icon" 
                   className={cn(
                     "rounded-lg border-gray-300 transition-all hover:bg-gray-50",
-                    isMobile ? "h-8 w-8" : "h-9 w-9",
+                    isMobile ? "h-10 w-10" : "h-11 w-11",
                     quantity === 0 
                       ? "opacity-50 cursor-not-allowed" 
                       : "hover:border-brand-primary/40 active:scale-95"
@@ -360,19 +392,28 @@ export function ProductCard({
                   <Minus className="h-4 w-4" />
                 </Button>
                 
-                <span 
-                  className="text-center font-bold text-gray-900 min-w-[2.5rem]"
-                  style={{ fontSize: isMobile ? '16px' : '18px' }}
-                >
-                  {quantity}
-                </span>
+                {/* QUANTITY INPUT FIELD - PRIMARY INPUT METHOD */}
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  value={quantityInput}
+                  onChange={(e) => handleQuantityInputChange(e.target.value)}
+                  onBlur={handleQuantityInputBlur}
+                  onKeyDown={handleQuantityInputEnter}
+                  className={cn(
+                    "text-center font-bold border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary",
+                    isMobile ? "h-10 w-16 text-base" : "h-11 w-20 text-lg"
+                  )}
+                  min="0"
+                  max="1000"
+                />
                 
                 <Button 
                   variant="outline" 
                   size="icon" 
                   className={cn(
                     "rounded-lg border-gray-300 transition-all hover:bg-gray-50 hover:border-brand-primary/40 active:scale-95",
-                    isMobile ? "h-8 w-8" : "h-9 w-9"
+                    isMobile ? "h-10 w-10" : "h-11 w-11"
                   )}
                   onClick={increaseQuantity}
                 >

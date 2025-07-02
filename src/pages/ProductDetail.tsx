@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
@@ -84,11 +85,17 @@ const ProductDetail = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [quantityInput, setQuantityInput] = useState("1");
   const [isAddingToCart, setIsAddingToCart] = useState(false);
   
   // Image gallery states
   const [isImageGalleryOpen, setIsImageGalleryOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  // Update quantityInput when quantity changes programmatically
+  useEffect(() => {
+    setQuantityInput(quantity.toString());
+  }, [quantity]);
 
   // Load product data
   useEffect(() => {
@@ -247,11 +254,36 @@ const ProductDetail = () => {
   };
 
   const increaseQuantity = () => {
-    setQuantity(prev => prev + 1);
+    const newQuantity = quantity + 1;
+    setQuantity(newQuantity);
+    setQuantityInput(newQuantity.toString());
   };
 
   const decreaseQuantity = () => {
-    setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+    const newQuantity = quantity > 1 ? quantity - 1 : 1;
+    setQuantity(newQuantity);
+    setQuantityInput(newQuantity.toString());
+  };
+
+  const handleQuantityInputChange = (value: string) => {
+    // Allow only numbers and empty string (for clearing)
+    if (value === '' || (/^\d+$/.test(value) && parseInt(value) <= 1000)) {
+      setQuantityInput(value);
+    }
+  };
+
+  const handleQuantityInputBlur = () => {
+    const newQuantity = parseInt(quantityInput) || 1;
+    const clampedQuantity = Math.max(1, Math.min(1000, newQuantity));
+    
+    setQuantity(clampedQuantity);
+    setQuantityInput(clampedQuantity.toString());
+  };
+
+  const handleQuantityInputEnter = (event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleQuantityInputBlur();
+    }
   };
 
   const handleAddToCart = async () => {
@@ -684,24 +716,38 @@ const ProductDetail = () => {
                 <div className="mt-auto">
                   {/* **SAME ROW: Quantity Selector + Add to Cart Button** */}
                   <div className="flex items-center gap-3 mb-4">
-                    {/* Quantity Selector */}
-                    <div className="flex items-center border border-gray-300 rounded-md flex-shrink-0">
+                    {/* Quantity Selector - MOBILE-OPTIMIZED WITH INPUT FIELD */}
+                    <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
                       <Button 
                         variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-none" 
+                        size="sm" 
+                        className="h-10 w-10 p-0 hover:bg-white rounded-md" 
                         onClick={decreaseQuantity}
-                        disabled={isAddingToCart}
+                        disabled={isAddingToCart || quantity <= 1}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
-                      <span className="w-10 text-center font-medium">{quantity}</span>
+                      
+                      {/* QUANTITY INPUT FIELD - PRIMARY INPUT METHOD */}
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        value={quantityInput}
+                        onChange={(e) => handleQuantityInputChange(e.target.value)}
+                        onBlur={handleQuantityInputBlur}
+                        onKeyDown={handleQuantityInputEnter}
+                        disabled={isAddingToCart}
+                        className="h-10 w-16 text-center text-sm font-medium border-0 bg-white rounded-md shadow-sm focus:ring-2 focus:ring-brand-primary/20"
+                        min="1"
+                        max="1000"
+                      />
+                      
                       <Button 
                         variant="ghost" 
-                        size="icon" 
-                        className="h-10 w-10 rounded-none" 
+                        size="sm" 
+                        className="h-10 w-10 p-0 hover:bg-white rounded-md" 
                         onClick={increaseQuantity}
-                        disabled={isAddingToCart}
+                        disabled={isAddingToCart || quantity >= 1000}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
