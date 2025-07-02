@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Package, User, Calendar, MapPin, Banknote, FileText, Clock, AlertTriangle, CheckCircle, Truck, Send, ArrowRight, Receipt, Box } from 'lucide-react';
+import { ArrowLeft, Package, User, Calendar, MapPin, Banknote, FileText, Clock, AlertTriangle, CheckCircle, Truck, Send, ArrowRight, Receipt, Box, Edit } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -714,13 +714,47 @@ const AdminOrderDetail: React.FC = () => {
                   <div className="space-y-4">
                     {order.delivery.expectedDelivery && (
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Calendar className="h-4 w-4 text-blue-600" />
-                          <p className="text-sm font-medium text-blue-900">Forventet levering:</p>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-blue-600" />
+                            <p className="text-sm font-medium text-blue-900">Forventet levering:</p>
+                          </div>
+                          {/* Edit button for delivery */}
+                          {!order.delivery.deliveredAt && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                // Add delivery edit functionality here - similar to DashboardOrders
+                                console.log('Edit delivery for order:', order.orderNumber);
+                              }}
+                              className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Rediger
+                            </Button>
+                          )}
                         </div>
-                        <p className="text-blue-800 font-semibold text-lg">
-                          {formatDate(order.delivery.expectedDelivery)}
-                        </p>
+                        <div className="space-y-2">
+                          <p className="text-blue-800 font-semibold text-lg">
+                            {formatDate(order.delivery.expectedDelivery)}
+                          </p>
+                          {/* Show time slot if available */}
+                          {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
+                            <div className="flex items-center gap-2 text-blue-700">
+                              <Clock className="h-4 w-4" />
+                              <p className="text-sm font-medium">
+                                <strong>Tidsinterval:</strong> {order.delivery.deliveryTimeSlot}
+                              </p>
+                            </div>
+                          )}
+                          {/* Show manual delivery indicator */}
+                          {order.delivery.isManuallySet && !order.delivery.deliveredAt && (
+                            <div className="text-xs text-blue-600 opacity-75">
+                              ✓ Manuelt fastsat leveringsdato
+                            </div>
+                          )}
+                        </div>
                         {order.delivery.estimatedRange && (
                           <div className="mt-3 pt-3 border-t border-blue-200">
                             <p className="text-xs font-medium text-blue-700 mb-1">Leveringsinterval:</p>

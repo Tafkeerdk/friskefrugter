@@ -371,6 +371,11 @@ export interface Order {
   delivery: {
     expectedDelivery?: string;
     deliveredAt?: string;
+    deliveryTimeSlot?: string;
+    deliveryDateType?: string;
+    isManuallySet?: boolean;
+    setBy?: string;
+    setAt?: string;
     estimatedRange?: {
       earliest: string;
       latest: string;
