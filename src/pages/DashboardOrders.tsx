@@ -56,13 +56,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -805,20 +799,19 @@ const DashboardOrders: React.FC = () => {
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 lg:flex-shrink-0">
             <div className="flex flex-col sm:flex-row gap-2">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Status filter" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle status</SelectItem>
-                  <SelectItem value="order_placed">Afgivet</SelectItem>
-                  <SelectItem value="order_confirmed">Bekræftet</SelectItem>
-                  <SelectItem value="in_transit">Pakket</SelectItem>
-                  <SelectItem value="delivered">Leveret</SelectItem>
-                  <SelectItem value="invoiced">Faktureret</SelectItem>
-                  <SelectItem value="rejected">Afvist</SelectItem>
-                </SelectContent>
-              </Select>
+                              <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">Alle status</option>
+                  <option value="order_placed">Afgivet</option>
+                  <option value="order_confirmed">Bekræftet</option>
+                  <option value="in_transit">Pakket</option>
+                  <option value="delivered">Leveret</option>
+                  <option value="invoiced">Faktureret</option>
+                  <option value="rejected">Afvist</option>
+                </select>
               
               <Input 
                 placeholder="Søg ordrer..." 
@@ -1388,17 +1381,17 @@ const DashboardOrders: React.FC = () => {
                     <Label htmlFor="delivery-date" className="text-sm font-medium">
                       Leveringsdato *
                     </Label>
-                    <Select value={deliveryDate} onValueChange={setDeliveryDate}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vælg leveringsdato" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="today">I dag</SelectItem>
-                        <SelectItem value="tomorrow">I morgen (standard)</SelectItem>
-                        <SelectItem value="day_after_tomorrow">I overmorgen</SelectItem>
-                        <SelectItem value="custom">Vælg specifik dato</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <select
+                      id="delivery-date"
+                      value={deliveryDate}
+                      onChange={(e) => setDeliveryDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="today">I dag</option>
+                      <option value="tomorrow">I morgen (standard)</option>
+                      <option value="day_after_tomorrow">I overmorgen</option>
+                      <option value="custom">Vælg specifik dato</option>
+                    </select>
                   </div>
 
                   {deliveryDate === 'custom' && (
@@ -1420,17 +1413,17 @@ const DashboardOrders: React.FC = () => {
                     <Label htmlFor="delivery-time" className="text-sm font-medium">
                       Tidsinterval *
                     </Label>
-                    <Select value={deliveryTime} onValueChange={setDeliveryTime}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Vælg tidsinterval" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="09:00-12:00">09:00-12:00 (standard)</SelectItem>
-                        <SelectItem value="12:00-16:00">12:00-16:00</SelectItem>
-                        <SelectItem value="16:00-20:00">16:00-20:00</SelectItem>
-                        <SelectItem value="09:00-20:00">Hele dagen (09:00-20:00)</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <select
+                      id="delivery-time"
+                      value={deliveryTime}
+                      onChange={(e) => setDeliveryTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="09:00-12:00">09:00-12:00 (standard)</option>
+                      <option value="12:00-16:00">12:00-16:00</option>
+                      <option value="16:00-20:00">16:00-20:00</option>
+                      <option value="09:00-20:00">Hele dagen (09:00-20:00)</option>
+                    </select>
                   </div>
                 </div>
 
