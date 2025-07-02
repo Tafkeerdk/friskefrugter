@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDebounce } from "@/hooks/useDebounce";
 import { 
   ArrowLeft, 
   Minus, 
@@ -92,10 +93,25 @@ const ProductDetail = () => {
   const [isImageGalleryOpen, setIsImageGalleryOpen] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
+  // **CRITICAL FIX: 500ms DEBOUNCED AUTO-UPDATE**
+  const debouncedQuantityInput = useDebounce(quantityInput, 500);
+
   // Update quantityInput when quantity changes programmatically
   useEffect(() => {
     setQuantityInput(quantity.toString());
   }, [quantity]);
+
+  // **AUTOMATIC UPDATE: No Enter/blur required - updates after 500ms of no typing**
+  useEffect(() => {
+    const newQuantity = parseInt(debouncedQuantityInput) || 1;
+    const clampedQuantity = Math.max(1, Math.min(1000, newQuantity));
+    
+    // Only update if quantity actually changed
+    if (clampedQuantity !== quantity) {
+      setQuantity(clampedQuantity);
+      setQuantityInput(clampedQuantity.toString());
+    }
+  }, [debouncedQuantityInput, quantity]);
 
   // Load product data
   useEffect(() => {
@@ -269,20 +285,6 @@ const ProductDetail = () => {
     // Allow only numbers and empty string (for clearing)
     if (value === '' || (/^\d+$/.test(value) && parseInt(value) <= 1000)) {
       setQuantityInput(value);
-    }
-  };
-
-  const handleQuantityInputBlur = () => {
-    const newQuantity = parseInt(quantityInput) || 1;
-    const clampedQuantity = Math.max(1, Math.min(1000, newQuantity));
-    
-    setQuantity(clampedQuantity);
-    setQuantityInput(clampedQuantity.toString());
-  };
-
-  const handleQuantityInputEnter = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      handleQuantityInputBlur();
     }
   };
 
@@ -716,7 +718,7 @@ const ProductDetail = () => {
                 <div className="mt-auto">
                   {/* **SAME ROW: Quantity Selector + Add to Cart Button** */}
                   <div className="flex items-center gap-3 mb-4">
-                    {/* Quantity Selector - MOBILE-OPTIMIZED WITH INPUT FIELD */}
+                    {/* Quantity Selector - AUTO-UPDATING WITH 500ms DEBOUNCE */}
                     <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2 border border-gray-200">
                       <Button 
                         variant="ghost" 
@@ -728,18 +730,15 @@ const ProductDetail = () => {
                         <Minus className="h-4 w-4" />
                       </Button>
                       
-                      {/* QUANTITY INPUT FIELD - PRIMARY INPUT METHOD */}
+                      {/* AUTO-UPDATING QUANTITY INPUT FIELD - 500ms debounce */}
                       <Input
                         type="text"
                         inputMode="numeric"
                         value={quantityInput}
                         onChange={(e) => handleQuantityInputChange(e.target.value)}
-                        onBlur={handleQuantityInputBlur}
-                        onKeyDown={handleQuantityInputEnter}
                         disabled={isAddingToCart}
+                        placeholder="1"
                         className="h-10 w-16 text-center text-sm font-medium border-0 bg-white rounded-md shadow-sm focus:ring-2 focus:ring-brand-primary/20"
-                        min="1"
-                        max="1000"
                       />
                       
                       <Button 

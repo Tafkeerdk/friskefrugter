@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface CustomerPricing {
   price: number;
@@ -62,10 +63,25 @@ export function ProductCard({
   const { toast } = useToast();
   const { addToCart } = useCart();
 
+  // **CRITICAL FIX: 500ms DEBOUNCED AUTO-UPDATE**
+  const debouncedQuantityInput = useDebounce(quantityInput, 500);
+
   // Update quantityInput when quantity changes programmatically
   React.useEffect(() => {
     setQuantityInput(quantity.toString());
   }, [quantity]);
+
+  // **AUTOMATIC UPDATE: No Enter/blur required - updates after 500ms of no typing**
+  React.useEffect(() => {
+    const newQuantity = parseInt(debouncedQuantityInput) || 0;
+    const clampedQuantity = Math.max(0, Math.min(1000, newQuantity));
+    
+    // Only update if quantity actually changed
+    if (clampedQuantity !== quantity) {
+      setQuantity(clampedQuantity);
+      setQuantityInput(clampedQuantity.toString());
+    }
+  }, [debouncedQuantityInput, quantity]);
 
   const increaseQuantity = () => {
     const newQuantity = quantity + 1;
@@ -83,20 +99,7 @@ export function ProductCard({
     // Allow only numbers and empty string (for clearing)
     if (value === '' || (/^\d+$/.test(value) && parseInt(value) <= 1000)) {
       setQuantityInput(value);
-    }
-  };
-
-  const handleQuantityInputBlur = () => {
-    const newQuantity = parseInt(quantityInput) || 0;
-    const clampedQuantity = Math.max(0, Math.min(1000, newQuantity));
-    
-    setQuantity(clampedQuantity);
-    setQuantityInput(clampedQuantity.toString());
-  };
-
-  const handleQuantityInputEnter = (event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      handleQuantityInputBlur();
+      // **REMOVED: No more manual blur/enter handling - automatic debounced updates**
     }
   };
 
@@ -374,7 +377,7 @@ export function ProductCard({
         <div className="mt-auto pt-3 border-t border-gray-100">
           {isLoggedIn ? (
             <div className="space-y-3">
-              {/* **Quantity Selector - Horizontal layout with INPUT FIELD** */}
+              {/* **Quantity Selector - Horizontal layout with AUTO-UPDATING INPUT FIELD** */}
               <div className="flex items-center justify-center gap-2">
                 <Button 
                   variant="outline" 
@@ -392,20 +395,17 @@ export function ProductCard({
                   <Minus className="h-4 w-4" />
                 </Button>
                 
-                {/* QUANTITY INPUT FIELD - PRIMARY INPUT METHOD */}
+                {/* AUTO-UPDATING QUANTITY INPUT FIELD - 500ms debounce */}
                 <Input
                   type="text"
                   inputMode="numeric"
                   value={quantityInput}
                   onChange={(e) => handleQuantityInputChange(e.target.value)}
-                  onBlur={handleQuantityInputBlur}
-                  onKeyDown={handleQuantityInputEnter}
+                  placeholder="0"
                   className={cn(
                     "text-center font-bold border-gray-300 bg-white rounded-lg focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary",
                     isMobile ? "h-10 w-16 text-base" : "h-11 w-20 text-lg"
                   )}
-                  min="0"
-                  max="1000"
                 />
                 
                 <Button 

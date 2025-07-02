@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { useDebounce } from '@/hooks/useDebounce';
 import { CartItem, Cart as CartType, authService, PlaceOrderRequest } from '@/lib/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useCart } from '@/hooks/useCart';
@@ -31,6 +32,9 @@ const Cart: React.FC = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
 
+  // **CRITICAL FIX: 500ms DEBOUNCED AUTO-UPDATE FOR ALL QUANTITY INPUTS**
+  const debouncedQuantityInputs = useDebounce(quantityInputs, 500);
+
   // Check authentication
   useEffect(() => {
     if (!isAuthenticated || !user || user.userType !== 'customer') {
@@ -49,6 +53,24 @@ const Cart: React.FC = () => {
       setQuantityInputs(initialInputs);
     }
   }, [cart?.items]);
+
+  // **AUTOMATIC UPDATE: Process debounced quantity changes**
+  useEffect(() => {
+    if (!cart?.items) return;
+    
+    // Check each debounced input against current cart quantities
+    Object.entries(debouncedQuantityInputs).forEach(([productId, inputValue]) => {
+      const newQuantity = parseInt(inputValue) || 1;
+      const clampedQuantity = Math.max(1, Math.min(1000, newQuantity));
+      
+      // Find current cart item
+      const currentItem = cart.items.find(item => item.product._id === productId);
+      if (currentItem && clampedQuantity !== currentItem.quantity) {
+        // Update quantity automatically
+        updateQuantity(productId, clampedQuantity);
+      }
+    });
+  }, [debouncedQuantityInputs, cart?.items]);
 
   const updateQuantity = async (productId: string, newQuantity: number) => {
     try {
@@ -92,30 +114,7 @@ const Cart: React.FC = () => {
         ...prev,
         [productId]: value
       }));
-    }
-  };
-
-  const handleQuantityInputBlur = (productId: string) => {
-    const inputValue = quantityInputs[productId];
-    const newQuantity = parseInt(inputValue) || 1;
-    const clampedQuantity = Math.max(1, Math.min(1000, newQuantity));
-    
-    // Update the input to show the clamped value
-    setQuantityInputs(prev => ({
-      ...prev,
-      [productId]: clampedQuantity.toString()
-    }));
-    
-    // Only update if quantity actually changed
-    const currentQuantity = cart?.items.find(item => item.product._id === productId)?.quantity || 1;
-    if (clampedQuantity !== currentQuantity) {
-      updateQuantity(productId, clampedQuantity);
-    }
-  };
-
-  const handleQuantityInputEnter = (productId: string, event: React.KeyboardEvent) => {
-    if (event.key === 'Enter') {
-      handleQuantityInputBlur(productId);
+      // **REMOVED: No more manual blur/enter handling - automatic debounced updates**
     }
   };
 
@@ -434,15 +433,14 @@ const Cart: React.FC = () => {
                         <Minus className="w-4 h-4" />
                       </Button>
                       
-                      {/* ADDED: Input field for quantity */}
+                      {/* AUTO-UPDATING QUANTITY INPUT FIELD - 500ms debounce */}
                       <Input
                         type="text"
                         inputMode="numeric"
                         value={quantityInputs[product._id] || quantity.toString()}
                         onChange={(e) => handleQuantityInputChange(product._id, e.target.value)}
-                        onBlur={() => handleQuantityInputBlur(product._id)}
-                        onKeyDown={(e) => handleQuantityInputEnter(product._id, e)}
                         disabled={isUpdating}
+                        placeholder="1"
                         className="h-10 w-16 text-center text-sm font-medium border-0 bg-white rounded-md shadow-sm focus:ring-2 focus:ring-brand-primary/20"
                       />
                       
