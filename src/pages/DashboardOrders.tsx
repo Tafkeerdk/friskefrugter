@@ -18,7 +18,8 @@ import {
   ChevronRight,
   FileText,
   Zap,
-  TrendingUp
+  TrendingUp,
+  Edit
 } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
@@ -158,6 +159,13 @@ const DashboardOrders: React.FC = () => {
   const [deliveryDate, setDeliveryDate] = useState<string>('tomorrow');
   const [deliveryTime, setDeliveryTime] = useState<string>('09:00-12:00');
   const [customDeliveryDate, setCustomDeliveryDate] = useState<string>('');
+
+  // NEW: Delivery edit state (for standalone delivery updates)
+  const [deliveryEditDialogOpen, setDeliveryEditDialogOpen] = useState(false);
+  const [isUpdatingDelivery, setIsUpdatingDelivery] = useState(false);
+  const [editDeliveryDate, setEditDeliveryDate] = useState<string>('tomorrow');
+  const [editDeliveryTime, setEditDeliveryTime] = useState<string>('09:00-12:00');
+  const [editCustomDeliveryDate, setEditCustomDeliveryDate] = useState<string>('');
 
   // Determine if we're in admin or customer context
   const isAdminContext = isAdminAuthenticated && location.pathname.includes('/admin');
@@ -406,6 +414,126 @@ const DashboardOrders: React.FC = () => {
       });
     } finally {
       setIsProcessingStatusUpdate(false);
+    }
+  };
+
+  // NEW: Handle standalone delivery edit
+  const handleDeliveryEdit = (order: OrderSummary) => {
+    setSelectedOrder(order);
+    
+    // Pre-fill with existing delivery info if available
+    if (order.delivery?.deliveryTimeSlot) {
+      setEditDeliveryTime(order.delivery.deliveryTimeSlot);
+    } else {
+      setEditDeliveryTime('09:00-12:00');
+    }
+    
+    if (order.delivery?.expectedDelivery) {
+      // Determine delivery date type based on existing date
+      const existingDate = new Date(order.delivery.expectedDelivery);
+      const today = new Date();
+      const tomorrow = new Date(today);
+      tomorrow.setDate(today.getDate() + 1);
+      const dayAfter = new Date(today);
+      dayAfter.setDate(today.getDate() + 2);
+      
+      // Compare dates (ignore time)
+      const existingDateStr = existingDate.toDateString();
+      const todayStr = today.toDateString();
+      const tomorrowStr = tomorrow.toDateString();
+      const dayAfterStr = dayAfter.toDateString();
+      
+      if (existingDateStr === todayStr) {
+        setEditDeliveryDate('today');
+      } else if (existingDateStr === tomorrowStr) {
+        setEditDeliveryDate('tomorrow');
+      } else if (existingDateStr === dayAfterStr) {
+        setEditDeliveryDate('day_after_tomorrow');
+      } else {
+        setEditDeliveryDate('custom');
+        setEditCustomDeliveryDate(existingDate.toISOString().split('T')[0]);
+      }
+    } else {
+      setEditDeliveryDate('tomorrow');
+      setEditCustomDeliveryDate('');
+    }
+    
+    setDeliveryEditDialogOpen(true);
+  };
+
+  // NEW: Update delivery information standalone
+  const updateDeliveryInfo = async () => {
+    if (!selectedOrder) return;
+
+    // Validate delivery information
+    if (editDeliveryDate === 'custom' && !editCustomDeliveryDate) {
+      toast({
+        title: "Fejl",
+        description: "Vælg venligst en leveringsdato",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsUpdatingDelivery(true);
+      
+      // Call the new delivery update API
+      const response = await authService.updateOrderDelivery(selectedOrder._id, {
+        deliveryDateType: editDeliveryDate as any,
+        customDeliveryDate: editDeliveryDate === 'custom' ? editCustomDeliveryDate : undefined,
+        deliveryTimeSlot: editDeliveryTime as any,
+        reason: 'Delivery information updated from admin interface'
+      });
+      
+      // Format delivery info for display
+      const deliveryDateStr = new Date(response.newDelivery.expectedDelivery).toLocaleDateString('da-DK', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      let description = `Leveringsinformation er opdateret for ordre ${selectedOrder.orderNumber}`;
+      description += `\n\nNy leveringsdato: ${deliveryDateStr}`;
+      description += `\nNyt tidsinterval: ${response.newDelivery.deliveryTimeSlot}`;
+      description += `\n\nKunden har modtaget email med den opdaterede leveringsinformation.`;
+
+      toast({
+        title: "Leveringsinformation opdateret",
+        description,
+      });
+
+      // Update local state with the response data
+      setAdminOrders(prev => prev.map(order => 
+        order._id === selectedOrder._id 
+          ? { 
+              ...order, 
+              lastUpdated: response.order.lastUpdated,
+              delivery: {
+                ...order.delivery,
+                expectedDelivery: response.newDelivery.expectedDelivery,
+                deliveryTimeSlot: response.newDelivery.deliveryTimeSlot,
+                deliveryDateType: response.newDelivery.deliveryDateType,
+                isManuallySet: true
+              }
+            }
+          : order
+      ));
+
+      setDeliveryEditDialogOpen(false);
+      setSelectedOrder(null);
+      setEditDeliveryDate('tomorrow');
+      setEditDeliveryTime('09:00-12:00');
+      setEditCustomDeliveryDate('');
+    } catch (error: any) {
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke opdatere leveringsinformation",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingDelivery(false);
     }
   };
 
@@ -971,23 +1099,51 @@ const DashboardOrders: React.FC = () => {
                         {/* Delivery Date Information */}
                         {(order.delivery?.expectedDelivery || order.delivery?.deliveredAt) && (
                           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Calendar className="h-4 w-4 text-blue-600" />
-                              <span className="text-sm font-medium text-blue-900">
-                                {order.delivery.deliveredAt ? 'Leveret:' : 'Forventet levering:'}
-                              </span>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-blue-600" />
+                                <span className="text-sm font-medium text-blue-900">
+                                  {order.delivery.deliveredAt ? 'Leveret:' : 'Forventet levering:'}
+                                </span>
+                              </div>
+                              {/* Edit button for admins */}
+                              {isAdminContext && !order.delivery.deliveredAt && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleDeliveryEdit(order)}
+                                  className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+                                >
+                                  <Edit className="h-3 w-3 mr-1" />
+                                  Rediger
+                                </Button>
+                              )}
                             </div>
-                            <p className="text-blue-800 font-medium">
-                              {order.delivery.deliveredAt 
-                                ? formatDate(order.delivery.deliveredAt)
-                                : formatDate(order.delivery.expectedDelivery!)
-                              }
-                            </p>
+                            <div className="space-y-1">
+                              <p className="text-blue-800 font-medium">
+                                {order.delivery.deliveredAt 
+                                  ? formatDate(order.delivery.deliveredAt)
+                                  : formatDate(order.delivery.expectedDelivery!)
+                                }
+                              </p>
+                              {/* Show time slot if available */}
+                              {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
+                                <p className="text-sm text-blue-700">
+                                  <strong>Tidsinterval:</strong> {order.delivery.deliveryTimeSlot}
+                                </p>
+                              )}
+                            </div>
                             {!order.delivery.deliveredAt && order.delivery.estimatedRange && (
-                              <div className="flex items-center gap-2 mt-1 text-xs text-blue-700">
+                              <div className="flex items-center gap-2 mt-2 text-xs text-blue-700">
                                 <span>📦 {new Date(order.delivery.estimatedRange.earliest).toLocaleDateString('da-DK', { month: 'short', day: 'numeric' })}</span>
                                 <span>-</span>
                                 <span>🚚 {new Date(order.delivery.estimatedRange.latest).toLocaleDateString('da-DK', { month: 'short', day: 'numeric' })}</span>
+                              </div>
+                            )}
+                            {/* Show manual delivery indicator */}
+                            {order.delivery.isManuallySet && !order.delivery.deliveredAt && (
+                              <div className="mt-2 text-xs text-blue-600 opacity-75">
+                                ✓ Manuelt fastsat leveringsdato
                               </div>
                             )}
                           </div>
@@ -1455,6 +1611,119 @@ const DashboardOrders: React.FC = () => {
                 <>
                   <Truck className="h-4 w-4 mr-2" />
                   Opdater med leveringsdato
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* NEW: Standalone Delivery Edit Dialog */}
+      <AlertDialog open={deliveryEditDialogOpen} onOpenChange={setDeliveryEditDialogOpen}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-blue-600" />
+              Rediger leveringsinformation
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  Opdater leveringsdato og tidsinterval for ordre <strong>{selectedOrder?.orderNumber}</strong>
+                </p>
+                
+                {/* Current delivery info display */}
+                {selectedOrder?.delivery?.expectedDelivery && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Nuværende leveringsinformation:</h4>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <p><strong>Dato:</strong> {formatDate(selectedOrder.delivery.expectedDelivery)}</p>
+                      {selectedOrder.delivery.deliveryTimeSlot && (
+                        <p><strong>Tidsinterval:</strong> {selectedOrder.delivery.deliveryTimeSlot}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-delivery-date" className="text-sm font-medium">
+                      Ny leveringsdato *
+                    </Label>
+                    <select
+                      id="edit-delivery-date"
+                      value={editDeliveryDate}
+                      onChange={(e) => setEditDeliveryDate(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="today">I dag</option>
+                      <option value="tomorrow">I morgen</option>
+                      <option value="day_after_tomorrow">I overmorgen</option>
+                      <option value="custom">Vælg specifik dato</option>
+                    </select>
+                  </div>
+
+                  {editDeliveryDate === 'custom' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-custom-date" className="text-sm font-medium">
+                        Specifik dato *
+                      </Label>
+                      <Input
+                        id="edit-custom-date"
+                        type="date"
+                        value={editCustomDeliveryDate}
+                        onChange={(e) => setEditCustomDeliveryDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                      />
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-delivery-time" className="text-sm font-medium">
+                      Nyt tidsinterval *
+                    </Label>
+                    <select
+                      id="edit-delivery-time"
+                      value={editDeliveryTime}
+                      onChange={(e) => setEditDeliveryTime(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="09:00-12:00">09:00-12:00</option>
+                      <option value="12:00-16:00">12:00-16:00</option>
+                      <option value="16:00-20:00">16:00-20:00</option>
+                      <option value="09:00-20:00">Hele dagen (09:00-20:00)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <Send className="h-4 w-4" />
+                    <span className="font-medium text-sm">Email notifikation</span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Kunden vil modtage en email med den opdaterede leveringsinformation.
+                  </p>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingDelivery}>Annuller</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={updateDeliveryInfo}
+              disabled={isUpdatingDelivery || (editDeliveryDate === 'custom' && !editCustomDeliveryDate)}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {isUpdatingDelivery ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Opdaterer...
+                </>
+              ) : (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  Opdater leveringsinformation
                 </>
               )}
             </AlertDialogAction>

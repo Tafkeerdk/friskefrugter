@@ -2334,26 +2334,67 @@ export const authService = {
     return data;
   },
 
+  /**
+   * Update delivery information for an order (NEW API)
+   */
   async updateOrderDelivery(orderId: string, deliveryInfo: {
-    expectedDelivery?: string;
-    deliveryInstructions?: string;
-    courierInfo?: {
-      company?: string;
-      trackingNumber?: string;
-      trackingUrl?: string;
+    deliveryDateType: 'today' | 'tomorrow' | 'day_after_tomorrow' | 'custom';
+    customDeliveryDate?: string;
+    deliveryTimeSlot: '09:00-12:00' | '12:00-16:00' | '16:00-20:00' | '09:00-20:00';
+    reason?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    order: {
+      _id: string;
+      orderNumber: string;
+      status: string;
+      delivery: {
+        expectedDelivery: string;
+        deliveryTimeSlot: string;
+        deliveryDateType: string;
+        isManuallySet: boolean;
+        setBy: string;
+        setAt: string;
+        estimatedRange: {
+          earliest: string;
+          latest: string;
+          updatedAt: string;
+        };
+      };
+      lastUpdated: string;
     };
-  }): Promise<{ success: boolean; message: string; delivery?: any }> {
-    const response = await apiClient.put(`${getEndpoint('/api/auth/admin/orders')}?orderId=${orderId}`, {
-      deliveryInfo
+    previousDelivery: {
+      expectedDelivery?: string;
+      deliveryTimeSlot?: string;
+      deliveryDateType?: string;
+    } | null;
+    newDelivery: {
+      expectedDelivery: string;
+      deliveryTimeSlot: string;
+      deliveryDateType: string;
+    };
+    emailSent: boolean;
+    updatedBy: {
+      id: string;
+      name: string;
+    };
+  }> {
+    const response = await apiClient.post(getEndpoint('/admin-order-delivery-update'), {
+      orderId,
+      ...deliveryInfo
     });
-    const result = await response.json();
     
-    // Clear order cache on successful update
-    if (result.success) {
-      requestCache.clearPattern('.*orders.*');
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update delivery information');
     }
-    
-    return result;
+
+    // Clear order cache after successful update
+    requestCache.clearPattern('.*orders.*');
+
+    return data;
   },
 
   async sendInvoice(orderId: string): Promise<{ 
