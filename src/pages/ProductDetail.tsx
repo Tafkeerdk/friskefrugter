@@ -112,13 +112,20 @@ const ProductDetail = () => {
       
       if (clampedQuantity !== quantity) {
         setQuantity(clampedQuantity);
-        setQuantityInput(clampedQuantity.toString());
+        // Don't update quantityInput here - let user see their typed value
       }
       
-      // Reset manual flag after processing
-      setInputChangedManually(false);
+      // Reset manual flag after a longer delay to prevent input override
+      setTimeout(() => setInputChangedManually(false), 100);
     }
-  }, [debouncedQuantityInput, inputChangedManually]);
+  }, [debouncedQuantityInput, inputChangedManually, quantity]);
+
+  // **SYNC INPUT FIELD: After debounce processing, sync input to show final value**
+  useEffect(() => {
+    if (!inputChangedManually && quantityInput !== quantity.toString()) {
+      setQuantityInput(quantity.toString());
+    }
+  }, [inputChangedManually, quantity, quantityInput]);
 
   // **CRITICAL FIX: Button handlers update quantity immediately without debouncing**
   const increaseQuantity = () => {
