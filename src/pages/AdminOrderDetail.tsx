@@ -587,14 +587,27 @@ const AdminOrderDetail: React.FC = () => {
                 <CardContent>
                   <div className="space-y-4">
                     {order.delivery.expectedDelivery && (
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="flex items-center gap-2 mb-1">
+                      <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <div className="flex items-center gap-2 mb-2">
                           <Calendar className="h-4 w-4 text-blue-600" />
                           <p className="text-sm font-medium text-blue-900">Forventet levering:</p>
                         </div>
-                        <p className="text-blue-800 font-medium">
+                        <p className="text-blue-800 font-semibold text-lg">
                           {formatDate(order.delivery.expectedDelivery)}
                         </p>
+                        {order.delivery.estimatedRange && (
+                          <div className="mt-3 pt-3 border-t border-blue-200">
+                            <p className="text-xs font-medium text-blue-700 mb-1">Leveringsinterval:</p>
+                            <div className="flex items-center gap-2 text-sm text-blue-700">
+                              <span>📦 Tidligst: {new Date(order.delivery.estimatedRange.earliest).toLocaleDateString('da-DK', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                              <span className="text-blue-500">•</span>
+                              <span>🚚 Senest: {new Date(order.delivery.estimatedRange.latest).toLocaleDateString('da-DK', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                            </div>
+                            <p className="text-xs text-blue-600 mt-1 opacity-75">
+                              Opdateret: {new Date(order.delivery.estimatedRange.updatedAt).toLocaleDateString('da-DK')} kl. {new Date(order.delivery.estimatedRange.updatedAt).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                     

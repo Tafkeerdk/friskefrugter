@@ -854,6 +854,31 @@ const DashboardOrders: React.FC = () => {
                           </span>
                         </div>
                         <StatusProgression order={order} />
+                        
+                        {/* Delivery Date Information */}
+                        {(order.delivery?.expectedDelivery || order.delivery?.deliveredAt) && (
+                          <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Calendar className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium text-blue-900">
+                                {order.delivery.deliveredAt ? 'Leveret:' : 'Forventet levering:'}
+                              </span>
+                            </div>
+                            <p className="text-blue-800 font-medium">
+                              {order.delivery.deliveredAt 
+                                ? formatDate(order.delivery.deliveredAt)
+                                : formatDate(order.delivery.expectedDelivery!)
+                              }
+                            </p>
+                            {!order.delivery.deliveredAt && order.delivery.estimatedRange && (
+                              <div className="flex items-center gap-2 mt-1 text-xs text-blue-700">
+                                <span>📦 {new Date(order.delivery.estimatedRange.earliest).toLocaleDateString('da-DK', { month: 'short', day: 'numeric' })}</span>
+                                <span>-</span>
+                                <span>🚚 {new Date(order.delivery.estimatedRange.latest).toLocaleDateString('da-DK', { month: 'short', day: 'numeric' })}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     )}
 

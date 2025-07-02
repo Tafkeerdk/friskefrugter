@@ -371,6 +371,11 @@ export interface Order {
   delivery: {
     expectedDelivery?: string;
     deliveredAt?: string;
+    estimatedRange?: {
+      earliest: string;
+      latest: string;
+      updatedAt: string;
+    };
     deliveryAddress?: {
       street: string;
       city: string;

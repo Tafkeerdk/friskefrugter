@@ -183,6 +183,11 @@ export interface OrderSummary {
   totalAmount: number;
   placedAt: string;
   expectedDelivery?: string;
+  estimatedRange?: {
+    earliest: string;
+    latest: string;
+    updatedAt: string;
+  };
   isInvoiced: boolean;
   invoiceNumber?: string;
   lastUpdated?: string;
