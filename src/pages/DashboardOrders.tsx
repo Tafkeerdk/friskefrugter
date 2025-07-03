@@ -1134,7 +1134,12 @@ const DashboardOrders: React.FC = () => {
                                   : formatDeliveryDate(order.delivery.expectedDelivery!)
                                 }
                               </p>
-
+                              {/* Show time slot if available */}
+                              {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
+                                <p className="text-sm text-blue-700">
+                                  <strong>Tidsinterval:</strong> {order.delivery.deliveryTimeSlot}
+                                </p>
+                              )}
                             </div>
 
                             {/* Show manual delivery indicator */}

@@ -864,10 +864,18 @@ const AdminOrderDetail: React.FC = () => {
                             )}
                           </div>
                           <div className="space-y-2">
-                            <p className="text-blue-800 font-semibold text-lg">
+                                                        <p className="text-blue-800 font-semibold text-lg">
                               {formatDeliveryDate(order.delivery.expectedDelivery)}
                             </p>
-
+                            {/* Show time slot if available */}
+                            {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
+                              <div className="flex items-center gap-2 text-blue-700">
+                                <Clock className="h-4 w-4" />
+                                <p className="text-sm font-medium">
+                                  <strong>Tidsinterval:</strong> {order.delivery.deliveryTimeSlot}
+                                </p>
+                              </div>
+                            )}
                             {/* Show manual delivery indicator */}
                             {order.delivery.isManuallySet && !order.delivery.deliveredAt && (
                               <div className="text-xs text-blue-600 opacity-75">
