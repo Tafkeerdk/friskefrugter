@@ -2290,12 +2290,17 @@ export const authService = {
     const response = await apiClient.post(getEndpoint('/admin-order-status-update'), {
       orderId,
       newStatus,
-      skippedStatuses: options.skippedStatuses || []
+      skippedStatuses: options.skippedStatuses || [],
+      deliveryInfo: options.deliveryInfo // CRITICAL FIX: Send delivery info to backend
     });
     
     const data = await response.json();
     
     if (!response.ok) {
+      // Handle specific validation errors for delivery info
+      if (data.requiresDeliveryInfo) {
+        throw new Error('Leveringsinformation er påkrævet når status opdateres til "Pakket". Vælg venligst leveringsdato og tidsinterval.');
+      }
       throw new Error(data.message || 'Failed to update order status');
     }
 
