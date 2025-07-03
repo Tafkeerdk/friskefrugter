@@ -99,6 +99,9 @@ const getEndpoint = (path: string): string => {
   if (pathOnly.startsWith('/admin-order-rejection')) {
     return `/.netlify/functions/admin-order-rejection${queryString}`;
   }
+  if (pathOnly.startsWith('/admin-order-delivery-update')) {
+    return `/.netlify/functions/admin-order-delivery-update${queryString}`;
+  }
   
   // Visitor tracking endpoint
   if (pathOnly.startsWith('/visitor-tracking')) {
