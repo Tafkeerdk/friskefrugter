@@ -1096,8 +1096,8 @@ const DashboardOrders: React.FC = () => {
                         </div>
                         <StatusProgression order={order} />
                         
-                        {/* Delivery Date Information - Only show if manually set by admin OR delivered */}
-                        {(order.delivery?.deliveredAt || (order.delivery?.expectedDelivery && order.delivery?.isManuallySet)) && (
+                        {/* Delivery Date Information - Only show if manually set or delivered */}
+                        {((order.delivery?.expectedDelivery && order.delivery?.isManuallySet) || order.delivery?.deliveredAt) && (
                           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-2">
@@ -1632,8 +1632,8 @@ const DashboardOrders: React.FC = () => {
                   Opdater leveringsdato og tidsinterval for ordre <strong>{selectedOrder?.orderNumber}</strong>
                 </p>
                 
-                {/* Current delivery info display */}
-                {selectedOrder?.delivery?.expectedDelivery && (
+                {/* Current delivery info display - Only show if manually set */}
+                {selectedOrder?.delivery?.expectedDelivery && selectedOrder?.delivery?.isManuallySet && (
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Nuværende leveringsinformation:</h4>
                     <div className="space-y-1 text-sm text-gray-600">

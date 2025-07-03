@@ -455,6 +455,7 @@ export interface OrderSummary {
     expectedDelivery?: string;
     deliveredAt?: string;
     deliveryTimeSlot?: string;
+    isManuallySet?: boolean;
     estimatedRange?: {
       earliest: string;
       latest: string;

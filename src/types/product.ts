@@ -183,6 +183,17 @@ export interface OrderSummary {
   totalAmount: number;
   placedAt: string;
   expectedDelivery?: string;
+  delivery?: {
+    expectedDelivery?: string;
+    deliveredAt?: string;
+    deliveryTimeSlot?: string;
+    isManuallySet?: boolean;
+    estimatedRange?: {
+      earliest: string;
+      latest: string;
+      updatedAt: string;
+    };
+  };
   estimatedRange?: {
     earliest: string;
     latest: string;
