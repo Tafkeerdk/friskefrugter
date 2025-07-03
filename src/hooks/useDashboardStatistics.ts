@@ -115,49 +115,67 @@ export const useDashboardStatistics = () => {
       console.error('Error fetching dashboard statistics:', error);
       setError(error.message || 'Fejl ved indlæsning af statistikker');
       
-              // Provide fallback data to prevent UI crashes (for new systems)
-        setStatistics({
-          dashboardStats: [
-            {
-              title: "Dagens ordrer",
-              value: "0",
-              description: "Ordrer modtaget i dag",
-              icon: ShoppingCart,
-              trend: { value: 0, isPositive: true },
-            },
-            {
-              title: "Ugens omsætning",
-              value: "0 kr",
-              description: "Samlet salg denne uge",
-              icon: Banknote, // Use Banknote for Danish currency
-              trend: { value: 0, isPositive: true },
-            },
-            {
-              title: "Nye kunder",
-              value: "0",
-              description: "Nye kunder denne uge",
-              icon: Users,
-              trend: { value: 0, isPositive: true },
-            },
-            {
-              title: "Vækst i salg",
-              value: "0%",
-              description: "Nyt system - ingen sammenligning endnu",
-              icon: TrendingUp,
-              trend: { value: 0, isPositive: true },
-            },
-          ],
-          salesChartData: [],
-          popularProducts: [],
-          orderStatuses: [],
-          recentActivities: []
-        });
-      
-      toast({
-        title: "Advarsel",
-        description: "Statistikker kunne ikke indlæses. Viser standard data.",
-        variant: "destructive",
+      // Provide fallback data to prevent UI crashes (for new systems)
+      setStatistics({
+        dashboardStats: [
+          {
+            title: "Dagens ordrer",
+            value: "0",
+            description: "Ordrer modtaget i dag",
+            icon: ShoppingCart,
+            trend: { value: 0, isPositive: true },
+          },
+          {
+            title: "Ugens omsætning",
+            value: "0 kr",
+            description: "Samlet salg denne uge",
+            icon: Banknote, // Use Banknote for Danish currency
+            trend: { value: 0, isPositive: true },
+          },
+          {
+            title: "Nye kunder",
+            value: "0",
+            description: "Nye kunder denne uge",
+            icon: Users,
+            trend: { value: 0, isPositive: true },
+          },
+          {
+            title: "Vækst i salg",
+            value: "0%",
+            description: "Nyt system - ingen sammenligning endnu",
+            icon: TrendingUp,
+            trend: { value: 0, isPositive: true },
+          },
+        ],
+        salesChartData: [],
+        popularProducts: [
+          {
+            id: "fallback-1",
+            name: "System indlæser data...",
+            image: "/placeholder.svg",
+            sales: 0,
+            status: "available" as const,
+          },
+          {
+            id: "fallback-2",
+            name: "Populære produkter vises snart",
+            image: "/placeholder.svg", 
+            sales: 0,
+            status: "available" as const,
+          }
+        ],
+        orderStatuses: [],
+        recentActivities: []
       });
+      
+      // Don't show toast for initial loading - only for actual errors
+      if (!error.message?.includes('getDashboardStatistics')) {
+        toast({
+          title: "Information",
+          description: "Dashboard data indlæses stadig. Prøv at opdatere siden om et øjeblik.",
+          variant: "default",
+        });
+      }
     } finally {
       setLoading(false);
     }

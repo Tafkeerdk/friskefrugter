@@ -90,7 +90,7 @@ export const popularProducts = [
   {
     id: "2",
     name: "Friske jordbær",
-    image: "/placeholder.svg",
+    image: "https://invalid-url-test.example/nonexistent.jpg",
     sales: 96,
     status: "low" as const,
   },
@@ -104,7 +104,7 @@ export const popularProducts = [
   {
     id: "4",
     name: "Avocado",
-    image: "/placeholder.svg",
+    image: "",
     sales: 72,
     status: "out" as const,
   },
