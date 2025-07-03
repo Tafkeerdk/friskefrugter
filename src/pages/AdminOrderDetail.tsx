@@ -781,7 +781,10 @@ const AdminOrderDetail: React.FC = () => {
                           </p>
                         )}
                         {order.customerSnapshot.discountGroup && (
-                          <Badge variant="outline" className="mt-2">
+                          <Badge 
+                            className="mt-2 text-white font-medium"
+                            style={{ backgroundColor: order.customerSnapshot.discountGroup.color }}
+                          >
                             {order.customerSnapshot.discountGroup.name} 
                             ({order.customerSnapshot.discountGroup.discountPercentage}%)
                           </Badge>
@@ -864,15 +867,7 @@ const AdminOrderDetail: React.FC = () => {
                             <p className="text-blue-800 font-semibold text-lg">
                               {formatDeliveryDate(order.delivery.expectedDelivery)}
                             </p>
-                            {/* Show time slot if available */}
-                            {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
-                              <div className="flex items-center gap-2 text-blue-700">
-                                <Clock className="h-4 w-4" />
-                                <p className="text-sm font-medium">
-                                  <strong>Tidsinterval:</strong> {order.delivery.deliveryTimeSlot}
-                                </p>
-                              </div>
-                            )}
+
                             {/* Show manual delivery indicator */}
                             {order.delivery.isManuallySet && !order.delivery.deliveredAt && (
                               <div className="text-xs text-blue-600 opacity-75">
@@ -880,19 +875,7 @@ const AdminOrderDetail: React.FC = () => {
                               </div>
                             )}
                           </div>
-                          {order.delivery.estimatedRange && (
-                            <div className="mt-3 pt-3 border-t border-blue-200">
-                              <p className="text-xs font-medium text-blue-700 mb-1">Leveringsinterval:</p>
-                              <div className="flex items-center gap-2 text-sm text-blue-700">
-                                <span>📦 Tidligst: {new Date(order.delivery.estimatedRange.earliest).toLocaleDateString('da-DK', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                                <span className="text-blue-500">•</span>
-                                <span>🚚 Senest: {new Date(order.delivery.estimatedRange.latest).toLocaleDateString('da-DK', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
-                              </div>
-                              <p className="text-xs text-blue-600 mt-1 opacity-75">
-                                Opdateret: {new Date(order.delivery.estimatedRange.updatedAt).toLocaleDateString('da-DK')} kl. {new Date(order.delivery.estimatedRange.updatedAt).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
-                          )}
+
                         </div>
                       )}
                       

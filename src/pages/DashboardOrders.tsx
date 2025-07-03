@@ -1134,20 +1134,9 @@ const DashboardOrders: React.FC = () => {
                                   : formatDeliveryDate(order.delivery.expectedDelivery!)
                                 }
                               </p>
-                              {/* Show time slot if available */}
-                              {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
-                                <p className="text-sm text-blue-700">
-                                  <strong>Tidsinterval:</strong> {order.delivery.deliveryTimeSlot}
-                                </p>
-                              )}
+
                             </div>
-                            {!order.delivery.deliveredAt && order.delivery.estimatedRange && (
-                              <div className="flex items-center gap-2 mt-2 text-xs text-blue-700">
-                                <span>📦 {new Date(order.delivery.estimatedRange.earliest).toLocaleDateString('da-DK', { month: 'short', day: 'numeric' })}</span>
-                                <span>-</span>
-                                <span>🚚 {new Date(order.delivery.estimatedRange.latest).toLocaleDateString('da-DK', { month: 'short', day: 'numeric' })}</span>
-                              </div>
-                            )}
+
                             {/* Show manual delivery indicator */}
                             {order.delivery.isManuallySet && !order.delivery.deliveredAt && (
                               <div className="mt-2 text-xs text-blue-600 opacity-75">
