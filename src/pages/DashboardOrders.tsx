@@ -1096,8 +1096,8 @@ const DashboardOrders: React.FC = () => {
                         </div>
                         <StatusProgression order={order} />
                         
-                        {/* Delivery Date Information */}
-                        {(order.delivery?.expectedDelivery || order.delivery?.deliveredAt) && (
+                        {/* Delivery Date Information - Only show if manually set by admin OR delivered */}
+                        {(order.delivery?.deliveredAt || (order.delivery?.expectedDelivery && order.delivery?.isManuallySet)) && (
                           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
                             <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-2">

@@ -712,12 +712,14 @@ const AdminOrderDetail: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {order.delivery.expectedDelivery && (
+                    {(order.delivery.deliveredAt || (order.delivery.expectedDelivery && order.delivery.isManuallySet)) && (
                       <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-blue-600" />
-                            <p className="text-sm font-medium text-blue-900">Forventet levering:</p>
+                            <p className="text-sm font-medium text-blue-900">
+                              {order.delivery.deliveredAt ? 'Leveret:' : 'Forventet levering:'}
+                            </p>
                           </div>
                           {/* Edit button for delivery */}
                           {!order.delivery.deliveredAt && (
@@ -736,9 +738,12 @@ const AdminOrderDetail: React.FC = () => {
                           )}
                         </div>
                         <div className="space-y-2">
-                          <p className="text-blue-800 font-semibold text-lg">
-                            {formatDate(order.delivery.expectedDelivery)}
-                          </p>
+                                                      <p className="text-blue-800 font-semibold text-lg">
+                              {order.delivery.deliveredAt 
+                                ? formatDate(order.delivery.deliveredAt)
+                                : formatDate(order.delivery.expectedDelivery)
+                              }
+                            </p>
                           {/* Show time slot if available */}
                           {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
                             <div className="flex items-center gap-2 text-blue-700">
