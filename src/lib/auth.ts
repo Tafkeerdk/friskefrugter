@@ -450,12 +450,13 @@ export interface OrderSummary {
   statusVariant: string;
   totalAmount: number;
   placedAt: string;
-  expectedDelivery?: string;
   delivery?: {
     expectedDelivery?: string;
     deliveredAt?: string;
     deliveryTimeSlot?: string;
     isManuallySet?: boolean;
+    setBy?: string;
+    setAt?: string;
     estimatedRange?: {
       earliest: string;
       latest: string;
