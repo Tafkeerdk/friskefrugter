@@ -750,6 +750,14 @@ const DashboardOrders: React.FC = () => {
     });
   };
 
+  const formatDeliveryDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('da-DK', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -1123,7 +1131,7 @@ const DashboardOrders: React.FC = () => {
                               <p className="text-blue-800 font-medium">
                                 {order.delivery.deliveredAt 
                                   ? formatDate(order.delivery.deliveredAt)
-                                  : formatDate(order.delivery.expectedDelivery!)
+                                  : formatDeliveryDate(order.delivery.expectedDelivery!)
                                 }
                               </p>
                               {/* Show time slot if available */}
@@ -1637,7 +1645,7 @@ const DashboardOrders: React.FC = () => {
                   <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Nuværende leveringsinformation:</h4>
                     <div className="space-y-1 text-sm text-gray-600">
-                      <p><strong>Dato:</strong> {formatDate(selectedOrder.delivery.expectedDelivery)}</p>
+                      <p><strong>Dato:</strong> {formatDeliveryDate(selectedOrder.delivery.expectedDelivery)}</p>
                       {selectedOrder.delivery.deliveryTimeSlot && (
                         <p><strong>Tidsinterval:</strong> {selectedOrder.delivery.deliveryTimeSlot}</p>
                       )}

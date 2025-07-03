@@ -119,6 +119,14 @@ const AdminOrderDetail: React.FC = () => {
     }).format(new Date(date));
   };
 
+  const formatDeliveryDate = (date: string | Date): string => {
+    return new Intl.DateTimeFormat('da-DK', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(new Date(date));
+  };
+
   const handleStatusUpdate = async (status: string) => {
     if (!order || isUpdatingStatus) return;
 
@@ -733,7 +741,7 @@ const AdminOrderDetail: React.FC = () => {
                           </div>
                           <div className="space-y-2">
                             <p className="text-blue-800 font-semibold text-lg">
-                              {formatDate(order.delivery.expectedDelivery)}
+                              {formatDeliveryDate(order.delivery.expectedDelivery)}
                             </p>
                             {/* Show time slot if available */}
                             {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
