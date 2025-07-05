@@ -502,21 +502,23 @@ const AdminOrderDetail: React.FC = () => {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="dashboard-page-container">
-          <div className="content-width">
-            {/* Header Skeleton */}
-            <div className="flex items-center gap-4 mb-6">
-              <Skeleton className="h-10 w-10" />
-              <div className="space-y-2">
-                <Skeleton className="h-8 w-48" />
-                <Skeleton className="h-4 w-32" />
+        <div className="flex-grow bg-gray-50">
+          <div className="page-container py-6 md:py-8">
+            <div className="content-width">
+              {/* Header Skeleton */}
+              <div className="flex items-center gap-4 mb-6">
+                <Skeleton className="h-10 w-10" />
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-48" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
               </div>
-            </div>
 
-            {/* Content Skeletons */}
-            <div className="grid gap-6 md:grid-cols-2">
-              <Skeleton className="h-64" />
-              <Skeleton className="h-64" />
+              {/* Content Skeletons */}
+              <div className="grid gap-6 md:grid-cols-2">
+                <Skeleton className="h-64" />
+                <Skeleton className="h-64" />
+              </div>
             </div>
           </div>
         </div>
@@ -527,26 +529,28 @@ const AdminOrderDetail: React.FC = () => {
   if (error || !order) {
     return (
       <DashboardLayout>
-        <div className="dashboard-page-container">
-          <div className="content-width">
-            <div className="flex items-center gap-4 mb-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/admin/orders')}
-                className="gap-2"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Tilbage til ordrer
-              </Button>
-            </div>
+        <div className="flex-grow bg-gray-50">
+          <div className="page-container py-6 md:py-8">
+            <div className="content-width">
+              <div className="flex items-center gap-4 mb-6">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate('/admin/orders')}
+                  className="gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Tilbage til ordrer
+                </Button>
+              </div>
 
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                {error || 'Ordre ikke fundet'}
-              </AlertDescription>
-            </Alert>
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  {error || 'Ordre ikke fundet'}
+                </AlertDescription>
+              </Alert>
+            </div>
           </div>
         </div>
       </DashboardLayout>
@@ -555,221 +559,223 @@ const AdminOrderDetail: React.FC = () => {
 
   return (
     <DashboardLayout>
-      <div className="dashboard-page-container">
-        <div className="space-y-6">
-          {/* Back button and title */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/admin/orders')}
-              className="w-full sm:w-auto"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Tilbage til ordrer
-            </Button>
-            {!isLoading && order && (
-              <h1 className="text-2xl font-bold">
-                Ordre #{order.orderNumber}
-              </h1>
-            )}
-          </div>
-
-          {isLoading ? (
-            // Loading skeleton
-            <div className="space-y-6">
-              <Skeleton className="h-[200px] w-full" />
-              <Skeleton className="h-[400px] w-full" />
+      <div className="flex-grow bg-gray-50">
+        <div className="page-container py-6 md:py-8">
+          <div className="content-width space-y-6">
+            {/* Back button and title */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/admin/orders')}
+                className="w-full sm:w-auto"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Tilbage til ordrer
+              </Button>
+              {!isLoading && order && (
+                <h1 className="text-2xl font-bold">
+                  Ordre #{order.orderNumber}
+                </h1>
+              )}
             </div>
-          ) : error ? (
-            // Error state
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          ) : order ? (
-            // Order details content
-            <div className="space-y-6">
-              {/* Status progression */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Status
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <StatusProgression />
-                </CardContent>
-              </Card>
 
-              {/* Customer information */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-5 w-5" />
-                    Kunde information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-medium text-brand-gray-900">{order.customer?.company}</h3>
-                      <p className="text-brand-gray-600">{order.customer?.name}</p>
-                      <p className="text-brand-gray-600">{order.customer?.email}</p>
-                      <p className="text-brand-gray-600">{order.customer?.phone}</p>
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-brand-gray-900">CVR: {order.customer?.cvr}</h3>
-                      {order.customer?.discountGroup && (
-                        <Badge variant="secondary" className="mt-2">
-                          {order.customer.discountGroup.name}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Delivery information */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            {isLoading ? (
+              // Loading skeleton
+              <div className="space-y-6">
+                <Skeleton className="h-[200px] w-full" />
+                <Skeleton className="h-[400px] w-full" />
+              </div>
+            ) : error ? (
+              // Error state
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            ) : order ? (
+              // Order details content
+              <div className="space-y-6">
+                {/* Status progression */}
+                <Card>
+                  <CardHeader className="pb-4">
                     <CardTitle className="flex items-center gap-2">
-                      <Truck className="h-5 w-5" />
-                      Levering
+                      <Clock className="h-5 w-5" />
+                      Status
                     </CardTitle>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleDeliveryEdit}
-                      className="w-full sm:w-auto"
-                    >
-                      <Edit className="h-4 w-4 mr-2" />
-                      Rediger levering
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <h3 className="font-medium text-brand-gray-900">Leveringsadresse</h3>
-                      <p className="text-brand-gray-600">{order.deliveryAddress?.street}</p>
-                      <p className="text-brand-gray-600">
-                        {order.deliveryAddress?.postalCode} {order.deliveryAddress?.city}
-                      </p>
+                  </CardHeader>
+                  <CardContent>
+                    <StatusProgression />
+                  </CardContent>
+                </Card>
+
+                {/* Customer information */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                      <User className="h-5 w-5" />
+                      Kunde information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="font-medium text-brand-gray-900">{order.customer?.company}</h3>
+                        <p className="text-brand-gray-600">{order.customer?.name}</p>
+                        <p className="text-brand-gray-600">{order.customer?.email}</p>
+                        <p className="text-brand-gray-600">{order.customer?.phone}</p>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-brand-gray-900">CVR: {order.customer?.cvr}</h3>
+                        {order.customer?.discountGroup && (
+                          <Badge variant="secondary" className="mt-2">
+                            {order.customer.discountGroup.name}
+                          </Badge>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-medium text-brand-gray-900">Leveringstidspunkt</h3>
-                      {order.delivery?.expectedDelivery ? (
-                        <>
-                          <p className="text-brand-gray-600">
-                            {formatDeliveryDate(order.delivery.expectedDelivery)}
-                          </p>
-                          {order.delivery.deliveryTimeSlot && (
+                  </CardContent>
+                </Card>
+
+                {/* Delivery information */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <CardTitle className="flex items-center gap-2">
+                        <Truck className="h-5 w-5" />
+                        Levering
+                      </CardTitle>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleDeliveryEdit}
+                        className="w-full sm:w-auto"
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Rediger levering
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <h3 className="font-medium text-brand-gray-900">Leveringsadresse</h3>
+                        <p className="text-brand-gray-600">{order.deliveryAddress?.street}</p>
+                        <p className="text-brand-gray-600">
+                          {order.deliveryAddress?.postalCode} {order.deliveryAddress?.city}
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-brand-gray-900">Leveringstidspunkt</h3>
+                        {order.delivery?.expectedDelivery ? (
+                          <>
                             <p className="text-brand-gray-600">
-                              {order.delivery.deliveryTimeSlot}
+                              {formatDeliveryDate(order.delivery.expectedDelivery)}
                             </p>
-                          )}
-                          {order.delivery.isManuallySet && (
-                            <Badge variant="outline" className="mt-2">
-                              Manuelt fastsat
-                            </Badge>
-                          )}
-                        </>
-                      ) : (
-                        <p className="text-brand-gray-500 italic">Ikke fastsat endnu</p>
-                      )}
+                            {order.delivery.deliveryTimeSlot && (
+                              <p className="text-brand-gray-600">
+                                {order.delivery.deliveryTimeSlot}
+                              </p>
+                            )}
+                            {order.delivery.isManuallySet && (
+                              <Badge variant="outline" className="mt-2">
+                                Manuelt fastsat
+                              </Badge>
+                            )}
+                          </>
+                        ) : (
+                          <p className="text-brand-gray-500 italic">Ikke fastsat endnu</p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Order items */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    Ordre detaljer
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {order.items.map((item, index) => (
-                      <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b last:border-0">
-                        <div className="flex-grow">
-                          <h3 className="font-medium text-brand-gray-900">{item.product.name}</h3>
-                          <p className="text-sm text-brand-gray-600">
-                            {item.quantity} {item.product.unit?.name || 'stk'} á {formatPrice(item.price)}
-                          </p>
+                {/* Order items */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                      <Package className="h-5 w-5" />
+                      Ordre detaljer
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {order.items.map((item, index) => (
+                        <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b last:border-0">
+                          <div className="flex-grow">
+                            <h3 className="font-medium text-brand-gray-900">{item.product.name}</h3>
+                            <p className="text-sm text-brand-gray-600">
+                              {item.quantity} {item.product.unit?.name || 'stk'} á {formatPrice(item.price)}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-brand-gray-900">
+                              {formatPrice(item.quantity * item.price)}
+                            </p>
+                            {item.discountPercent > 0 && (
+                              <Badge variant="secondary" className="ml-2">
+                                {item.discountPercent}% rabat
+                              </Badge>
+                            )}
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-medium text-brand-gray-900">
-                            {formatPrice(item.quantity * item.price)}
-                          </p>
-                          {item.discountPercent > 0 && (
-                            <Badge variant="secondary" className="ml-2">
-                              {item.discountPercent}% rabat
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div className="pt-4 space-y-2">
-                      <div className="flex justify-between text-brand-gray-600">
-                        <span>Subtotal</span>
-                        <span>{formatPrice(order.subtotal)}</span>
-                      </div>
-                      {order.discountAmount > 0 && (
+                      ))}
+                      
+                      <div className="pt-4 space-y-2">
                         <div className="flex justify-between text-brand-gray-600">
-                          <span>Rabat</span>
-                          <span>-{formatPrice(order.discountAmount)}</span>
+                          <span>Subtotal</span>
+                          <span>{formatPrice(order.subtotal)}</span>
                         </div>
-                      )}
-                      <div className="flex justify-between font-medium text-brand-gray-900 text-lg">
-                        <span>Total</span>
-                        <span>{formatPrice(order.total)}</span>
+                        {order.discountAmount > 0 && (
+                          <div className="flex justify-between text-brand-gray-600">
+                            <span>Rabat</span>
+                            <span>-{formatPrice(order.discountAmount)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between font-medium text-brand-gray-900 text-lg">
+                          <span>Total</span>
+                          <span>{formatPrice(order.total)}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* Order history */}
-              <Card>
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
-                    Ordre historik
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {order.statusHistory?.map((history, index) => (
-                      <div key={index} className="flex gap-4 pb-4 last:pb-0 border-b last:border-0">
-                        <div className="flex-shrink-0">
-                          {getStatusIcon(history.status)}
-                        </div>
-                        <div>
-                          <p className="font-medium text-brand-gray-900">
-                            {STATUS_LABELS[history.status as keyof typeof STATUS_LABELS]}
-                          </p>
-                          <p className="text-sm text-brand-gray-600">
-                            {formatDate(history.timestamp)}
-                          </p>
-                          {history.notes && (
-                            <p className="text-sm text-brand-gray-500 mt-1">
-                              {history.notes}
+                {/* Order history */}
+                <Card>
+                  <CardHeader className="pb-4">
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Ordre historik
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {order.statusHistory?.map((history, index) => (
+                        <div key={index} className="flex gap-4 pb-4 last:pb-0 border-b last:border-0">
+                          <div className="flex-shrink-0">
+                            {getStatusIcon(history.status)}
+                          </div>
+                          <div>
+                            <p className="font-medium text-brand-gray-900">
+                              {STATUS_LABELS[history.status as keyof typeof STATUS_LABELS]}
                             </p>
-                          )}
+                            <p className="text-sm text-brand-gray-600">
+                              {formatDate(history.timestamp)}
+                            </p>
+                            {history.notes && (
+                              <p className="text-sm text-brand-gray-500 mt-1">
+                                {history.notes}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : null}
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
 
