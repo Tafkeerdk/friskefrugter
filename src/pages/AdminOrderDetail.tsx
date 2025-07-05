@@ -554,457 +554,224 @@ const AdminOrderDetail: React.FC = () => {
   }
 
   return (
-    <>
-      <DashboardLayout>
-        <div className="dashboard-page-container">
-          <div className="content-width">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate('/admin/orders')}
-                  className="gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  Tilbage til ordrer
-                </Button>
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    Ordre {order.orderNumber}
-                  </h1>
-                  <p className="text-sm text-gray-600">
-                    Afgivet {formatDate(order.placedAt)}
-                  </p>
-                </div>
-              </div>
-              <Badge 
-                className={cn(
-                  "text-sm font-medium",
-                  STATUS_COLORS[order.status as keyof typeof STATUS_COLORS] || STATUS_COLORS['order_placed']
-                )}
-              >
-                {STATUS_LABELS[order.status as keyof typeof STATUS_LABELS] || order.status}
-              </Badge>
+    <DashboardLayout>
+      <div className="dashboard-page-container">
+        <div className="space-y-6">
+          {/* Back button and title */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <Button
+              variant="outline"
+              onClick={() => navigate('/admin/orders')}
+              className="w-full sm:w-auto"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Tilbage til ordrer
+            </Button>
+            {!isLoading && order && (
+              <h1 className="text-2xl font-bold">
+                Ordre #{order.orderNumber}
+              </h1>
+            )}
+          </div>
+
+          {isLoading ? (
+            // Loading skeleton
+            <div className="space-y-6">
+              <Skeleton className="h-[200px] w-full" />
+              <Skeleton className="h-[400px] w-full" />
             </div>
-
-            {/* Order Summary */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+          ) : error ? (
+            // Error state
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          ) : order ? (
+            // Order details content
+            <div className="space-y-6">
+              {/* Status progression */}
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {formatPrice(order.orderTotals.totalAmount)}
-                      </p>
-                    </div>
-                  </div>
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <Clock className="h-5 w-5" />
+                    Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <StatusProgression />
                 </CardContent>
               </Card>
 
+              {/* Customer information */}
               <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-blue-600" />
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5" />
+                    Kunde information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Antal varer</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {order.orderTotals.totalItems}
-                      </p>
+                      <h3 className="font-medium text-brand-gray-900">{order.customer?.company}</h3>
+                      <p className="text-brand-gray-600">{order.customer?.name}</p>
+                      <p className="text-brand-gray-600">{order.customer?.email}</p>
+                      <p className="text-brand-gray-600">{order.customer?.phone}</p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="h-5 w-5 text-orange-600" />
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Besparelse</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {formatPrice(order.orderTotals.totalSavings)}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Faktura</p>
-                      <p className="text-lg font-bold text-gray-900">
-                        {order.invoice.isInvoiced ? (
-                          <span className="text-green-600">✓ Sendt</span>
-                        ) : (
-                          <span className="text-gray-500">Ikke sendt</span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Status Progression */}
-            <StatusProgression />
-
-            {/* Main Content */}
-            <div className="grid gap-6 xl:grid-cols-3">
-              {/* Left Column - Order Items & Customer */}
-              <div className="xl:col-span-2 space-y-6">
-                {/* Order Items */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Package className="h-5 w-5" />
-                      Ordre varer
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {order.items.map((item, index) => (
-                        <div key={index} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
-                            {item.product.billeder && item.product.billeder.length > 0 ? (
-                              <img
-                                src={item.product.billeder[0].url}
-                                alt={item.product.produktnavn}
-                                className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                  e.currentTarget.nextElementSibling!.classList.remove('hidden');
-                                }}
-                              />
-                            ) : null}
-                            <div className={cn(
-                              "w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-sm",
-                              item.product.billeder && item.product.billeder.length > 0 ? "hidden" : ""
-                            )}>
-                              <Package className="h-4 w-4 sm:h-6 sm:w-6 text-gray-400" />
-                            </div>
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">
-                              {item.product.produktnavn}
-                            </h4>
-                            <p className="text-sm text-gray-600">
-                              Varenr: {item.product.varenummer}
-                            </p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <span className="text-sm text-gray-600">
-                                Antal: {item.quantity}
-                              </span>
-                              <span className="text-sm font-medium">
-                                {formatPrice(item.staticPricing.price)} stk.
-                              </span>
-                              {item.staticPricing.discountPercentage > 0 && (
-                                <Badge variant="secondary" className="text-xs">
-                                  -{item.staticPricing.discountPercentage}%
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900">
-                              {formatPrice(item.itemTotal)}
-                            </p>
-                            {item.itemSavings > 0 && (
-                              <p className="text-sm text-green-600">
-                                Besparelse: {formatPrice(item.itemSavings)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    <Separator className="my-4" />
-
-                    {/* Order Totals */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Subtotal:</span>
-                        <span>{formatPrice(order.orderTotals.subtotal)}</span>
-                      </div>
-                      {order.orderTotals.totalSavings > 0 && (
-                        <div className="flex justify-between text-sm text-green-600">
-                          <span>Total besparelse:</span>
-                          <span>-{formatPrice(order.orderTotals.totalSavings)}</span>
-                        </div>
-                      )}
-                      <Separator />
-                      <div className="flex justify-between font-bold text-lg">
-                        <span>Total:</span>
-                        <span>{formatPrice(order.orderTotals.totalAmount)}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Customer Information */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <User className="h-5 w-5" />
-                      Kunde information
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <h4 className="font-medium text-gray-900">
-                          {order.customerSnapshot.companyName}
-                        </h4>
-                        <p className="text-gray-600">
-                          {order.customerSnapshot.contactPersonName}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {order.customerSnapshot.email}
-                        </p>
-                        {order.customerSnapshot.phone && (
-                          <p className="text-sm text-gray-600">
-                            {order.customerSnapshot.phone}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        {order.customerSnapshot.cvrNumber && (
-                          <p className="text-sm text-gray-600">
-                            CVR: {order.customerSnapshot.cvrNumber}
-                          </p>
-                        )}
-                        {order.customerSnapshot.discountGroup && (
-                          <Badge 
-                            className="mt-2 text-white font-medium"
-                            style={{ backgroundColor: order.customerSnapshot.discountGroup.color }}
-                          >
-                            {order.customerSnapshot.discountGroup.name} 
-                            ({order.customerSnapshot.discountGroup.discountPercentage}%)
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Status & Delivery */}
-              <div className="space-y-6">
-                {/* Status History */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Clock className="h-5 w-5" />
-                      Status historik
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {order.statusHistory && order.statusHistory.length > 0 ? (
-                        order.statusHistory.map((status, index) => (
-                          <div key={index} className="flex items-start gap-3">
-                            <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-2" />
-                            <div className="flex-1">
-                              <p className="font-medium text-gray-900">
-                                {STATUS_LABELS[status.status as keyof typeof STATUS_LABELS] || status.status}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                {formatDate(status.timestamp)}
-                              </p>
-                              {status.notes && (
-                                <p className="text-sm text-gray-500 mt-1">
-                                  {status.notes}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-sm text-gray-600">Ingen status historik tilgængelig</p>
+                      <h3 className="font-medium text-brand-gray-900">CVR: {order.customer?.cvr}</h3>
+                      {order.customer?.discountGroup && (
+                        <Badge variant="secondary" className="mt-2">
+                          {order.customer.discountGroup.name}
+                        </Badge>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </CardContent>
+              </Card>
 
-                {/* Delivery Information */}
-                <Card>
-                  <CardHeader>
+              {/* Delivery information */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <CardTitle className="flex items-center gap-2">
                       <Truck className="h-5 w-5" />
                       Levering
                     </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {order.delivery.expectedDelivery && order.delivery.isManuallySet && (
-                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-blue-600" />
-                              <p className="text-sm font-medium text-blue-900">Forventet levering:</p>
-                            </div>
-                            {/* Edit button for delivery */}
-                            {!order.delivery.deliveredAt && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={handleDeliveryEdit}
-                                className="h-6 px-2 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
-                              >
-                                <Edit className="h-3 w-3 mr-1" />
-                                Rediger
-                              </Button>
-                            )}
-                          </div>
-                          <div className="space-y-2">
-                                                        <p className="text-blue-800 font-semibold text-lg">
-                              {formatDeliveryDate(order.delivery.expectedDelivery)}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleDeliveryEdit}
+                      className="w-full sm:w-auto"
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Rediger levering
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <h3 className="font-medium text-brand-gray-900">Leveringsadresse</h3>
+                      <p className="text-brand-gray-600">{order.deliveryAddress?.street}</p>
+                      <p className="text-brand-gray-600">
+                        {order.deliveryAddress?.postalCode} {order.deliveryAddress?.city}
+                      </p>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-brand-gray-900">Leveringstidspunkt</h3>
+                      {order.delivery?.expectedDelivery ? (
+                        <>
+                          <p className="text-brand-gray-600">
+                            {formatDeliveryDate(order.delivery.expectedDelivery)}
+                          </p>
+                          {order.delivery.deliveryTimeSlot && (
+                            <p className="text-brand-gray-600">
+                              {order.delivery.deliveryTimeSlot}
                             </p>
-                            {/* Show time slot if available */}
-                            {order.delivery.deliveryTimeSlot && !order.delivery.deliveredAt && (
-                              <div className="flex items-center gap-2 text-blue-700">
-                                <Clock className="h-4 w-4" />
-                                <p className="text-sm font-medium">
-                                  <strong>Tidsinterval:</strong> {order.delivery.deliveryTimeSlot}
-                                </p>
-                              </div>
-                            )}
-                            {/* Show manual delivery indicator */}
-                            {order.delivery.isManuallySet && !order.delivery.deliveredAt && (
-                              <div className="text-xs text-blue-600 opacity-75">
-                                ✓ Manuelt fastsat leveringsdato
-                              </div>
-                            )}
-                          </div>
+                          )}
+                          {order.delivery.isManuallySet && (
+                            <Badge variant="outline" className="mt-2">
+                              Manuelt fastsat
+                            </Badge>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-brand-gray-500 italic">Ikke fastsat endnu</p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
+              {/* Order items */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Ordre detaljer
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {order.items.map((item, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b last:border-0">
+                        <div className="flex-grow">
+                          <h3 className="font-medium text-brand-gray-900">{item.product.name}</h3>
+                          <p className="text-sm text-brand-gray-600">
+                            {item.quantity} {item.product.unit?.name || 'stk'} á {formatPrice(item.price)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-brand-gray-900">
+                            {formatPrice(item.quantity * item.price)}
+                          </p>
+                          {item.discountPercent > 0 && (
+                            <Badge variant="secondary" className="ml-2">
+                              {item.discountPercent}% rabat
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <div className="pt-4 space-y-2">
+                      <div className="flex justify-between text-brand-gray-600">
+                        <span>Subtotal</span>
+                        <span>{formatPrice(order.subtotal)}</span>
+                      </div>
+                      {order.discountAmount > 0 && (
+                        <div className="flex justify-between text-brand-gray-600">
+                          <span>Rabat</span>
+                          <span>-{formatPrice(order.discountAmount)}</span>
                         </div>
                       )}
-                      
-                      {order.delivery.deliveryAddress && (
-                        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <MapPin className="h-4 w-4 text-green-600" />
-                            <p className="text-sm font-medium text-green-900">Leveringsadresse:</p>
-                          </div>
-                          <div className="text-green-800 font-medium space-y-1">
-                            <p className="text-base">{order.delivery.deliveryAddress.street}</p>
-                            <p className="text-base">
-                              {order.delivery.deliveryAddress.postalCode} {order.delivery.deliveryAddress.city}
-                            </p>
-                            <p className="text-sm">{order.delivery.deliveryAddress.country}</p>
-                          </div>
-                        </div>
-                      )}
+                      <div className="flex justify-between font-medium text-brand-gray-900 text-lg">
+                        <span>Total</span>
+                        <span>{formatPrice(order.total)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-                      {order.delivery.courierInfo && (
-                        <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                          <div className="flex items-center gap-2 mb-1">
-                            <Truck className="h-4 w-4 text-purple-600" />
-                            <p className="text-sm font-medium text-purple-900">Fragtfirma:</p>
-                          </div>
-                          <p className="text-purple-800 font-medium">{order.delivery.courierInfo.company}</p>
-                          {order.delivery.courierInfo.trackingNumber && (
-                            <p className="text-sm text-purple-700 mt-1">
-                              Sporings nr: {order.delivery.courierInfo.trackingNumber}
+              {/* Order history */}
+              <Card>
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Ordre historik
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {order.statusHistory?.map((history, index) => (
+                      <div key={index} className="flex gap-4 pb-4 last:pb-0 border-b last:border-0">
+                        <div className="flex-shrink-0">
+                          {getStatusIcon(history.status)}
+                        </div>
+                        <div>
+                          <p className="font-medium text-brand-gray-900">
+                            {STATUS_LABELS[history.status as keyof typeof STATUS_LABELS]}
+                          </p>
+                          <p className="text-sm text-brand-gray-600">
+                            {formatDate(history.timestamp)}
+                          </p>
+                          {history.notes && (
+                            <p className="text-sm text-brand-gray-500 mt-1">
+                              {history.notes}
                             </p>
                           )}
                         </div>
-                      )}
-
-                      {order.delivery.deliveryInstructions && (
-                        <div className="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-                          <div className="flex items-center gap-2 mb-1">
-                            <FileText className="h-4 w-4 text-yellow-600" />
-                            <p className="text-sm font-medium text-yellow-900">Leveringsinstruktioner:</p>
-                          </div>
-                          <p className="text-yellow-800">{order.delivery.deliveryInstructions}</p>
-                        </div>
-                      )}
-
-                      {!order.delivery.deliveryAddress && !order.delivery.expectedDelivery && !order.delivery.courierInfo && !order.delivery.deliveryInstructions && (
-                        <div className="text-center py-4 text-gray-500">
-                          <Truck className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                          <p className="text-sm">Ingen leveringsoplysninger tilgængelige</p>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Invoice Information */}
-                {order.invoice.isInvoiced && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Faktura
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-green-600">
-                          <CheckCircle className="h-4 w-4" />
-                          <span className="font-medium">Faktura sendt</span>
-                        </div>
-                        
-                        {order.invoice.invoicedAt && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Sendt dato:</p>
-                            <p className="text-gray-900">
-                              {formatDate(order.invoice.invoicedAt)}
-                            </p>
-                          </div>
-                        )}
-
-                        {order.invoice.invoiceNumber && (
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">Faktura nummer:</p>
-                            <p className="text-gray-900">{order.invoice.invoiceNumber}</p>
-                          </div>
-                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {/* Order Notes */}
-                {(order.orderNotes || order.internalNotes) && (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <FileText className="h-5 w-5" />
-                        Noter
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {order.orderNotes && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Kunde noter:</p>
-                          <p className="text-gray-900">{order.orderNotes}</p>
-                        </div>
-                      )}
-                      
-                      {order.internalNotes && (
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Interne noter:</p>
-                          <p className="text-gray-900">{order.internalNotes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
+          ) : null}
         </div>
-      </DashboardLayout>
+      </div>
 
       {/* Delivery Date Dialog for "Pakket" Status */}
       <AlertDialog open={deliveryDateDialogOpen} onOpenChange={setDeliveryDateDialogOpen}>
@@ -1230,7 +997,7 @@ const AdminOrderDetail: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </DashboardLayout>
   );
 };
 
