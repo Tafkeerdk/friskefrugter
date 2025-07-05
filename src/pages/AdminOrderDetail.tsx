@@ -452,7 +452,7 @@ const AdminOrderDetail: React.FC = () => {
                   <div 
                     className={cn(
                       "relative flex items-center justify-center transition-all duration-300",
-                      "border-2 rounded-full text-xs font-medium w-10 h-10",
+                      "border-2 rounded-full text-xs font-medium w-8 h-8 sm:w-10 sm:h-10",
                       isComplete 
                         ? "bg-blue-600 text-white border-blue-600" 
                         : "bg-gray-50 text-gray-400 border-gray-200",
@@ -590,7 +590,7 @@ const AdminOrderDetail: React.FC = () => {
             </div>
 
             {/* Order Summary */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2">
@@ -656,9 +656,9 @@ const AdminOrderDetail: React.FC = () => {
             <StatusProgression />
 
             {/* Main Content */}
-            <div className="grid gap-6 lg:grid-cols-3">
+            <div className="grid gap-6 xl:grid-cols-3">
               {/* Left Column - Order Items & Customer */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="xl:col-span-2 space-y-6">
                 {/* Order Items */}
                 <Card>
                   <CardHeader>
@@ -670,13 +670,13 @@ const AdminOrderDetail: React.FC = () => {
                   <CardContent>
                     <div className="space-y-4">
                       {order.items.map((item, index) => (
-                        <div key={index} className="flex items-center gap-4 p-4 border rounded-lg">
-                          <div className="w-16 h-16 flex-shrink-0">
+                        <div key={index} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
                             {item.product.billeder && item.product.billeder.length > 0 ? (
                               <img
                                 src={item.product.billeder[0].url}
                                 alt={item.product.produktnavn}
-                                className="w-16 h-16 object-cover rounded-lg"
+                                className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                   e.currentTarget.nextElementSibling!.classList.remove('hidden');
@@ -684,10 +684,10 @@ const AdminOrderDetail: React.FC = () => {
                               />
                             ) : null}
                             <div className={cn(
-                              "w-16 h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-sm",
+                              "w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-sm",
                               item.product.billeder && item.product.billeder.length > 0 ? "hidden" : ""
                             )}>
-                              <Package className="h-6 w-6 text-gray-400" />
+                              <Package className="h-4 w-4 sm:h-6 sm:w-6 text-gray-400" />
                             </div>
                           </div>
                           <div className="flex-1">
@@ -757,7 +757,7 @@ const AdminOrderDetail: React.FC = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid gap-4 md:grid-cols-2">
+                    <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <h4 className="font-medium text-gray-900">
                           {order.customerSnapshot.companyName}

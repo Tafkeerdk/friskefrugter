@@ -934,11 +934,11 @@ const DashboardOrders: React.FC = () => {
           
           {/* Controls */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 lg:flex-shrink-0">
-            <div className="flex flex-col sm:flex-row gap-2">
+            <div className="flex flex-col gap-2">
                               <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full sm:w-40 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="all">Alle status</option>
                   <option value="order_placed">Afgivet</option>
@@ -951,7 +951,7 @@ const DashboardOrders: React.FC = () => {
               
               <Input 
                 placeholder="Søg ordrer..." 
-                className="w-full sm:w-64 lg:w-72" 
+                className="w-full" 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -1018,7 +1018,7 @@ const DashboardOrders: React.FC = () => {
                 <Card key={order._id} className="overflow-hidden hover:shadow-md transition-shadow duration-200">
                   <CardContent className="p-6">
                     {/* Order Header */}
-                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+                    <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-6">
                       <div className="flex items-start gap-4">
                         {isAdminContext && (
                           <Checkbox 
