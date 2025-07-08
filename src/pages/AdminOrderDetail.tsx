@@ -36,12 +36,12 @@ const STATUS_LABELS = {
 } as const;
 
 const STATUS_COLORS = {
-  'order_placed': 'bg-gray-100 text-gray-800',
+  'order_placed': 'bg-brand-gray-100 text-brand-gray-800',
   'order_confirmed': 'bg-blue-100 text-blue-800',
   'in_transit': 'bg-yellow-100 text-yellow-800',
-  'delivered': 'bg-green-100 text-green-800',
+  'delivered': 'bg-brand-primary/10 text-brand-primary-dark',
   'invoiced': 'bg-purple-100 text-purple-800',
-  'rejected': 'bg-red-100 text-red-800'
+  'rejected': 'bg-brand-error/10 text-brand-error'
 } as const;
 
 const STATUS_PROGRESSION = ['order_placed', 'order_confirmed', 'in_transit', 'delivered', 'invoiced'] as const;
@@ -431,15 +431,15 @@ const AdminOrderDetail: React.FC = () => {
     const currentIndex = getCurrentStatusIndex(order.status);
     
     return (
-      <Card className="mb-6">
+      <Card className="card-brand mb-6">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ArrowRight className="h-5 w-5" />
+          <CardTitle className="flex items-center gap-2 text-brand-gray-900">
+            <ArrowRight className="h-5 w-5 text-brand-primary" />
             Status progression
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2 py-3">
+          <div className="flex items-center gap-1 sm:gap-2 py-3 overflow-x-auto">
             {STATUS_PROGRESSION.map((status, index) => {
               const isComplete = index <= currentIndex;
               const isCurrent = index === currentIndex;
@@ -452,12 +452,12 @@ const AdminOrderDetail: React.FC = () => {
                   <div 
                     className={cn(
                       "relative flex items-center justify-center transition-all duration-300",
-                      "border-2 rounded-full text-xs font-medium w-8 h-8 sm:w-10 sm:h-10",
+                      "border-2 rounded-full text-xs font-medium w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0",
                       isComplete 
-                        ? "bg-blue-600 text-white border-blue-600" 
-                        : "bg-gray-50 text-gray-400 border-gray-200",
+                        ? "bg-brand-primary text-white border-brand-primary" 
+                        : "bg-brand-gray-50 text-brand-gray-400 border-brand-gray-200",
                       canProgress && "cursor-pointer hover:scale-110 hover:shadow-md",
-                      isCurrent && "ring-2 ring-blue-300 shadow-md",
+                      isCurrent && "ring-2 ring-brand-primary/30 shadow-md",
                       willSkipSteps && canProgress && "hover:ring-2 hover:ring-yellow-300"
                     )}
                     onClick={() => canProgress && handleStatusUpdate(status)}
@@ -469,29 +469,29 @@ const AdminOrderDetail: React.FC = () => {
                   >
                     {getStatusIcon(status)}
                     {isCurrent && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-600 rounded-full animate-pulse" />
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-brand-primary rounded-full animate-pulse" />
                     )}
                     {willSkipSteps && canProgress && (
                       <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full" />
                     )}
                     {isUpdatingStatus && canProgress && (
-                      <div className="absolute inset-0 bg-gray-200 rounded-full animate-pulse" />
+                      <div className="absolute inset-0 bg-brand-gray-200 rounded-full animate-pulse" />
                     )}
                   </div>
                   
                   {index < STATUS_PROGRESSION.length - 1 && (
                     <div className={cn(
-                      "flex-1 h-0.5 transition-all duration-300",
+                      "flex-1 h-0.5 transition-all duration-300 min-w-[20px] sm:min-w-[30px]",
                       index < currentIndex 
-                        ? "bg-blue-600" 
-                        : "bg-gray-200"
+                        ? "bg-brand-primary" 
+                        : "bg-brand-gray-200"
                     )} />
                   )}
                 </React.Fragment>
               );
             })}
           </div>
-          <div className="text-xs text-gray-500 mt-2">
+          <div className="text-xs text-brand-gray-500 mt-4 px-2 text-center sm:text-left">
             Klik på en status for at opdatere ordren. Kunden vil modtage email om ændringen.
           </div>
         </CardContent>
@@ -559,29 +559,29 @@ const AdminOrderDetail: React.FC = () => {
         <div className="dashboard-page-container">
           <div className="content-width">
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0 mb-6">
+              <div className="flex flex-col space-y-3 md:flex-row md:items-center md:gap-4 md:space-y-0">
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => navigate('/admin/orders')}
-                  className="gap-2"
+                  className="btn-brand-outline self-start min-h-[44px] px-4"
                 >
-                  <ArrowLeft className="h-4 w-4" />
+                  <ArrowLeft className="h-4 w-4 mr-2" />
                   Tilbage til ordrer
                 </Button>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
+                  <h1 className="text-xl md:text-2xl font-bold text-brand-gray-900">
                     Ordre {order.orderNumber}
                   </h1>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-brand-gray-600">
                     Afgivet {formatDate(order.placedAt)}
                   </p>
                 </div>
               </div>
               <Badge 
                 className={cn(
-                  "text-sm font-medium",
+                  "text-sm font-medium self-start md:self-center",
                   STATUS_COLORS[order.status as keyof typeof STATUS_COLORS] || STATUS_COLORS['order_placed']
                 )}
               >
@@ -590,14 +590,14 @@ const AdminOrderDetail: React.FC = () => {
             </div>
 
             {/* Order Summary */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-              <Card>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+              <Card className="card-brand">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Total</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                  <div className="flex items-center gap-3">
+                    <Banknote className="h-5 w-5 text-brand-primary flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-brand-gray-600">Total</p>
+                      <p className="text-lg md:text-2xl font-bold text-brand-gray-900 truncate">
                         {formatPrice(order.orderTotals.totalAmount)}
                       </p>
                     </div>
@@ -605,13 +605,13 @@ const AdminOrderDetail: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="card-brand">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Antal varer</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                  <div className="flex items-center gap-3">
+                    <Package className="h-5 w-5 text-brand-secondary flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-brand-gray-600">Antal varer</p>
+                      <p className="text-lg md:text-2xl font-bold text-brand-gray-900">
                         {order.orderTotals.totalItems}
                       </p>
                     </div>
@@ -619,13 +619,13 @@ const AdminOrderDetail: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="card-brand">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Besparelse</p>
-                      <p className="text-2xl font-bold text-gray-900">
+                  <div className="flex items-center gap-3">
+                    <Banknote className="h-5 w-5 text-brand-warning flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-brand-gray-600">Besparelse</p>
+                      <p className="text-lg md:text-2xl font-bold text-brand-gray-900 truncate">
                         {formatPrice(order.orderTotals.totalSavings)}
                       </p>
                     </div>
@@ -633,17 +633,17 @@ const AdminOrderDetail: React.FC = () => {
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="card-brand">
                 <CardContent className="pt-6">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-600">Faktura</p>
-                      <p className="text-lg font-bold text-gray-900">
+                  <div className="flex items-center gap-3">
+                    <FileText className="h-5 w-5 text-purple-600 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium text-brand-gray-600">Faktura</p>
+                      <p className="text-base md:text-lg font-bold text-brand-gray-900">
                         {order.invoice.isInvoiced ? (
-                          <span className="text-green-600">✓ Sendt</span>
+                          <span className="text-brand-success">✓ Sendt</span>
                         ) : (
-                          <span className="text-gray-500">Ikke sendt</span>
+                          <span className="text-brand-gray-500">Ikke sendt</span>
                         )}
                       </p>
                     </div>
@@ -656,27 +656,27 @@ const AdminOrderDetail: React.FC = () => {
             <StatusProgression />
 
             {/* Main Content */}
-            <div className="grid gap-6 xl:grid-cols-3">
+            <div className="grid gap-6 lg:grid-cols-1 xl:grid-cols-3">
               {/* Left Column - Order Items & Customer */}
               <div className="xl:col-span-2 space-y-6">
                 {/* Order Items */}
-                <Card>
+                <Card className="card-brand">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Package className="h-5 w-5" />
+                    <CardTitle className="flex items-center gap-2 text-brand-gray-900">
+                      <Package className="h-5 w-5 text-brand-primary" />
                       Ordre varer
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                       {order.items.map((item, index) => (
-                        <div key={index} className="flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border rounded-lg">
-                          <div className="w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
+                        <div key={index} className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4 p-4 border border-brand-gray-200 rounded-lg hover:border-brand-primary/20 transition-colors">
+                          <div className="w-16 h-16 flex-shrink-0 mx-auto sm:mx-0">
                             {item.product.billeder && item.product.billeder.length > 0 ? (
                               <img
                                 src={item.product.billeder[0].url}
                                 alt={item.product.produktnavn}
-                                className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg"
+                                className="w-16 h-16 object-cover rounded-lg"
                                 onError={(e) => {
                                   e.currentTarget.style.display = 'none';
                                   e.currentTarget.nextElementSibling!.classList.remove('hidden');
@@ -684,39 +684,39 @@ const AdminOrderDetail: React.FC = () => {
                               />
                             ) : null}
                             <div className={cn(
-                              "w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-sm",
+                              "w-16 h-16 bg-gradient-to-br from-brand-gray-50 to-brand-gray-100 rounded-lg flex items-center justify-center border border-brand-gray-200 shadow-sm",
                               item.product.billeder && item.product.billeder.length > 0 ? "hidden" : ""
                             )}>
-                              <Package className="h-4 w-4 sm:h-6 sm:w-6 text-gray-400" />
+                              <Package className="h-6 w-6 text-brand-gray-400" />
                             </div>
                           </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">
+                          <div className="flex-1 text-center sm:text-left w-full">
+                            <h4 className="font-medium text-brand-gray-900 text-base sm:text-lg">
                               {item.product.produktnavn}
                             </h4>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-sm text-brand-gray-600 mb-3">
                               Varenr: {item.product.varenummer}
                             </p>
-                            <div className="flex items-center gap-4 mt-2">
-                              <span className="text-sm text-gray-600">
-                                Antal: {item.quantity}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+                              <span className="text-sm text-brand-gray-600">
+                                Antal: <strong>{item.quantity}</strong>
                               </span>
-                              <span className="text-sm font-medium">
+                              <span className="text-sm font-medium text-brand-gray-900">
                                 {formatPrice(item.staticPricing.price)} stk.
                               </span>
                               {item.staticPricing.discountPercentage > 0 && (
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs bg-brand-primary/10 text-brand-primary-dark self-center sm:self-start">
                                   -{item.staticPricing.discountPercentage}%
                                 </Badge>
                               )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-bold text-gray-900">
+                          <div className="text-center sm:text-right w-full sm:w-auto">
+                            <p className="font-bold text-brand-gray-900 text-lg">
                               {formatPrice(item.itemTotal)}
                             </p>
                             {item.itemSavings > 0 && (
-                              <p className="text-sm text-green-600">
+                              <p className="text-sm text-brand-success">
                                 Besparelse: {formatPrice(item.itemSavings)}
                               </p>
                             )}
@@ -725,24 +725,24 @@ const AdminOrderDetail: React.FC = () => {
                       ))}
                     </div>
 
-                    <Separator className="my-4" />
+                    <Separator className="my-4 bg-brand-gray-200" />
 
                     {/* Order Totals */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
+                    <div className="space-y-3 bg-brand-gray-50 p-4 rounded-lg">
+                      <div className="flex justify-between text-sm text-brand-gray-700">
                         <span>Subtotal:</span>
-                        <span>{formatPrice(order.orderTotals.subtotal)}</span>
+                        <span className="font-medium">{formatPrice(order.orderTotals.subtotal)}</span>
                       </div>
                       {order.orderTotals.totalSavings > 0 && (
-                        <div className="flex justify-between text-sm text-green-600">
+                        <div className="flex justify-between text-sm text-brand-success">
                           <span>Total besparelse:</span>
-                          <span>-{formatPrice(order.orderTotals.totalSavings)}</span>
+                          <span className="font-medium">-{formatPrice(order.orderTotals.totalSavings)}</span>
                         </div>
                       )}
-                      <Separator />
-                      <div className="flex justify-between font-bold text-lg">
+                      <Separator className="bg-brand-gray-200" />
+                      <div className="flex justify-between font-bold text-lg text-brand-gray-900">
                         <span>Total:</span>
-                        <span>{formatPrice(order.orderTotals.totalAmount)}</span>
+                        <span className="text-brand-primary">{formatPrice(order.orderTotals.totalAmount)}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -1008,10 +1008,10 @@ const AdminOrderDetail: React.FC = () => {
 
       {/* Delivery Date Dialog for "Pakket" Status */}
       <AlertDialog open={deliveryDateDialogOpen} onOpenChange={setDeliveryDateDialogOpen}>
-        <AlertDialogContent className="max-w-lg">
+        <AlertDialogContent className="max-w-lg mx-4 sm:mx-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-blue-600" />
+            <AlertDialogTitle className="flex items-center gap-2 text-brand-gray-900">
+              <Truck className="h-5 w-5 text-brand-primary" />
               Leveringsdato og tid
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
@@ -1100,7 +1100,7 @@ const AdminOrderDetail: React.FC = () => {
             <AlertDialogAction
               onClick={updateOrderStatusWithDelivery}
               disabled={isUpdatingStatus || (deliveryDate === 'custom' && !customDeliveryDate)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="btn-brand-primary"
             >
               {isUpdatingStatus ? (
                 <>
@@ -1120,10 +1120,10 @@ const AdminOrderDetail: React.FC = () => {
 
       {/* Standalone Delivery Edit Dialog */}
       <AlertDialog open={deliveryEditDialogOpen} onOpenChange={setDeliveryEditDialogOpen}>
-        <AlertDialogContent className="max-w-lg">
+        <AlertDialogContent className="max-w-lg mx-4 sm:mx-auto">
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5 text-blue-600" />
+            <AlertDialogTitle className="flex items-center gap-2 text-brand-gray-900">
+              <Edit className="h-5 w-5 text-brand-primary" />
               Rediger leveringsinformation
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
@@ -1213,7 +1213,7 @@ const AdminOrderDetail: React.FC = () => {
             <AlertDialogAction
               onClick={updateDeliveryInfo}
               disabled={isUpdatingDelivery || (editDeliveryDate === 'custom' && !editCustomDeliveryDate)}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="btn-brand-primary"
             >
               {isUpdatingDelivery ? (
                 <>
