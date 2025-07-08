@@ -167,6 +167,12 @@ const DashboardOrders: React.FC = () => {
   const [editDeliveryTime, setEditDeliveryTime] = useState<string>('09:00-12:00');
   const [editCustomDeliveryDate, setEditCustomDeliveryDate] = useState<string>('');
 
+  // PDF Delivery Paper state
+  const [deliveryPdfDialogOpen, setDeliveryPdfDialogOpen] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [manualOrderIds, setManualOrderIds] = useState<string[]>([]);
+  const [draggedOrderIndex, setDraggedOrderIndex] = useState<number | null>(null);
+
   // Determine if we're in admin or customer context
   const isAdminContext = isAdminAuthenticated && location.pathname.includes('/admin');
 
@@ -702,6 +708,86 @@ const DashboardOrders: React.FC = () => {
     }
   };
 
+  const handleGenerateDeliveryPDF = async (type: 'fifo' | 'manual') => {
+    try {
+      setIsGeneratingPdf(true);
+      
+      const response = await authService.generateDeliveryPDF(
+        type, 
+        type === 'manual' ? manualOrderIds : undefined
+      );
+
+      if (response.success && response.data) {
+        // Open PDF in new window for printing
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.document.write(response.data.htmlContent);
+          newWindow.document.close();
+          
+          // Auto print after a short delay to allow content to load
+          setTimeout(() => {
+            newWindow.print();
+          }, 1000);
+        }
+
+        toast({
+          title: "Leveringsseddel genereret",
+          description: `${response.data.totalOrders} ordrer er klar til levering.`,
+        });
+
+        setDeliveryPdfDialogOpen(false);
+      }
+    } catch (error: any) {
+      console.error('Delivery PDF generation error:', error);
+      toast({
+        title: "Fejl ved generering",
+        description: error.message || "Kunne ikke generere leveringsseddel.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedOrderIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    
+    if (draggedOrderIndex !== null && draggedOrderIndex !== dropIndex) {
+      const newOrderIds = [...manualOrderIds];
+      const draggedOrderId = newOrderIds[draggedOrderIndex];
+      
+      // Remove dragged item
+      newOrderIds.splice(draggedOrderIndex, 1);
+      
+      // Insert at new position
+      newOrderIds.splice(dropIndex, 0, draggedOrderId);
+      
+      setManualOrderIds(newOrderIds);
+    }
+    
+    setDraggedOrderIndex(null);
+  };
+
+  const initializeManualOrdering = () => {
+    // Initialize with orders ready for delivery (confirmed or in_transit)
+    const deliveryReadyOrders = adminOrders.filter(order => 
+      ['order_confirmed', 'in_transit'].includes(order.status) &&
+      order.delivery?.expectedDelivery
+    );
+    setManualOrderIds(deliveryReadyOrders.map(order => order._id));
+    setDeliveryPdfDialogOpen(true);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'order_placed':
@@ -981,6 +1067,28 @@ const DashboardOrders: React.FC = () => {
                     <Download className="h-4 w-4" />
                   )}
                   <span className="hidden sm:inline">Eksporter PDF</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleGenerateDeliveryPDF('fifo')}
+                  disabled={isGeneratingPdf}
+                  className="gap-1 bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
+                >
+                  {isGeneratingPdf ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600" />
+                  ) : (
+                    <Truck className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">FIFO Leveringsseddel</span>
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={initializeManualOrdering}
+                  disabled={isGeneratingPdf}
+                  className="gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span className="hidden sm:inline">Manuel Rækkefølge</span>
                 </Button>
               </div>
             )}
@@ -1732,6 +1840,117 @@ const DashboardOrders: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Manual Delivery PDF Ordering Dialog */}
+      <Dialog open={deliveryPdfDialogOpen} onOpenChange={setDeliveryPdfDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-blue-600" />
+              Manuel rækkefølge for leveringsseddel
+            </DialogTitle>
+            <DialogDescription>
+              Træk og slip ordrer for at ændre leveringsrækkefølgen. Ordrerne vil blive printet i den rækkefølge du angiver.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Delivery Ready Orders List */}
+            <div className="space-y-2">
+              <h4 className="text-sm font-medium text-gray-700">
+                Ordrer klar til levering ({manualOrderIds.length})
+              </h4>
+              
+              {manualOrderIds.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Truck className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <p>Ingen ordrer er klar til levering</p>
+                  <p className="text-sm">Ordrer skal være bekræftet og have en leveringsdato</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-96 overflow-y-auto">
+                  {manualOrderIds.map((orderId, index) => {
+                    const order = adminOrders.find(o => o._id === orderId);
+                    if (!order) return null;
+
+                    return (
+                      <div
+                        key={orderId}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, index)}
+                        className={cn(
+                          "flex items-center justify-between p-3 bg-white border rounded-lg cursor-move hover:shadow-md transition-shadow",
+                          draggedOrderIndex === index && "opacity-50"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="text-sm font-medium text-gray-600">
+                            #{index + 1}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">
+                              {order.orderNumber}
+                            </div>
+                            <div className="text-sm text-gray-600">
+                              {order.customer.companyName}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium">
+                            {order.totalAmount.toLocaleString('da-DK')} kr
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {order.delivery?.expectedDelivery 
+                              ? formatDeliveryDate(order.delivery.expectedDelivery)
+                              : 'Ingen leveringsdato'
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex justify-between items-center pt-4 border-t">
+              <div className="text-sm text-gray-600">
+                Total: <strong>{manualOrderIds.length} ordrer</strong>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeliveryPdfDialogOpen(false)}
+                  disabled={isGeneratingPdf}
+                >
+                  Annuller
+                </Button>
+                <Button
+                  onClick={() => handleGenerateDeliveryPDF('manual')}
+                  disabled={isGeneratingPdf || manualOrderIds.length === 0}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {isGeneratingPdf ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Genererer...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generer leveringsseddel
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

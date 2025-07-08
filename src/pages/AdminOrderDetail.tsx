@@ -20,6 +20,8 @@ import {
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DAWAAddressInput } from '@/components/ui/dawa-address-input';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { authService, type Order } from '@/lib/auth';
@@ -71,6 +73,18 @@ const AdminOrderDetail: React.FC = () => {
   const [editDeliveryDate, setEditDeliveryDate] = useState<string>('tomorrow');
   const [editDeliveryTime, setEditDeliveryTime] = useState<string>('09:00-12:00');
   const [editCustomDeliveryDate, setEditCustomDeliveryDate] = useState<string>('');
+
+  // Delivery address edit state
+  const [deliveryAddressEditDialogOpen, setDeliveryAddressEditDialogOpen] = useState(false);
+  const [isUpdatingDeliveryAddress, setIsUpdatingDeliveryAddress] = useState(false);
+  const [deliveryAddressEdit, setDeliveryAddressEdit] = useState({
+    street: '',
+    city: '',
+    postalCode: '',
+    country: 'Danmark'
+  });
+  const [saveForFutureOrders, setSaveForFutureOrders] = useState(false);
+  const [sendEmailNotification, setSendEmailNotification] = useState(false);
 
   useEffect(() => {
     if (!isAdminAuthenticated) {
@@ -400,6 +414,65 @@ const AdminOrderDetail: React.FC = () => {
       });
     } finally {
       setIsUpdatingDelivery(false);
+    }
+  };
+
+  const handleDeliveryAddressEdit = () => {
+    if (!order) return;
+    
+    // Pre-fill the form with current delivery address
+    const currentAddress = order.delivery?.deliveryAddress || order.customer?.address;
+    if (currentAddress) {
+      setDeliveryAddressEdit({
+        street: currentAddress.street || '',
+        city: currentAddress.city || '',
+        postalCode: currentAddress.postalCode || '',
+        country: currentAddress.country || 'Danmark'
+      });
+    }
+    
+    setDeliveryAddressEditDialogOpen(true);
+  };
+
+  const updateDeliveryAddress = async () => {
+    if (!order) return;
+
+    try {
+      setIsUpdatingDeliveryAddress(true);
+
+      const response = await authService.updateOrderDeliveryAddress(order._id, deliveryAddressEdit, {
+        saveForFutureOrders,
+        sendEmailNotification
+      });
+
+      if (response.success) {
+        // Update order with new delivery address
+        setOrder(prev => prev ? {
+          ...prev,
+          delivery: {
+            ...prev.delivery,
+            deliveryAddress: response.newDeliveryAddress,
+            addressUpdatedBy: response.order.delivery.addressUpdatedBy,
+            addressUpdatedAt: response.order.delivery.addressUpdatedAt
+          }
+        } : null);
+
+        setDeliveryAddressEditDialogOpen(false);
+        
+        toast({
+          title: "Leveringsadresse opdateret",
+          description: `Leveringsadresse er blevet opdateret for ordre ${order.orderNumber}${response.customerUpdated ? ' og gemt som standard' : ''}`,
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Error updating delivery address:', error);
+      toast({
+        title: "Fejl",
+        description: error.message || "Kunne ikke opdatere leveringsadresse",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingDeliveryAddress(false);
     }
   };
 
@@ -889,9 +962,20 @@ const AdminOrderDetail: React.FC = () => {
                       
                       {order.delivery.deliveryAddress && (
                         <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                          <div className="flex items-center gap-2 mb-2">
-                            <MapPin className="h-4 w-4 text-green-600" />
-                            <p className="text-sm font-medium text-green-900">Leveringsadresse:</p>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-4 w-4 text-green-600" />
+                              <p className="text-sm font-medium text-green-900">Leveringsadresse:</p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleDeliveryAddressEdit}
+                              className="h-6 px-2 text-xs border-green-300 text-green-700 hover:bg-green-100"
+                            >
+                              <Edit className="h-3 w-3 mr-1" />
+                              Rediger
+                            </Button>
                           </div>
                           <div className="text-green-800 font-medium space-y-1">
                             <p className="text-base">{order.delivery.deliveryAddress.street}</p>
@@ -1224,6 +1308,141 @@ const AdminOrderDetail: React.FC = () => {
                 <>
                   <Edit className="h-4 w-4 mr-2" />
                   Opdater leveringsinformation
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delivery Address Edit Dialog */}
+      <AlertDialog open={deliveryAddressEditDialogOpen} onOpenChange={setDeliveryAddressEditDialogOpen}>
+        <AlertDialogContent className="max-w-2xl mx-4 sm:mx-auto">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2 text-brand-gray-900">
+              <MapPin className="h-5 w-5 text-brand-primary" />
+              Rediger leveringsadresse
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  Opdater leveringsadresse for ordre <strong>{order?.orderNumber}</strong>
+                </p>
+                
+                {/* Current delivery address display */}
+                {order?.delivery?.deliveryAddress && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Nuværende leveringsadresse:</h4>
+                    <div className="space-y-1 text-sm text-gray-600">
+                      <p><strong>Adresse:</strong> {order.delivery.deliveryAddress.street}</p>
+                      <p><strong>By:</strong> {order.delivery.deliveryAddress.postalCode} {order.delivery.deliveryAddress.city}</p>
+                      <p><strong>Land:</strong> {order.delivery.deliveryAddress.country}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* DAWA Address Input */}
+                <div className="space-y-4">
+                  <DAWAAddressInput
+                    onAddressSelect={(addressData) => {
+                      if (addressData) {
+                        setDeliveryAddressEdit({
+                          street: addressData.street || '',
+                          city: addressData.city || '',
+                          postalCode: addressData.postalCode || '',
+                          country: 'Danmark'
+                        });
+                      }
+                    }}
+                    initialValue={deliveryAddressEdit}
+                    label="Ny leveringsadresse"
+                    placeholder="Søg efter ny leveringsadresse..."
+                    disabled={isUpdatingDeliveryAddress}
+                  />
+                </div>
+
+                {/* Options */}
+                <div className="space-y-3 border-t pt-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="saveForFutureOrders"
+                      checked={saveForFutureOrders}
+                      onCheckedChange={(checked) => setSaveForFutureOrders(checked as boolean)}
+                      disabled={isUpdatingDeliveryAddress}
+                    />
+                    <Label htmlFor="saveForFutureOrders" className="text-sm font-medium">
+                      Ønsker du at angive denne adresse som standard for alle fremtidige ordrer for denne kunde?
+                    </Label>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="sendEmailNotification"
+                      checked={sendEmailNotification}
+                      onCheckedChange={(checked) => setSendEmailNotification(checked as boolean)}
+                      disabled={isUpdatingDeliveryAddress}
+                    />
+                    <Label htmlFor="sendEmailNotification" className="text-sm font-medium">
+                      Ønsker du at sende email til kunden om adresseændringen?
+                    </Label>
+                  </div>
+                </div>
+
+                {/* Info boxes */}
+                {saveForFutureOrders && sendEmailNotification && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <Send className="h-4 w-4" />
+                      <span className="font-medium text-sm">Email notifikation inkluderer</span>
+                    </div>
+                    <p className="text-sm text-blue-600 mt-1">
+                      Kunden vil modtage en email med den nye leveringsadresse og information om at den er gemt som standard for fremtidige ordrer.
+                    </p>
+                  </div>
+                )}
+
+                {sendEmailNotification && !saveForFutureOrders && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-blue-700">
+                      <Send className="h-4 w-4" />
+                      <span className="font-medium text-sm">Email notifikation</span>
+                    </div>
+                    <p className="text-sm text-blue-600 mt-1">
+                      Kunden vil modtage en email med den opdaterede leveringsadresse for denne ordre.
+                    </p>
+                  </div>
+                )}
+
+                {saveForFutureOrders && !sendEmailNotification && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-center gap-2 text-yellow-700">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span className="font-medium text-sm">Ingen email notifikation</span>
+                    </div>
+                    <p className="text-sm text-yellow-600 mt-1">
+                      Adressen vil blive gemt som standard, men kunden vil ikke modtage en email om ændringen.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isUpdatingDeliveryAddress}>Annuller</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={updateDeliveryAddress}
+              disabled={isUpdatingDeliveryAddress || !deliveryAddressEdit.street || !deliveryAddressEdit.city || !deliveryAddressEdit.postalCode}
+              className="btn-brand-primary"
+            >
+              {isUpdatingDeliveryAddress ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Opdaterer...
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4 mr-2" />
+                  Opdater leveringsadresse
                 </>
               )}
             </AlertDialogAction>

@@ -102,6 +102,12 @@ const getEndpoint = (path: string): string => {
   if (pathOnly.startsWith('/admin-order-delivery-update')) {
     return `/.netlify/functions/admin-order-delivery-update${queryString}`;
   }
+  if (pathOnly.startsWith('/admin-order-delivery-address-update')) {
+    return `/.netlify/functions/admin-order-delivery-address-update${queryString}`;
+  }
+  if (pathOnly.startsWith('/admin-delivery-pdf')) {
+    return `/.netlify/functions/admin-delivery-pdf${queryString}`;
+  }
   
   // Visitor tracking endpoint
   if (pathOnly.startsWith('/visitor-tracking')) {
@@ -2408,6 +2414,111 @@ export const authService = {
 
     // Clear order cache after successful update
     requestCache.clearPattern('.*orders.*');
+
+    return data;
+  },
+
+  /**
+   * Update delivery address for an order (NEW API)
+   */
+  async updateOrderDeliveryAddress(orderId: string, deliveryAddress: {
+    street: string;
+    city: string;
+    postalCode: string;
+    country: string;
+  }, options: {
+    saveForFutureOrders?: boolean;
+    sendEmailNotification?: boolean;
+  } = {}): Promise<{
+    success: boolean;
+    message: string;
+    order: {
+      _id: string;
+      orderNumber: string;
+      status: string;
+      delivery: {
+        deliveryAddress: {
+          street: string;
+          city: string;
+          postalCode: string;
+          country: string;
+        };
+        addressUpdatedBy: string;
+        addressUpdatedAt: string;
+      };
+      lastUpdated: string;
+    };
+    previousDeliveryAddress: {
+      street: string;
+      city: string;
+      postalCode: string;
+      country: string;
+    } | null;
+    newDeliveryAddress: {
+      street: string;
+      city: string;
+      postalCode: string;
+      country: string;
+    };
+    customerUpdated: boolean;
+    emailSent: boolean;
+    updatedBy: {
+      id: string;
+      name: string;
+    };
+  }> {
+    const response = await apiClient.post(getEndpoint('/admin-order-delivery-address-update'), {
+      orderId,
+      deliveryAddress,
+      saveForFutureOrders: options.saveForFutureOrders || false,
+      sendEmailNotification: options.sendEmailNotification || false
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to update delivery address');
+    }
+
+    // Clear order cache after successful update
+    requestCache.clearPattern('.*orders.*');
+
+    return data;
+  },
+
+  /**
+   * Generate delivery PDF with FIFO ordering
+   */
+  async generateDeliveryPDF(type: 'fifo' | 'manual' = 'fifo', orderIds?: string[]): Promise<{
+    success: boolean;
+    message: string;
+    data?: {
+      htmlContent: string;
+      orders: Array<{
+        _id: string;
+        orderNumber: string;
+        customerName: string;
+        totalAmount: number;
+        status: string;
+        expectedDelivery: string;
+        deliveryTimeSlot: string;
+      }>;
+      type: string;
+      generatedAt: string;
+      totalOrders: number;
+      totalAmount: number;
+    };
+  }> {
+    const response = await apiClient.post(getEndpoint('/admin-delivery-pdf'), {
+      type,
+      orderIds: type === 'manual' ? orderIds : undefined
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to generate delivery PDF');
+    }
 
     return data;
   },
