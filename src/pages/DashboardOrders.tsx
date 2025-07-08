@@ -169,6 +169,7 @@ const DashboardOrders: React.FC = () => {
 
   // PDF Delivery Paper state
   const [deliveryPdfDialogOpen, setDeliveryPdfDialogOpen] = useState(false);
+  const [deliveryPdfTypeDialogOpen, setDeliveryPdfTypeDialogOpen] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [manualOrderIds, setManualOrderIds] = useState<string[]>([]);
   const [draggedOrderIndex, setDraggedOrderIndex] = useState<number | null>(null);
@@ -1070,7 +1071,7 @@ const DashboardOrders: React.FC = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => handleGenerateDeliveryPDF('fifo')}
+                  onClick={() => setDeliveryPdfTypeDialogOpen(true)}
                   disabled={isGeneratingPdf}
                   className="gap-1 bg-green-50 hover:bg-green-100 border-green-200 text-green-700"
                 >
@@ -1079,16 +1080,7 @@ const DashboardOrders: React.FC = () => {
                   ) : (
                     <Truck className="h-4 w-4" />
                   )}
-                  <span className="hidden sm:inline">FIFO Leveringsseddel</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={initializeManualOrdering}
-                  disabled={isGeneratingPdf}
-                  className="gap-1 bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700"
-                >
-                  <Edit className="h-4 w-4" />
-                  <span className="hidden sm:inline">Manuel Rækkefølge</span>
+                  <span className="hidden sm:inline">Leveringsseddel</span>
                 </Button>
               </div>
             )}
@@ -1840,6 +1832,59 @@ const DashboardOrders: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Delivery PDF Type Selection Dialog */}
+      <Dialog open={deliveryPdfTypeDialogOpen} onOpenChange={setDeliveryPdfTypeDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-green-600" />
+              Opret leveringsseddel
+            </DialogTitle>
+            <DialogDescription>
+              Vælg hvordan du vil oprette leveringssedlen. Du kan enten bruge den automatiske rækkefølge eller arrangere ordrerne manuelt.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <Button
+              onClick={() => {
+                setDeliveryPdfTypeDialogOpen(false);
+                handleGenerateDeliveryPDF('fifo');
+              }}
+              disabled={isGeneratingPdf}
+              className="w-full justify-start gap-3 p-4 h-auto bg-green-50 hover:bg-green-100 border-green-200 text-green-700 border"
+              variant="outline"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar className="h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Seneste ordre rækkefølge</div>
+                  <div className="text-xs text-green-600">Automatisk sortering efter ordredato</div>
+                </div>
+              </div>
+            </Button>
+
+            <Button
+              onClick={() => {
+                setDeliveryPdfTypeDialogOpen(false);
+                initializeManualOrdering();
+              }}
+              disabled={isGeneratingPdf}
+              className="w-full justify-start gap-3 p-4 h-auto bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-700 border"
+              variant="outline"
+            >
+              <div className="flex items-center gap-3">
+                <Edit className="h-5 w-5" />
+                <div className="text-left">
+                  <div className="font-medium">Manuel rækkefølge</div>
+                  <div className="text-xs text-blue-600">Tilpas leveringsrækkefølgen selv</div>
+                </div>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Manual Delivery PDF Ordering Dialog */}
       <Dialog open={deliveryPdfDialogOpen} onOpenChange={setDeliveryPdfDialogOpen}>
