@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Search, Filter, LogIn, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, LogIn, X, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface PublicProductFiltersProps {
   // Filter values
@@ -48,6 +49,42 @@ export function PublicProductFilters({
   className
 }: PublicProductFiltersProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  
+  // **LOCAL STATE FOR DEBOUNCED SEARCH - CRITICAL FIX**
+  const [localSearch, setLocalSearch] = useState(search);
+  
+  // **DEBOUNCED SEARCH VALUE - 600MS DELAY**
+  const debouncedSearch = useDebounce(localSearch, 600);
+
+  // **SYNC LOCAL SEARCH WITH PROP WHEN IT CHANGES EXTERNALLY**
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  // **TRIGGER API CALL WHEN DEBOUNCED SEARCH CHANGES**
+  useEffect(() => {
+    if (debouncedSearch !== search) {
+      onSearchChange(debouncedSearch);
+    }
+  }, [debouncedSearch, search, onSearchChange]);
+
+  // **HANDLE ENTER KEY FOR IMMEDIATE SEARCH**
+  const handleSearchKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Trigger immediate search on Enter
+      onSearchChange(localSearch);
+    }
+  };
+
+  // **CLEAR SEARCH HANDLER**
+  const handleClearSearch = () => {
+    setLocalSearch('');
+    onSearchChange('');
+  };
+
+  // **CHECK IF SEARCH IS PENDING (USER IS STILL TYPING)**
+  const isSearchPending = localSearch !== search && localSearch !== debouncedSearch;
 
   const activeFiltersCount = [
     category !== 'all',
@@ -78,19 +115,43 @@ export function PublicProductFilters({
           </div>
         </div>
 
-        {/* Search - Always Visible */}
+        {/* **DEBOUNCED SEARCH WITH PENDING INDICATOR** */}
         <div className="space-y-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {isSearchPending ? (
+              <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-orange-500 animate-pulse" />
+            ) : (
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            )}
             <Input
               type="text"
-              placeholder="Søg efter produktnavn..."
-              value={search}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-10"
+              placeholder="Søg efter produktnavn... (Tryk Enter for øjeblikkelig søgning)"
+              value={localSearch}
+              onChange={(e) => setLocalSearch(e.target.value)}
+              onKeyDown={handleSearchKeyPress}
+              className={cn(
+                "pl-10 pr-10",
+                isSearchPending && "border-orange-300 focus:border-orange-400"
+              )}
               disabled={isLoading}
             />
+            {localSearch && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                onClick={handleClearSearch}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
+          {isSearchPending && (
+            <p className="text-xs text-orange-600 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Søger automatisk om {Math.ceil(600 / 1000)} sekunder eller tryk Enter...
+            </p>
+          )}
         </div>
       </CardHeader>
 
@@ -115,6 +176,7 @@ export function PublicProductFilters({
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
+                      setLocalSearch('');
                       onClearFilters();
                     }}
                     className="text-xs"
@@ -168,7 +230,7 @@ export function PublicProductFilters({
         <Separator />
 
         {/* Sort Options */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <Label>Sortér efter</Label>
           <div className="grid grid-cols-1 gap-2">
             <Select

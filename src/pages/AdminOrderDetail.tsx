@@ -921,7 +921,7 @@ const AdminOrderDetail: React.FC = () => {
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-blue-600" />
-                              <p className="text-sm font-medium text-blue-900">Forventet levering:</p>
+                              <p className="text-sm font-medium text-blue-900">Levering:</p>
                             </div>
                             {/* Edit button for delivery */}
                             {!order.delivery.deliveredAt && (
@@ -937,7 +937,7 @@ const AdminOrderDetail: React.FC = () => {
                             )}
                           </div>
                           <div className="space-y-2">
-                                                        <p className="text-blue-800 font-semibold text-lg">
+                            <p className="text-blue-800 font-semibold text-lg">
                               {formatDeliveryDate(order.delivery.expectedDelivery)}
                             </p>
                             {/* Show time slot if available */}
@@ -956,7 +956,6 @@ const AdminOrderDetail: React.FC = () => {
                               </div>
                             )}
                           </div>
-
                         </div>
                       )}
                       
@@ -1012,7 +1011,7 @@ const AdminOrderDetail: React.FC = () => {
                         </div>
                       )}
 
-                      {!order.delivery.deliveryAddress && !order.delivery.expectedDelivery && !order.delivery.courierInfo && !order.delivery.deliveryInstructions && (
+                      {!order.delivery.deliveryAddress && !order.delivery.courierInfo && !order.delivery.deliveryInstructions && (
                         <div className="text-center py-4 text-gray-500">
                           <Truck className="h-8 w-8 mx-auto mb-2 text-gray-300" />
                           <p className="text-sm">Ingen leveringsoplysninger tilgængelige</p>

@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Star, Tag, Award, X, Search, Filter, ChevronDown, ChevronUp } from "lucide-react";
+import { Star, Tag, Award, X, Search, Filter, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CustomerProductFiltersProps {
@@ -257,18 +257,30 @@ export function CustomerProductFilters({
               value={localSearch}
               onChange={(e) => setLocalSearch(e.target.value)}
               onKeyDown={handleSearchKeyPress}
-              className="pl-10"
+              className={cn(
+                "pl-10 pr-10",
+                localSearch !== search && "border-orange-300 focus:border-orange-400"
+              )}
               disabled={isLoading}
             />
-            {localSearch !== search && (
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                <div className="h-2 w-2 bg-orange-400 rounded-full animate-pulse"></div>
-              </div>
+            {localSearch && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-1 top-1/2 transform -translate-y-1/2 h-8 w-8"
+                onClick={() => {
+                  setLocalSearch('');
+                  onSearchChange('');
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             )}
           </div>
           {localSearch !== search && (
-            <p className="text-xs text-gray-500">
-              Søger automatisk om {0.8} sekunder eller tryk Enter for øjeblikkelig søgning...
+            <p className="text-xs text-orange-600 flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              Søger automatisk om {Math.ceil(800 / 1000)} sekund eller tryk Enter...
             </p>
           )}
         </div>
