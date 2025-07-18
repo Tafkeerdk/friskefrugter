@@ -2487,7 +2487,7 @@ export const authService = {
   },
 
   /**
-   * Generate delivery PDF with FIFO ordering
+   * Generate delivery PDF with kronologisk ordering
    */
   async generateDeliveryPDF(type: 'fifo' | 'manual' = 'fifo', orderIds?: string[]): Promise<{
     success: boolean;
