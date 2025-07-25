@@ -5,6 +5,8 @@ import { Button } from '../components/ui/button';
 import { ArrowLeft, Smartphone, CheckCircle, Shield } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 
 const Apply: React.FC = () => {
   const navigate = useNavigate();
@@ -12,60 +14,27 @@ const Apply: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile-Optimized Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="page-container">
-          <div className={cn(
-            "flex items-center",
-            isMobile ? "h-14 justify-between" : "justify-between h-16"
-          )}>
-            <div className="flex items-center space-x-3">
-              <Button
-                variant="ghost"
-                onClick={() => navigate('/')}
-                className={cn(
-                  "flex items-center",
-                  isMobile ? "px-2" : "px-3"
-                )}
-                size={isMobile ? "sm" : "default"}
-              >
-                <ArrowLeft className={cn(isMobile ? "w-4 h-4 mr-1" : "w-4 h-4 mr-2")} />
-                {isMobile ? "Tilbage" : "Tilbage"}
-              </Button>
-              <h1 className={cn(
-                "font-semibold text-gray-900",
-                isMobile ? "text-lg" : "text-xl"
-              )}>
-                {isMobile ? "B2B Ansøgning" : "B2B Ansøgning"}
-              </h1>
-            </div>
-            {!isMobile && (
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant="outline"
-                  onClick={() => navigate('/login')}
-                >
-                  Har du allerede en konto? Log ind
-                </Button>
-              </div>
-            )}
-            {isMobile && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/login')}
-                className="text-xs px-3"
-              >
-                Log ind
-              </Button>
-            )}
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* Mobile-First Main Content */}
       <main className="page-container py-6 md:py-8">
         <div className="content-width">
+          {/* Back Button */}
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              onClick={() => navigate('/')}
+              className={cn(
+                "flex items-center",
+                isMobile ? "px-2" : "px-3"
+              )}
+              size={isMobile ? "sm" : "default"}
+            >
+              <ArrowLeft className={cn(isMobile ? "w-4 h-4 mr-1" : "w-4 h-4 mr-2")} />
+              {isMobile ? "Tilbage" : "Tilbage til forsiden"}
+            </Button>
+          </div>
+          
           {/* Mobile-Optimized Hero Section */}
           <div className={cn(
             "text-center mb-8",
@@ -86,6 +55,17 @@ const Apply: React.FC = () => {
               Få adgang til vores B2B platform med kundespecifikke priser, 
               rabatter og professionelle indkøbsværktøjer.
             </p>
+            
+            {/* Login Button */}
+            <div className="mt-6">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/login')}
+                className="text-sm"
+              >
+                Har du allerede en konto? Log ind
+              </Button>
+            </div>
           </div>
 
           {/* Mobile-Friendly Benefits Section */}
@@ -156,23 +136,10 @@ const Apply: React.FC = () => {
             </div>
           )}
 
-          {/* Desktop Login Link */}
-          {!isMobile && (
-            <div className="mt-8 text-center">
-              <p className="text-sm text-gray-600">
-                Har du allerede en konto?{' '}
-                <Button
-                  variant="link"
-                  onClick={() => navigate('/login')}
-                  className="p-0 h-auto text-primary hover:underline"
-                >
-                  Log ind her
-                </Button>
-              </p>
-            </div>
-          )}
+{/* Desktop login link removed - now in hero section */}
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
