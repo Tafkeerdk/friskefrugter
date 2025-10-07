@@ -235,7 +235,8 @@ const DashboardOfferGroupPrices: React.FC = () => {
         });
       });
 
-      console.log('💾 Saving prices:', prices);
+      console.log('💾 Saving prices - COUNT:', prices.length);
+      console.log('💾 Saving prices - DETAILED:', JSON.stringify(prices, null, 2));
 
       const apiResponse = await fetch(
         `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-offer-group-prices`,
@@ -255,13 +256,21 @@ const DashboardOfferGroupPrices: React.FC = () => {
         }
       );
 
+      console.log('📡 Response status:', apiResponse.status);
+      console.log('📡 Response ok:', apiResponse.ok);
+
       if (!apiResponse.ok) {
+        const errorText = await apiResponse.text();
+        console.error('❌ API Error Response:', errorText);
         throw new Error(`HTTP error! status: ${apiResponse.status}`);
       }
 
       const response = await apiResponse.json();
+      console.log('✅ API Response:', JSON.stringify(response, null, 2));
 
       if (response.success) {
+        console.log('✅ Save successful! Results:', response.results);
+        
         toast({
           title: '✅ Priser gemt',
           description: response.message || `${prices.length} priser er blevet opdateret`,
@@ -272,6 +281,8 @@ const DashboardOfferGroupPrices: React.FC = () => {
         setHasChanges(false);
         await loadPricingData();
       } else {
+        console.error('❌ Save failed:', response.error);
+        
         toast({
           variant: 'destructive',
           title: 'Fejl',
