@@ -79,6 +79,8 @@ const DashboardOfferGroupPrices: React.FC = () => {
       setIsLoading(true);
       
       const token = localStorage.getItem('adminAccessToken');
+      console.log('🔐 Token check:', token ? 'Token found' : 'No token');
+      
       if (!token) {
         toast({
           variant: 'destructive',
@@ -88,27 +90,36 @@ const DashboardOfferGroupPrices: React.FC = () => {
         return;
       }
 
-      const apiResponse = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-offer-group-prices?view=by-product`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'X-Session-Type': 'browser',
-            'X-PWA': 'false',
-            'X-Display-Mode': 'browser'
-          }
+      const url = `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-offer-group-prices?view=by-product`;
+      console.log('🌐 Making request to:', url);
+
+      const apiResponse = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Session-Type': 'browser',
+          'X-PWA': 'false',
+          'X-Display-Mode': 'browser'
         }
-      );
+      });
+
+      console.log('📡 Response status:', apiResponse.status);
+      console.log('📡 Response ok:', apiResponse.ok);
 
       if (!apiResponse.ok) {
+        const errorText = await apiResponse.text();
+        console.error('❌ API Error Response:', errorText);
         throw new Error(`HTTP error! status: ${apiResponse.status}`);
       }
 
       const response = await apiResponse.json();
+      console.log('✅ API Response:', response);
 
       if (response.success) {
+        console.log('✅ Offer Groups:', response.offerGroups?.length);
+        console.log('✅ Products:', response.products?.length);
+        
         setOfferGroups(response.offerGroups || []);
         setProducts(response.products || []);
         
@@ -117,7 +128,10 @@ const DashboardOfferGroupPrices: React.FC = () => {
           ...new Set(response.products.map((p: Product) => p.kategori.navn))
         ].sort();
         setCategories(uniqueCategories);
+        
+        console.log('✅ Categories:', uniqueCategories);
       } else {
+        console.error('❌ API returned success: false');
         toast({
           variant: 'destructive',
           title: 'Fejl',
@@ -125,7 +139,7 @@ const DashboardOfferGroupPrices: React.FC = () => {
         });
       }
     } catch (error) {
-      console.error('Error loading pricing data:', error);
+      console.error('❌ Error loading pricing data:', error);
       toast({
         variant: 'destructive',
         title: 'Fejl',
