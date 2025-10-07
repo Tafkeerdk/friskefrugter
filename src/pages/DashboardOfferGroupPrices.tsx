@@ -91,7 +91,8 @@ const DashboardOfferGroupPrices: React.FC = () => {
         return;
       }
 
-      const url = `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-offer-group-prices?view=by-product`;
+      // Add cache-busting timestamp to ensure fresh data
+      const url = `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-offer-group-prices?view=by-product&_t=${Date.now()}`;
 
       const apiResponse = await fetch(url, {
         method: 'GET',
@@ -101,7 +102,8 @@ const DashboardOfferGroupPrices: React.FC = () => {
           'X-Session-Type': 'browser',
           'X-PWA': 'false',
           'X-Display-Mode': 'browser'
-        }
+        },
+        cache: 'no-store' // Force fresh data, no caching
       });
 
       if (!apiResponse.ok) {
