@@ -33,7 +33,7 @@ import About from "./pages/About";
 import FAQ from "./pages/FAQ";
 import ProductSetup from "./pages/ProductSetup";
 import PasswordReset from "./pages/PasswordReset";
-import DashboardDiscountGroups from "./pages/DashboardDiscountGroups";
+import DashboardOfferGroupPrices from "./pages/DashboardOfferGroupPrices";
 import DashboardUniqueOffers from "./pages/DashboardUniqueOffers";
 import DashboardFeaturedProducts from "./pages/DashboardFeaturedProducts";
 import DashboardHenvendelser from "./pages/DashboardHenvendelser";
@@ -239,7 +239,7 @@ const AppContent = () => {
               path="/admin/discount-groups" 
               element={
                 <ProtectedRoute requireAdmin={true}>
-                  <DashboardDiscountGroups />
+                  <DashboardOfferGroupPrices />
                 </ProtectedRoute>
               } 
             />

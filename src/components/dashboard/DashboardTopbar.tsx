@@ -142,7 +142,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       '/admin/customers': 'Kunder',
       '/admin/invoices': 'Fakturaer',
       '/admin/statistics': 'Statistikker',
-      '/admin/discount-groups': 'Rabatgrupper',
+      '/admin/discount-groups': 'Tilbudgrupper',
       '/admin/unique-offers': 'Unikke Tilbud',
       '/admin/henvendelser': 'Henvendelser',
       '/admin/profile': 'Min Profil',

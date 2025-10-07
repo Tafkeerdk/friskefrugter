@@ -365,7 +365,7 @@ const DashboardSidebar: React.FC = () => {
                     isMobile ? "h-4 w-4" : "h-5 w-5"
                   )} />
                   <span className="truncate">
-                    {isMobile ? "Rabat" : "Rabatgrupper"}
+                    {isMobile ? "Tilbud" : "Tilbudgrupper"}
                   </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>

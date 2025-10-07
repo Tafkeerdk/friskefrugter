@@ -73,6 +73,9 @@ const getEndpoint = (path: string): string => {
   if (pathOnly.startsWith('/api/auth/admin/discount-groups')) {
     return `/.netlify/functions/admin-discount-groups${queryString}`;
   }
+  if (pathOnly.startsWith('/api/auth/admin/offer-group-prices')) {
+    return `/.netlify/functions/admin-offer-group-prices${queryString}`;
+  }
   if (pathOnly.startsWith('/api/auth/admin/customers')) {
     return `/.netlify/functions/admin-customers${queryString}`;
   }
