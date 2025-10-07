@@ -616,11 +616,6 @@ const ProductDetail = () => {
                               : product.customerPricing.discountLabel
                             }
                           </Badge>
-                          {product.customerPricing.discountPercentage > 0 && (
-                            <span className="text-sm font-medium text-brand-success">
-                              -{product.customerPricing.discountPercentage}%
-                            </span>
-                          )}
                         </div>
                       )}
                       

@@ -213,17 +213,7 @@ export function CustomerProductFilters({
                     backgroundColor: customerInfo.discountGroup.color || '#6B7280'
                   }}
                 >
-                  <span className={cn(isMobile ? "hidden" : "inline")}>
-                    {customerInfo.discountGroup.name} Kunde
-                  </span>
-                  <span className={cn(isMobile ? "inline" : "hidden")}>
-                    {customerInfo.discountGroup.name}
-                  </span>
-                  {customerInfo.discountGroup.discountPercentage > 0 && (
-                    <span className="ml-1">
-                      ({customerInfo.discountGroup.discountPercentage}%)
-                    </span>
-                  )}
+                  {customerInfo.discountGroup.name}
                 </span>
               )}
             </div>
