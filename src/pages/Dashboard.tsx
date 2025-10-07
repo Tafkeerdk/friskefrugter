@@ -284,7 +284,7 @@ const Dashboard: React.FC = () => {
                     
                     {(safeUser.discountGroup || safeUser.discountGroups) && (
                       <div className="pt-2 border-t">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Rabatgrupper</p>
+                        <p className="text-sm font-medium text-gray-700 mb-2">Tilbudsgruppe</p>
                         <div className="flex flex-wrap gap-2">
                           {safeUser.discountGroup && (
                             <Badge 
@@ -292,7 +292,7 @@ const Dashboard: React.FC = () => {
                               style={getDiscountGroupStyle(safeUser.discountGroup)}
                             >
                               {typeof safeUser.discountGroup === 'object' && safeUser.discountGroup
-                                ? `${safeUser.discountGroup.name} (${safeUser.discountGroup.discountPercentage}% rabat)`
+                                ? `${safeUser.discountGroup.name}`
                                 : (typeof safeUser.discountGroup === 'string' ? safeUser.discountGroup : 'Standard')
                               }
                             </Badge>

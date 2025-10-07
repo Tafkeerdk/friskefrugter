@@ -185,12 +185,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
                     : (typeof displayUser.discountGroup === 'string' ? displayUser.discountGroup : 'Standard')
                   }
                 </Badge>
-                <span className="text-xs text-muted-foreground">
-                  ({typeof displayUser.discountGroup === 'object' && displayUser.discountGroup 
-                    ? displayUser.discountGroup.discountPercentage 
-                    : getDiscountPercentage(typeof displayUser.discountGroup === 'string' ? displayUser.discountGroup : 'Standard')
-                  }% rabat)
-                </span>
               </div>
             </div>
           </>

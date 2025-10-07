@@ -587,9 +587,9 @@ const Profile = () => {
                       <p className="text-sm text-muted-foreground">{user.companyName}</p>
                       {user.discountGroup && (
                         <p className="text-sm text-brand-primary">
-                          Rabatgruppe: {
+                          Tilbudsgruppe: {
                             typeof user.discountGroup === 'object' && user.discountGroup
-                              ? `${user.discountGroup.name} (${user.discountGroup.discountPercentage}% rabat)`
+                              ? `${user.discountGroup.name}`
                               : (typeof user.discountGroup === 'string' ? user.discountGroup : 'Standard')
                           }
                         </p>
