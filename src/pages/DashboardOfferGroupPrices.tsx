@@ -14,7 +14,6 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { authService } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -78,10 +77,36 @@ const DashboardOfferGroupPrices: React.FC = () => {
   const loadPricingData = async () => {
     try {
       setIsLoading(true);
-      const response = await authService.makeAuthenticatedRequest(
-        '/api/auth/admin/offer-group-prices?view=by-product',
-        { method: 'GET' }
+      
+      const token = localStorage.getItem('adminAccessToken');
+      if (!token) {
+        toast({
+          variant: 'destructive',
+          title: 'Fejl',
+          description: 'Ikke godkendt. Log venligst ind igen.'
+        });
+        return;
+      }
+
+      const apiResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-offer-group-prices?view=by-product`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-Session-Type': 'browser',
+            'X-PWA': 'false',
+            'X-Display-Mode': 'browser'
+          }
+        }
       );
+
+      if (!apiResponse.ok) {
+        throw new Error(`HTTP error! status: ${apiResponse.status}`);
+      }
+
+      const response = await apiResponse.json();
 
       if (response.success) {
         setOfferGroups(response.offerGroups || []);
@@ -96,7 +121,7 @@ const DashboardOfferGroupPrices: React.FC = () => {
         toast({
           variant: 'destructive',
           title: 'Fejl',
-          description: 'Kunne ikke indlæse prisdata'
+          description: response.error || 'Kunne ikke indlæse prisdata'
         });
       }
     } catch (error) {
@@ -162,6 +187,16 @@ const DashboardOfferGroupPrices: React.FC = () => {
     try {
       setIsSaving(true);
 
+      const token = localStorage.getItem('adminAccessToken');
+      if (!token) {
+        toast({
+          variant: 'destructive',
+          title: 'Fejl',
+          description: 'Ikke godkendt. Log venligst ind igen.'
+        });
+        return;
+      }
+
       // Convert pending changes to API format
       const prices: Array<{
         product: string;
@@ -179,17 +214,29 @@ const DashboardOfferGroupPrices: React.FC = () => {
         });
       });
 
-      const response = await authService.makeAuthenticatedRequest(
-        '/api/auth/admin/offer-group-prices',
+      const apiResponse = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-offer-group-prices`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            'X-Session-Type': 'browser',
+            'X-PWA': 'false',
+            'X-Display-Mode': 'browser'
+          },
           body: JSON.stringify({
             action: 'bulk-upsert',
             prices
           })
         }
       );
+
+      if (!apiResponse.ok) {
+        throw new Error(`HTTP error! status: ${apiResponse.status}`);
+      }
+
+      const response = await apiResponse.json();
 
       if (response.success) {
         toast({
