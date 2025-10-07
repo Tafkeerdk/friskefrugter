@@ -14,6 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { tokenManager } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import {
   Select,
@@ -78,7 +79,7 @@ const DashboardOfferGroupPrices: React.FC = () => {
     try {
       setIsLoading(true);
       
-      const token = localStorage.getItem('adminAccessToken');
+      const token = tokenManager.getAccessToken('admin');
       console.log('🔐 Token check:', token ? 'Token found' : 'No token');
       
       if (!token) {
@@ -201,7 +202,7 @@ const DashboardOfferGroupPrices: React.FC = () => {
     try {
       setIsSaving(true);
 
-      const token = localStorage.getItem('adminAccessToken');
+      const token = tokenManager.getAccessToken('admin');
       if (!token) {
         toast({
           variant: 'destructive',
