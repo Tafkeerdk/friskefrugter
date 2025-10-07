@@ -453,197 +453,306 @@ const DashboardOfferGroupPrices: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Pricing Cards - Mobile Friendly */}
-          {filteredProducts.length === 0 ? (
-            <Card>
-              <CardContent className="py-12">
-                <div className="text-center">
+          {/* Desktop Table View - Hidden on Mobile */}
+          <Card className="hidden lg:block mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Tag className="h-5 w-5 text-brand-primary" />
+                Prisstyring
+              </CardTitle>
+              <CardDescription>
+                Opdater priser direkte i tabellen. Ændringer gemmes når du klikker "Gem ændringer"
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {filteredProducts.length === 0 ? (
+                <div className="text-center py-12">
                   <Package className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
                   <p className="text-brand-gray-600">Ingen produkter fundet</p>
-                  {searchTerm && (
-                    <Button
-                      variant="outline"
-                      onClick={clearFilters}
-                      className="mt-4"
-                    >
-                      Ryd filtre
-                    </Button>
-                  )}
                 </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {/* Tilbudgruppe Legend - Mobile Friendly */}
-              <Card className="bg-brand-gray-50 border-brand-gray-200">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Tag className="h-4 w-4 text-brand-primary" />
-                    <span className="font-semibold text-brand-gray-900 text-sm">Tilbudgrupper:</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {offerGroups.map(group => (
-                      <div
-                        key={group._id}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-white text-sm font-medium"
-                        style={{ backgroundColor: group.color }}
-                      >
-                        <span>{group.name}</span>
-                        <Badge variant="secondary" className="bg-white/20 text-white border-0 text-xs">
-                          {group.customerCount}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Product Cards */}
-              {filteredProducts.map(product => (
-                <Card 
-                  key={product.id}
-                  className={cn(
-                    "transition-all duration-200",
-                    hasProductChanges(product.id) && "ring-2 ring-brand-success shadow-lg"
-                  )}
-                >
-                  <CardContent className="p-4 md:p-6">
-                    {/* Product Header */}
-                    <div className="flex gap-3 md:gap-4 mb-4 pb-4 border-b border-brand-gray-200">
-                      {/* Product Image */}
-                      <div className="w-16 h-16 md:w-20 md:h-20 flex-shrink-0 rounded-lg border-2 border-brand-gray-200 overflow-hidden bg-gradient-to-br from-brand-gray-50 to-brand-gray-100">
-                        {!imageErrors.has(product.id) && product.billeder && product.billeder.length > 0 ? (
-                          <img
-                            src={product.billeder.find(b => b.isPrimary)?.url || product.billeder[0]?.url}
-                            alt={product.produktnavn}
-                            className="w-full h-full object-cover"
-                            onError={() => handleImageError(product.id)}
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Package className="h-8 w-8 md:h-10 md:w-10 text-brand-gray-400" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Product Info */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-brand-gray-900 text-base md:text-lg mb-1 break-words">
-                          {product.produktnavn}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2 text-xs md:text-sm text-brand-gray-500">
-                          <span className="font-mono bg-brand-gray-100 px-2 py-0.5 rounded">
-                            {product.varenummer}
-                          </span>
-                          <span className="text-brand-gray-400">•</span>
-                          <span>{product.kategori.navn}</span>
-                        </div>
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="text-sm text-brand-gray-600">Basispris:</span>
-                          <span className="font-bold text-brand-primary-dark text-lg">
-                            {product.basispris.toFixed(2)} kr
-                          </span>
-                          <span className="text-xs text-brand-gray-500">
-                            / {product.enhed.kortform}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Status Badge */}
-                      {hasProductChanges(product.id) && (
-                        <div className="flex-shrink-0">
-                          <Badge className="bg-brand-success text-white border-0">
-                            <Edit2 className="h-3 w-3 mr-1" />
-                            Ændret
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Pricing Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-                      {offerGroups.map(group => {
-                        const isChanged = isPriceChanged(product, group._id);
-                        const hasCustom = hasCustomPrice(product, group._id);
-                        const displayPrice = getDisplayPrice(product, group._id);
-
-                        return (
-                          <div
-                            key={group._id}
-                            className={cn(
-                              "relative rounded-lg border-2 p-3 transition-all duration-200",
-                              isChanged 
-                                ? "border-brand-success bg-brand-success/5 shadow-md" 
-                                : hasCustom
-                                ? "border-brand-primary/30 bg-brand-primary/5"
-                                : "border-brand-gray-200 hover:border-brand-gray-300"
-                            )}
-                          >
-                            {/* Group Header */}
-                            <div className="flex items-center justify-between mb-2">
-                              <span
-                                className="text-sm font-semibold px-2 py-0.5 rounded text-white"
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-brand-gray-200">
+                        <th className="text-left py-3 px-4 font-semibold text-brand-gray-900 min-w-[200px]">
+                          Produkt
+                        </th>
+                        <th className="text-right py-3 px-4 font-semibold text-brand-gray-900 min-w-[100px]">
+                          Basispris
+                        </th>
+                        {offerGroups.map(group => (
+                          <th key={group._id} className="text-center py-3 px-4 font-semibold min-w-[120px]">
+                            <div className="flex flex-col items-center gap-1">
+                              <span 
+                                className="px-2 py-1 rounded text-sm text-white"
                                 style={{ backgroundColor: group.color }}
                               >
                                 {group.name}
                               </span>
-                              {isChanged && (
-                                <CheckCircle2 className="h-4 w-4 text-brand-success" />
-                              )}
-                            </div>
-
-                            {/* Price Input */}
-                            <div className="relative">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                min="0"
-                                value={displayPrice}
-                                onChange={(e) => handlePriceChange(product.id, group._id, e.target.value, product.basispris)}
-                                className={cn(
-                                  "text-center font-semibold text-base min-h-[44px] touch-manipulation",
-                                  isChanged 
-                                    ? "border-brand-success bg-white text-brand-success focus:ring-brand-success" 
-                                    : hasCustom
-                                    ? "border-brand-primary text-brand-primary-dark focus:ring-brand-primary"
-                                    : "text-brand-gray-500 focus:text-brand-gray-900 border-brand-gray-300"
-                                )}
-                                onFocus={(e) => e.target.select()}
-                              />
-                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-gray-400 pointer-events-none">
-                                kr
+                              <span className="text-xs text-brand-gray-500 font-normal">
+                                {group.customerCount} kunder
                               </span>
                             </div>
-
-                            {/* Helper Text */}
-                            <div className="mt-1.5 text-xs text-center">
-                              {isChanged ? (
-                                <span className="text-brand-success font-medium">
-                                  ✓ Ny pris (ikke gemt)
-                                </span>
-                              ) : hasCustom ? (
-                                <span className="text-brand-primary">
-                                  💰 Tilpasset pris
-                                </span>
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredProducts.map(product => (
+                        <tr 
+                          key={product.id}
+                          className={cn(
+                            "border-b border-brand-gray-100 hover:bg-brand-gray-50 transition-colors",
+                            hasProductChanges(product.id) && "bg-brand-success/5"
+                          )}
+                        >
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-3">
+                              {!imageErrors.has(product.id) && product.billeder && product.billeder.length > 0 ? (
+                                <img
+                                  src={product.billeder.find(b => b.isPrimary)?.url || product.billeder[0]?.url}
+                                  alt={product.produktnavn}
+                                  className="h-10 w-10 rounded object-cover"
+                                  onError={() => handleImageError(product.id)}
+                                />
                               ) : (
-                                <span className="text-brand-gray-500">
-                                  Bruger basispris
-                                </span>
+                                <div className="h-10 w-10 rounded bg-gradient-to-br from-brand-gray-100 to-brand-gray-200 flex items-center justify-center">
+                                  <Package className="h-5 w-5 text-brand-gray-400" />
+                                </div>
                               )}
+                              <div>
+                                <div className="font-medium text-brand-gray-900">{product.produktnavn}</div>
+                                <div className="text-sm text-brand-gray-500">{product.varenummer}</div>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          </td>
+                          <td className="py-3 px-4 text-right font-semibold text-brand-gray-900">
+                            {product.basispris.toFixed(2)} kr
+                          </td>
+                          {offerGroups.map(group => {
+                            const isChanged = isPriceChanged(product, group._id);
+                            return (
+                              <td key={group._id} className="py-3 px-4">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={getDisplayPrice(product, group._id)}
+                                  onChange={(e) => handlePriceChange(product.id, group._id, e.target.value, product.basispris)}
+                                  onFocus={(e) => e.target.select()}
+                                  className={cn(
+                                    "text-center input-brand",
+                                    isChanged 
+                                      ? "border-brand-success bg-brand-success/5 text-brand-success font-semibold focus:ring-brand-success" 
+                                      : "text-brand-gray-500 focus:text-brand-gray-900"
+                                  )}
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Mobile Card View - Hidden on Desktop */}
+          <div className="lg:hidden space-y-4 mb-6">
+            {filteredProducts.length === 0 ? (
+              <Card>
+                <CardContent className="py-12">
+                  <div className="text-center">
+                    <Package className="h-12 w-12 text-brand-gray-400 mx-auto mb-4" />
+                    <p className="text-brand-gray-600">Ingen produkter fundet</p>
+                    {searchTerm && (
+                      <Button
+                        variant="outline"
+                        onClick={clearFilters}
+                        className="mt-4"
+                      >
+                        Ryd filtre
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {/* Tilbudgruppe Legend - Mobile Only */}
+                <Card className="bg-brand-gray-50 border-brand-gray-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Tag className="h-4 w-4 text-brand-primary" />
+                      <span className="font-semibold text-brand-gray-900 text-sm">Tilbudgrupper:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {offerGroups.map(group => (
+                        <div
+                          key={group._id}
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-white text-sm font-medium"
+                          style={{ backgroundColor: group.color }}
+                        >
+                          <span>{group.name}</span>
+                          <Badge variant="secondary" className="bg-white/20 text-white border-0 text-xs">
+                            {group.customerCount}
+                          </Badge>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-            </div>
-          )}
 
-          {/* Floating Save Button - Mobile */}
+                {/* Product Cards */}
+                {filteredProducts.map(product => (
+                  <Card 
+                    key={product.id}
+                    className={cn(
+                      "transition-all duration-200",
+                      hasProductChanges(product.id) && "ring-2 ring-brand-success shadow-lg"
+                    )}
+                  >
+                    <CardContent className="p-4">
+                      {/* Product Header */}
+                      <div className="flex gap-3 mb-4 pb-4 border-b border-brand-gray-200">
+                        {/* Product Image */}
+                        <div className="w-16 h-16 flex-shrink-0 rounded-lg border-2 border-brand-gray-200 overflow-hidden bg-gradient-to-br from-brand-gray-50 to-brand-gray-100">
+                          {!imageErrors.has(product.id) && product.billeder && product.billeder.length > 0 ? (
+                            <img
+                              src={product.billeder.find(b => b.isPrimary)?.url || product.billeder[0]?.url}
+                              alt={product.produktnavn}
+                              className="w-full h-full object-cover"
+                              onError={() => handleImageError(product.id)}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Package className="h-8 w-8 text-brand-gray-400" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Product Info */}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-brand-gray-900 text-base mb-1 break-words">
+                            {product.produktnavn}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-2 text-xs text-brand-gray-500">
+                            <span className="font-mono bg-brand-gray-100 px-2 py-0.5 rounded">
+                              {product.varenummer}
+                            </span>
+                            <span className="text-brand-gray-400">•</span>
+                            <span>{product.kategori.navn}</span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="text-sm text-brand-gray-600">Basispris:</span>
+                            <span className="font-bold text-brand-primary-dark text-lg">
+                              {product.basispris.toFixed(2)} kr
+                            </span>
+                            <span className="text-xs text-brand-gray-500">
+                              / {product.enhed.kortform}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Status Badge */}
+                        {hasProductChanges(product.id) && (
+                          <div className="flex-shrink-0">
+                            <Badge className="bg-brand-success text-white border-0">
+                              <Edit2 className="h-3 w-3 mr-1" />
+                              Ændret
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Pricing Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {offerGroups.map(group => {
+                          const isChanged = isPriceChanged(product, group._id);
+                          const hasCustom = hasCustomPrice(product, group._id);
+                          const displayPrice = getDisplayPrice(product, group._id);
+
+                          return (
+                            <div
+                              key={group._id}
+                              className={cn(
+                                "relative rounded-lg border-2 p-3 transition-all duration-200",
+                                isChanged 
+                                  ? "border-brand-success bg-brand-success/5 shadow-md" 
+                                  : hasCustom
+                                  ? "border-brand-primary/30 bg-brand-primary/5"
+                                  : "border-brand-gray-200 hover:border-brand-gray-300"
+                              )}
+                            >
+                              {/* Group Header */}
+                              <div className="flex items-center justify-between mb-2">
+                                <span
+                                  className="text-sm font-semibold px-2 py-0.5 rounded text-white"
+                                  style={{ backgroundColor: group.color }}
+                                >
+                                  {group.name}
+                                </span>
+                                {isChanged && (
+                                  <CheckCircle2 className="h-4 w-4 text-brand-success" />
+                                )}
+                              </div>
+
+                              {/* Price Input */}
+                              <div className="relative">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={displayPrice}
+                                  onChange={(e) => handlePriceChange(product.id, group._id, e.target.value, product.basispris)}
+                                  className={cn(
+                                    "text-center font-semibold text-base min-h-[44px] touch-manipulation",
+                                    isChanged 
+                                      ? "border-brand-success bg-white text-brand-success focus:ring-brand-success" 
+                                      : hasCustom
+                                      ? "border-brand-primary text-brand-primary-dark focus:ring-brand-primary"
+                                      : "text-brand-gray-500 focus:text-brand-gray-900 border-brand-gray-300"
+                                  )}
+                                  onFocus={(e) => e.target.select()}
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-gray-400 pointer-events-none">
+                                  kr
+                                </span>
+                              </div>
+
+                              {/* Helper Text */}
+                              <div className="mt-1.5 text-xs text-center">
+                                {isChanged ? (
+                                  <span className="text-brand-success font-medium">
+                                    ✓ Ny pris (ikke gemt)
+                                  </span>
+                                ) : hasCustom ? (
+                                  <span className="text-brand-primary">
+                                    💰 Tilpasset pris
+                                  </span>
+                                ) : (
+                                  <span className="text-brand-gray-500">
+                                    Bruger basispris
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </>
+            )}
+          </div>
+
+          {/* Floating Save Button - Mobile Only */}
           {hasChanges && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden">
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden">
               <Button
                 onClick={handleSaveChanges}
                 disabled={isSaving}
