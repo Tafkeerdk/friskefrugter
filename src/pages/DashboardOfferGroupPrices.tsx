@@ -111,6 +111,12 @@ const DashboardOfferGroupPrices: React.FC = () => {
       const response = await apiResponse.json();
 
       if (response.success) {
+        // DEBUG: Log product pricing structure
+        if (response.products && response.products.length > 0) {
+          console.log('🔍 DEBUG: First product data:', JSON.stringify(response.products[0], null, 2));
+          console.log('🔍 DEBUG: groupPrices keys:', Object.keys(response.products[0].groupPrices || {}));
+        }
+        
         setOfferGroups(response.offerGroups || []);
         setProducts(response.products || []);
         
@@ -310,6 +316,17 @@ const DashboardOfferGroupPrices: React.FC = () => {
 
     // Check saved prices
     const savedPrice = product.groupPrices[offerGroupId];
+    
+    // DEBUG: Log pricing lookup
+    if (product.produktnavn === "Agurker - Lange Danske") {
+      console.log(`🔍 getDisplayPrice for ${product.produktnavn}:`,{
+        offerGroupId,
+        groupPrices: product.groupPrices,
+        savedPrice,
+        basispris: product.basispris
+      });
+    }
+    
     if (savedPrice !== null && savedPrice !== undefined) {
       return savedPrice.toFixed(2);
     }
