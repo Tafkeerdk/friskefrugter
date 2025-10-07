@@ -16,7 +16,8 @@ interface CustomerProductFiltersProps {
   search: string;
   category: string;
   priceRange: { min: number; max: number };
-  rabatGruppe: boolean;
+  rabatGruppe: boolean; // Legacy name - kept for backwards compatibility
+  tilbudsgruppe?: boolean; // New name
   fastUdsalgspris: boolean;
   uniqueOffer: boolean;
   sortBy: string;
@@ -26,7 +27,8 @@ interface CustomerProductFiltersProps {
   onSearchChange: (value: string) => void;
   onCategoryChange: (value: string) => void;
   onPriceRangeChange: (range: { min: number; max: number }) => void;
-  onRabatGruppeChange: (value: boolean) => void;
+  onRabatGruppeChange: (value: boolean) => void; // Legacy handler
+  onTilbudsgruppeChange?: (value: boolean) => void; // New handler
   onFastUdsalgsprisChange: (value: boolean) => void;
   onUniqueOfferChange: (value: boolean) => void;
   onSortChange: (sortBy: string, sortOrder: 'asc' | 'desc') => void;
@@ -40,7 +42,12 @@ interface CustomerProductFiltersProps {
       name: string;
       discountPercentage: number;
       color: string;
-    };
+    }; // Legacy field
+    offerGroup?: {
+      name: string;
+      description?: string;
+      color: string;
+    }; // New field
     uniqueOffersCount: number;
     fastUdsalgsprisCount?: number;
     tilbudsgruppeCount?: number; // ✅ NEW: Count of products with fixed offer group prices
@@ -58,6 +65,7 @@ export function CustomerProductFilters({
   category,
   priceRange,
   rabatGruppe,
+  tilbudsgruppe,
   fastUdsalgspris,
   uniqueOffer,
   sortBy,
@@ -66,6 +74,7 @@ export function CustomerProductFilters({
   onCategoryChange,
   onPriceRangeChange,
   onRabatGruppeChange,
+  onTilbudsgruppeChange,
   onFastUdsalgsprisChange,
   onUniqueOfferChange,
   onSortChange,
@@ -76,6 +85,9 @@ export function CustomerProductFilters({
   isMobile = false,
   className
 }: CustomerProductFiltersProps) {
+  // Support both old and new parameter names
+  const offerGroupActive = tilbudsgruppe ?? rabatGruppe;
+  const handleOfferGroupChange = onTilbudsgruppeChange || onRabatGruppeChange;
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   
   // **LOCAL STATE FOR DEBOUNCED SEARCH**
@@ -470,10 +482,10 @@ export function CustomerProductFilters({
                 <Award className="h-4 w-4 text-brand-secondary" />
                 <div>
                   <Label htmlFor="rabatGruppe" className="text-sm font-medium">
-                    {customerInfo.discountGroup.name} Priser
+                    {(customerInfo.offerGroup?.name || customerInfo.discountGroup?.name)} Priser
                   </Label>
                   <p className="text-xs text-gray-500">
-                    Produkter med {customerInfo.discountGroup.name} tilbudspriser
+                    Produkter med {(customerInfo.offerGroup?.name || customerInfo.discountGroup?.name)} tilbudspriser
                   </p>
                 </div>
               </div>
@@ -483,7 +495,7 @@ export function CustomerProductFilters({
                     variant="default" 
                     className="text-xs text-white" 
                     style={{
-                      backgroundColor: customerInfo.discountGroup.color || '#6B7280'
+                      backgroundColor: (customerInfo.offerGroup?.color || customerInfo.discountGroup?.color) || '#6B7280'
                     }}
                   >
                     {customerInfo.tilbudsgruppeCount || customerInfo.rabatGruppeCount}
@@ -492,7 +504,7 @@ export function CustomerProductFilters({
                 <span 
                   className="text-xs px-2 py-1 rounded text-white font-medium"
                   style={{
-                    backgroundColor: customerInfo.discountGroup.color || '#6B7280'
+                    backgroundColor: (customerInfo.offerGroup?.color || customerInfo.discountGroup?.color) || '#6B7280'
                   }}
                 >
                   Tilbud
@@ -501,7 +513,7 @@ export function CustomerProductFilters({
                   id="rabatGruppe"
                   checked={pendingFilters.rabatGruppe}
                   onCheckedChange={(value) => setPendingFilters(prev => ({ ...prev, rabatGruppe: value }))}
-                  disabled={isLoading || !customerInfo?.rabatGruppeCount}
+                  disabled={isLoading || !(customerInfo?.tilbudsgruppeCount || customerInfo?.rabatGruppeCount)}
                 />
               </div>
             </div>

@@ -150,7 +150,13 @@ export interface User {
     name: string;
     discountPercentage: number;
     color?: string;
-  } | string; // Support both object and string for backward compatibility
+  } | string; // Legacy field - kept for backwards compatibility
+  offerGroup?: {
+    id?: string;
+    name: string;
+    description?: string;
+    color?: string;
+  }; // New offer group field
   name?: string;
   role?: string;
   profilePictureUrl?: string;

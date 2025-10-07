@@ -170,7 +170,7 @@ const DashboardDiscountGroups: React.FC = () => {
           console.log('🔄 DashboardDiscountGroups: Fetched', response.discountGroups?.length || 0, 'discount groups');
         }
       } else {
-        setError(response.message || 'Kunne ikke hente rabatgrupper');
+        setError(response.message || 'Kunne ikke hente tilbudsgrupper');
       }
     } catch (err) {
       setError('Netværksfejl - kontroller din internetforbindelse');

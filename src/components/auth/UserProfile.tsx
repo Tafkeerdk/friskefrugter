@@ -163,26 +163,26 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
         {isCustomer(displayUser) && (
           <>
             <div>
-              <p className="text-xs font-medium text-muted-foreground mb-1">Rabatgruppe</p>
+              <p className="text-xs font-medium text-muted-foreground mb-1">Tilbudsgruppe</p>
               <div className="flex items-center space-x-2">
                 <Badge 
                   variant="secondary" 
                   className="text-xs"
                   style={{
-                    backgroundColor: typeof displayUser.discountGroup === 'object' && displayUser.discountGroup?.color 
-                      ? `${displayUser.discountGroup.color}20` 
+                    backgroundColor: (displayUser.offerGroup?.color || 
+                      (typeof displayUser.discountGroup === 'object' && displayUser.discountGroup?.color))
+                      ? `${displayUser.offerGroup?.color || (typeof displayUser.discountGroup === 'object' ? displayUser.discountGroup?.color : undefined)}20` 
                       : undefined,
-                    borderColor: typeof displayUser.discountGroup === 'object' && displayUser.discountGroup?.color 
-                      ? displayUser.discountGroup.color 
-                      : undefined,
-                    color: typeof displayUser.discountGroup === 'object' && displayUser.discountGroup?.color 
-                      ? displayUser.discountGroup.color 
-                      : undefined
+                    borderColor: displayUser.offerGroup?.color || 
+                      (typeof displayUser.discountGroup === 'object' ? displayUser.discountGroup?.color : undefined),
+                    color: displayUser.offerGroup?.color || 
+                      (typeof displayUser.discountGroup === 'object' ? displayUser.discountGroup?.color : undefined)
                   }}
                 >
-                  {typeof displayUser.discountGroup === 'object' && displayUser.discountGroup 
-                    ? displayUser.discountGroup.name 
-                    : (typeof displayUser.discountGroup === 'string' ? displayUser.discountGroup : 'Standard')
+                  {displayUser.offerGroup?.name || 
+                    (typeof displayUser.discountGroup === 'object' && displayUser.discountGroup 
+                      ? displayUser.discountGroup.name 
+                      : (typeof displayUser.discountGroup === 'string' ? displayUser.discountGroup : 'Standard'))
                   }
                 </Badge>
               </div>

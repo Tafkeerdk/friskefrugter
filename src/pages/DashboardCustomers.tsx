@@ -200,7 +200,7 @@ const DashboardCustomers: React.FC = () => {
 
       if (response.success) {
         toast({
-          title: "Rabatgruppe opdateret",
+          title: "Tilbudsgruppe opdateret",
           description: response.message,
         });
 
@@ -219,7 +219,7 @@ const DashboardCustomers: React.FC = () => {
         // Reload discount groups to update customer counts
         await loadDiscountGroups();
       } else {
-        setError(response.message || 'Kunne ikke opdatere rabatgruppe');
+        setError(response.message || 'Kunne ikke opdatere tilbudsgruppe');
       }
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
@@ -368,7 +368,7 @@ const DashboardCustomers: React.FC = () => {
                           onClick={() => openDiscountGroupDialog(customer)}
                         >
                           <Percent className="h-4 w-4 mr-2" />
-                          Ændre rabatgruppe
+                          Ændre tilbudsgruppe
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
@@ -530,7 +530,7 @@ const DashboardCustomers: React.FC = () => {
                     {(() => {
                       const selectedGroup = discountGroups.find(g => g.id === selectedDiscountGroupId);
                       return selectedGroup ? 
-                        `Kunden vil få ${selectedGroup.discountPercentage}% rabat med ${selectedGroup.name} gruppen` :
+                        `Kunden vil få tilbudspriser med ${selectedGroup.name} gruppen` :
                         '';
                     })()}
                   </span>
@@ -563,7 +563,7 @@ const DashboardCustomers: React.FC = () => {
               ) : (
                 <>
                   <Percent className="h-4 w-4 mr-2" />
-                  Opdater rabatgruppe
+                  Opdater tilbudsgruppe
                 </>
               )}
             </Button>
