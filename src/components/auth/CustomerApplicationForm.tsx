@@ -20,7 +20,7 @@ const applicationSchema = z.object({
   companyName: z.string().min(2, 'Virksomhedsnavn skal være mindst 2 tegn'),
   cvrNumber: z.string().min(8, 'CVR nummer er påkrævet'),
   contactPersonName: z.string().min(2, 'Kontaktperson navn skal være mindst 2 tegn'),
-  email: z.string().email('Ugyldig email adresse'),
+  email: z.string().regex(/^[a-zA-ZæøåÆØÅ0-9._+-]+@[a-zA-ZæøåÆØÅ0-9.-]+\.[a-zA-Z]{2,}$/, 'Ugyldig email adresse'),
   phone: z.string().min(8, 'Telefonnummer skal være mindst 8 cifre'),
   password: z.string().min(8, 'Password skal være mindst 8 tegn'),
   confirmPassword: z.string(),

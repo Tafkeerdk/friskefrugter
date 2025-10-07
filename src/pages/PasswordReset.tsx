@@ -14,11 +14,11 @@ import { ArrowLeft, Mail, Lock, Loader2, CheckCircle, Key, AlertTriangle } from 
 import { authService } from '../lib/auth';
 
 const passwordResetRequestSchema = z.object({
-  email: z.string().email('Ugyldig email adresse'),
+  email: z.string().regex(/^[a-zA-ZæøåÆØÅ0-9._+-]+@[a-zA-ZæøåÆØÅ0-9.-]+\.[a-zA-Z]{2,}$/, 'Ugyldig email adresse'),
 });
 
 const passwordResetVerifySchema = z.object({
-  email: z.string().email('Ugyldig email adresse'),
+  email: z.string().regex(/^[a-zA-ZæøåÆØÅ0-9._+-]+@[a-zA-ZæøåÆØÅ0-9.-]+\.[a-zA-Z]{2,}$/, 'Ugyldig email adresse'),
   resetCode: z.string().length(6, 'Nulstillingskode skal være 6 cifre'),
   newPassword: z.string().min(8, 'Password skal være mindst 8 tegn'),
   confirmPassword: z.string(),

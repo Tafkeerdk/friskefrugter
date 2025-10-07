@@ -16,7 +16,7 @@ import { Navbar } from "../components/layout/Navbar";
 import { Footer } from "../components/layout/Footer";
 
 const adminLoginSchema = z.object({
-  email: z.string().email('Ugyldig email adresse'),
+  email: z.string().regex(/^[a-zA-ZæøåÆØÅ0-9._+-]+@[a-zA-ZæøåÆØÅ0-9.-]+\.[a-zA-Z]{2,}$/, 'Ugyldig email adresse'),
   password: z.string().min(6, 'Password skal være mindst 6 tegn'),
 });
 
