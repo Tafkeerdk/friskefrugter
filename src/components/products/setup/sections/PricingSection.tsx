@@ -420,7 +420,7 @@ export const PricingSection: React.FC<PricingSectionProps> = ({
                     </FormLabel>
                     <FormDescription>
                       Vis produktet med rabatpris og før/efter priser. 
-                      <strong className="text-orange-600"> Bemærk:</strong> Hvis du angiver en før-pris, vil rabatgrupper ikke få yderligere rabat for at undgå dobbelt rabat.
+                      <strong className="text-orange-600"> Bemærk:</strong> Hvis du angiver en før-pris, vil tilbudsgrupper ikke få yderligere rabat for at undgå dobbelt rabat.
                     </FormDescription>
                   </div>
                   <FormControl>

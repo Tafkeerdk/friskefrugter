@@ -20,7 +20,6 @@ import { cn } from '@/lib/utils';
 
 import { ProductFormData, ProductSetupFormProps, Unit } from '@/types/product';
 import { productSetupSchema, productEditSchema } from './validation/productSchema';
-import { RabatGruppePreview } from './components/RabatGruppePreview';
 import { api, productFormDataToFormData, handleApiError } from '@/lib/api';
 import { authService } from '@/lib/auth';
 
@@ -258,13 +257,6 @@ export const ProductSetupForm: React.FC<ProductSetupFormProps> = ({
             loadingUnits={loadingUnits}
           />
 
-          {/* Rabat Gruppe Preview */}
-          <RabatGruppePreview 
-            basispris={watch('basispris')}
-            discount={watch('discount')}
-            produktnavn={watch('produktnavn')}
-            isLoading={isLoading}
-          />
 
           {/* Category Section */}
           <CategorySection 
