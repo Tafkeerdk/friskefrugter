@@ -7,7 +7,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 export interface CustomerPricing {
   price: number;
   originalPrice: number;
-  discountType: 'unique_offer' | 'fast_udsalgspris' | 'rabat_gruppe' | 'none';
+  discountType: 'unique_offer' | 'fast_udsalgspris' | 'tilbudsgruppe' | 'rabat_gruppe' | 'none';
   discountLabel: string | null;
   discountPercentage: number;
   showStrikethrough: boolean;
@@ -23,7 +23,7 @@ export interface CustomerPricing {
   groupDetails?: {
     groupName?: string;
     groupDescription?: string;
-    groupColor?: string; // Add color from database
+    groupColor?: string;
   };
 }
 
@@ -50,7 +50,8 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
         return <Star className="h-3 w-3" />;
       case 'fast_udsalgspris':
         return <Tag className="h-3 w-3" />;
-      case 'rabat_gruppe':
+      case 'tilbudsgruppe': // ✅ NEW: tilbudsgruppe with fixed prices
+      case 'rabat_gruppe': // Keep for backwards compatibility
         return <Award className="h-3 w-3" />;
       default:
         return null;
@@ -63,8 +64,9 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
         return 'default'; // Uses brand-primary
       case 'fast_udsalgspris':
         return 'destructive'; // Red for sale prices
-      case 'rabat_gruppe':
-        return 'secondary'; // Gray for group discounts
+      case 'tilbudsgruppe': // ✅ NEW
+      case 'rabat_gruppe': // Keep for backwards compatibility
+        return 'secondary'; // Gray for group prices
       default:
         return 'outline';
     }
@@ -76,7 +78,8 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
         return 'bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-lg animate-pulse';
       case 'fast_udsalgspris':
         return 'bg-brand-error text-white border-brand-error';
-      case 'rabat_gruppe':
+      case 'tilbudsgruppe': // ✅ NEW
+      case 'rabat_gruppe': // Keep for backwards compatibility
         // Use dynamic color if available, otherwise fallback to brand-secondary
         return customerPricing.groupDetails?.groupColor 
           ? '' // Empty class, will use inline styles
@@ -87,7 +90,7 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
   };
 
   const getBadgeStyle = () => {
-    if (customerPricing.discountType === 'rabat_gruppe' && customerPricing.groupDetails?.groupColor) {
+    if ((customerPricing.discountType === 'tilbudsgruppe' || customerPricing.discountType === 'rabat_gruppe') && customerPricing.groupDetails?.groupColor) {
       return {
         backgroundColor: customerPricing.groupDetails.groupColor,
         borderColor: customerPricing.groupDetails.groupColor,

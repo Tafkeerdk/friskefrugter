@@ -43,7 +43,8 @@ interface CustomerProductFiltersProps {
     };
     uniqueOffersCount: number;
     fastUdsalgsprisCount?: number;
-    rabatGruppeCount?: number;
+    tilbudsgruppeCount?: number; // ✅ NEW: Count of products with fixed offer group prices
+    rabatGruppeCount?: number; // Deprecated, kept for backwards compatibility
   };
 
   // UI State
@@ -472,22 +473,22 @@ export function CustomerProductFilters({
             </div>
           </div>
 
-          {/* Rabat Gruppe Filter - Only show if customer has discount group with >0% */}
-          {customerInfo?.discountGroup && customerInfo.discountGroup.discountPercentage > 0 && (
+          {/* Tilbudsgruppe Filter - Show if customer has offer group with fixed prices */}
+          {customerInfo?.discountGroup && (customerInfo.tilbudsgruppeCount > 0 || customerInfo.rabatGruppeCount > 0) && (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-brand-secondary" />
                 <div>
                   <Label htmlFor="rabatGruppe" className="text-sm font-medium">
-                    {customerInfo.discountGroup.name} Rabat
+                    {customerInfo.discountGroup.name} Priser
                   </Label>
                   <p className="text-xs text-gray-500">
-                    Produkter med {customerInfo.discountGroup.name} rabat
+                    Produkter med {customerInfo.discountGroup.name} tilbudspriser
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {customerInfo?.rabatGruppeCount > 0 && (
+                {(customerInfo?.tilbudsgruppeCount > 0 || customerInfo?.rabatGruppeCount > 0) && (
                   <Badge 
                     variant="default" 
                     className="text-xs text-white" 
@@ -495,7 +496,7 @@ export function CustomerProductFilters({
                       backgroundColor: customerInfo.discountGroup.color || '#6B7280'
                     }}
                   >
-                    {customerInfo.rabatGruppeCount}
+                    {customerInfo.tilbudsgruppeCount || customerInfo.rabatGruppeCount}
                   </Badge>
                 )}
                 <span 
@@ -504,7 +505,7 @@ export function CustomerProductFilters({
                     backgroundColor: customerInfo.discountGroup.color || '#6B7280'
                   }}
                 >
-                  -{customerInfo.discountGroup.discountPercentage}%
+                  Tilbud
                 </span>
                 <Switch
                   id="rabatGruppe"
