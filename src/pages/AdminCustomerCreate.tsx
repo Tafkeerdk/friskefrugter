@@ -508,14 +508,14 @@ const AdminCustomerCreate: React.FC = () => {
                 </div>
               </div>
 
-              {/* Discount Group Selection */}
+              {/* Offer Group Selection */}
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Rabatgruppe</h3>
+                <h3 className="text-lg font-semibold">Tilbudsgruppe</h3>
                 <div className="space-y-2">
-                  <Label htmlFor="discountGroupId">Tildel rabatgruppe *</Label>
+                  <Label htmlFor="discountGroupId">Tildel tilbudsgruppe *</Label>
                   <Select onValueChange={(value) => setValue('discountGroupId', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Vælg rabatgruppe" />
+                      <SelectValue placeholder="Vælg tilbudsgruppe" />
                     </SelectTrigger>
                     <SelectContent>
                       {discountGroups.map((group) => (
@@ -523,7 +523,7 @@ const AdminCustomerCreate: React.FC = () => {
                           <div className="flex items-center justify-between w-full">
                             <span>{group.name}</span>
                             <span className="ml-2 text-sm text-muted-foreground">
-                              {group.discountPercentage}%
+                              Tilbudsgruppe
                             </span>
                           </div>
                         </SelectItem>

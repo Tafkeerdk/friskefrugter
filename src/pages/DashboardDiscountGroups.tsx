@@ -799,16 +799,16 @@ const DashboardDiscountGroups: React.FC = () => {
           {/* Mobile-friendly header section */}
           <div className="space-y-4 md:space-y-0 md:flex md:items-center md:justify-between">
             <div className="space-y-2">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-brand-gray-900">Rabatgrupper</h2>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-brand-gray-900">Tilbudsgrupper</h2>
               <p className="text-sm md:text-base text-brand-gray-600">
-                Administrer op til 5 rabatgrupper med forskellige rabatsatser.
+                Administrer op til 5 tilbudsgrupper med faste priser per produkt.
               </p>
               {/* Nielsen's Heuristic #1: Visibility of System Status - Mobile optimized */}
               {totalProducts > 0 && (
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-xs sm:text-sm">
                   <span className="flex items-center gap-1 text-brand-success">
                     <CheckCircle2 className="h-3 w-3 flex-shrink-0" />
-                    <span className="truncate">{discountEligibleProducts.length} varer påvirkes af rabatgrupper</span>
+                    <span className="truncate">{discountEligibleProducts.length} varer påvirkes af tilbudsgrupper</span>
                   </span>
                   <span className="flex items-center gap-1 text-brand-warning">
                     <AlertTriangle className="h-3 w-3 flex-shrink-0" />
@@ -835,15 +835,15 @@ const DashboardDiscountGroups: React.FC = () => {
                   disabled={discountGroups.length >= 5}
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="hidden sm:inline">Opret rabatgruppe</span>
+                  <span className="hidden sm:inline">Opret tilbudsgruppe</span>
                   <span className="sm:hidden">Opret</span>
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px] mx-4">
                 <DialogHeader>
-                  <DialogTitle>Opret ny rabatgruppe</DialogTitle>
+                  <DialogTitle>Opret ny tilbudsgruppe</DialogTitle>
                   <DialogDescription>
-                    Opret en ny rabatgruppe med tilpasset rabatsats og farve.
+                    Opret en ny tilbudsgruppe med tilpasset navn og farve.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
@@ -926,7 +926,7 @@ const DashboardDiscountGroups: React.FC = () => {
                     disabled={isSubmitting}
                     className="w-full sm:w-auto min-h-[44px]"
                   >
-                    {isSubmitting ? 'Opretter...' : 'Opret rabatgruppe'}
+                    {isSubmitting ? 'Opretter...' : 'Opret tilbudsgruppe'}
                   </Button>
                 </div>
               </DialogContent>

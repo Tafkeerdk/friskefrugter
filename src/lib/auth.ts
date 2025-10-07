@@ -361,6 +361,18 @@ export interface Order {
     companyName: string;
     email: string;
     contactPersonName: string;
+    address?: {
+      street: string;
+      city: string;
+      postalCode: string;
+      country: string;
+    };
+    offerGroup?: {
+      _id: string;
+      name: string;
+      description: string;
+      color: string;
+    };
   };
   items: OrderItem[];
   orderTotals: {

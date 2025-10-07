@@ -475,37 +475,37 @@ const DashboardCustomers: React.FC = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Discount Group Assignment Dialog */}
+      {/* Offer Group Assignment Dialog */}
       <Dialog open={discountGroupDialogOpen} onOpenChange={setDiscountGroupDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ændre rabatgruppe</DialogTitle>
+            <DialogTitle>Ændre tilbudsgruppe</DialogTitle>
             <DialogDescription>
-              Vælg en ny rabatgruppe for <strong>{selectedCustomer?.companyName}</strong>
+              Vælg en ny tilbudsgruppe for <strong>{selectedCustomer?.companyName}</strong>
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="discount-group">Nuværende rabatgruppe</Label>
+              <Label htmlFor="discount-group">Nuværende tilbudsgruppe</Label>
               <div className="p-3 bg-muted rounded-lg">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">{selectedCustomer?.discountGroup.name}</span>
                   <Badge variant="outline">
-                    {selectedCustomer?.discountGroup.discountPercentage}% rabat
+                    Tilbudsgruppe
                   </Badge>
                 </div>
               </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="new-discount-group">Ny rabatgruppe</Label>
+              <Label htmlFor="new-discount-group">Ny tilbudsgruppe</Label>
               <Select 
                 value={selectedDiscountGroupId} 
                 onValueChange={setSelectedDiscountGroupId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Vælg rabatgruppe" />
+                  <SelectValue placeholder="Vælg tilbudsgruppe" />
                 </SelectTrigger>
                 <SelectContent>
                   {discountGroups.map((group) => (
@@ -513,7 +513,7 @@ const DashboardCustomers: React.FC = () => {
                       <div className="flex items-center justify-between w-full">
                         <span>{group.name}</span>
                         <span className="ml-2 text-sm text-muted-foreground">
-                          {group.discountPercentage}%
+                          Tilbudsgruppe
                         </span>
                       </div>
                     </SelectItem>

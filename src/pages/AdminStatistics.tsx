@@ -439,7 +439,7 @@ const AdminStatistics: React.FC = () => {
               <TabsContent value="revenue" className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Omsætning efter Rabatgruppe</CardTitle>
+                    <CardTitle>Omsætning efter Tilbudsgruppe</CardTitle>
                     <CardDescription>
                       Fordeling af omsætning på forskellige kundegrupper
                     </CardDescription>
@@ -450,7 +450,7 @@ const AdminStatistics: React.FC = () => {
                         <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
                           <div className="flex-1">
                             <div className="font-medium text-gray-900">
-                              {group._id || 'Standard rabatgruppe'}
+                              {group._id || 'Standard tilbudsgruppe'}
                             </div>
                             <div className="text-sm text-gray-500">
                               {group.orders} ordrer • Gennemsnit: {formatCurrency(group.averageOrderValue)}

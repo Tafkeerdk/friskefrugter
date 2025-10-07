@@ -853,13 +853,13 @@ const AdminOrderDetail: React.FC = () => {
                             CVR: {order.customerSnapshot.cvrNumber}
                           </p>
                         )}
-                        {order.customerSnapshot.discountGroup && (
+                        {(order.customerSnapshot.discountGroup || order.customer?.offerGroup) && (
                           <Badge 
                             className="mt-2 text-white font-medium"
-                            style={{ backgroundColor: order.customerSnapshot.discountGroup.color }}
+                            style={{ backgroundColor: (order.customerSnapshot.discountGroup?.color || order.customer?.offerGroup?.color) }}
                           >
-                            {order.customerSnapshot.discountGroup.name} 
-                            ({order.customerSnapshot.discountGroup.discountPercentage}%)
+                            {order.customerSnapshot.discountGroup?.name || order.customer?.offerGroup?.name} 
+                            (Tilbudsgruppe)
                           </Badge>
                         )}
                       </div>
