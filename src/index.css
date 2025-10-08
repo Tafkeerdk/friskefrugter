@@ -967,3 +967,38 @@
 .delay-500 {
   animation-delay: 0.5s;
 }
+
+/* 📱 MOBILE TOUCH OPTIMIZATIONS - CRITICAL FOR SIDEBAR FUNCTIONALITY */
+@media (max-width: 640px) {
+  /* Ensure all interactive elements have proper touch targets */
+  [data-sidebar="trigger"] {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Improve touch responsiveness for sidebar elements */
+  [data-sidebar="sidebar"] button,
+  [data-sidebar="sidebar"] [role="button"] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 44px;
+  }
+  
+  /* Prevent zoom on double tap for sidebar triggers */
+  .sidebar-trigger {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  
+  /* Ensure sheet overlay doesn't interfere with touch */
+  [data-radix-popper-content-wrapper] {
+    touch-action: manipulation;
+  }
+}

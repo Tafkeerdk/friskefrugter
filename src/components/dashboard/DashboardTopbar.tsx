@@ -140,6 +140,7 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       '/admin/categories': 'Kategorier',
       '/admin/orders': 'Ordrer',
       '/admin/customers': 'Kunder',
+      '/admin/customers/tilbudsgrupper': 'Manage Tilbudsgrupper',
       '/admin/invoices': 'Fakturaer',
       '/admin/statistics': 'Statistikker',
       '/admin/discount-groups': 'Tilbudgrupper',
@@ -196,7 +197,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
       {isMobile && !isSearchExpanded && (
         <>
           <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
-            <SidebarTrigger className="h-8 w-8 flex-shrink-0" />
+            <SidebarTrigger 
+              className="h-8 w-8 flex-shrink-0 bg-brand-gray-100 hover:bg-brand-gray-200 border border-brand-gray-200" 
+              title="Åbn menu"
+            />
             <Button
               variant="ghost"
               size="icon"
@@ -404,7 +408,10 @@ const DashboardTopbar: React.FC<DashboardTopbarProps> = ({
         <>
           {/* Left side - Sidebar trigger, title, and homepage button */}
           <div className="flex items-center gap-3 lg:gap-4 flex-shrink-0 min-w-0">
-            <SidebarTrigger className="h-9 w-9 lg:h-10 lg:w-10 flex-shrink-0" />
+            <SidebarTrigger 
+              className="h-9 w-9 lg:h-10 lg:w-10 flex-shrink-0 bg-brand-gray-100 hover:bg-brand-gray-200 border border-brand-gray-200" 
+              title="Åbn/luk menu"
+            />
             <div className="font-semibold text-lg lg:text-xl tracking-tight whitespace-nowrap truncate min-w-0">
               {getPageTitle()}
             </div>

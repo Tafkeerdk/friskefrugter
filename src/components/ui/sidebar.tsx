@@ -89,9 +89,18 @@ const SidebarProvider = React.forwardRef<
 
     // Helper to toggle the sidebar.
     const toggleSidebar = React.useCallback(() => {
-      return isMobile
-        ? setOpenMobile((open) => !open)
-        : setOpen((open) => !open)
+      if (isMobile) {
+        setOpenMobile((prevOpen) => {
+          const newOpen = !prevOpen
+          console.log('Mobile sidebar toggle:', prevOpen, '->', newOpen)
+          return newOpen
+        })
+      } else {
+        setOpen((prevOpen) => {
+          const newOpen = !prevOpen
+          return newOpen
+        })
+      }
     }, [isMobile, setOpen, setOpenMobile])
 
     // Adds a keyboard shortcut to toggle the sidebar.
@@ -196,18 +205,20 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
+            side={side}
             className={cn(
               "w-[--sidebar-width] bg-white border-r border-gray-200 p-0 text-gray-900 shadow-xl",
               "[&>button]:hidden",
               // Ensure proper contrast and readability
-              "backdrop-blur-none bg-opacity-100"
+              "backdrop-blur-none bg-opacity-100",
+              // Ensure proper mobile touch handling
+              "touch-manipulation"
             )}
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
               } as React.CSSProperties
             }
-            side={side}
           >
             <div className="flex h-full w-full flex-col bg-white">{children}</div>
           </SheetContent>
@@ -268,17 +279,31 @@ const SidebarTrigger = React.forwardRef<
 >(({ className, onClick, ...props }, ref) => {
   const { toggleSidebar } = useSidebar()
 
+  const handleClick = React.useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    
+    // Call custom onClick if provided
+    onClick?.(event)
+    
+    // Always toggle sidebar
+    toggleSidebar()
+  }, [onClick, toggleSidebar])
+
+  const handleTouchStart = React.useCallback((event: React.TouchEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+  }, [])
+
   return (
     <Button
       ref={ref}
       data-sidebar="trigger"
       variant="ghost"
       size="icon"
-      className={cn("h-7 w-7", className)}
-      onClick={(event) => {
-        onClick?.(event)
-        toggleSidebar()
-      }}
+      className={cn("h-7 w-7 touch-manipulation", className)}
+      onClick={handleClick}
+      onTouchStart={handleTouchStart}
       {...props}
     >
       <PanelLeft />
