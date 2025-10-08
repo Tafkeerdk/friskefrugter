@@ -42,6 +42,7 @@ import DashboardApplicationDetail from "./pages/DashboardApplicationDetail";
 import DashboardNotifications from "./pages/DashboardNotifications";
 import DashboardContactDetail from "./pages/DashboardContactDetail";
 import AdminCustomerCreate from "./pages/AdminCustomerCreate";
+import DashboardTilbudsgrupper from "./pages/DashboardTilbudsgrupper";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
 import CustomerOrders from "./pages/CustomerOrders";
@@ -232,6 +233,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute requireAdmin={true}>
                   <AdminCustomerCreate />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/admin/customers/tilbudsgrupper" 
+              element={
+                <ProtectedRoute requireAdmin={true}>
+                  <DashboardTilbudsgrupper />
                 </ProtectedRoute>
               } 
             />

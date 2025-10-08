@@ -299,6 +299,15 @@ const DashboardCustomers: React.FC = () => {
               />
             </div>
             <Button 
+              variant="outline"
+              className="flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
+              onClick={() => navigate('/admin/customers/tilbudsgrupper')}
+            >
+              <Percent className="h-4 w-4" />
+              <span className="hidden sm:inline">Manage Tilbudsgrupper</span>
+              <span className="sm:hidden">Grupper</span>
+            </Button>
+            <Button 
               className="flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
               onClick={() => navigate('/admin/customers/new')}
             >
@@ -346,7 +355,7 @@ const DashboardCustomers: React.FC = () => {
                           className="mt-1 rounded-full px-2.5 text-xs border"
                           style={getDiscountGroupStyle(customer.discountGroup)}
                         >
-                          {customer.discountGroup.name} ({customer.discountGroup.discountPercentage}%)
+                          {customer.discountGroup.name}
                         </Badge>
                       </div>
                     </div>
