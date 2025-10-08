@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Plus, Trash2, AlertTriangle, Users, Edit, Palette, Save, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertTriangle, Edit } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "@/components/dashboard/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -30,17 +30,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { tokenManager } from "@/lib/auth";
 import { useToast } from "@/hooks/use-toast";
@@ -85,7 +77,6 @@ const DashboardTilbudsgrupper: React.FC = () => {
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
   const [selectedTilbudsgruppe, setSelectedTilbudsgruppe] = useState<TilbudsGruppe | null>(null);
   
   // Form states
@@ -96,15 +87,10 @@ const DashboardTilbudsgrupper: React.FC = () => {
     color: '#609c14'
   });
   
-  // Bulk assignment states
-  const [selectedCustomers, setSelectedCustomers] = useState<string[]>([]);
-  const [targetTilbudsgruppe, setTargetTilbudsgruppe] = useState<string>('');
-  
   // Loading states
   const [createLoading, setCreateLoading] = useState(false);
   const [editLoading, setEditLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [bulkAssignLoading, setBulkAssignLoading] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -410,70 +396,6 @@ const DashboardTilbudsgrupper: React.FC = () => {
     }
   };
 
-  const handleBulkAssign = async () => {
-    try {
-      setBulkAssignLoading(true);
-      setError(null);
-
-      const token = tokenManager.getAccessToken('admin');
-      if (!token) {
-        throw new Error('Ikke godkendt. Log venligst ind igen.');
-      }
-
-      const apiResponse = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/admin-customers`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            'X-Session-Type': 'browser',
-            'X-PWA': 'false',
-            'X-Display-Mode': 'browser'
-          },
-          body: JSON.stringify({
-            action: 'bulk-assign-discount-group',
-            customerIds: selectedCustomers,
-            discountGroupId: targetTilbudsgruppe
-          })
-        }
-      );
-
-      if (!apiResponse.ok) {
-        throw new Error(`HTTP error! status: ${apiResponse.status}`);
-      }
-
-      const response = await apiResponse.json();
-
-      if (response.success) {
-        toast({
-          title: "Kunder flyttet",
-          description: `${selectedCustomers.length} kunder er blevet flyttet til den valgte tilbudsgruppe.`,
-        });
-        
-        // Reset selection and close dialog
-        setSelectedCustomers([]);
-        setTargetTilbudsgruppe('');
-        setBulkAssignDialogOpen(false);
-        
-        // Reload data
-        await loadData();
-      } else {
-        throw new Error(response.message || 'Kunne ikke flytte kunder');
-      }
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Der opstod en fejl';
-      setError(errorMessage);
-      toast({
-        variant: "destructive",
-        title: "Fejl",
-        description: errorMessage,
-      });
-    } finally {
-      setBulkAssignLoading(false);
-    }
-  };
-
   const openEditDialog = (tilbudsgruppe: TilbudsGruppe) => {
     setSelectedTilbudsgruppe(tilbudsgruppe);
     setFormData({
@@ -483,22 +405,6 @@ const DashboardTilbudsgrupper: React.FC = () => {
       color: tilbudsgruppe.color
     });
     setEditDialogOpen(true);
-  };
-
-  const toggleCustomerSelection = (customerId: string) => {
-    setSelectedCustomers(prev => 
-      prev.includes(customerId) 
-        ? prev.filter(id => id !== customerId)
-        : [...prev, customerId]
-    );
-  };
-
-  const selectAllCustomers = () => {
-    if (selectedCustomers.length === customers.length) {
-      setSelectedCustomers([]);
-    } else {
-      setSelectedCustomers(customers.map(c => c.id));
-    }
   };
 
   if (isLoading) {
@@ -539,115 +445,6 @@ const DashboardTilbudsgrupper: React.FC = () => {
           </div>
           
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-2 lg:flex-shrink-0">
-            <Dialog open={bulkAssignDialogOpen} onOpenChange={setBulkAssignDialogOpen}>
-              <DialogTrigger asChild>
-                <Button 
-                  variant="outline"
-                  className="flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
-                >
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Masseflytt Kunder</span>
-                  <span className="sm:hidden">Flytt</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white">
-                <DialogHeader>
-                  <DialogTitle>Masseflytt Kunder til Tilbudsgruppe</DialogTitle>
-                  <DialogDescription>
-                    Vælg kunder og flyt dem til en tilbudsgruppe.
-                  </DialogDescription>
-                </DialogHeader>
-                
-                <div className="space-y-4">
-                  {/* Customer Selection */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label>Vælg Kunder</Label>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={selectAllCustomers}
-                      >
-                        {selectedCustomers.length === customers.length ? 'Fravælg alle' : 'Vælg alle'}
-                      </Button>
-                    </div>
-                    
-                    <div className="max-h-60 overflow-y-auto border border-brand-gray-200 rounded-lg p-2 space-y-2 bg-white">
-                      {customers.length === 0 ? (
-                        <p className="text-sm text-brand-gray-500 text-center py-4">Ingen kunder fundet</p>
-                      ) : (
-                        customers.map((customer) => (
-                          <div key={customer.id} className="flex items-center space-x-2 p-2 hover:bg-brand-gray-50 rounded">
-                            <Checkbox
-                              id={customer.id}
-                              checked={selectedCustomers.includes(customer.id)}
-                              onCheckedChange={() => toggleCustomerSelection(customer.id)}
-                            />
-                            <label htmlFor={customer.id} className="flex-1 text-sm cursor-pointer">
-                              <div className="font-medium text-brand-gray-900">{customer.companyName}</div>
-                              <div className="text-brand-gray-500">{customer.contactPersonName}</div>
-                              <Badge 
-                                variant="outline" 
-                                className="mt-1"
-                                style={{
-                                  backgroundColor: `${customer.discountGroup.color || '#6B7280'}20`,
-                                  borderColor: customer.discountGroup.color || '#6B7280',
-                                  color: customer.discountGroup.color || '#6B7280'
-                                }}
-                              >
-                                {customer.discountGroup.name}
-                              </Badge>
-                            </label>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    
-                    {selectedCustomers.length > 0 && (
-                      <p className="text-sm text-brand-gray-600 mt-2">
-                        {selectedCustomers.length} kunder valgt
-                      </p>
-                    )}
-                  </div>
-                  
-                  {/* Target Group Selection */}
-                  <div>
-                    <Label htmlFor="target-group">Flyt til Tilbudsgruppe</Label>
-                    <Select value={targetTilbudsgruppe} onValueChange={setTargetTilbudsgruppe}>
-                      <SelectTrigger className="bg-white">
-                        <SelectValue placeholder="Vælg tilbudsgruppe" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white">
-                        <SelectItem value="">Standard (0%)</SelectItem>
-                        {tilbudsgrupper.map((gruppe) => (
-                          <SelectItem key={gruppe.id} value={gruppe.id}>
-                            {gruppe.name} ({gruppe.discountPercentage}%)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end gap-2 pt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setBulkAssignDialogOpen(false)}
-                    disabled={bulkAssignLoading}
-                  >
-                    Annuller
-                  </Button>
-                  <Button 
-                    onClick={handleBulkAssign}
-                    disabled={selectedCustomers.length === 0 || bulkAssignLoading}
-                    className="btn-brand-primary"
-                  >
-                    {bulkAssignLoading ? 'Flytter...' : `Flyt ${selectedCustomers.length} kunder`}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-            
             <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto btn-brand-primary">
@@ -840,12 +637,9 @@ const DashboardTilbudsgrupper: React.FC = () => {
                       {/* Customer Count */}
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-brand-gray-600">Kunder:</span>
-                        <div className="flex items-center gap-1">
-                          <Users className="h-4 w-4 text-brand-gray-500" />
-                          <span className="text-sm font-medium text-brand-gray-900">
-                            {gruppe.customerCount}
-                          </span>
-                        </div>
+                        <span className="text-sm font-medium text-brand-gray-900">
+                          {gruppe.customerCount}
+                        </span>
                       </div>
                       
                       {/* Color Preview */}
