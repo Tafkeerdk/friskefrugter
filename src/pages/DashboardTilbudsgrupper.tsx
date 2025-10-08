@@ -550,7 +550,7 @@ const DashboardTilbudsgrupper: React.FC = () => {
                   <span className="sm:hidden">Flytt</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] bg-white">
+              <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white">
                 <DialogHeader>
                   <DialogTitle>Masseflytt Kunder til Tilbudsgruppe</DialogTitle>
                   <DialogDescription>
@@ -572,31 +572,35 @@ const DashboardTilbudsgrupper: React.FC = () => {
                       </Button>
                     </div>
                     
-                    <div className="max-h-60 overflow-y-auto border rounded-lg p-2 space-y-2">
-                      {customers.map((customer) => (
-                        <div key={customer.id} className="flex items-center space-x-2 p-2 hover:bg-brand-gray-50 rounded">
-                          <Checkbox
-                            id={customer.id}
-                            checked={selectedCustomers.includes(customer.id)}
-                            onCheckedChange={() => toggleCustomerSelection(customer.id)}
-                          />
-                          <label htmlFor={customer.id} className="flex-1 text-sm cursor-pointer">
-                            <div className="font-medium">{customer.companyName}</div>
-                            <div className="text-brand-gray-500">{customer.contactPersonName}</div>
-                            <Badge 
-                              variant="outline" 
-                              className="mt-1"
-                              style={{
-                                backgroundColor: `${customer.discountGroup.color || '#6B7280'}20`,
-                                borderColor: customer.discountGroup.color || '#6B7280',
-                                color: customer.discountGroup.color || '#6B7280'
-                              }}
-                            >
-                              {customer.discountGroup.name}
-                            </Badge>
-                          </label>
-                        </div>
-                      ))}
+                    <div className="max-h-60 overflow-y-auto border border-brand-gray-200 rounded-lg p-2 space-y-2 bg-white">
+                      {customers.length === 0 ? (
+                        <p className="text-sm text-brand-gray-500 text-center py-4">Ingen kunder fundet</p>
+                      ) : (
+                        customers.map((customer) => (
+                          <div key={customer.id} className="flex items-center space-x-2 p-2 hover:bg-brand-gray-50 rounded">
+                            <Checkbox
+                              id={customer.id}
+                              checked={selectedCustomers.includes(customer.id)}
+                              onCheckedChange={() => toggleCustomerSelection(customer.id)}
+                            />
+                            <label htmlFor={customer.id} className="flex-1 text-sm cursor-pointer">
+                              <div className="font-medium text-brand-gray-900">{customer.companyName}</div>
+                              <div className="text-brand-gray-500">{customer.contactPersonName}</div>
+                              <Badge 
+                                variant="outline" 
+                                className="mt-1"
+                                style={{
+                                  backgroundColor: `${customer.discountGroup.color || '#6B7280'}20`,
+                                  borderColor: customer.discountGroup.color || '#6B7280',
+                                  color: customer.discountGroup.color || '#6B7280'
+                                }}
+                              >
+                                {customer.discountGroup.name}
+                              </Badge>
+                            </label>
+                          </div>
+                        ))
+                      )}
                     </div>
                     
                     {selectedCustomers.length > 0 && (
@@ -610,10 +614,10 @@ const DashboardTilbudsgrupper: React.FC = () => {
                   <div>
                     <Label htmlFor="target-group">Flyt til Tilbudsgruppe</Label>
                     <Select value={targetTilbudsgruppe} onValueChange={setTargetTilbudsgruppe}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-white">
                         <SelectValue placeholder="Vælg tilbudsgruppe" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="bg-white">
                         <SelectItem value="">Standard (0%)</SelectItem>
                         {tilbudsgrupper.map((gruppe) => (
                           <SelectItem key={gruppe.id} value={gruppe.id}>
