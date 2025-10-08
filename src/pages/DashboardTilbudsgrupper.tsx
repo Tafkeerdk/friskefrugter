@@ -314,7 +314,7 @@ const DashboardTilbudsgrupper: React.FC = () => {
             'X-Display-Mode': 'browser'
           },
           body: JSON.stringify({
-            id: selectedTilbudsgruppe.id,
+            discountGroupId: selectedTilbudsgruppe.id,
             ...formData
           })
         }
@@ -376,7 +376,7 @@ const DashboardTilbudsgrupper: React.FC = () => {
             'X-PWA': 'false',
             'X-Display-Mode': 'browser'
           },
-          body: JSON.stringify({ id: tilbudsgruppe.id })
+          body: JSON.stringify({ discountGroupId: tilbudsgruppe.id })
         }
       );
 
