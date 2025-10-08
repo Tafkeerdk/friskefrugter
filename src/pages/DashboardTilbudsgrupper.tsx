@@ -171,7 +171,19 @@ const DashboardTilbudsgrupper: React.FC = () => {
       const response = await apiResponse.json();
 
       if (response.success) {
-        setTilbudsgrupper(response.discountGroups || []);
+        // Map discountGroups to tilbudsgrupper format
+        const groups = response.discountGroups || [];
+        setTilbudsgrupper(groups.map((group: any) => ({
+          id: group._id || group.id,
+          name: group.name,
+          description: group.description,
+          discountPercentage: group.discountPercentage,
+          color: group.color,
+          customerCount: group.customerCount || 0,
+          isActive: group.isActive !== false,
+          createdAt: group.createdAt,
+          updatedAt: group.updatedAt
+        })));
       }
       
       return response;
@@ -518,7 +530,7 @@ const DashboardTilbudsgrupper: React.FC = () => {
             </Button>
             <div className="flex-1 min-w-0">
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-brand-gray-900">
-                Manage Tilbudsgrupper
+                Administrer Tilbudsgrupper
               </h2>
               <p className="text-sm md:text-base text-brand-gray-600 mt-1">
                 Opret, rediger og administrer tilbudsgrupper for dine kunder.
@@ -534,13 +546,13 @@ const DashboardTilbudsgrupper: React.FC = () => {
                   className="flex items-center justify-center gap-2 whitespace-nowrap w-full sm:w-auto"
                 >
                   <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Bulk Assign</span>
-                  <span className="sm:hidden">Assign</span>
+                  <span className="hidden sm:inline">Masseflytt Kunder</span>
+                  <span className="sm:hidden">Flytt</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
+              <DialogContent className="sm:max-w-[600px] bg-white">
                 <DialogHeader>
-                  <DialogTitle>Bulk Assign Kunder</DialogTitle>
+                  <DialogTitle>Masseflytt Kunder til Tilbudsgruppe</DialogTitle>
                   <DialogDescription>
                     Vælg kunder og flyt dem til en tilbudsgruppe.
                   </DialogDescription>
@@ -640,7 +652,7 @@ const DashboardTilbudsgrupper: React.FC = () => {
                   <span className="sm:hidden">Opret</span>
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="bg-white">
                 <DialogHeader>
                   <DialogTitle>Opret Ny Tilbudsgruppe</DialogTitle>
                   <DialogDescription>
@@ -855,7 +867,7 @@ const DashboardTilbudsgrupper: React.FC = () => {
 
         {/* Edit Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent>
+          <DialogContent className="bg-white">
             <DialogHeader>
               <DialogTitle>Rediger Tilbudsgruppe</DialogTitle>
               <DialogDescription>
