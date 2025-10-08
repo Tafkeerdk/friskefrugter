@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -14,7 +14,11 @@ import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton,
 } from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   LayoutDashboard,
   Package,
@@ -33,6 +37,11 @@ import {
   Scale,
   Star,
   MessageSquare,
+  ChevronDown,
+  ChevronRight,
+  Store,
+  TrendingUp,
+  Cog,
 } from "lucide-react";
 
 const DashboardSidebar: React.FC = () => {
@@ -40,6 +49,21 @@ const DashboardSidebar: React.FC = () => {
   const location = useLocation();
   const { logout, user } = useAuth();
   const isMobile = useIsMobile();
+  
+  // State for collapsible menu sections
+  const [expandedSections, setExpandedSections] = useState({
+    products: true,
+    customers: true,
+    analytics: false,
+    system: false,
+  });
+  
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
+  };
   
   const handleNavigation = (path: string) => (e: React.MouseEvent) => {
     e.preventDefault();
@@ -63,6 +87,10 @@ const DashboardSidebar: React.FC = () => {
   };
 
   const isActive = (path: string) => location.pathname === path;
+  
+  const isAnySubMenuActive = (paths: string[]) => {
+    return paths.some(path => location.pathname === path);
+  };
 
   return (
     <Sidebar>
@@ -110,9 +138,10 @@ const DashboardSidebar: React.FC = () => {
       </SidebarHeader>
       
       <SidebarContent className={cn(isMobile ? "px-2" : "px-3")}>
+        {/* Dashboard & Overview Section */}
         <SidebarGroup>
           <SidebarGroupLabel className={cn(isMobile ? "text-xs px-2" : "text-sm")}>
-            Admin Overblik
+            Dashboard & Overblik
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -123,7 +152,7 @@ const DashboardSidebar: React.FC = () => {
                   className={cn(
                     "transition-all duration-200 group",
                     isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin") && "bg-primary/10 text-primary font-medium"
+                    isActive("/admin") && "bg-brand-primary/10 text-brand-primary font-medium"
                   )}
                 >
                   <LayoutDashboard className={cn(
@@ -141,7 +170,7 @@ const DashboardSidebar: React.FC = () => {
                   className={cn(
                     "transition-all duration-200 group",
                     isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/applications") && "bg-primary/10 text-primary font-medium"
+                    isActive("/admin/applications") && "bg-brand-primary/10 text-brand-primary font-medium"
                   )}
                 >
                   <UserCheck className={cn(
@@ -164,7 +193,7 @@ const DashboardSidebar: React.FC = () => {
                   className={cn(
                     "transition-all duration-200 group",
                     isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/notifications") && "bg-primary/10 text-primary font-medium"
+                    isActive("/admin/notifications") && "bg-brand-primary/10 text-brand-primary font-medium"
                   )}
                 >
                   <Bell className={cn(
@@ -187,7 +216,7 @@ const DashboardSidebar: React.FC = () => {
                   className={cn(
                     "transition-all duration-200 group",
                     isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/henvendelser") && "bg-primary/10 text-primary font-medium"
+                    isActive("/admin/henvendelser") && "bg-brand-primary/10 text-brand-primary font-medium"
                   )}
                 >
                   <MessageSquare className={cn(
@@ -199,269 +228,372 @@ const DashboardSidebar: React.FC = () => {
                   </span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/products")}
-                  isActive={isActive("/admin/products")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/products") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Package className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">Produkter</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/featured-products")}
-                  isActive={isActive("/admin/featured-products")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/featured-products") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Star className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">
-                    {isMobile ? "Udvalgte" : "Udvalgte Produkter"}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/categories")}
-                  isActive={isActive("/admin/categories")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/categories") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <LayoutGrid className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">Kategorier</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/units")}
-                  isActive={isActive("/admin/units")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/units") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Scale className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">Enheder</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/orders")}
-                  isActive={isActive("/admin/orders")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/orders") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <ShoppingCart className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">Ordrer</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/invoices")}
-                  isActive={isActive("/admin/invoices")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/invoices") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <FileText className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">Fakturaer</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/customers")}
-                  isActive={isActive("/admin/customers")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/customers") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Users className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">
-                    {isMobile ? "B2B Kunder" : "B2B Kunder"}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/customer-carts")}
-                  isActive={isActive("/admin/customer-carts")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/customer-carts") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <ShoppingCart className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">
-                    {isMobile ? "Kunde Kurve" : "Kunde Kurve"}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/discount-groups")}
-                  isActive={isActive("/admin/discount-groups")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/discount-groups") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Percent className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">
-                    {isMobile ? "Tilbud" : "Tilbudgrupper"}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/unique-offers")}
-                  isActive={isActive("/admin/unique-offers")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/unique-offers") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Star className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">
-                    {isMobile ? "Unikke" : "Unikke Tilbud"}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
+        {/* Product Management Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className={cn(isMobile ? "text-xs px-2" : "text-sm")}>
-            Analyse & Rapporter
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/statistics")}
-                  isActive={isActive("/admin/statistics")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/statistics") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <BarChart3 className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">Statistik</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <Collapsible 
+                open={expandedSections.products} 
+                onOpenChange={() => toggleSection('products')}
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      className={cn(
+                        "transition-all duration-200 group w-full justify-between",
+                        isMobile ? "h-10 text-sm" : "h-11",
+                        isAnySubMenuActive([
+                          "/admin/products", 
+                          "/admin/featured-products", 
+                          "/admin/categories", 
+                          "/admin/units"
+                        ]) && "bg-brand-primary/10 text-brand-primary font-medium"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Store className={cn(
+                          "transition-all flex-shrink-0",
+                          isMobile ? "h-4 w-4" : "h-5 w-5"
+                        )} />
+                        <span className="truncate">Produktstyring</span>
+                      </div>
+                      {expandedSections.products ? (
+                        <ChevronDown className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      ) : (
+                        <ChevronRight className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                </SidebarMenuItem>
+                
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/products")}
+                        isActive={isActive("/admin/products")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Package className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Produkter</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/featured-products")}
+                        isActive={isActive("/admin/featured-products")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Star className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">
+                          {isMobile ? "Udvalgte" : "Udvalgte Produkter"}
+                        </span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/categories")}
+                        isActive={isActive("/admin/categories")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <LayoutGrid className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Kategorier</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/units")}
+                        isActive={isActive("/admin/units")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Scale className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Enheder</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        
+
+        {/* Customer & Sales Management Section */}
         <SidebarGroup>
-          <SidebarGroupLabel className={cn(isMobile ? "text-xs px-2" : "text-sm")}>
-            System Administration
-          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/profile")}
-                  isActive={isActive("/admin/profile")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/profile") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Shield className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">Min Profil</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  onClick={handleNavigation("/admin/settings")}
-                  isActive={isActive("/admin/settings")}
-                  className={cn(
-                    "transition-all duration-200",
-                    isMobile ? "h-10 text-sm" : "h-11",
-                    isActive("/admin/settings") && "bg-primary/10 text-primary font-medium"
-                  )}
-                >
-                  <Settings className={cn(
-                    "transition-all flex-shrink-0",
-                    isMobile ? "h-4 w-4" : "h-5 w-5"
-                  )} />
-                  <span className="truncate">
-                    {isMobile ? "Indstillinger" : "Systemindstillinger"}
-                  </span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <Collapsible 
+                open={expandedSections.customers} 
+                onOpenChange={() => toggleSection('customers')}
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      className={cn(
+                        "transition-all duration-200 group w-full justify-between",
+                        isMobile ? "h-10 text-sm" : "h-11",
+                        isAnySubMenuActive([
+                          "/admin/customers", 
+                          "/admin/customer-carts",
+                          "/admin/discount-groups", 
+                          "/admin/unique-offers",
+                          "/admin/orders",
+                          "/admin/invoices"
+                        ]) && "bg-brand-primary/10 text-brand-primary font-medium"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Users className={cn(
+                          "transition-all flex-shrink-0",
+                          isMobile ? "h-4 w-4" : "h-5 w-5"
+                        )} />
+                        <span className="truncate">Kunder & Salg</span>
+                      </div>
+                      {expandedSections.customers ? (
+                        <ChevronDown className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      ) : (
+                        <ChevronRight className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                </SidebarMenuItem>
+                
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/customers")}
+                        isActive={isActive("/admin/customers")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Users className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">B2B Kunder</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/customer-carts")}
+                        isActive={isActive("/admin/customer-carts")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <ShoppingCart className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Kunde Kurve</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/orders")}
+                        isActive={isActive("/admin/orders")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <ShoppingCart className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Ordrer</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/invoices")}
+                        isActive={isActive("/admin/invoices")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <FileText className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Fakturaer</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/discount-groups")}
+                        isActive={isActive("/admin/discount-groups")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Percent className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">
+                          {isMobile ? "Tilbud" : "Tilbudgrupper"}
+                        </span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/unique-offers")}
+                        isActive={isActive("/admin/unique-offers")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Star className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">
+                          {isMobile ? "Unikke" : "Unikke Tilbud"}
+                        </span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Analytics & Reports Section */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Collapsible 
+                open={expandedSections.analytics} 
+                onOpenChange={() => toggleSection('analytics')}
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      className={cn(
+                        "transition-all duration-200 group w-full justify-between",
+                        isMobile ? "h-10 text-sm" : "h-11",
+                        isAnySubMenuActive(["/admin/statistics"]) && "bg-brand-primary/10 text-brand-primary font-medium"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className={cn(
+                          "transition-all flex-shrink-0",
+                          isMobile ? "h-4 w-4" : "h-5 w-5"
+                        )} />
+                        <span className="truncate">Analyse & Rapporter</span>
+                      </div>
+                      {expandedSections.analytics ? (
+                        <ChevronDown className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      ) : (
+                        <ChevronRight className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                </SidebarMenuItem>
+                
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/statistics")}
+                        isActive={isActive("/admin/statistics")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <BarChart3 className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Statistik</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* System Administration Section */}
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <Collapsible 
+                open={expandedSections.system} 
+                onOpenChange={() => toggleSection('system')}
+              >
+                <SidebarMenuItem>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton 
+                      className={cn(
+                        "transition-all duration-200 group w-full justify-between",
+                        isMobile ? "h-10 text-sm" : "h-11",
+                        isAnySubMenuActive(["/admin/profile", "/admin/settings"]) && "bg-brand-primary/10 text-brand-primary font-medium"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Cog className={cn(
+                          "transition-all flex-shrink-0",
+                          isMobile ? "h-4 w-4" : "h-5 w-5"
+                        )} />
+                        <span className="truncate">System Administration</span>
+                      </div>
+                      {expandedSections.system ? (
+                        <ChevronDown className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      ) : (
+                        <ChevronRight className={cn("transition-transform", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                </SidebarMenuItem>
+                
+                <CollapsibleContent>
+                  <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/profile")}
+                        isActive={isActive("/admin/profile")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Shield className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">Min Profil</span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    
+                    <SidebarMenuSubItem>
+                      <SidebarMenuSubButton 
+                        onClick={handleNavigation("/admin/settings")}
+                        isActive={isActive("/admin/settings")}
+                        className={cn(
+                          "transition-all duration-200",
+                          isMobile ? "text-xs" : "text-sm"
+                        )}
+                      >
+                        <Settings className={cn("flex-shrink-0", isMobile ? "h-3 w-3" : "h-4 w-4")} />
+                        <span className="truncate">
+                          {isMobile ? "Indstillinger" : "Systemindstillinger"}
+                        </span>
+                      </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                  </SidebarMenuSub>
+                </CollapsibleContent>
+              </Collapsible>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
