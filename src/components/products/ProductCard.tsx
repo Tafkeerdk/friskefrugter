@@ -16,10 +16,22 @@ import { FavoriteButton } from "@/components/products/FavoriteButton";
 interface CustomerPricing {
   price: number;
   originalPrice?: number;
-  discountType: 'none' | 'fast_udsalgspris' | 'rabat_gruppe' | 'unique_offer';
+  discountType: 'unique_offer' | 'fast_udsalgspris' | 'tilbudsgruppe' | 'rabat_gruppe' | 'none';
   discountLabel?: string;
+  discountPercentage?: number;
   showStrikethrough?: boolean;
+  offerDetails?: {
+    description?: string;
+    validFrom?: string;
+    validTo?: string;
+  };
+  saleDetails?: {
+    validFrom?: string;
+    validTo?: string;
+  };
   groupDetails?: {
+    groupName?: string;
+    groupDescription?: string;
     groupColor?: string;
   };
 }

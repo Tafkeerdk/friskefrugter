@@ -404,25 +404,29 @@ const Index = () => {
                 {settings.subtitle}
               </p>
             </div>
-            {/* RESPONSIVE GRID FOR ALL FEATURED PRODUCTS (UP TO 8) */}
+            {/* RESPONSIVE GRID FOR ALL FEATURED PRODUCTS (UP TO 8) - FLEXIBLE & BALANCED */}
             <div className="flex justify-center">
               <div className={cn(
                 "grid w-full",
                 // MOBILE: Always 2 columns for clean mobile layout
                 isMobile 
                   ? "grid-cols-2 gap-4 max-w-lg px-4" 
-                  // DESKTOP: Responsive grid for all featured products (up to 8)
+                  // DESKTOP: Flexible responsive grid that adapts to product count
                   : featuredProducts.length === 1
                     ? "grid-cols-1 max-w-sm gap-8"
                     : featuredProducts.length === 2
                       ? "grid-cols-2 max-w-2xl gap-8"
-                      : featuredProducts.length === 3
-                        ? "grid-cols-3 max-w-4xl gap-8"
-                        : featuredProducts.length === 4
-                          ? "grid-cols-4 max-w-6xl gap-8"
-                          : featuredProducts.length <= 6
-                            ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-3 max-w-5xl gap-6"
-                            : "grid-cols-2 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 max-w-6xl gap-6"
+                    : featuredProducts.length === 3
+                      ? "grid-cols-3 max-w-4xl gap-8"
+                    : featuredProducts.length === 4
+                      ? "grid-cols-2 md:grid-cols-4 max-w-6xl gap-6"
+                    : featuredProducts.length === 5
+                      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5 max-w-6xl gap-6"
+                    : featuredProducts.length === 6
+                      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-3 max-w-5xl gap-6"
+                    : featuredProducts.length === 7
+                      ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-4 max-w-6xl gap-6"
+                    : "grid-cols-2 md:grid-cols-4 max-w-6xl gap-6" // 8 items: 2 rows of 4
               )}>
                 {loading ? (
                   // Loading skeleton - show expected number
@@ -436,19 +440,18 @@ const Index = () => {
                 ) : featuredProducts.length > 0 ? (
                   // Show ALL featured products (up to 8)
                   featuredProducts.map((product) => (
-                    <div key={product.id} className="flex justify-center">
-                      <ProductCard 
-                        id={product.id}
-                        name={product.name}
-                        image={product.image || '/placeholder.svg'}
-                        category={product.category}
-                        unit={product.unit}
-                        isLoggedIn={product.isLoggedIn}
-                        userType={product.userType as "customer" | "public"}
-                        price={product.userType === 'customer' ? product.price : product.basePrice}
-                        customerPricing={product.customerPricing}
-                      />
-                    </div>
+                    <ProductCard 
+                      key={product.id}
+                      id={product.id}
+                      name={product.name}
+                      image={product.image || '/placeholder.svg'}
+                      category={product.category}
+                      unit={product.unit}
+                      isLoggedIn={product.isLoggedIn}
+                      userType={product.userType as "customer" | "public"}
+                      price={product.userType === 'customer' ? product.price : product.basePrice}
+                      customerPricing={product.customerPricing}
+                    />
                   ))
                 ) : (
                   // No products fallback
