@@ -231,7 +231,7 @@ export function ProductPricing({ customerPricing, isMobile = false, position = '
 
       {position === 'detail' && customerPricing.groupDetails?.groupName && (
         <p className="text-xs text-gray-600 mt-1">
-          {customerPricing.groupDetails.groupName} rabat
+          {customerPricing.groupDetails.groupName}
         </p>
       )}
 
