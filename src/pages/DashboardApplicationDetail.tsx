@@ -69,6 +69,14 @@ interface Application {
     employees?: number;
     foundedYear?: number;
   };
+  cvrWarning?: {
+    message: string;
+    existingCustomers: Array<{
+      contactPerson: string;
+      email: string;
+      companyName: string;
+    }>;
+  };
 }
 
 const DashboardApplicationDetail: React.FC = () => {
@@ -83,6 +91,10 @@ const DashboardApplicationDetail: React.FC = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  
+  // CVR warning states
+  const [cvrWarning, setCvrWarning] = useState<any>(null);
+  const [cvrWarningDialogOpen, setCvrWarningDialogOpen] = useState(false);
 
   useEffect(() => {
     if (id && adminUser) {
@@ -101,6 +113,13 @@ const DashboardApplicationDetail: React.FC = () => {
       
       if (response.success) {
         setApplication(response.application);
+        // ✅ Store CVR warning if exists
+        if (response.cvrWarning) {
+          setCvrWarning(response.cvrWarning);
+          console.log('⚠️ CVR Warning:', response.cvrWarning);
+        } else {
+          setCvrWarning(null);
+        }
       } else {
         setError(response.error || 'Ansøgning ikke fundet');
       }
@@ -112,20 +131,37 @@ const DashboardApplicationDetail: React.FC = () => {
     }
   };
 
+  // ✅ Check for CVR warning before approving
+  const handleApproveClick = () => {
+    if (cvrWarning) {
+      // Show CVR warning dialog first
+      setCvrWarningDialogOpen(true);
+    } else {
+      // No warning - approve directly
+      if (application) {
+        handleApprove(application.id);
+      }
+    }
+  };
+
   const handleApprove = async (applicationId: string) => {
     try {
       setActionLoading(applicationId);
       const response = await authService.approveApplication(applicationId);
       
       if (response.success) {
-        // Close modal and reset state
+        // Close all modals and reset state
         setDialogOpen(false);
+        setCvrWarningDialogOpen(false);
         setRejectionReason('');
         
         // Refresh data
         await loadApplication();
         
-        // Show success message
+        // Show success message with CVR warning if applicable
+        if (response.cvrWarning) {
+          console.log('⚠️ Application approved - Multiple customers from same company:', response.cvrWarning);
+        }
         if (response.emailSent) {
           console.log('✅ Application approved and email sent successfully');
         }
@@ -575,7 +611,7 @@ const DashboardApplicationDetail: React.FC = () => {
                     <div className="space-y-4 pt-4 border-t">
                       <div className="flex space-x-2">
                         <Button
-                          onClick={() => handleApprove(application.id)}
+                          onClick={handleApproveClick}
                           disabled={actionLoading === application.id}
                           className="btn-brand-primary"
                         >
@@ -613,6 +649,93 @@ const DashboardApplicationDetail: React.FC = () => {
                   )}
                 </div>
               )}
+            </DialogContent>
+          </Dialog>
+
+          {/* CVR Warning Dialog - Shows when approving application with existing CVR */}
+          <Dialog open={cvrWarningDialogOpen} onOpenChange={setCvrWarningDialogOpen}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-brand-warning">
+                  <AlertTriangle className="h-5 w-5" />
+                  Flere kunder fra samme virksomhed
+                </DialogTitle>
+                <DialogDescription>
+                  {cvrWarning?.message}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <Alert className="border-brand-warning bg-brand-warning/10">
+                  <AlertTriangle className="h-4 w-4 text-brand-warning" />
+                  <AlertDescription className="text-brand-warning">
+                    Dette CVR-nummer er allerede registreret i systemet. Det er OK at godkende hvis det er en anden kontaktperson fra samme virksomhed.
+                  </AlertDescription>
+                </Alert>
+
+                {cvrWarning?.existingCustomers && cvrWarning.existingCustomers.length > 0 && (
+                  <Card className="border-brand-gray-200">
+                    <CardHeader>
+                      <CardTitle className="text-sm font-medium">Eksisterende kunder fra denne virksomhed:</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {cvrWarning.existingCustomers.map((customer: any, index: number) => (
+                          <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                            <User className="h-4 w-4 text-brand-primary mt-0.5" />
+                            <div className="flex-1">
+                              <p className="font-medium text-gray-900">{customer.contactPerson}</p>
+                              <p className="text-sm text-gray-600">{customer.email}</p>
+                              <p className="text-xs text-gray-500">{customer.companyName}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-gray-900">Ny kontaktperson der ansøger:</p>
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <p className="font-medium text-gray-900">{application?.contactPersonName}</p>
+                    <p className="text-sm text-gray-600">{application?.email}</p>
+                  </div>
+                </div>
+
+                <Alert className="border-blue-200 bg-blue-50">
+                  <AlertDescription className="text-blue-900">
+                    <strong>Bemærk:</strong> Begge kunder vil kunne logge ind med deres egne emails og har separate konti, men de deler samme CVR-nummer og virksomhedsdata.
+                  </AlertDescription>
+                </Alert>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-4 border-t">
+                <Button
+                  variant="outline"
+                  onClick={() => setCvrWarningDialogOpen(false)}
+                  disabled={!!actionLoading}
+                >
+                  Annuller
+                </Button>
+                <Button
+                  onClick={() => application && handleApprove(application.id)}
+                  disabled={!!actionLoading}
+                  className="btn-brand-primary"
+                >
+                  {actionLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      Godkender...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Godkend alligevel
+                    </>
+                  )}
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
         </div>

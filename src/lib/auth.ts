@@ -241,6 +241,14 @@ export interface ApplicationResponse {
   message: string;
   emailSent?: boolean;
   emailError?: string;
+  cvrWarning?: {
+    message: string;
+    existingCustomers: Array<{
+      contactPerson: string;
+      email: string;
+      companyName: string;
+    }>;
+  };
 }
 
 // Cart interfaces
@@ -1337,7 +1345,19 @@ export const authService = {
   },
 
   // Get individual application by ID
-  async getApplication(id: string): Promise<{ success: boolean; application?: any; error?: string }> {
+  async getApplication(id: string): Promise<{ 
+    success: boolean; 
+    application?: any; 
+    error?: string;
+    cvrWarning?: {
+      message: string;
+      existingCustomers: Array<{
+        contactPerson: string;
+        email: string;
+        companyName: string;
+      }>;
+    };
+  }> {
     try {
       const response = await apiClient.get(getEndpoint(`/api/auth/admin/applications?id=${id}`));
       const data = await response.json();
