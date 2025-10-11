@@ -211,9 +211,11 @@ const ProductDetail = () => {
          
          try {
            // First: Try to get from customer products with pricing
-           console.log('🔄 Attempting customer products fetch...');
+           console.log('🔄 Attempting customer product by ID...');
+           // ⚡ PERFORMANCE: Search by ID to avoid loading all products
            const customerResponse = await api.getCustomerProducts({ 
-             limit: 1000 // Get enough to find our product
+             search: id, // Search by product ID
+             limit: 1 // Only need this one product
            });
            
            if (customerResponse.success && customerResponse.data && (customerResponse.data as any).products) {

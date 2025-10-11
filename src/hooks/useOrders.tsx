@@ -211,10 +211,10 @@ export const useOrders = (): UseOrdersReturn => {
         console.log('🔄 Loading order statistics...');
       }
       
-      // Get all orders (with a high limit to get comprehensive stats)
+      // ⚡ PERFORMANCE: Only get recent orders for stats (not all 1000!)
       const response = await authService.getMyOrders({ 
         page: 1, 
-        limit: 1000 // High limit to get all orders for stats
+        limit: 50 // ⚡ Only get recent 50 orders instead of 1000 for dashboard stats
       });
       
       if (response.success) {
