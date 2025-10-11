@@ -27,6 +27,7 @@ import {
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ProductCard } from "@/components/products/ProductCard";
 import { ProductPricing, CustomerPricing } from "@/components/products/card/ProductPricing";
+import { FavoriteButton } from "@/components/products/FavoriteButton";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { api, handleApiError } from "@/lib/api";
@@ -587,7 +588,16 @@ const ProductDetail = () => {
                 )}
               </div>
               
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{product.produktnavn}</h1>
+              <div className="flex items-start justify-between gap-4 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900 flex-1">{product.produktnavn}</h1>
+                {isCustomerAuthenticated && (
+                  <FavoriteButton 
+                    productId={product._id}
+                    size="lg"
+                    variant="detail"
+                  />
+                )}
+              </div>
               
               {product.varenummer && (
                 <p className="text-sm text-gray-500 mb-4">Varenr: {product.varenummer}</p>

@@ -11,6 +11,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useCart } from "@/hooks/useCart";
 import { useToast } from "@/hooks/use-toast";
 import { useDebounce } from "@/hooks/useDebounce";
+import { FavoriteButton } from "@/components/products/FavoriteButton";
 
 interface CustomerPricing {
   price: number;
@@ -217,6 +218,17 @@ export function ProductCard({
       <Link to={`/products/${id}`}>
         <div className="relative w-full bg-gray-50 overflow-hidden rounded-t-lg aspect-[4/3]">
           {renderImage()}
+          
+          {/* **FAVORITE BUTTON - TOP LEFT CORNER OF IMAGE** */}
+          {isLoggedIn && userType === 'customer' && (
+            <div className="absolute top-2 left-2 z-10">
+              <FavoriteButton 
+                productId={id}
+                size="sm"
+                variant="card"
+              />
+            </div>
+          )}
           
           {/* **DISCOUNT BADGE - TOP RIGHT CORNER OF IMAGE** */}
           {isLoggedIn && customerPricing && customerPricing.discountType !== 'none' && customerPricing.discountLabel && (

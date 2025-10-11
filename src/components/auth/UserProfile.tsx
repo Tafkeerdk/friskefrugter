@@ -13,7 +13,7 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '../ui/dropdown-menu';
-import { LogOut, User, Settings, Shield, LayoutDashboard } from 'lucide-react';
+import { LogOut, User, Settings, Shield, LayoutDashboard, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface UserProfileProps {
@@ -110,6 +110,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ variant = 'card' }) =>
               <DropdownMenuItem onClick={handleProfileClick}>
                 <User className="mr-2 h-4 w-4" />
                 <span>Profil</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/favorites')}>
+                <Heart className="mr-2 h-4 w-4" />
+                <span>Favoritter</span>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />

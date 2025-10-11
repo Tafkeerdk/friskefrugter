@@ -46,6 +46,7 @@ import DashboardTilbudsgrupper from "./pages/DashboardTilbudsgrupper";
 import Profile from "./pages/Profile";
 import CustomerUniqueOffers from "./pages/CustomerUniqueOffers";
 import CustomerOrders from "./pages/CustomerOrders";
+import CustomerFavorites from "./pages/CustomerFavorites";
 import OrderSuccess from "./pages/OrderSuccess";
 
 // Developer-only components
@@ -339,6 +340,14 @@ const AppContent = () => {
               element={
                 <ProtectedRoute requireCustomer={true}>
                   <CustomerOrders />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/favorites" 
+              element={
+                <ProtectedRoute requireCustomer={true}>
+                  <CustomerFavorites />
                 </ProtectedRoute>
               } 
             />
