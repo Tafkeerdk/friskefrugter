@@ -3,6 +3,7 @@ import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { tokenManager } from '@/lib/auth';
 
 interface FavoriteButtonProps {
   productId: string;
@@ -35,7 +36,8 @@ export function FavoriteButton({
     setIsLoading(true);
 
     try {
-      const token = localStorage.getItem('customerAccessToken');
+      // ✅ CRITICAL: Use tokenManager instead of localStorage
+      const token = tokenManager.getAccessToken('customer');
       if (!token) {
         toast({
           variant: 'destructive',

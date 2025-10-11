@@ -11,6 +11,7 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
+import { tokenManager } from "@/lib/auth";
 
 interface CustomerPricing {
   price: number;
@@ -65,7 +66,8 @@ export default function CustomerFavorites() {
     try {
       setIsLoading(true);
       
-      const token = localStorage.getItem('customerAccessToken');
+      // ✅ CRITICAL: Use tokenManager instead of localStorage
+      const token = tokenManager.getAccessToken('customer');
       if (!token) {
         throw new Error('Ingen token fundet');
       }
@@ -107,7 +109,8 @@ export default function CustomerFavorites() {
     try {
       setRemovingIds(prev => new Set(prev).add(productId));
 
-      const token = localStorage.getItem('customerAccessToken');
+      // ✅ CRITICAL: Use tokenManager instead of localStorage
+      const token = tokenManager.getAccessToken('customer');
       if (!token) throw new Error('Ingen token fundet');
 
       const response = await fetch(

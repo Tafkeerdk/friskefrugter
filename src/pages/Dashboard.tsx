@@ -19,13 +19,50 @@ import {
   Settings,
   ShoppingCart,
   TrendingUp,
-  Clock
+  Clock,
+  Heart
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const Dashboard: React.FC = () => {
   const { user, isLoading } = useAuth();
   const { orderStats, isLoadingStats, statsError } = useOrders();
+  const [favoritesCount, setFavoritesCount] = React.useState<number>(0);
+  const [isLoadingFavorites, setIsLoadingFavorites] = React.useState(false);
+
+  // Load favorites count
+  React.useEffect(() => {
+    const loadFavoritesCount = async () => {
+      try {
+        setIsLoadingFavorites(true);
+        const response = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL || 'https://famous-dragon-b033ac.netlify.app'}/.netlify/functions/customer-favorites`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('customer_accessToken')}`,
+              'X-Session-Type': 'browser',
+              'X-PWA': 'false',
+              'X-Display-Mode': 'browser'
+            }
+          }
+        );
+        const data = await response.json();
+        if (data.success) {
+          setFavoritesCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error('Error loading favorites count:', error);
+      } finally {
+        setIsLoadingFavorites(false);
+      }
+    };
+
+    if (user) {
+      loadFavoritesCount();
+    }
+  }, [user]);
 
   // Show loading while user data is being fetched
   if (isLoading || !user) {
@@ -188,32 +225,29 @@ const Dashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="text-center">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs md:text-sm font-medium">Sidste Ordre</CardTitle>
-                <FileText className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                {isLoadingStats ? (
-                  <div className="animate-pulse">
-                    <div className="h-4 md:h-8 bg-gray-200 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-16 mx-auto"></div>
-                  </div>
-                ) : (
-                  <>
-                <div className="text-sm md:text-2xl font-bold">
-                      {customerStats.lastOrderDate 
-                        ? new Date(customerStats.lastOrderDate).toLocaleDateString('da-DK')
-                        : 'Ingen ordrer'
-                      }
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Seneste aktivitet
-                </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <Link to="/favorites" className="block">
+              <Card className="text-center hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-xs md:text-sm font-medium">Mine Favoritter</CardTitle>
+                  <Heart className="h-3 w-3 md:h-4 md:w-4 text-red-500" />
+                </CardHeader>
+                <CardContent>
+                  {isLoadingFavorites ? (
+                    <div className="animate-pulse">
+                      <div className="h-4 md:h-8 bg-gray-200 rounded mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded w-20 mx-auto"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-lg md:text-2xl font-bold text-red-500">{favoritesCount}</div>
+                      <p className="text-xs text-muted-foreground">
+                        Gemte produkter
+                      </p>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
           </div>
 
           {/* Main Content - Mobile responsive layout */}
