@@ -920,6 +920,7 @@ export const productFormDataToFormData = (productData: any, images?: File[], exi
   formData.append('basispris', productData.basispris?.toString() || '0');
   formData.append('kategori', JSON.stringify(productData.kategori));
   formData.append('lagerstyring', JSON.stringify(productData.lagerstyring));
+  formData.append('discount', JSON.stringify(productData.discount || {})); // ✅ Add discount field
   formData.append('aktiv', productData.aktiv?.toString() || 'true');
   
   // Add existing images information (for edit mode)
@@ -944,29 +945,49 @@ export const productFormDataToFormData = (productData: any, images?: File[], exi
   
   // Add new image files in correct order (primary first)
   if (images && images.length > 0) {
-    // If we have ProductImage objects with isPrimary, sort them
+    console.log('📸 Adding new image files to FormData:', images.length);
+    
+    // Check if we need to sort by isPrimary from productData.billeder
     if (productData.billeder && productData.billeder.length > 0) {
-      const imageData = productData.billeder;
+      const billedeMetadata = productData.billeder;
       
-      // Sort images so primary comes first
-      const sortedImages = [...imageData].sort((a, b) => {
-        if (a.isPrimary && !b.isPrimary) return -1;
-        if (!a.isPrimary && b.isPrimary) return 1;
-        return 0;
-      });
+      // Filter only new uploads (not existing images)
+      const newUploads = billedeMetadata.filter((img: any) => !img.isExisting && img.file);
       
-      // Add files in the sorted order (only new uploads)
-      sortedImages.forEach((imageData, index) => {
-        if (!imageData.isExisting && imageData.file) {
-          formData.append('billeder', imageData.file);
-        }
-      });
+      if (newUploads.length > 0) {
+        // Sort so primary image comes first
+        const sortedUploads = [...newUploads].sort((a, b) => {
+          if (a.isPrimary && !b.isPrimary) return -1;
+          if (!a.isPrimary && b.isPrimary) return 1;
+          return 0;
+        });
+        
+        // Append the actual File objects from sorted metadata
+        sortedUploads.forEach((imageData: any) => {
+          if (imageData.file instanceof File) {
+            console.log('📎 Appending image file:', imageData.file.name, 'isPrimary:', imageData.isPrimary);
+            formData.append('billeder', imageData.file);
+          }
+        });
+        console.log(`✅ Added ${sortedUploads.length} new image files to FormData`);
+      } else {
+        // No metadata with files, use the images array directly
+        console.log('⚠️ No file metadata found, using images array directly');
+        images.forEach((file) => {
+          console.log('📎 Appending image file:', file.name);
+          formData.append('billeder', file);
+        });
+      }
     } else {
-      // Fallback: just add images as provided
-      images.forEach((file, index) => {
+      // No billeder metadata, use the images array directly
+      console.log('⚠️ No billeder metadata, using images array directly');
+      images.forEach((file) => {
+        console.log('📎 Appending image file:', file.name);
         formData.append('billeder', file);
       });
     }
+  } else {
+    console.log('⚠️ No new images to upload');
   }
   
   console.log('📦 FormData prepared:', {
