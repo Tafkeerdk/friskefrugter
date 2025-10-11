@@ -342,7 +342,7 @@ const Contact = () => {
                   <div className="p-6 bg-brand-gray-50 border-t">
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">Multi Grønt A/S</h3>
+                        <h3 className="font-semibold text-gray-900 mb-1">Multi Grønt ApS</h3>
                         <p className="text-gray-600">Litauen Alle 13, 2630 Taastrup</p>
                       </div>
                       <a 

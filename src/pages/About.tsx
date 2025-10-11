@@ -356,7 +356,7 @@ export default function About() {
                 <div className="animate-fade-in-left mx-auto lg:mx-0 w-full max-w-md lg:max-w-none">
                   <div className="bg-brand-gray-50 rounded-xl p-8 shadow-sm hover:shadow-md transition-shadow duration-300">
                     <h3 className="text-2xl font-bold text-brand-primary-dark mb-6">
-                      Multi Grønt A/S
+                      Multi Grønt ApS
                     </h3>
                     <div className="space-y-4">
                       <div className="flex items-start gap-3">
@@ -406,13 +406,13 @@ export default function About() {
                         allowFullScreen={true}
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
-                        title="Multi Grønt A/S - Litauen Alle 13, 2630 Taastrup"
+                        title="Multi Grønt ApS - Litauen Alle 13, 2630 Taastrup"
                       ></iframe>
                     </div>
                     <div className="p-4 bg-brand-gray-50 border-t">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-brand-gray-600 font-medium">Multi Grønt A/S</span>
-                        <span className="text-brand-gray-500">Litauen Alle 13, 2630 Taastrup</span>
+                        <span className="text-brand-gray-600 font-medium">Multi Grønt ApS</span>
+<span className="text-brand-gray-500">Litauen Alle 13, 2630 Taastrup</span>
                       </div>
                     </div>
                   </div>
