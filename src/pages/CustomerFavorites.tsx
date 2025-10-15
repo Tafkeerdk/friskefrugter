@@ -6,24 +6,41 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Heart, ShoppingCart, Trash2, AlertCircle } from "lucide-react";
+import { Heart, AlertCircle, Trash2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
 import { tokenManager } from "@/lib/auth";
+import { ProductCard } from "@/components/products/ProductCard";
 
 interface CustomerPricing {
   price: number;
-  originalPrice: number;
-  discountType: string;
-  discountLabel: string;
-  discountPercentage: number;
-  showStrikethrough: boolean;
+  originalPrice?: number;
+  discountType: 'unique_offer' | 'fast_udsalgspris' | 'tilbudsgruppe' | 'rabat_gruppe' | 'none';
+  discountLabel?: string;
+  discountPercentage?: number;
+  showStrikethrough?: boolean;
+  offerDetails?: {
+    description?: string;
+    validFrom?: string;
+    validTo?: string;
+  };
+  saleDetails?: {
+    validFrom?: string;
+    validTo?: string;
+  };
   groupDetails?: {
     groupName?: string;
+    groupDescription?: string;
     groupColor?: string;
   };
+}
+
+interface Unit {
+  _id: string;
+  value: string;
+  label: string;
+  description?: string;
 }
 
 interface Favorite {
@@ -41,9 +58,7 @@ interface Favorite {
     kategori: {
       navn: string;
     };
-    enhed: {
-      label: string;
-    };
+    enhed: Unit | string;
   };
   customerPricing: CustomerPricing;
 }
@@ -54,7 +69,6 @@ export default function CustomerFavorites() {
   const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
   const { toast } = useToast();
   const { isCustomerAuthenticated } = useAuth();
-  const { addToCart } = useCart();
 
   useEffect(() => {
     if (isCustomerAuthenticated) {
@@ -156,42 +170,10 @@ export default function CustomerFavorites() {
     }
   };
 
-  const handleAddToCart = async (product: Favorite['product']) => {
-    try {
-      const success = await addToCart(product._id, 1);
-
-      if (success) {
-        toast({
-          title: 'Tilføjet til kurv',
-          description: `${product.produktnavn} er tilføjet til din kurv`,
-          className: 'bg-brand-success text-white border-brand-success'
-        });
-      } else {
-        throw new Error('Failed to add to cart');
-      }
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Fejl',
-        description: 'Kunne ikke tilføje til kurv. Prøv igen.'
-      });
-    }
-  };
-
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('da-DK', {
-      style: 'currency',
-      currency: 'DKK'
-    }).format(price);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('da-DK', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+  // Helper function to get product image
+  const getProductImageUrl = (favorite: Favorite) => {
+    const primaryImage = favorite.product.billeder.find(img => img.isPrimary);
+    return primaryImage?.url || favorite.product.billeder[0]?.url || '/placeholder.svg';
   };
 
   if (!isCustomerAuthenticated) {
@@ -239,15 +221,19 @@ export default function CustomerFavorites() {
               </p>
             </div>
 
-            {/* Loading State */}
+            {/* Loading State - Matching Products Page Grid */}
             {isLoading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Card key={i}>
-                    <CardContent className="p-4">
-                      <Skeleton className="h-48 w-full mb-4" />
-                      <Skeleton className="h-6 w-3/4 mb-2" />
-                      <Skeleton className="h-4 w-1/2" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 justify-items-center">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <Card key={i} className="w-full max-w-[240px] sm:max-w-[320px]">
+                    <CardContent className="p-0">
+                      <Skeleton className="w-full aspect-[4/3] rounded-t-lg" />
+                      <div className="p-4 space-y-3">
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-10 w-full" />
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -275,108 +261,42 @@ export default function CustomerFavorites() {
             {/* Favorites Grid */}
             {!isLoading && favorites.length > 0 && (
               <>
-                <div className="mb-4 text-sm text-gray-600">
-                  {favorites.length} {favorites.length === 1 ? 'favorit' : 'favoritter'}
+                <div className="mb-6 flex items-center justify-between">
+                  <div className="text-sm text-gray-600">
+                    {favorites.length} {favorites.length === 1 ? 'favorit' : 'favoritter'}
+                  </div>
+                  <Badge variant="outline" className="bg-brand-primary/10 text-brand-primary border-brand-primary/20">
+                    <Heart className="h-3 w-3 mr-1 fill-current" />
+                    Dine favoritter
+                  </Badge>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Product Cards Grid - Same as Products Page */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 justify-items-center">
                   {favorites.map((favorite) => {
                     const product = favorite.product;
-                    const pricing = favorite.customerPricing;
-                    const primaryImage = product.billeder.find(img => img.isPrimary) || product.billeder[0];
                     const isRemoving = removingIds.has(product._id);
 
                     return (
-                      <Card 
+                      <div 
                         key={favorite._id}
                         className={cn(
-                          "card-brand overflow-hidden transition-all duration-300 hover:shadow-lg",
-                          isRemoving && "opacity-50"
+                          "w-full transition-opacity duration-300",
+                          isRemoving && "opacity-50 pointer-events-none"
                         )}
                       >
-                        <CardContent className="p-0">
-                          {/* Product Image */}
-                          <Link to={`/products/${product._id}`}>
-                            <div className="relative aspect-[4/3] bg-gray-100 overflow-hidden">
-                              <img 
-                                src={primaryImage?.url || '/placeholder.svg'}
-                                alt={product.produktnavn}
-                                className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                              />
-                              {/* Discount Badge */}
-                              {pricing.discountType !== 'standard' && pricing.discountLabel && (
-                                <Badge 
-                                  className="absolute top-2 right-2 text-xs font-medium px-2 py-1 text-white shadow-lg"
-                                  style={{
-                                    backgroundColor: pricing.discountType === 'unique_offer' 
-                                      ? '#9333EA'
-                                      : pricing.discountType === 'fast_udsalgspris'
-                                        ? '#DC2626'
-                                        : pricing.groupDetails?.groupColor || '#F59E0B'
-                                  }}
-                                >
-                                  {pricing.discountLabel}
-                                </Badge>
-                              )}
-                            </div>
-                          </Link>
-
-                          {/* Product Info */}
-                          <div className="p-4">
-                            <Link to={`/products/${product._id}`}>
-                              <h3 className="font-bold text-gray-900 mb-1 hover:text-brand-primary transition-colors line-clamp-2">
-                                {product.produktnavn}
-                              </h3>
-                            </Link>
-                            
-                            <div className="flex items-center gap-2 mb-3">
-                              <Badge variant="secondary" className="text-xs">
-                                {product.kategori.navn}
-                              </Badge>
-                              <span className="text-xs text-gray-500">
-                                Tilføjet {formatDate(favorite.addedAt)}
-                              </span>
-                            </div>
-
-                            {/* Price Display */}
-                            <div className="mb-4">
-                              <div className="flex items-center gap-2">
-                                {pricing.showStrikethrough && pricing.originalPrice > pricing.price && (
-                                  <span className="text-sm text-gray-400 line-through">
-                                    {formatPrice(pricing.originalPrice)}
-                                  </span>
-                                )}
-                                <span className="text-xl font-bold text-brand-primary">
-                                  {formatPrice(pricing.price)}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">
-                                per {product.enhed.label}
-                              </p>
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex gap-2">
-                              <Button
-                                className="btn-brand-primary flex-1"
-                                onClick={() => handleAddToCart(product)}
-                              >
-                                <ShoppingCart className="h-4 w-4 mr-2" />
-                                Læg i kurv
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="icon"
-                                className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-600"
-                                onClick={() => handleRemoveFavorite(product._id)}
-                                disabled={isRemoving}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                        <ProductCard
+                          id={product._id}
+                          name={product.produktnavn}
+                          image={getProductImageUrl(favorite)}
+                          category={product.kategori.navn}
+                          unit={product.enhed}
+                          isLoggedIn={true}
+                          userType="customer"
+                          price={product.basispris}
+                          customerPricing={favorite.customerPricing}
+                        />
+                      </div>
                     );
                   })}
                 </div>
